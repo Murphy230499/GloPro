@@ -6,7 +6,16 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import Layout from '@/components/Layout';
+import { BranchProvider } from '@/lib/BranchContext';
+import Dashboard from '@/pages/Dashboard';
+import Appointments from '@/pages/Appointments';
+import POS from '@/pages/POS';
+import Customers from '@/pages/Customers';
+import StaffPage from '@/pages/Staff';
+import Services from '@/pages/Services';
+import Reports from '@/pages/Reports';
+import SettingsPage from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +43,16 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/appointments" element={<Appointments />} />
+        <Route path="/pos" element={<POS />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/staff" element={<StaffPage />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -48,7 +66,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <BranchProvider>
+            <AuthenticatedApp />
+          </BranchProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>
