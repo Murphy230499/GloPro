@@ -38,6 +38,9 @@
     "avatar_color": {
       "type": "string",
       "default": "#FF6B9D"
+    },
+    "avatar_url": {
+      "type": "string"
     }
   },
   "required": [

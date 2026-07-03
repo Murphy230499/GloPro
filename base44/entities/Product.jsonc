@@ -25,6 +25,9 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "image_url": {
+      "type": "string"
     }
   },
   "required": [

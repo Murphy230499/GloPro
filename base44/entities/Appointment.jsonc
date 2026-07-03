@@ -36,6 +36,38 @@
     "assistant_staff_name": {
       "type": "string"
     },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service_id": {
+            "type": "string"
+          },
+          "service_name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "staff_id": {
+            "type": "string"
+          },
+          "staff_name": {
+            "type": "string"
+          },
+          "assistant_staff_id": {
+            "type": "string"
+          },
+          "assistant_staff_name": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "date": {
       "type": "string",
       "format": "date"

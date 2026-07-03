@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import ImageUpload from '@/components/ImageUpload';
 
 const CATEGORIES = {
   hair: { label: 'Tóc', color: '#FF6B9D' },
@@ -95,7 +96,14 @@ export default function Services() {
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: cat.color + '1a', color: cat.color }}>{cat.label}</span>
                   <button onClick={() => toggleActive(s, true)}>{s.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
                 </div>
-                <div className="font-bold mt-2">{s.name}</div>
+                <div className="mt-2 -mx-1">
+                  {s.image_url ? (
+                    <div className="h-24 -mx-3 mt-1 mb-2 overflow-hidden rounded-xl bg-slate-100">
+                      <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="font-bold">{s.name}</div>
                 {s.description && <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">{s.description}</div>}
                 <div className="flex items-center justify-between mt-3">
                   <span className="font-bold text-pink-600">{formatVND(s.price)}</span>
@@ -154,6 +162,7 @@ function ServiceForm({ item, onClose, onSave }) {
     name: item.name || '', category: item.category || 'hair', price: item.price || 0,
     duration_minutes: item.duration_minutes || 60, commission_rate: item.commission_rate || 30,
     description: item.description || '', is_active: item.is_active !== false,
+    image_url: item.image_url || '',
   });
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
@@ -171,6 +180,7 @@ function ServiceForm({ item, onClose, onSave }) {
           </div>
           <div><label className="text-xs text-slate-400">Hoa hồng (%)</label><input type="number" value={f.commission_rate || ''} onChange={(e) => setF({ ...f, commission_rate: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" /></div>
           <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+          <ImageUpload value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} label="Hình minh hoạ" />
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-100 font-semibold text-sm">Hủy</button>
@@ -202,6 +212,7 @@ function ProductForm({ item, onClose, onSave }) {
             <div><label className="text-xs text-slate-400">Giá vốn</label><input type="number" value={f.cost_price || ''} onChange={(e) => setF({ ...f, cost_price: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" /></div>
           </div>
           <div><label className="text-xs text-slate-400">Tồn kho</label><input type="number" value={f.stock || ''} onChange={(e) => setF({ ...f, stock: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" /></div>
+          <ImageUpload value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} label="Hình sản phẩm" />
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-100 font-semibold text-sm">Hủy</button>

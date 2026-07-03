@@ -3,6 +3,8 @@ import { Search, Plus, X, Phone, Calendar, Gift, Edit3, Crown } from 'lucide-rea
 import { base44 } from '@/api/base44Client';
 import { formatVND, formatDate } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import Avatar from '@/components/Avatar';
+import ImageUpload from '@/components/ImageUpload';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -71,7 +73,7 @@ export default function Customers() {
             return (
               <button key={c.id} onClick={() => setDetail(c)} className="text-left bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-500 text-white flex items-center justify-center font-bold text-lg">{c.name[0]}</div>
+                  <Avatar src={c.avatar_url} name={c.name} size={48} color="#E879A9" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate flex items-center gap-1.5">{c.name} {isVIP && <Crown className="w-3.5 h-3.5 text-amber-400" />}</div>
                     <div className="text-xs text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone}</div>
@@ -106,7 +108,7 @@ function CustomerDetail({ customer, invoices, memberships, onClose, onEdit }) {
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
         </div>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-500 text-white flex items-center justify-center font-bold text-2xl">{customer.name[0]}</div>
+          <Avatar src={customer.avatar_url} name={customer.name} size={56} color="#E879A9" />
           <div>
             <div className="text-sm text-slate-500 flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{customer.phone}</div>
             {customer.birthday && <div className="text-sm text-slate-500 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(customer.birthday)}</div>}
@@ -159,7 +161,7 @@ function CustomerDetail({ customer, invoices, memberships, onClose, onEdit }) {
 }
 
 function CustomerForm({ customer, onClose, onSave }) {
-  const [f, setF] = useState({ name: customer.name || '', phone: customer.phone || '', email: customer.email || '', gender: customer.gender || 'female', birthday: customer.birthday || '', address: customer.address || '', note: customer.note || '' });
+  const [f, setF] = useState({ name: customer.name || '', phone: customer.phone || '', email: customer.email || '', gender: customer.gender || 'female', birthday: customer.birthday || '', address: customer.address || '', note: customer.note || '', avatar_url: customer.avatar_url || '' });
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30" />
@@ -177,6 +179,7 @@ function CustomerForm({ customer, onClose, onSave }) {
           </div>
           <input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} placeholder="Địa chỉ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
           <textarea value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="Ghi chú, sở thích, dị ứng..." rows={3} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+          <ImageUpload value={f.avatar_url} onChange={(v) => setF({ ...f, avatar_url: v })} label="Ảnh đại diện" shape="circle" />
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-100 font-semibold text-sm">Hủy</button>

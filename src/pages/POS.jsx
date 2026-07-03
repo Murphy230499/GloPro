@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, UserPlus, CreditCard, X, Check, Wallet } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, UserPlus, CreditCard, X, Check, Wallet, Scissors } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND, todayStr } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import Avatar from '@/components/Avatar';
+import StaffAssignPicker from '@/components/StaffAssignPicker';
 
 const METHODS = [
   { value: 'cash', label: 'Tiền mặt', color: '#34D399' },
@@ -148,7 +150,16 @@ export default function POS() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {filtered.map((item) => (
                 <button key={item.id} onClick={() => addToCart(item)}
-                  className="text-left p-3 rounded-xl border border-slate-100 hover:border-pink-300 hover:bg-pink-50/40 transition-colors">
+                  className="text-left p-2 rounded-xl border border-slate-100 hover:border-pink-300 hover:bg-pink-50/40 transition-colors overflow-hidden">
+                  <div className="h-20 rounded-lg overflow-hidden bg-slate-100 mb-2">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">
+                        {tab === 'service' ? <Scissors className="w-7 h-7" /> : <ShoppingCart className="w-7 h-7" />}
+                      </div>
+                    )}
+                  </div>
                   <div className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</div>
                   <div className="text-pink-600 font-bold text-sm mt-1">{formatVND(item.price)}</div>
                   {tab === 'service' && item.duration_minutes && <div className="text-xs text-slate-400">{item.duration_minutes} phút</div>}
@@ -169,7 +180,7 @@ export default function POS() {
           {/* Customer */}
           {customer ? (
             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-pink-50 mb-3">
-              <div className="w-9 h-9 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold text-sm">{customer.name[0]}</div>
+              <Avatar src={customer.avatar_url} name={customer.name} size={36} color="#E879A9" />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">{customer.name}</div>
                 <div className="text-xs text-slate-500">{customer.points || 0} điểm • {formatVND(customer.total_spent || 0)}</div>
@@ -201,11 +212,11 @@ export default function POS() {
                   <span className="font-bold text-sm text-pink-600">{formatVND(x.price * x.qty)}</span>
                 </div>
                 {x.type === 'service' && (
-                  <select value={x.staff_id} onChange={(e) => updateCart(i, { staff_id: e.target.value, staff_name: staff.find(s => s.id === e.target.value)?.full_name || '' })}
-                    className="w-full mt-2 px-2 py-1.5 rounded-lg border border-slate-200 text-xs bg-white">
-                    <option value="">— Phân KTV —</option>
-                    {staff.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-                  </select>
+                  <StaffAssignPicker
+                    staff={staff}
+                    value={x.staff_id}
+                    onChange={(id, name) => updateCart(i, { staff_id: id, staff_name: name })}
+                  />
                 )}
               </div>
             ))}
@@ -296,7 +307,7 @@ function CustomerPicker({ customers, onPick, onNew }) {
             <div className="space-y-1.5 max-h-72 overflow-y-auto">
               {list.map((c) => (
                 <button key={c.id} onClick={() => { onPick(c); setOpen(false); }} className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 text-left">
-                  <div className="w-9 h-9 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold text-sm">{c.name[0]}</div>
+                  <Avatar src={c.avatar_url} name={c.name} size={36} color="#E879A9" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{c.name}</div>
                     <div className="text-xs text-slate-400">{c.phone} • {c.points || 0} điểm</div>

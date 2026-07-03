@@ -4,7 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND, todayStr } from '@/lib/format';
 import AppointmentModal from '@/components/AppointmentModal';
+import AppointmentGrid from '@/components/AppointmentGrid';
 import { toast } from '@/components/Layout';
+import { LayoutGrid, List } from 'lucide-react';
 
 const STATUS_COLORS = {
   pending: '#94A3B8', confirmed: '#60A5FA', checked_in: '#FBBF24',
@@ -19,7 +21,9 @@ export default function Appointments() {
   const { currentBranchId } = useBranch();
   const [date, setDate] = useState(todayStr());
   const [appointments, setAppointments] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('list');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
@@ -27,8 +31,12 @@ export default function Appointments() {
     setLoading(true);
     const filter = { date };
     if (currentBranchId !== 'all') filter.branch_id = currentBranchId;
-    base44.entities.Appointment.filter(filter).then((data) => {
+    Promise.all([
+      base44.entities.Appointment.filter(filter),
+      base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
+    ]).then(([data, st]) => {
       setAppointments(data.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
+      setStaff(st.filter((x) => x.is_active !== false));
       setLoading(false);
     });
   };
@@ -63,6 +71,14 @@ export default function Appointments() {
             <CalendarDays className="w-4 h-4 text-pink-500" />
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="text-sm outline-none" />
           </div>
+          <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1">
+            <button onClick={() => setView('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold ${view === 'list' ? 'bg-primary text-white' : 'text-slate-500'}`}>
+              <List className="w-4 h-4" /> <span className="hidden sm:inline">Danh sách</span>
+            </button>
+            <button onClick={() => setView('grid')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold ${view === 'grid' ? 'bg-primary text-white' : 'text-slate-500'}`}>
+              <LayoutGrid className="w-4 h-4" /> <span className="hidden sm:inline">Lưới</span>
+            </button>
+          </div>
           <button onClick={() => { setEditing(null); setModalOpen(true); }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm shadow-sm">
             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Đặt lịch</span>
@@ -77,6 +93,13 @@ export default function Appointments() {
           <CalendarDays className="w-12 h-12 mx-auto text-slate-200 mb-3" />
           <p className="text-slate-400">Chưa có lịch hẹn nào trong ngày {date}</p>
         </div>
+      ) : view === 'grid' ? (
+        <AppointmentGrid
+          appointments={appointments}
+          staff={staff}
+          onApptClick={(a) => { setEditing(a); setModalOpen(true); }}
+          onEmptyClick={() => { setEditing(null); setModalOpen(true); }}
+        />
       ) : (
         <div className="space-y-5">
           {orderedStatuses.map((status) => {
