@@ -1,0 +1,45 @@
+{
+  "name": "Shift",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string"
+    },
+    "staff_name": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "is_overtime": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "checked_in",
+        "checked_out",
+        "absent"
+      ],
+      "default": "scheduled"
+    }
+  },
+  "required": [
+    "staff_id",
+    "staff_name",
+    "branch_id",
+    "date"
+  ]
+}

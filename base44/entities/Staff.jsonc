@@ -1,0 +1,48 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "manager",
+        "receptionist",
+        "stylist",
+        "technician",
+        "therapist",
+        "barber",
+        "cashier",
+        "nail_tech"
+      ]
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "base_salary": {
+      "type": "number",
+      "default": 0
+    },
+    "specialties": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "avatar_color": {
+      "type": "string",
+      "default": "#FF6B9D"
+    }
+  },
+  "required": [
+    "full_name",
+    "role",
+    "branch_id"
+  ]
+}

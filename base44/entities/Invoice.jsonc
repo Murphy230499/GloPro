@@ -1,0 +1,116 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_code": {
+      "type": "string"
+    },
+    "appointment_id": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "service",
+              "product",
+              "package"
+            ]
+          },
+          "price": {
+            "type": "number"
+          },
+          "qty": {
+            "type": "number"
+          },
+          "staff_id": {
+            "type": "string"
+          },
+          "staff_name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "default": 0
+    },
+    "discount": {
+      "type": "number",
+      "default": 0
+    },
+    "points_used": {
+      "type": "number",
+      "default": 0
+    },
+    "membership_used": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "tip": {
+      "type": "number",
+      "default": 0
+    },
+    "payment_methods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "transfer",
+              "card",
+              "ewallet",
+              "membership",
+              "points"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "unpaid",
+        "refunded"
+      ],
+      "default": "paid"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "customer_name",
+    "branch_id",
+    "total"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "Membership",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "cash_card",
+        "package",
+        "treatment_course"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "sessions_remaining": {
+      "type": "number",
+      "default": 0
+    },
+    "total_sessions": {
+      "type": "number",
+      "default": 0
+    },
+    "purchased_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "customer_name",
+    "type"
+  ]
+}

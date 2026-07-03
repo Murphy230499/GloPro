@@ -1,0 +1,46 @@
+{
+  "name": "Service",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "hair",
+        "nail",
+        "skincare",
+        "spa",
+        "barber",
+        "makeup",
+        "other"
+      ]
+    },
+    "price": {
+      "type": "number"
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "commission_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "description": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "price",
+    "category"
+  ]
+}

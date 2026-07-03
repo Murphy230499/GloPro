@@ -1,0 +1,87 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "service_id": {
+      "type": "string"
+    },
+    "service_name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number",
+      "default": 0
+    },
+    "staff_id": {
+      "type": "string"
+    },
+    "staff_name": {
+      "type": "string"
+    },
+    "assistant_staff_id": {
+      "type": "string"
+    },
+    "assistant_staff_name": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "checked_in",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_show"
+      ],
+      "default": "pending"
+    },
+    "note": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "online",
+        "phone",
+        "walk_in",
+        "reception"
+      ],
+      "default": "reception"
+    },
+    "is_customer_requested_staff": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "customer_name",
+    "branch_id",
+    "date",
+    "start_time",
+    "status"
+  ]
+}
