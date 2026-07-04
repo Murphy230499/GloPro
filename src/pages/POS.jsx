@@ -171,7 +171,7 @@ export default function POS() {
         </div>
 
         {/* Cart */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col px-2 py-3">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold flex items-center gap-2"><ShoppingCart className="w-4 h-4 text-pink-500" /> Giỏ hàng</h3>
             {cart.length > 0 && <button onClick={() => setCart([])} className="text-xs text-red-500 font-medium">Xóa hết</button>}
