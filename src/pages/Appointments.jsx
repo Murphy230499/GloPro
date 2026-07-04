@@ -7,6 +7,7 @@ import AppointmentModal from '@/components/AppointmentModal';
 import AppointmentGrid from '@/components/AppointmentGrid';
 import { toast } from '@/components/Layout';
 import { LayoutGrid, List } from 'lucide-react';
+import Avatar from '@/components/Avatar';
 
 const STATUS_COLORS = {
   pending: '#94A3B8', confirmed: '#60A5FA', checked_in: '#FBBF24',
@@ -22,6 +23,7 @@ export default function Appointments() {
   const [date, setDate] = useState(todayStr());
   const [appointments, setAppointments] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('list');
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,9 +36,16 @@ export default function Appointments() {
     Promise.all([
       base44.entities.Appointment.filter(filter),
       base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
-    ]).then(([data, st]) => {
-      setAppointments(data.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
+      base44.entities.Customer.list(),
+    ]).then(([data, st, cus]) => {
+      const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
+      const enriched = data.map((a) => ({
+        ...a,
+        customer_avatar_url: a.customer_id ? cusMap[a.customer_id]?.avatar_url : undefined,
+      }));
+      setAppointments(enriched.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
       setStaff(st.filter((x) => x.is_active !== false));
+      setCustomers(cus);
       setLoading(false);
     });
   };
@@ -124,9 +133,28 @@ export default function Appointments() {
                           {STATUS_LABEL[status]}
                         </span>
                       </div>
-                      <div className="font-semibold text-slate-700 text-sm">{a.customer_name}</div>
-                      {a.customer_phone && <div className="text-xs text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" />{a.customer_phone}</div>}
-                      {a.staff_name && <div className="text-xs text-slate-500 mt-1">KTV: {a.staff_name}</div>}
+                      <div className="flex items-center gap-2">
+                        <Avatar src={a.customer_avatar_url} name={a.customer_name} size={28} color="#FBBF24" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-700 text-sm truncate">{a.customer_name}</div>
+                          {a.customer_phone && <div className="text-xs text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" />{a.customer_phone}</div>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        {(() => {
+                          const staffIds = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_id).filter(Boolean);
+                          const staffNames = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_name).filter(Boolean);
+                          return staffIds.length > 0 || a.staff_name ? (
+                            <>
+              {Array.from(new Set(staffIds.length ? staffIds : [a.staff_id])).slice(0, 3).map((sid, idx) => {
+                const stf = staff.find((s) => s.id === sid);
+                return <Avatar key={sid || idx} src={stf?.avatar_url} name={staffNames[idx] || stf?.full_name} size={20} color={stf?.avatar_color || '#FF6B9D'} />;
+              })}
+              <span className="text-xs text-slate-500 truncate">{a.staff_name || staffNames.join(', ')}</span>
+                            </>
+                          ) : null;
+                        })()}
+                      </div>
                       {a.price > 0 && <div className="text-sm font-semibold text-pink-600 mt-1">{formatVND(a.price)}</div>}
                       {a.note && <div className="text-xs text-slate-400 mt-1 italic line-clamp-2">"{a.note}"</div>}
                       <div className="flex gap-1.5 mt-3 flex-wrap">

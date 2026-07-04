@@ -124,10 +124,28 @@ export default function AppointmentGrid({ appointments, staff, onApptClick, onEm
                           <Clock className="w-3 h-3 shrink-0" />
                           {a.start_time?.slice(0, 5)} {a.end_time && `– ${a.end_time.slice(0, 5)}`}
                         </div>
-                        <div className="text-[11px] font-bold truncate" style={{ color: STATUS_TEXT[a.status] }}>{a.customer_name}</div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Avatar src={a.customer_avatar_url} name={a.customer_name} size={18} color="#FBBF24" />
+                          <div className="text-[11px] font-bold truncate flex-1" style={{ color: STATUS_TEXT[a.status] }}>{a.customer_name}</div>
+                        </div>
                         <div className="text-[10px] truncate text-slate-600">
                           {services.map((s) => s.service_name).join(' + ') || 'Chưa chọn dịch vụ'}
                         </div>
+                        {(() => {
+                          const ids = Array.from(new Set((services.map((s) => s.staff_id).filter(Boolean))));
+                          const names = services.map((s) => s.staff_name).filter(Boolean);
+                          if (!ids.length && !names.length) return null;
+                          return (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {ids.slice(0, 3).map((sid, i) => {
+                                const stf = staff.find((s) => s.id === sid);
+                                return <Avatar key={sid} src={stf?.avatar_url} name={names[i]} size={16} color={stf?.avatar_color || '#FF6B9D'} />;
+                              })}
+                              {!ids.length && names.length > 0 && names.slice(0, 1).map((n, i) => <Avatar key={i} name={n} size={16} color="#FF6B9D" />)}
+                              <span className="text-[9px] text-slate-500 truncate">{names.join(', ')}</span>
+                            </div>
+                          );
+                        })()}
                         {isUnassigned && (
                           <div className="text-[9px] mt-0.5 inline-flex items-center gap-0.5 text-amber-600 font-semibold">
                             <UserPlus className="w-2.5 h-2.5" /> Cần phân KTV

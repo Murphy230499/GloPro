@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { formatVND } from '@/lib/format';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
+import CustomerPicker from '@/components/CustomerPicker';
 
 const SOURCES = [
   { value: 'reception', label: 'Quầy lễ tân' },
@@ -98,18 +99,17 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
     recalcEnd(rows, t);
   };
 
-  const onCustomerChange = (id) => {
+  const onCustomerChange = (id, name, phone) => {
     if (id === 'new') {
       set('customer_id', '');
       set('customer_name', '');
       set('customer_phone', '');
       return;
     }
-    const c = customers.find((x) => x.id === id);
-    if (c) {
-      set('customer_id', c.id);
-      set('customer_name', c.name);
-      set('customer_phone', c.phone);
+    if (id) {
+      set('customer_id', id);
+      set('customer_name', name);
+      set('customer_phone', phone || '');
     }
   };
 
@@ -171,16 +171,12 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-slate-600 mb-1.5 block">Khách hàng</label>
-            <select
-              value={form.customer_id || 'new'}
-              onChange={(e) => onCustomerChange(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
-            >
-              <option value="new">+ Khách mới</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>
-              ))}
-            </select>
+            <CustomerPicker
+              customers={customers}
+              value={form.customer_id || ''}
+              onAddNew={() => onCustomerChange('new')}
+              onChange={(id, name, phone) => onCustomerChange(id, name, phone)}
+            />
             {!form.customer_id && (
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <input placeholder="Tên khách" value={form.customer_name || ''} onChange={(e) => set('customer_name', e.target.value)}
