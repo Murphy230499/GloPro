@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarDays, ShoppingCart, Users, UserSquare,
-  Scissors, BarChart3, Settings as SettingsIcon, Sparkles,
-  ChevronDown, Grid, X, MapPin,
+  Scissors, BarChart3, Settings as SettingsIcon, Grid, X,
 } from 'lucide-react';
-import { useBranch } from '@/lib/BranchContext';
 import { Toaster as SonnerToaster, toast } from 'sonner';
+import TopBar from '@/components/TopBar';
 
 export { toast };
 
@@ -24,9 +23,7 @@ const NAV = [
 const MOBILE_TABS = NAV.slice(0, 4);
 
 export default function Layout() {
-  const { branches, currentBranchId, setBranch, currentBranch } = useBranch();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [branchMenu, setBranchMenu] = useState(false);
   const location = useLocation();
 
   const NavItem = ({ item, onClick }) => {
@@ -47,7 +44,7 @@ export default function Layout() {
           isActive ? { background: item.color } : undefined
         }
       >
-        <Icon className="w-5 h-5 shrink-0" style={{ color: undefined }} />
+        <Icon className="w-5 h-5 shrink-0" />
         <span>{item.label}</span>
       </NavLink>
     );
@@ -55,89 +52,16 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-body">
+      <TopBar />
+
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-slate-100 z-30">
-        <div className="px-5 py-5 flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-md">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="font-bold text-lg leading-none tracking-tight">GlowPro</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">Salon & Spa Manager</div>
-          </div>
-        </div>
-
-        {/* Branch selector */}
-        <div className="px-3 mb-2 relative">
-          <button
-            onClick={() => setBranchMenu((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100 text-left"
-          >
-            <MapPin className="w-4 h-4 text-pink-500 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-slate-400 leading-none">Cơ sở</div>
-              <div className="text-sm font-semibold truncate mt-0.5">
-                {currentBranchId === 'all' ? 'Tất cả cơ sở' : currentBranch?.name || '—'}
-              </div>
-            </div>
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          </button>
-          {branchMenu && (
-            <div className="absolute left-3 right-3 top-full mt-1 bg-white rounded-xl border border-slate-100 shadow-lg py-1 z-10">
-              <button
-                onClick={() => { setBranch('all'); setBranchMenu(false); }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Tất cả cơ sở</button>
-              {branches.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => { setBranch(b.id); setBranchMenu(false); }}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 truncate"
-                >
-                  {b.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <aside className="hidden md:flex fixed top-16 left-0 bottom-0 w-64 flex-col bg-white border-r border-slate-100 z-30">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {NAV.map((item) => (
             <NavItem key={item.to} item={item} />
           ))}
         </nav>
       </aside>
-
-      {/* Mobile top header */}
-      <header className="md:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-slate-100">
-        <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold tracking-tight">GlowPro</span>
-          </div>
-          <button
-            onClick={() => setBranchMenu((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-xs font-semibold"
-          >
-            <MapPin className="w-3.5 h-3.5 text-pink-500" />
-            <span className="max-w-[120px] truncate">
-              {currentBranchId === 'all' ? 'Tất cả' : currentBranch?.name || '—'}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        {branchMenu && (
-          <div className="absolute left-3 right-3 top-14 mt-1 bg-white rounded-xl border border-slate-100 shadow-lg py-1 z-10">
-            <button onClick={() => { setBranch('all'); setBranchMenu(false); }}
-              className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50">Tất cả cơ sở</button>
-            {branches.map((b) => (
-              <button key={b.id} onClick={() => { setBranch(b.id); setBranchMenu(false); }}
-                className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 truncate">{b.name}</button>
-            ))}
-          </div>
-        )}
-      </header>
 
       {/* Content */}
       <main className="md:ml-64 pb-20 md:pb-8 min-h-screen">
