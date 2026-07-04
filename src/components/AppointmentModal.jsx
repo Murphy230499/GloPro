@@ -195,7 +195,7 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
               <div key={i} className="bg-slate-50 rounded-xl p-2.5 mx-1">
                   <div className="flex items-center gap-2">
                     <select value={r.service_id} onChange={(e) => onServicePick(i, e.target.value)}
-                  className="flex-1 py-2 rounded-lg border border-slate-200 text-sm bg-white px-2">
+                  className="flex-1 px-2.5 py-2 rounded-lg border border-slate-200 text-sm bg-white">
                       <option value="">— Chọn dịch vụ —</option>
                       {services.map((s) =>
                     <option key={s.id} value={s.id}>{s.name} — {formatVND(s.price)}</option>
