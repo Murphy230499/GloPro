@@ -128,7 +128,7 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-        <h3 className="font-bold mb-3">Top dịch vụ theo doanh thu</h3>
+        <h3 className="font-bold mb-3 text-xl">Top dịch vụ theo doanh thu</h3>
         {topServices.length === 0 ?
         <p className="text-slate-400 text-sm text-center py-6">Chưa có dữ liệu</p> :
 
