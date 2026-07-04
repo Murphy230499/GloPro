@@ -79,8 +79,8 @@ export default function GlobalSearch() {
 
   return (
     <div ref={ref} className="relative flex-1 max-w-xl">
-      <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-pink-200">
-        <Search className="w-4 h-4 text-slate-400 shrink-0" />
+      <div className="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200">
+        <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
