@@ -123,7 +123,7 @@ export default function POS() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Thu ngân</h1>
-        <p className="text-slate-400 text-sm mt-1 hidden">{currentBranchId === 'all' ? 'Chọn một cơ sở cụ thể để thanh toán' : currentBranch?.name}</p>
+        
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
