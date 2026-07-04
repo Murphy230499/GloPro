@@ -126,7 +126,7 @@ export default function POS() {
         <p className="text-slate-400 text-sm mt-1">{currentBranchId === 'all' ? 'Chọn một cơ sở cụ thể để thanh toán' : currentBranch?.name}</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 mx-1">
+      <div className="grid lg:grid-cols-3 gap-4">
         {/* Catalog */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm py-4 px-2">
