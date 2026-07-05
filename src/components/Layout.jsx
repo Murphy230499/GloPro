@@ -65,7 +65,7 @@ export default function Layout() {
 
       {/* Content */}
       <main className="md:ml-64 pb-20 md:pb-8 min-h-screen">
-        <div className="max-w-6xl px-4 md:px-8 py-5 md:py-8 mr-1">
+        <div className="max-w-6xl px-4 md:px-8 py-5 md:py-8 my-2">
           <Outlet />
         </div>
       </main>
