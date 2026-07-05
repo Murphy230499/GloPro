@@ -11,8 +11,8 @@ export default function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
-      <div className="h-16 flex items-center gap-2 sm:gap-3 px-3 sm:px-5">
-        {/* Logo */}
+      <div className="h-16 flex items-center gap-3 px-3 sm:px-5">
+        {/* Left: logo + branch */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-md">
             <Sparkles className="w-4 h-4 text-white" />
@@ -20,7 +20,6 @@ export default function TopBar() {
           <span className="font-bold tracking-tight hidden lg:block">GlowPro</span>
         </div>
 
-        {/* Branch selector */}
         <div className="relative shrink-0">
           <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">
             <MapPin className="w-4 h-4 text-pink-500" />
@@ -45,12 +44,16 @@ export default function TopBar() {
           )}
         </div>
 
-        {/* Global search */}
-        <GlobalSearch />
+        {/* Center: global search */}
+        <div className="flex-1 flex justify-center px-2">
+          <GlobalSearch />
+        </div>
 
         {/* Right cluster */}
-        <NotificationCenter />
-        <ProfileMenu />
+        <div className="flex items-center gap-2 shrink-0">
+          <NotificationCenter />
+          <ProfileMenu />
+        </div>
       </div>
     </header>
   );

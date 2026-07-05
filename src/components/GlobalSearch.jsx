@@ -78,7 +78,7 @@ export default function GlobalSearch() {
   const go = (to) => { nav(to); setOpen(false); setQ(''); };
 
   return (
-    <div ref={ref} className="relative flex-1 max-w-xl">
+    <div ref={ref} className="relative w-full max-w-xl">
       <div className="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200">
         <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <input

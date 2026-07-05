@@ -151,7 +151,7 @@ export default function POS() {
         <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thu ngân</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/invoices')} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
-            <BarChart3 className="w-4 h-4" /> Doanh thu trong ngày
+            <BarChart3 className="w-4 h-4" /> Danh sách hoá đơn
           </button>
           <button onClick={createSale} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white font-semibold text-sm shadow-sm">
             <Plus className="w-4 h-4" /> Tạo đơn
