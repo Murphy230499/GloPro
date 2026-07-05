@@ -99,13 +99,18 @@
       "enum": [
         "paid",
         "unpaid",
-        "refunded"
+        "refunded",
+        "cancelled"
       ],
       "default": "paid"
     },
     "date": {
       "type": "string",
       "format": "date"
+    },
+    "print_count": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

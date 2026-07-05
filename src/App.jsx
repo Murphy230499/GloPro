@@ -11,6 +11,8 @@ import { BranchProvider } from '@/lib/BranchContext';
 import Dashboard from '@/pages/Dashboard';
 import Appointments from '@/pages/Appointments';
 import POS from '@/pages/POS';
+import Invoices from '@/pages/Invoices';
+import InvoiceDetail from '@/pages/InvoiceDetail';
 import Customers from '@/pages/Customers';
 import StaffPage from '@/pages/Staff';
 import Services from '@/pages/Services';
@@ -47,6 +49,8 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/pos" element={<POS />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/staff" element={<StaffPage />} />
         <Route path="/services" element={<Services />} />
