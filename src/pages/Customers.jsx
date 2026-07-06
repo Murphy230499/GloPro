@@ -18,10 +18,10 @@ export default function Customers() {
 
   const load = () => {
     Promise.all([
-      base44.entities.Customer.list(),
-      base44.entities.Invoice.list(),
-      base44.entities.Membership.list(),
-    ]).then(([c, inv, m]) => {
+    base44.entities.Customer.list(),
+    base44.entities.Invoice.list(),
+    base44.entities.Membership.list()]
+    ).then(([c, inv, m]) => {
       setCustomers(c);
       setInvoices(inv);
       setMemberships(m);
@@ -54,7 +54,7 @@ export default function Customers() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Khách hàng</h1>
           <p className="text-slate-400 text-sm mt-1">{customers.length} khách hàng toàn chuỗi</p>
         </div>
-        <button onClick={() => { setEditing({}); }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+        <button onClick={() => {setEditing({});}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
           <Plus className="w-4 h-4" /> Thêm khách
         </button>
       </div>
@@ -64,14 +64,14 @@ export default function Customers() {
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên hoặc SĐT..." className="bg-transparent outline-none text-sm flex-1" />
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {loading ?
+      <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div> :
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((c) => {
-            const isVIP = (c.total_spent || 0) > 5000000;
-            return (
-              <button key={c.id} onClick={() => setDetail(c)} className="text-left bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          const isVIP = (c.total_spent || 0) > 5000000;
+          return (
+            <button key={c.id} onClick={() => setDetail(c)} className="text-left rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow bg-[hsl(var(--secondary))]">
                 <div className="flex items-center gap-3">
                   <Avatar src={c.avatar_url} name={c.name} size={48} color="#E879A9" />
                   <div className="flex-1 min-w-0">
@@ -84,18 +84,18 @@ export default function Customers() {
                   <div><div className="font-bold text-sm">{c.points || 0}</div><div className="text-[10px] text-slate-400">điểm</div></div>
                   <div><div className="font-bold text-sm text-pink-600">{formatVND(c.total_spent || 0).replace('₫', '')}</div><div className="text-[10px] text-slate-400">VNĐ</div></div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+              </button>);
 
-      {detail && (
-        <CustomerDetail customer={detail} invoices={custInvoices} memberships={custMemberships} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />
-      )}
+        })}
+        </div>
+      }
+
+      {detail &&
+      <CustomerDetail customer={detail} invoices={custInvoices} memberships={custMemberships} onClose={() => setDetail(null)} onEdit={() => {setEditing(detail);setDetail(null);}} />
+      }
       {editing && <CustomerForm customer={editing} onClose={() => setEditing(null)} onSave={saveCustomer} />}
-    </div>
-  );
+    </div>);
+
 }
 
 function CustomerDetail({ customer, invoices, memberships, onClose, onEdit }) {
@@ -122,42 +122,42 @@ function CustomerDetail({ customer, invoices, memberships, onClose, onEdit }) {
         </div>
         {customer.note && <div className="bg-slate-50 rounded-xl p-3 text-sm text-slate-600 mb-4">📝 {customer.note}</div>}
 
-        {memberships.length > 0 && (
-          <div className="mb-4">
+        {memberships.length > 0 &&
+        <div className="mb-4">
             <h3 className="font-bold text-sm mb-2">Thẻ & gói</h3>
             <div className="space-y-2">
-              {memberships.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+              {memberships.map((m) =>
+            <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
                   <div>
                     <div className="font-semibold text-sm">{m.name || m.type}</div>
                     <div className="text-xs text-slate-500">{m.type === 'cash_card' ? formatVND(m.balance) + ' còn lại' : `${m.sessions_remaining}/${m.total_sessions} buổi`}</div>
                   </div>
                   <Crown className="w-5 h-5 text-purple-400" />
                 </div>
-              ))}
+            )}
             </div>
           </div>
-        )}
+        }
 
         <h3 className="font-bold text-sm mb-2">Lịch sử thanh toán</h3>
-        {invoices.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center py-6">Chưa có giao dịch</p>
-        ) : (
-          <div className="space-y-2">
-            {invoices.slice(0, 15).map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+        {invoices.length === 0 ?
+        <p className="text-slate-400 text-sm text-center py-6">Chưa có giao dịch</p> :
+
+        <div className="space-y-2">
+            {invoices.slice(0, 15).map((inv) =>
+          <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
                 <div>
                   <div className="font-semibold text-sm">{inv.invoice_code || 'HĐ'}</div>
-                  <div className="text-xs text-slate-400">{formatDate(inv.date)} • {(inv.items || []).map(i => i.name).join(', ')}</div>
+                  <div className="text-xs text-slate-400">{formatDate(inv.date)} • {(inv.items || []).map((i) => i.name).join(', ')}</div>
                 </div>
                 <div className="font-bold text-sm text-pink-600">{formatVND(inv.total)}</div>
               </div>
-            ))}
+          )}
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function CustomerForm({ customer, onClose, onSave }) {
@@ -186,6 +186,6 @@ function CustomerForm({ customer, onClose, onSave }) {
           <button onClick={() => f.name && f.phone ? onSave(f) : toast.error('Nhập tên & SĐT')} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">Lưu</button>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
