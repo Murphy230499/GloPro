@@ -1,5 +1,5 @@
 {
-  "name": "Treatment",
+  "name": "ServicePackage",
   "type": "object",
   "properties": {
     "name": {
@@ -7,6 +7,10 @@
     },
     "group_id": {
       "type": "string"
+    },
+    "usage_count": {
+      "type": "number",
+      "default": 1
     },
     "expiry_months": {
       "type": "number",
@@ -30,15 +34,6 @@
           },
           "service_name": {
             "type": "string"
-          },
-          "sessions": {
-            "type": "number"
-          },
-          "unit_price_retail": {
-            "type": "number"
-          },
-          "unit_price_in_treatment": {
-            "type": "number"
           }
         }
       }

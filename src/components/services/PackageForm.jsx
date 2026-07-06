@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/Layout';
-import { formatVND } from '@/lib/format';
 import ImageUpload from '@/components/ImageUpload';
 
-export default function TreatmentForm({ item, groups, services, onClose, onSave }) {
+export default function PackageForm({ item, groups, services, onClose, onSave }) {
   const [f, setF] = useState({
     name: item.name || '',
     group_id: item.group_id || '',
+    usage_count: item.usage_count || 1,
     expiry_months: item.expiry_months || 0,
     expiry_days: item.expiry_days || 0,
     price: item.price || 0,
@@ -22,53 +22,45 @@ export default function TreatmentForm({ item, groups, services, onClose, onSave 
     const svc = services.find((s) => s.id === selService);
     if (!svc) return toast.error('Chọn dịch vụ');
     if (f.services.find((x) => x.service_id === selService)) return toast.error('Đã có dịch vụ này');
-    setF({
-      ...f,
-      services: [...f.services, {
-        service_id: svc.id,
-        service_name: svc.name,
-        sessions: 1,
-        unit_price_retail: svc.price || 0,
-        unit_price_in_treatment: svc.price || 0,
-      }],
-    });
+    setF({ ...f, services: [...f.services, { service_id: svc.id, service_name: svc.name }] });
     setSelService('');
-  };
-
-  const updateService = (sid, field, value) => {
-    setF({ ...f, services: f.services.map((x) => x.service_id === sid ? { ...x, [field]: value } : x) });
   };
 
   const removeService = (sid) => {
     setF({ ...f, services: f.services.filter((x) => x.service_id !== sid) });
   };
 
-  const totalRetail = f.services.reduce((s, x) => s + (x.unit_price_retail || 0) * (x.sessions || 0), 0);
-
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30" />
-      <div className="relative bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="relative bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{item.id ? 'Sửa liệu trình' : 'Thêm liệu trình'}</h2>
+          <h2 className="text-lg font-bold">{item.id ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
-          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên liệu trình" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên gói dịch vụ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
 
           <div>
-            <label className="text-xs text-slate-400">Nhóm liệu trình</label>
+            <label className="text-xs text-slate-400">Nhóm gói</label>
             <select value={f.group_id} onChange={(e) => setF({ ...f, group_id: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
               <option value="">— Chọn nhóm —</option>
               {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-slate-400">Giá bán (VNĐ)</label>
+              <label className="text-xs text-slate-400">Giá gói (VNĐ)</label>
               <input type="number" value={f.price || ''} onChange={(e) => setF({ ...f, price: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
             </div>
+            <div>
+              <label className="text-xs text-slate-400">Số lần sử dụng</label>
+              <input type="number" value={f.usage_count || ''} onChange={(e) => setF({ ...f, usage_count: Number(e.target.value) || 1 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-slate-400">Hạn dùng (tháng)</label>
               <input type="number" value={f.expiry_months || ''} onChange={(e) => setF({ ...f, expiry_months: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
@@ -82,7 +74,7 @@ export default function TreatmentForm({ item, groups, services, onClose, onSave 
           <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
 
           <div>
-            <label className="text-xs text-slate-400 font-semibold">Dịch vụ trong liệu trình</label>
+            <label className="text-xs text-slate-400 font-semibold">Dịch vụ trong gói</label>
             <div className="flex gap-1.5 mt-1">
               <select value={selService} onChange={(e) => setSelService(e.target.value)} className="flex-1 px-2.5 py-2 rounded-xl border border-slate-200 text-sm">
                 <option value="">— Chọn dịch vụ —</option>
@@ -91,33 +83,13 @@ export default function TreatmentForm({ item, groups, services, onClose, onSave 
               <button type="button" onClick={addService} className="px-3 rounded-xl bg-slate-100 flex items-center justify-center"><Plus className="w-4 h-4" /></button>
             </div>
             {f.services.length > 0 && (
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-1">
                 {f.services.map((it) => (
-                  <div key={it.service_id} className="p-2.5 rounded-xl bg-slate-50 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 text-sm font-medium truncate">{it.service_name}</span>
-                      <button type="button" onClick={() => removeService(it.service_id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <div>
-                        <label className="text-[10px] text-slate-400">Số lần</label>
-                        <input type="number" value={it.sessions || ''} onChange={(e) => updateService(it.service_id, 'sessions', Number(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400">Đơn giá lẻ</label>
-                        <input type="number" value={it.unit_price_retail || ''} onChange={(e) => updateService(it.service_id, 'unit_price_retail', Number(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400">Đơn giá trong LT</label>
-                        <input type="number" value={it.unit_price_in_treatment || ''} onChange={(e) => updateService(it.service_id, 'unit_price_in_treatment', Number(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs" />
-                      </div>
-                    </div>
+                  <div key={it.service_id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 text-sm">
+                    <span className="flex-1 truncate">{it.service_name}</span>
+                    <button type="button" onClick={() => removeService(it.service_id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 ))}
-                <div className="flex justify-between text-xs text-slate-500 px-1">
-                  <span>Tổng giá lẻ: <b className="text-slate-700">{formatVND(totalRetail)}</b></span>
-                  <span>Giá bán LT: <b className="text-pink-600">{formatVND(f.price)}</b></span>
-                </div>
               </div>
             )}
           </div>
@@ -126,7 +98,7 @@ export default function TreatmentForm({ item, groups, services, onClose, onSave 
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-100 font-semibold text-sm">Hủy</button>
-          <button onClick={() => (f.name ? onSave(f) : toast.error('Nhập tên liệu trình'))} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">Lưu</button>
+          <button onClick={() => (f.name ? onSave(f) : toast.error('Nhập tên gói'))} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">Lưu</button>
         </div>
       </div>
     </div>

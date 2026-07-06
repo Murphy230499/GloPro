@@ -70,7 +70,7 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Quản lý nhóm {type === 'service' ? 'dịch vụ' : 'sản phẩm'}</h2>
+          <h2 className="text-lg font-bold">Quản lý nhóm {type === 'service' ? 'dịch vụ' : type === 'product' ? 'sản phẩm' : type === 'package' ? 'gói dịch vụ' : 'liệu trình'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
         </div>
 

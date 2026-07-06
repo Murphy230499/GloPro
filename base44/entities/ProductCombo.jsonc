@@ -1,50 +1,36 @@
 {
-  "name": "Treatment",
+  "name": "ProductCombo",
   "type": "object",
   "properties": {
     "name": {
       "type": "string"
     },
-    "group_id": {
+    "description": {
       "type": "string"
     },
-    "expiry_months": {
-      "type": "number",
-      "default": 0
-    },
-    "expiry_days": {
-      "type": "number",
-      "default": 0
-    },
-    "price": {
-      "type": "number",
-      "default": 0
-    },
-    "services": {
+    "items": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "service_id": {
+          "product_id": {
             "type": "string"
           },
-          "service_name": {
+          "product_name": {
             "type": "string"
           },
-          "sessions": {
+          "price": {
             "type": "number"
           },
-          "unit_price_retail": {
-            "type": "number"
-          },
-          "unit_price_in_treatment": {
+          "qty": {
             "type": "number"
           }
         }
       }
     },
-    "description": {
-      "type": "string"
+    "combo_price": {
+      "type": "number",
+      "default": 0
     },
     "branch_id": {
       "type": "string"
