@@ -21,27 +21,27 @@ export default function TopBar() {
         </div>
 
         <div className="relative shrink-0">
-          <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">
+          <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 mx-20">
             <MapPin className="w-4 h-4 text-pink-500" />
             <span className="text-sm font-semibold max-w-[120px] truncate">
               {currentBranchId === 'all' ? 'Tất cả cơ sở' : currentBranch?.name || '—'}
             </span>
             <ChevronDown className="w-4 h-4 text-slate-400" />
           </button>
-          {branchMenu && (
-            <div className="absolute left-0 mt-2 w-60 bg-white rounded-2xl border border-slate-100 shadow-xl py-1 z-50">
-              <button onClick={() => { setBranch('all'); setBranchMenu(false); }} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
+          {branchMenu &&
+          <div className="absolute left-0 mt-2 w-60 bg-white rounded-2xl border border-slate-100 shadow-xl py-1 z-50">
+              <button onClick={() => {setBranch('all');setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
                 <span>Tất cả cơ sở</span>
                 {currentBranchId === 'all' && <Check className="w-4 h-4 text-pink-500" />}
               </button>
-              {branches.map((b) => (
-                <button key={b.id} onClick={() => { setBranch(b.id); setBranchMenu(false); }} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
+              {branches.map((b) =>
+            <button key={b.id} onClick={() => {setBranch(b.id);setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
                   <span className="truncate">{b.name}</span>
                   {currentBranchId === b.id && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
                 </button>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
 
         {/* Center: global search */}
@@ -55,6 +55,6 @@ export default function TopBar() {
           <ProfileMenu />
         </div>
       </div>
-    </header>
-  );
+    </header>);
+
 }
