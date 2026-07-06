@@ -1,72 +1,114 @@
 import React, { useState } from 'react';
-import { Search, Scissors, ShoppingCart, Box, Clock, ChevronDown } from 'lucide-react';
+import { Search, Scissors, ShoppingCart, Clock, ChevronDown, Gift, Sparkles, Layers, Boxes } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 
 const TABS = [
-  { v: 'service', l: 'Dịch vụ' },
-  { v: 'product', l: 'Sản phẩm' },
-  { v: 'package', l: 'Gói dịch vụ' },
+  { v: 'service', l: 'Dịch vụ', i: Scissors },
+  { v: 'product', l: 'Sản phẩm', i: ShoppingCart },
+  { v: 'package', l: 'Gói DV', i: Gift },
+  { v: 'treatment', l: 'Liệu trình', i: Sparkles },
+  { v: 'service_combo', l: 'Combo DV', i: Layers },
+  { v: 'product_combo', l: 'Combo SP', i: Boxes },
 ];
 
-const SERVICE_CATS = [
-  { key: 'hair', label: 'Hair' },
-  { key: 'barber', label: 'Barber' },
-  { key: 'nail', label: 'Nails' },
-  { key: 'skincare', label: 'Skincare' },
-  { key: 'spa', label: 'Spa' },
-  { key: 'makeup', label: 'Makeup' },
-  { key: 'other', label: 'Khác' },
-];
-
-export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, onAddItem }) {
+export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, onAddItem }) {
   const [collapsed, setCollapsed] = useState({});
 
-  const items = tab === 'service' ? services : tab === 'product' ? products : [];
+  const getItems = () => {
+    switch (tab) {
+      case 'service': return services;
+      case 'product': return products;
+      case 'package': return packages;
+      case 'treatment': return treatments;
+      case 'service_combo': return serviceCombos;
+      case 'product_combo': return productCombos;
+      default: return [];
+    }
+  };
+
+  const items = getItems() || [];
   const filtered = items.filter((i) => i.name?.toLowerCase().includes(search.toLowerCase()));
+
+  const itemIcon = () => {
+    switch (tab) {
+      case 'service': return Scissors;
+      case 'product': return ShoppingCart;
+      case 'package': return Gift;
+      case 'treatment': return Sparkles;
+      case 'service_combo': return Layers;
+      case 'product_combo': return Boxes;
+      default: return Scissors;
+    }
+  };
 
   const grouped = {};
   filtered.forEach((item) => {
-    const cat = item.category || 'other';
+    const cat = item.group_id || item.category || 'other';
     (grouped[cat] = grouped[cat] || []).push(item);
   });
 
-  const catList = tab === 'service'
-    ? SERVICE_CATS.filter((c) => grouped[c.key]?.length)
-    : Object.entries(grouped).map(([key, list]) => ({ key, label: key || 'Khác', list }));
-
+  const catList = Object.entries(grouped).map(([key, list]) => ({ key, label: key || 'Khác', list }));
   const toggleCat = (key) => setCollapsed((c) => ({ ...c, [key]: !c[key] }));
+
+  const handleAdd = (item) => {
+    let type = tab;
+    if (tab === 'package' || tab === 'treatment' || tab === 'service_combo' || tab === 'product_combo') type = 'package';
+    if (tab === 'service') type = 'service';
+    if (tab === 'product') type = 'product';
+    onAddItem(item, type);
+  };
+
+  const getItemPrice = (item) => {
+    if (tab === 'package') return item.price;
+    if (tab === 'treatment') return item.price;
+    if (tab === 'service_combo' || tab === 'product_combo') return item.combo_price;
+    return item.price;
+  };
+
+  const getItemSub = (item) => {
+    if (tab === 'service') return item.duration_minutes ? `${item.duration_minutes} phút` : '';
+    if (tab === 'product') return item.stock != null ? `Tồn: ${item.stock}` : '';
+    if (tab === 'package') return `${item.usage_count || 1} lần dùng`;
+    if (tab === 'treatment') {
+      const parts = [];
+      if (item.services?.length) parts.push(`${item.services.length} DV`);
+      if (item.expiry_months || item.expiry_days) parts.push(`Hạn: ${item.expiry_months || 0}T ${item.expiry_days || 0}N`);
+      return parts.join(' • ');
+    }
+    if (tab === 'service_combo') return `${item.items?.length || 0} dịch vụ`;
+    if (tab === 'product_combo') return `${item.items?.length || 0} sản phẩm`;
+    return '';
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-5 px-4 pt-3.5 border-b border-slate-100">
-        {TABS.map((t) => (
-          <button key={t.v} onClick={() => setTab(t.v)}
-            className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${tab === t.v ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-            {t.l}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 px-2 pt-3 border-b border-slate-100 overflow-x-auto">
+        {TABS.map((t) => {
+          const Icon = t.i;
+          return (
+            <button key={t.v} onClick={() => setTab(t.v)}
+              className={`flex items-center gap-1 pb-2.5 px-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t.v ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+              <Icon className="w-3.5 h-3.5" /> {t.l}
+            </button>
+          );
+        })}
       </div>
 
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5">
           <Search className="w-4 h-4 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === 'service' ? 'Tìm dịch vụ...' : tab === 'product' ? 'Tìm sản phẩm...' : 'Tìm gói dịch vụ...'}
+            placeholder="Tìm..."
             className="bg-transparent outline-none text-sm flex-1" />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4">
-        {tab === 'package' ? (
-          <div className="text-center py-16 text-slate-300">
-            <Box className="w-12 h-12 mx-auto mb-3 text-slate-200" strokeWidth={1.2} />
-            <p className="text-sm">Chưa có gói dịch vụ</p>
-          </div>
-        ) : catList.length === 0 ? (
+        {catList.length === 0 ? (
           <div className="text-center py-16 text-slate-300 text-sm">Không tìm thấy</div>
         ) : (
           catList.map((cat) => {
-            const list = grouped[cat.key] || cat.list || [];
+            const list = cat.list;
             const isCollapsed = collapsed[cat.key];
             return (
               <div key={cat.key} className="mb-3">
@@ -78,31 +120,28 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
                 </button>
                 {!isCollapsed && (
                   <div className="space-y-1">
-                    {list.map((item) => (
-                      <button key={item.id} onClick={() => onAddItem(item, tab === 'service' ? 'service' : 'product')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
-                            {item.image_url ? (
-                              <img src={item.image_url} alt="" className="w-full h-full object-cover" />
-                            ) : tab === 'service' ? (
-                              <Scissors className="w-4 h-4 text-slate-400" />
-                            ) : (
-                              <ShoppingCart className="w-4 h-4 text-slate-400" />
-                            )}
+                    {list.map((item) => {
+                      const Icon = itemIcon();
+                      return (
+                        <button key={item.id} onClick={() => handleAdd(item)}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                              {item.image_url ? (
+                                <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Icon className="w-4 h-4 text-slate-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{item.name}</div>
+                              {getItemSub(item) && <div className="text-xs text-slate-400">{getItemSub(item)}</div>}
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm truncate">{item.name}</div>
-                            {tab === 'service' && item.duration_minutes ? (
-                              <div className="text-xs text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{item.duration_minutes} phút</div>
-                            ) : tab === 'product' && item.stock != null ? (
-                              <div className="text-xs text-slate-400">Tồn kho: {item.stock}</div>
-                            ) : null}
-                          </div>
-                        </div>
-                        <span className="font-bold text-sm text-pink-600 shrink-0">{formatVND(item.price)}</span>
-                      </button>
-                    ))}
+                          <span className="font-bold text-sm text-pink-600 shrink-0">{formatVND(getItemPrice(item))}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

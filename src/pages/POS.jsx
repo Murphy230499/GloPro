@@ -43,6 +43,10 @@ export default function POS() {
   const [activeId, setActiveId] = useState(null);
   const [services, setServices] = useState([]);
   const [products, setProducts] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [treatments, setTreatments] = useState([]);
+  const [serviceCombos, setServiceCombos] = useState([]);
+  const [productCombos, setProductCombos] = useState([]);
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [catalogTab, setCatalogTab] = useState('service');
@@ -56,11 +60,19 @@ export default function POS() {
     Promise.all([
       base44.entities.Service.filter(filter),
       base44.entities.Product.filter(filter),
+      base44.entities.ServicePackage.filter(filter),
+      base44.entities.Treatment.filter(filter),
+      base44.entities.ServiceCombo.filter(filter),
+      base44.entities.ProductCombo.filter(filter),
       base44.entities.Staff.filter(filter),
       base44.entities.Customer.list(),
-    ]).then(([s, p, st, c]) => {
+    ]).then(([s, p, pk, t, sc, pc, st, c]) => {
       setServices(s.filter((x) => x.is_active));
       setProducts(p.filter((x) => x.is_active));
+      setPackages(pk.filter((x) => x.is_active));
+      setTreatments(t.filter((x) => x.is_active));
+      setServiceCombos(sc.filter((x) => x.is_active));
+      setProductCombos(pc.filter((x) => x.is_active));
       setStaff(st);
       setCustomers(c);
     });
@@ -182,7 +194,8 @@ export default function POS() {
       {/* Split layout */}
       <div className="grid lg:grid-cols-2 gap-4 h-[calc(100vh-220px)] min-h-[500px]">
         <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
-          services={services} products={products} onAddItem={addToCart} />
+          services={services} products={products} packages={packages} treatments={treatments}
+          serviceCombos={serviceCombos} productCombos={productCombos} onAddItem={addToCart} />
         {activeSession ? (
           <TicketColumn session={activeSession} staff={staff} customers={customers}
             onUpdate={patchSession}
