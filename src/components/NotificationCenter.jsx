@@ -73,7 +73,7 @@ export default function NotificationCenter() {
 
   return (
     <div ref={ref} className="relative shrink-0">
-      <button onClick={() => setOpen((v) => !v)} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 mr-1">
+      <button onClick={() => setOpen((v) => !v)} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200">
         <Bell className="w-5 h-5 text-slate-600" />
         {unread > 0 &&
         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center">
