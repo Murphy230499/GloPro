@@ -21,7 +21,7 @@ export default function ProfileMenu() {
   }, []);
 
   return (
-    <div ref={ref} className="relative shrink-0 px-1">
+    <div ref={ref} className="relative shrink-0">
       <button onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 py-1 rounded-xl hover:bg-slate-100 px-1 ml-4 mr-16">
         <Avatar src={user?.avatar_url} name={user?.full_name || 'U'} size={36} color="#FF6B9D" ring />
         <div className="hidden sm:block text-left">

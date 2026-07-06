@@ -21,7 +21,7 @@ export default function TopBar() {
         </div>
 
         <div className="relative shrink-0">
-          <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 mx-20">
+          <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 mx-20 text-3xl">
             <MapPin className="w-4 h-4 text-pink-500" />
             <span className="text-sm font-semibold max-w-[120px] truncate">
               {currentBranchId === 'all' ? 'Tất cả cơ sở' : currentBranch?.name || '—'}
