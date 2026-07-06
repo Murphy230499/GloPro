@@ -1,36 +1,24 @@
 {
-  "name": "Product",
+  "name": "Treatment",
   "type": "object",
   "properties": {
     "name": {
       "type": "string"
     },
-    "category": {
+    "description": {
       "type": "string"
     },
-    "group_id": {
-      "type": "string"
+    "total_sessions": {
+      "type": "number",
+      "default": 1
     },
     "price": {
-      "type": "number"
-    },
-    "cost_price": {
       "type": "number",
       "default": 0
     },
-    "stock": {
+    "duration_days": {
       "type": "number",
-      "default": 0
-    },
-    "min_stock": {
-      "type": "number",
-      "default": 0
-    },
-    "unit": {
-      "type": "string"
-    },
-    "sku": {
-      "type": "string"
+      "default": 30
     },
     "branch_id": {
       "type": "string"
@@ -44,7 +32,6 @@
     }
   },
   "required": [
-    "name",
-    "price"
+    "name"
   ]
 }

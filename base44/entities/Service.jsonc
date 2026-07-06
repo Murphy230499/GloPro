@@ -17,8 +17,19 @@
         "other"
       ]
     },
+    "group_id": {
+      "type": "string"
+    },
     "price": {
       "type": "number"
+    },
+    "price_from": {
+      "type": "number",
+      "default": 0
+    },
+    "cost": {
+      "type": "number",
+      "default": 0
     },
     "duration_minutes": {
       "type": "number"
@@ -39,11 +50,26 @@
     },
     "image_url": {
       "type": "string"
+    },
+    "accompanied_products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      }
     }
   },
   "required": [
-    "name",
-    "price",
-    "category"
+    "name"
   ]
 }
