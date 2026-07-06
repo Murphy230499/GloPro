@@ -13,14 +13,14 @@ import ProductComboForm from '@/components/services/ProductComboForm';
 import GroupManager from '@/components/services/GroupManager';
 
 const TABS = [
-  { v: 'service', l: 'Dịch vụ', i: Scissors, grp: 'service' },
-  { v: 'product', l: 'Sản phẩm', i: Package, grp: 'product' },
-  { v: 'package', l: 'Gói dịch vụ', i: Gift, grp: 'package' },
-  { v: 'treatment', l: 'Liệu trình', i: Sparkles, grp: 'treatment' },
-  { v: 'service_combo', l: 'Combo dịch vụ', i: Layers, grp: null },
-  { v: 'product_combo', l: 'Combo sản phẩm', i: Boxes, grp: null },
-  { v: 'inventory', l: 'Kho hàng', i: Archive, grp: null },
-];
+{ v: 'service', l: 'Dịch vụ', i: Scissors, grp: 'service' },
+{ v: 'product', l: 'Sản phẩm', i: Package, grp: 'product' },
+{ v: 'package', l: 'Gói dịch vụ', i: Gift, grp: 'package' },
+{ v: 'treatment', l: 'Liệu trình', i: Sparkles, grp: 'treatment' },
+{ v: 'service_combo', l: 'Combo dịch vụ', i: Layers, grp: null },
+{ v: 'product_combo', l: 'Combo sản phẩm', i: Boxes, grp: null },
+{ v: 'inventory', l: 'Kho hàng', i: Archive, grp: null }];
+
 
 const ENTITY_MAP = { service: 'Service', product: 'Product', package: 'ServicePackage', treatment: 'Treatment', service_combo: 'ServiceCombo', product_combo: 'ProductCombo' };
 const ADD_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình', service_combo: 'combo dịch vụ', product_combo: 'combo sản phẩm' };
@@ -44,14 +44,14 @@ export default function Services() {
     setLoading(true);
     const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
     Promise.all([
-      base44.entities.Service.filter(filter),
-      base44.entities.Product.filter(filter),
-      base44.entities.ServicePackage.filter(filter),
-      base44.entities.Treatment.filter(filter),
-      base44.entities.ServiceCombo.filter(filter),
-      base44.entities.ProductCombo.filter(filter),
-      base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
-    ]).then(([s, p, pk, t, sc, pc, g]) => {
+    base44.entities.Service.filter(filter),
+    base44.entities.Product.filter(filter),
+    base44.entities.ServicePackage.filter(filter),
+    base44.entities.Treatment.filter(filter),
+    base44.entities.ServiceCombo.filter(filter),
+    base44.entities.ProductCombo.filter(filter),
+    base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })]
+    ).then(([s, p, pk, t, sc, pc, g]) => {
       setServices(s);
       setProducts(p);
       setPackages(pk);
@@ -60,7 +60,7 @@ export default function Services() {
       setProductCombos(pc);
       setGroups(g);
       setLoading(false);
-    }).catch(() => { setLoading(false); });
+    }).catch(() => {setLoading(false);});
   };
   useEffect(load, [currentBranchId]);
 
@@ -78,7 +78,7 @@ export default function Services() {
       }
       setEditing(null);
       load();
-    } catch (e) { toast.error('Lỗi: ' + (e.message || e)); }
+    } catch (e) {toast.error('Lỗi: ' + (e.message || e));}
   };
 
   const remove = async (type, id) => {
@@ -87,7 +87,7 @@ export default function Services() {
       await base44.entities[ENTITY_MAP[type]].delete(id);
       toast.success('Đã xoá');
       load();
-    } catch (e) { toast.error('Lỗi: ' + (e.message || e)); }
+    } catch (e) {toast.error('Lỗi: ' + (e.message || e));}
   };
 
   const toggleActive = async (type, item) => {
@@ -120,16 +120,16 @@ export default function Services() {
           <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo và kho</p>
         </div>
         <div className="flex items-center gap-2">
-          {currentTab.grp && (
-            <button onClick={() => setGroupModal(currentTab.grp)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          {currentTab.grp &&
+          <button onClick={() => setGroupModal(currentTab.grp)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
               <Tag className="w-4 h-4" /> Quản lý nhóm
             </button>
-          )}
-          {tab !== 'inventory' && (
-            <button onClick={() => setEditing({ type: tab })} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+          }
+          {tab !== 'inventory' &&
+          <button onClick={() => setEditing({ type: tab })} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
               <Plus className="w-4 h-4" /> Thêm {ADD_LABEL[tab]}
             </button>
-          )}
+          }
         </div>
       </div>
 
@@ -139,26 +139,26 @@ export default function Services() {
           const Icon = t.i;
           return (
             <button key={t.v} onClick={() => setTab(t.v)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${tab === t.v ? 'bg-primary text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${tab === t.v ? 'bg-primary text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
               <Icon className="w-4 h-4" /> {t.l}
-            </button>
-          );
+            </button>);
+
         })}
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div>
-      ) : tab === 'service' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {loading ?
+      <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div> :
+      tab === 'service' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {services.length === 0 ? <EmptyState text="Chưa có dịch vụ nào" /> : services.map((s) => {
-            const grp = getGroup('service', s.group_id);
-            return (
-              <div key={s.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!s.is_active ? 'opacity-50' : ''}`}>
+          const grp = getGroup('service', s.group_id);
+          return (
+            <div key={s.id} className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-[hsl(var(--secondary))] ${!s.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
-                  {grp ? (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span>
-                  ) : <span className="text-[11px] text-slate-300">Không nhóm</span>}
+                  {grp ?
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> :
+                <span className="text-[11px] text-slate-300">Không nhóm</span>}
                   <button onClick={() => toggleActive('service', s)}>{s.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
                 </div>
                 {s.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={s.image_url} alt={s.name} className="w-full h-full object-cover" /></div>}
@@ -174,16 +174,16 @@ export default function Services() {
                   <button onClick={() => setEditing({ ...s, type: 'service' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('service', s.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : tab === 'product' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div>);
+
+        })}
+        </div> :
+      tab === 'product' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : products.map((p) => {
-            const grp = getGroup('product', p.group_id);
-            return (
-              <div key={p.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!p.is_active ? 'opacity-50' : ''}`}>
+          const grp = getGroup('product', p.group_id);
+          return (
+            <div key={p.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!p.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
                   <button onClick={() => toggleActive('product', p)}>{p.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
@@ -198,16 +198,16 @@ export default function Services() {
                   <button onClick={() => setEditing({ ...p, type: 'product' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('product', p.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : tab === 'package' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div>);
+
+        })}
+        </div> :
+      tab === 'package' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {packages.length === 0 ? <EmptyState text="Chưa có gói dịch vụ nào" /> : packages.map((pk) => {
-            const grp = getGroup('package', pk.group_id);
-            return (
-              <div key={pk.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!pk.is_active ? 'opacity-50' : ''}`}>
+          const grp = getGroup('package', pk.group_id);
+          return (
+            <div key={pk.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!pk.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
                   <button onClick={() => toggleActive('package', pk)}>{pk.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
@@ -219,28 +219,28 @@ export default function Services() {
                   <span className="font-bold text-pink-600">{formatVND(pk.price)}</span>
                   <span className="text-xs text-slate-400">{pk.usage_count || 1} lần sử dụng</span>
                 </div>
-                {(pk.expiry_months > 0 || pk.expiry_days > 0) && (
-                  <div className="text-xs text-slate-400 mt-0.5">Hạn: {pk.expiry_months > 0 ? `${pk.expiry_months} tháng ` : ''}{pk.expiry_days > 0 ? `${pk.expiry_days} ngày` : ''}</div>
-                )}
-                {pk.services?.length > 0 && (
-                  <div className="mt-2 space-y-0.5">
+                {(pk.expiry_months > 0 || pk.expiry_days > 0) &&
+              <div className="text-xs text-slate-400 mt-0.5">Hạn: {pk.expiry_months > 0 ? `${pk.expiry_months} tháng ` : ''}{pk.expiry_days > 0 ? `${pk.expiry_days} ngày` : ''}</div>
+              }
+                {pk.services?.length > 0 &&
+              <div className="mt-2 space-y-0.5">
                     {pk.services.map((it, i) => <div key={i} className="text-xs text-slate-500">• {it.service_name}</div>)}
                   </div>
-                )}
+              }
                 <div className="flex gap-1.5 mt-3">
                   <button onClick={() => setEditing({ ...pk, type: 'package' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('package', pk.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : tab === 'treatment' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div>);
+
+        })}
+        </div> :
+      tab === 'treatment' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {treatments.length === 0 ? <EmptyState text="Chưa có liệu trình nào" /> : treatments.map((t) => {
-            const grp = getGroup('treatment', t.group_id);
-            return (
-              <div key={t.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!t.is_active ? 'opacity-50' : ''}`}>
+          const grp = getGroup('treatment', t.group_id);
+          return (
+            <div key={t.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!t.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
                   <button onClick={() => toggleActive('treatment', t)}>{t.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
@@ -252,26 +252,26 @@ export default function Services() {
                   <span className="font-bold text-pink-600">{formatVND(t.price)}</span>
                   {(t.expiry_months > 0 || t.expiry_days > 0) && <span className="text-xs text-slate-400">Hạn: {t.expiry_months > 0 ? `${t.expiry_months}T ` : ''}{t.expiry_days > 0 ? `${t.expiry_days}N` : ''}</span>}
                 </div>
-                {t.services?.length > 0 && (
-                  <div className="mt-2 space-y-0.5">
+                {t.services?.length > 0 &&
+              <div className="mt-2 space-y-0.5">
                     {t.services.map((it, i) => <div key={i} className="text-xs text-slate-500 flex justify-between"><span className="truncate">• {it.service_name}</span><span className="shrink-0">{it.sessions}x</span></div>)}
                   </div>
-                )}
+              }
                 <div className="flex gap-1.5 mt-3">
                   <button onClick={() => setEditing({ ...t, type: 'treatment' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('treatment', t.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : tab === 'service_combo' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div>);
+
+        })}
+        </div> :
+      tab === 'service_combo' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {serviceCombos.length === 0 ? <EmptyState text="Chưa có combo dịch vụ nào" /> : serviceCombos.map((c) => {
-            const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0), 0);
-            const discount = original - (c.combo_price || 0);
-            return (
-              <div key={c.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!c.is_active ? 'opacity-50' : ''}`}>
+          const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0), 0);
+          const discount = original - (c.combo_price || 0);
+          return (
+            <div key={c.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!c.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Combo dịch vụ</span>
                   <button onClick={() => toggleActive('service_combo', c)}>{c.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
@@ -290,17 +290,17 @@ export default function Services() {
                   <button onClick={() => setEditing({ ...c, type: 'service_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('service_combo', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : tab === 'product_combo' ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div>);
+
+        })}
+        </div> :
+      tab === 'product_combo' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {productCombos.length === 0 ? <EmptyState text="Chưa có combo sản phẩm nào" /> : productCombos.map((c) => {
-            const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0) * (x.qty || 1), 0);
-            const discount = original - (c.combo_price || 0);
-            return (
-              <div key={c.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!c.is_active ? 'opacity-50' : ''}`}>
+          const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0) * (x.qty || 1), 0);
+          const discount = original - (c.combo_price || 0);
+          return (
+            <div key={c.id} className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm ${!c.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Combo sản phẩm</span>
                   <button onClick={() => toggleActive('product_combo', c)}>{c.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
@@ -319,15 +319,15 @@ export default function Services() {
                   <button onClick={() => setEditing({ ...c, type: 'product_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
                   <button onClick={() => remove('product_combo', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Inventory */
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : (
-            <table className="w-full text-sm">
+              </div>);
+
+        })}
+        </div> : (
+
+      /* Inventory */
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          {products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> :
+        <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500 text-xs">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium">Sản phẩm</th>
@@ -341,9 +341,9 @@ export default function Services() {
               </thead>
               <tbody>
                 {products.map((p) => {
-                  const lowStock = (p.stock || 0) <= (p.min_stock || 0) && p.min_stock > 0;
-                  return (
-                    <tr key={p.id} className={`border-t border-slate-50 ${lowStock ? 'bg-red-50/40' : ''}`}>
+              const lowStock = (p.stock || 0) <= (p.min_stock || 0) && p.min_stock > 0;
+              return (
+                <tr key={p.id} className={`border-t border-slate-50 ${lowStock ? 'bg-red-50/40' : ''}`}>
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{p.sku || '—'}</td>
                       <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{p.unit || 'cái'}</td>
@@ -361,14 +361,14 @@ export default function Services() {
                           <button onClick={() => adjustStock(p, 1)} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-bold">+</button>
                         </div>
                       </td>
-                    </tr>
-                  );
-                })}
+                    </tr>);
+
+            })}
               </tbody>
             </table>
-          )}
-        </div>
-      )}
+        }
+        </div>)
+      }
 
       {/* Modals */}
       {editing?.type === 'service' && <ServiceForm item={editing} groups={getGroups('service')} products={products} onClose={() => setEditing(null)} onSave={save} />}
@@ -378,8 +378,8 @@ export default function Services() {
       {editing?.type === 'service_combo' && <ComboForm item={editing} services={services} onClose={() => setEditing(null)} onSave={save} />}
       {editing?.type === 'product_combo' && <ProductComboForm item={editing} products={products} onClose={() => setEditing(null)} onSave={save} />}
       {groupModal && <GroupManager type={groupModal} branchId={currentBranchId} onClose={() => setGroupModal(null)} onChanged={load} />}
-    </div>
-  );
+    </div>);
+
 }
 
 function EmptyState({ text }) {
