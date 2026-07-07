@@ -79,7 +79,7 @@ export default function GlobalSearch() {
 
   return (
     <div ref={ref} className="relative w-full max-w-xl">
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200 mx-6 bg-[hsl(var(--border))] rounded-lg">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200 mx-6 rounded-lg bg-slate-100">
         <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <input
           value={q}
