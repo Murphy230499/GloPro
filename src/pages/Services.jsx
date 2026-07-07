@@ -160,7 +160,7 @@ export default function Services() {
           {services.length === 0 ? <EmptyState text="Chưa có dịch vụ nào" /> : services.map((s) => {
           const grp = getGroup('service', s.group_id);
           return (
-            <div key={s.id} className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-[hsl(var(--sidebar-border))] ${!s.is_active ? 'opacity-50' : ''}`}>
+            <div key={s.id} className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-blue-50 ${!s.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   {grp ?
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> :
@@ -331,8 +331,8 @@ export default function Services() {
         </div> :
       tab === 'prepaid_card' ?
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {prepaidCards.length === 0 ? <EmptyState text="Chưa có thẻ tiền mặt nào" /> : prepaidCards.map((c) => (
-            <div key={c.id} className={`${!c.is_active ? 'opacity-50' : ''}`}>
+          {prepaidCards.length === 0 ? <EmptyState text="Chưa có thẻ tiền mặt nào" /> : prepaidCards.map((c) =>
+        <div key={c.id} className={`${!c.is_active ? 'opacity-50' : ''}`}>
               <PrepaidCardView card={c} />
               <div className="flex items-center justify-between mt-2 px-1">
                 <span className="text-xs text-slate-400">Giá bán: <span className="font-semibold text-pink-600">{formatVND(c.selling_price)}</span></span>
@@ -344,7 +344,7 @@ export default function Services() {
                 <button onClick={() => remove('prepaid_card', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
-          ))}
+        )}
       </div> : (
 
       /* Inventory */
