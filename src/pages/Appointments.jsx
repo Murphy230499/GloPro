@@ -123,7 +123,7 @@ export default function Appointments() {
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {list.map((a) =>
-                <div key={a.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+                <div key={a.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm py-4 px-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="font-bold text-sm">{a.start_time?.slice(0, 5)} - {a.end_time?.slice(0, 5) || '?'}</div>
