@@ -5,19 +5,20 @@ import {
   Scissors, BarChart3, Settings as SettingsIcon, Grid, X } from
 'lucide-react';
 import { Toaster as SonnerToaster, toast } from 'sonner';
+import { useT } from '@/lib/i18n';
 import TopBar from '@/components/TopBar';
 
 export { toast };
 
 const NAV = [
-{ to: '/', label: 'Tổng quan', icon: LayoutDashboard, color: '#FF6B9D', end: true },
-{ to: '/appointments', label: 'Lịch hẹn', icon: CalendarDays, color: '#60A5FA' },
-{ to: '/pos', label: 'Thu ngân', icon: ShoppingCart, color: '#34D399' },
-{ to: '/customers', label: 'Khách hàng', icon: Users, color: '#FBBF24' },
-{ to: '/staff', label: 'Nhân viên', icon: UserSquare, color: '#F97316' },
-{ to: '/services', label: 'Dịch vụ', icon: Scissors, color: '#A78BFA' },
-{ to: '/reports', label: 'Báo cáo', icon: BarChart3, color: '#C084FC' },
-{ to: '/settings', label: 'Cài đặt', icon: SettingsIcon, color: '#94A3B8' }];
+{ to: '/', tkey: 'nav.dashboard', icon: LayoutDashboard, color: '#FF6B9D', end: true },
+{ to: '/appointments', tkey: 'nav.appointments', icon: CalendarDays, color: '#60A5FA' },
+{ to: '/pos', tkey: 'nav.pos', icon: ShoppingCart, color: '#34D399' },
+{ to: '/customers', tkey: 'nav.customers', icon: Users, color: '#FBBF24' },
+{ to: '/staff', tkey: 'nav.staff', icon: UserSquare, color: '#F97316' },
+{ to: '/services', tkey: 'nav.catalog', icon: Scissors, color: '#A78BFA' },
+{ to: '/reports', tkey: 'nav.reports', icon: BarChart3, color: '#C084FC' },
+{ to: '/settings', tkey: 'nav.settings', icon: SettingsIcon, color: '#94A3B8' }];
 
 
 const MOBILE_TABS = NAV.slice(0, 4);
@@ -25,6 +26,7 @@ const MOBILE_TABS = NAV.slice(0, 4);
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
+  const { t } = useT();
 
   const NavItem = ({ item, onClick }) => {
     const Icon = item.icon;
@@ -45,7 +47,7 @@ export default function Layout() {
         }>
         
         <Icon className="w-5 h-5 shrink-0" />
-        <span>{item.label}</span>
+        <span>{t(item.tkey)}</span>
       </NavLink>);
 
   };
@@ -85,7 +87,7 @@ export default function Layout() {
                   <Icon className="w-5 h-5" style={{ color: active ? 'white' : '#94A3B8' }} />
                 </div>
                 <span className="text-[10px] font-medium" style={{ color: active ? item.color : '#94A3B8' }}>
-                  {item.label}
+                  {t(item.tkey)}
                 </span>
               </NavLink>);
 
@@ -94,7 +96,7 @@ export default function Layout() {
             <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100">
               <Grid className="w-5 h-5 text-slate-500" />
             </div>
-            <span className="text-[10px] font-medium text-slate-500">Khác</span>
+            <span className="text-[10px] font-medium text-slate-500">{t('nav.more')}</span>
           </button>
         </div>
       </nav>
@@ -109,7 +111,7 @@ export default function Layout() {
           
             <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between mb-3">
-              <span className="font-bold text-lg">Tất cả chức năng</span>
+              <span className="font-bold text-lg">{t('nav.all_features')}</span>
               <button onClick={() => setMoreOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
                 <X className="w-4 h-4" />
               </button>
@@ -128,7 +130,7 @@ export default function Layout() {
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: item.color + '1a' }}>
                       <Icon className="w-6 h-6" style={{ color: item.color }} />
                     </div>
-                    <span className="text-xs font-medium text-slate-600">{item.label}</span>
+                    <span className="text-xs font-medium text-slate-600">{t(item.tkey)}</span>
                   </NavLink>);
 
             })}

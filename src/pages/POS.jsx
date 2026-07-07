@@ -47,6 +47,8 @@ export default function POS() {
   const [treatments, setTreatments] = useState([]);
   const [serviceCombos, setServiceCombos] = useState([]);
   const [productCombos, setProductCombos] = useState([]);
+  const [prepaidCards, setPrepaidCards] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [catalogTab, setCatalogTab] = useState('service');
@@ -64,15 +66,19 @@ export default function POS() {
       base44.entities.Treatment.filter(filter),
       base44.entities.ServiceCombo.filter(filter),
       base44.entities.ProductCombo.filter(filter),
+      base44.entities.PrepaidCard.filter(filter),
+      base44.entities.ServiceGroup.filter(filter),
       base44.entities.Staff.filter(filter),
       base44.entities.Customer.list(),
-    ]).then(([s, p, pk, t, sc, pc, st, c]) => {
+    ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
       setServices(s.filter((x) => x.is_active));
       setProducts(p.filter((x) => x.is_active));
       setPackages(pk.filter((x) => x.is_active));
       setTreatments(t.filter((x) => x.is_active));
       setServiceCombos(sc.filter((x) => x.is_active));
       setProductCombos(pc.filter((x) => x.is_active));
+      setPrepaidCards(gc.filter((x) => x.is_active));
+      setGroups(gr);
       setStaff(st);
       setCustomers(c);
     });
@@ -195,7 +201,8 @@ export default function POS() {
       <div className="grid lg:grid-cols-2 gap-4 h-[calc(100vh-220px)] min-h-[500px]">
         <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
           services={services} products={products} packages={packages} treatments={treatments}
-          serviceCombos={serviceCombos} productCombos={productCombos} onAddItem={addToCart} />
+          serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
+          groups={groups} onAddItem={addToCart} />
         {activeSession ? (
           <TicketColumn session={activeSession} staff={staff} customers={customers}
             onUpdate={patchSession}

@@ -8,6 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import Layout from '@/components/Layout';
 import { BranchProvider } from '@/lib/BranchContext';
+import { LanguageProvider } from '@/lib/i18n';
 import Dashboard from '@/pages/Dashboard';
 import Appointments from '@/pages/Appointments';
 import POS from '@/pages/POS';
@@ -70,9 +71,11 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <BranchProvider>
-            <AuthenticatedApp />
-          </BranchProvider>
+          <LanguageProvider>
+            <BranchProvider>
+              <AuthenticatedApp />
+            </BranchProvider>
+          </LanguageProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>

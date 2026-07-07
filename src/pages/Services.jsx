@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Scissors, Package, Edit3, ToggleLeft, ToggleRight, Trash2, Gift, Sparkles, Layers, Boxes, Archive, Tag, AlertTriangle } from 'lucide-react';
+import { Plus, Scissors, Package, Edit3, ToggleLeft, ToggleRight, Trash2, Gift, Sparkles, Layers, Boxes, Archive, Tag, AlertTriangle, CreditCard } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
@@ -11,6 +11,8 @@ import TreatmentForm from '@/components/services/TreatmentForm';
 import ComboForm from '@/components/services/ComboForm';
 import ProductComboForm from '@/components/services/ProductComboForm';
 import GroupManager from '@/components/services/GroupManager';
+import PrepaidCardForm from '@/components/services/PrepaidCardForm';
+import PrepaidCardView from '@/components/PrepaidCardView';
 
 const TABS = [
 { v: 'service', l: 'Dịch vụ', i: Scissors, grp: 'service' },
@@ -19,11 +21,12 @@ const TABS = [
 { v: 'treatment', l: 'Liệu trình', i: Sparkles, grp: 'treatment' },
 { v: 'service_combo', l: 'Combo dịch vụ', i: Layers, grp: null },
 { v: 'product_combo', l: 'Combo sản phẩm', i: Boxes, grp: null },
+{ v: 'prepaid_card', l: 'Thẻ tiền mặt', i: CreditCard, grp: null },
 { v: 'inventory', l: 'Kho hàng', i: Archive, grp: null }];
 
 
-const ENTITY_MAP = { service: 'Service', product: 'Product', package: 'ServicePackage', treatment: 'Treatment', service_combo: 'ServiceCombo', product_combo: 'ProductCombo' };
-const ADD_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình', service_combo: 'combo dịch vụ', product_combo: 'combo sản phẩm' };
+const ENTITY_MAP = { service: 'Service', product: 'Product', package: 'ServicePackage', treatment: 'Treatment', service_combo: 'ServiceCombo', product_combo: 'ProductCombo', prepaid_card: 'PrepaidCard' };
+const ADD_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình', service_combo: 'combo dịch vụ', product_combo: 'combo sản phẩm', prepaid_card: 'thẻ tiền mặt' };
 const GROUP_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình' };
 
 export default function Services() {
@@ -35,6 +38,7 @@ export default function Services() {
   const [treatments, setTreatments] = useState([]);
   const [serviceCombos, setServiceCombos] = useState([]);
   const [productCombos, setProductCombos] = useState([]);
+  const [prepaidCards, setPrepaidCards] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -50,14 +54,16 @@ export default function Services() {
     base44.entities.Treatment.filter(filter),
     base44.entities.ServiceCombo.filter(filter),
     base44.entities.ProductCombo.filter(filter),
+    base44.entities.PrepaidCard.filter(filter),
     base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })]
-    ).then(([s, p, pk, t, sc, pc, g]) => {
+    ).then(([s, p, pk, t, sc, pc, gc, g]) => {
       setServices(s);
       setProducts(p);
       setPackages(pk);
       setTreatments(t);
       setServiceCombos(sc);
       setProductCombos(pc);
+      setPrepaidCards(gc);
       setGroups(g);
       setLoading(false);
     }).catch(() => {setLoading(false);});
@@ -116,8 +122,8 @@ export default function Services() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dịch vụ & Sản phẩm</h1>
-          <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo và kho</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Danh mục</h1>
+          <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo, thẻ tiền mặt và kho</p>
         </div>
         <div className="flex items-center gap-2">
           {currentTab.grp &&
@@ -134,13 +140,13 @@ export default function Services() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-1.5 pb-1">
         {TABS.map((t) => {
           const Icon = t.i;
           return (
             <button key={t.v} onClick={() => setTab(t.v)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${tab === t.v ? 'bg-primary text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
-              <Icon className="w-4 h-4" /> {t.l}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.v ? 'bg-primary text-white border border-primary shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+              <Icon className="w-3.5 h-3.5" /> {t.l}
             </button>);
 
         })}
@@ -322,7 +328,24 @@ export default function Services() {
               </div>);
 
         })}
-        </div> : (
+        </div> :
+      tab === 'prepaid_card' ?
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {prepaidCards.length === 0 ? <EmptyState text="Chưa có thẻ tiền mặt nào" /> : prepaidCards.map((c) => (
+            <div key={c.id} className={`${!c.is_active ? 'opacity-50' : ''}`}>
+              <PrepaidCardView card={c} />
+              <div className="flex items-center justify-between mt-2 px-1">
+                <span className="text-xs text-slate-400">Giá bán: <span className="font-semibold text-pink-600">{formatVND(c.selling_price)}</span></span>
+                {c.expiry_months > 0 && <span className="text-xs text-slate-400">Hạn: {c.expiry_months}T</span>}
+              </div>
+              <div className="flex gap-1.5 mt-2">
+                <button onClick={() => setEditing({ ...c, type: 'prepaid_card' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+                <button onClick={() => toggleActive('prepaid_card', c)} className="px-3 py-2 rounded-full bg-slate-100">{c.is_active ? <ToggleRight className="w-5 h-5 text-green-500" /> : <ToggleLeft className="w-5 h-5 text-slate-300" />}</button>
+                <button onClick={() => remove('prepaid_card', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
+          ))}
+      </div> : (
 
       /* Inventory */
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -377,6 +400,7 @@ export default function Services() {
       {editing?.type === 'treatment' && <TreatmentForm item={editing} groups={getGroups('treatment')} services={services} onClose={() => setEditing(null)} onSave={save} />}
       {editing?.type === 'service_combo' && <ComboForm item={editing} services={services} onClose={() => setEditing(null)} onSave={save} />}
       {editing?.type === 'product_combo' && <ProductComboForm item={editing} products={products} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'prepaid_card' && <PrepaidCardForm item={editing} onClose={() => setEditing(null)} onSave={save} />}
       {groupModal && <GroupManager type={groupModal} branchId={currentBranchId} onClose={() => setGroupModal(null)} onChanged={load} />}
     </div>);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Scissors, ShoppingCart, Clock, ChevronDown, Gift, Sparkles, Layers, Boxes } from 'lucide-react';
+import { Search, Scissors, ShoppingCart, ChevronDown, Gift, Sparkles, Layers, Boxes, CreditCard } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 
 const TABS = [
@@ -9,9 +9,15 @@ const TABS = [
   { v: 'treatment', l: 'Liệu trình', i: Sparkles },
   { v: 'service_combo', l: 'Combo DV', i: Layers },
   { v: 'product_combo', l: 'Combo SP', i: Boxes },
+  { v: 'prepaid_card', l: 'Thẻ', i: CreditCard },
 ];
 
-export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, onAddItem }) {
+const SERVICE_CATS = [
+  { key: 'hair', label: 'Hair' }, { key: 'barber', label: 'Barber' }, { key: 'nail', label: 'Nails' },
+  { key: 'skincare', label: 'Skincare' }, { key: 'spa', label: 'Spa' }, { key: 'makeup', label: 'Makeup' }, { key: 'other', label: 'Khác' },
+];
+
+export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards, groups, onAddItem }) {
   const [collapsed, setCollapsed] = useState({});
 
   const getItems = () => {
@@ -22,6 +28,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
       case 'treatment': return treatments;
       case 'service_combo': return serviceCombos;
       case 'product_combo': return productCombos;
+      case 'prepaid_card': return prepaidCards;
       default: return [];
     }
   };
@@ -37,30 +44,42 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
       case 'treatment': return Sparkles;
       case 'service_combo': return Layers;
       case 'product_combo': return Boxes;
+      case 'prepaid_card': return CreditCard;
       default: return Scissors;
     }
   };
 
+  const resolveGroupName = (item) => {
+    if (item.group_id) {
+      const g = groups?.find((g) => g.id === item.group_id);
+      if (g) return g.name;
+    }
+    if (tab === 'service' && item.category) {
+      const cat = SERVICE_CATS.find((c) => c.key === item.category);
+      if (cat) return cat.label;
+    }
+    return null;
+  };
+
   const grouped = {};
   filtered.forEach((item) => {
-    const cat = item.group_id || item.category || 'other';
+    const cat = resolveGroupName(item) || 'Khác';
     (grouped[cat] = grouped[cat] || []).push(item);
   });
 
-  const catList = Object.entries(grouped).map(([key, list]) => ({ key, label: key || 'Khác', list }));
+  const catList = Object.entries(grouped).map(([key, list]) => ({ key, label: key, list }));
   const toggleCat = (key) => setCollapsed((c) => ({ ...c, [key]: !c[key] }));
 
   const handleAdd = (item) => {
-    let type = tab;
-    if (tab === 'package' || tab === 'treatment' || tab === 'service_combo' || tab === 'product_combo') type = 'package';
+    let type = 'package';
     if (tab === 'service') type = 'service';
     if (tab === 'product') type = 'product';
     onAddItem(item, type);
   };
 
   const getItemPrice = (item) => {
-    if (tab === 'package') return item.price;
-    if (tab === 'treatment') return item.price;
+    if (tab === 'prepaid_card') return item.selling_price || item.face_value;
+    if (tab === 'package' || tab === 'treatment') return item.price;
     if (tab === 'service_combo' || tab === 'product_combo') return item.combo_price;
     return item.price;
   };
@@ -77,6 +96,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
     }
     if (tab === 'service_combo') return `${item.items?.length || 0} dịch vụ`;
     if (tab === 'product_combo') return `${item.items?.length || 0} sản phẩm`;
+    if (tab === 'prepaid_card') return `Mệnh giá: ${formatVND(item.face_value)}`;
     return '';
   };
 
@@ -98,8 +118,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
         <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5">
           <Search className="w-4 h-4 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm..."
-            className="bg-transparent outline-none text-sm flex-1" />
+            placeholder="Tìm..." className="bg-transparent outline-none text-sm flex-1" />
         </div>
       </div>
 

@@ -1,0 +1,49 @@
+{
+  "name": "PrepaidCard",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "card_code": {
+      "type": "string"
+    },
+    "face_value": {
+      "type": "number",
+      "default": 0
+    },
+    "selling_price": {
+      "type": "number",
+      "default": 0
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "color": {
+      "type": "string",
+      "default": "#FF6B9D"
+    },
+    "expiry_months": {
+      "type": "number",
+      "default": 0
+    },
+    "description": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "face_value"
+  ]
+}
