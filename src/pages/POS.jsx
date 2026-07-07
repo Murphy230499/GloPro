@@ -24,7 +24,7 @@ const newSession = () => {
     cart: [],
     discount: 0,
     tip: 0,
-    createdAt: new Date(),
+    createdAt: new Date()
   };
 };
 
@@ -60,17 +60,17 @@ export default function POS() {
   useEffect(() => {
     const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
     Promise.all([
-      base44.entities.Service.filter(filter),
-      base44.entities.Product.filter(filter),
-      base44.entities.ServicePackage.filter(filter),
-      base44.entities.Treatment.filter(filter),
-      base44.entities.ServiceCombo.filter(filter),
-      base44.entities.ProductCombo.filter(filter),
-      base44.entities.PrepaidCard.filter(filter),
-      base44.entities.ServiceGroup.filter(filter),
-      base44.entities.Staff.filter(filter),
-      base44.entities.Customer.list(),
-    ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
+    base44.entities.Service.filter(filter),
+    base44.entities.Product.filter(filter),
+    base44.entities.ServicePackage.filter(filter),
+    base44.entities.Treatment.filter(filter),
+    base44.entities.ServiceCombo.filter(filter),
+    base44.entities.ProductCombo.filter(filter),
+    base44.entities.PrepaidCard.filter(filter),
+    base44.entities.ServiceGroup.filter(filter),
+    base44.entities.Staff.filter(filter),
+    base44.entities.Customer.list()]
+    ).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
       setServices(s.filter((x) => x.is_active));
       setProducts(p.filter((x) => x.is_active));
       setPackages(pk.filter((x) => x.is_active));
@@ -86,7 +86,7 @@ export default function POS() {
 
   const activeSession = sessions.find((s) => s.id === activeId);
 
-  const patchSession = (patch) => setSessions((arr) => arr.map((s) => (s.id === activeId ? { ...s, ...patch } : s)));
+  const patchSession = (patch) => setSessions((arr) => arr.map((s) => s.id === activeId ? { ...s, ...patch } : s));
 
   const createSale = () => {
     const s = newSession();
@@ -104,9 +104,9 @@ export default function POS() {
     const session = activeSession;
     const cart = session?.cart || [];
     const existing = cart.find((x) => x.name === item.name && x.type === type);
-    const newCart = existing
-      ? cart.map((x) => (x === existing ? { ...x, qty: (x.qty || 1) + 1 } : x))
-      : [...cart, { name: item.name, type, price: item.price, qty: 1, staff_id: '', staff_name: '' }];
+    const newCart = existing ?
+    cart.map((x) => x === existing ? { ...x, qty: (x.qty || 1) + 1 } : x) :
+    [...cart, { name: item.name, type, price: item.price, qty: 1, staff_id: '', staff_name: '' }];
     if (session) {
       patchSession({ cart: newCart });
     } else {
@@ -142,7 +142,7 @@ export default function POS() {
         branch_id: currentBranchId === 'all' ? '' : currentBranchId,
         items: cart.map((x) => ({ name: x.name, type: x.type, price: x.price, qty: x.qty, staff_id: x.staff_id, staff_name: x.staff_name })),
         subtotal, discount, total, tip,
-        payment_methods: payments, status: 'paid', date: todayStr(),
+        payment_methods: payments, status: 'paid', date: todayStr()
       });
       if (session.customer.id) {
         const newPoints = Math.floor(total / 10000);
@@ -150,7 +150,7 @@ export default function POS() {
           total_spent: (session.customer.total_spent || 0) + total,
           points: Math.max(0, (session.customer.points || 0) + newPoints),
           visit_count: (session.customer.visit_count || 0) + 1,
-          last_visit: todayStr(),
+          last_visit: todayStr()
         });
       }
       toast.success(`Thanh toán thành công • ${session.saleCode}`);
@@ -163,7 +163,7 @@ export default function POS() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 my-1">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thu ngân</h1>
@@ -178,50 +178,50 @@ export default function POS() {
       </div>
 
       {/* Session tabs */}
-      {sessions.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {sessions.map((s) => (
-            <button key={s.id} onClick={() => setActiveId(s.id)}
-              className={`flex items-center gap-2 pl-3 pr-1.5 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-colors ${s.id === activeId ? 'bg-white border-primary font-semibold text-slate-800' : 'bg-slate-100/70 border-transparent text-slate-500'}`}>
-              {s.customer ? (
-                <Avatar src={s.customer.avatar_url} name={s.customer.name} size={20} color="#E879A9" />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">W</div>
-              )}
+      {sessions.length > 0 &&
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {sessions.map((s) =>
+        <button key={s.id} onClick={() => setActiveId(s.id)}
+        className={`flex items-center gap-2 pl-3 pr-1.5 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-colors ${s.id === activeId ? 'bg-white border-primary font-semibold text-slate-800' : 'bg-slate-100/70 border-transparent text-slate-500'}`}>
+              {s.customer ?
+          <Avatar src={s.customer.avatar_url} name={s.customer.name} size={20} color="#E879A9" /> :
+
+          <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">W</div>
+          }
               <span>{tabName(s)}</span>
-              <span onClick={(e) => { e.stopPropagation(); closeSession(s.id); }} className="ml-1 w-5 h-5 rounded-full flex items-center justify-center hover:bg-black/10">
+              <span onClick={(e) => {e.stopPropagation();closeSession(s.id);}} className="ml-1 w-5 h-5 rounded-full flex items-center justify-center hover:bg-black/10">
                 <X className="w-3 h-3" />
               </span>
             </button>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Split layout */}
       <div className="grid lg:grid-cols-2 gap-4 h-[calc(100vh-220px)] min-h-[500px]">
         <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
-          services={services} products={products} packages={packages} treatments={treatments}
-          serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
-          groups={groups} onAddItem={addToCart} />
-        {activeSession ? (
-          <TicketColumn session={activeSession} staff={staff} customers={customers}
-            onUpdate={patchSession}
-            onPickCustomer={(c) => patchSession({ customer: c })}
-            onClearCustomer={() => patchSession({ customer: null })}
-            onNewCustomer={() => setCustModal(true)}
-            onCheckout={() => setCheckoutOpen(true)}
-            onCancel={() => { closeSession(activeId); toast('Đã huỷ đơn'); }}
-            disabled={currentBranchId === 'all'} />
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+        services={services} products={products} packages={packages} treatments={treatments}
+        serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
+        groups={groups} onAddItem={addToCart} />
+        {activeSession ?
+        <TicketColumn session={activeSession} staff={staff} customers={customers}
+        onUpdate={patchSession}
+        onPickCustomer={(c) => patchSession({ customer: c })}
+        onClearCustomer={() => patchSession({ customer: null })}
+        onNewCustomer={() => setCustModal(true)}
+        onCheckout={() => setCheckoutOpen(true)}
+        onCancel={() => {closeSession(activeId);toast('Đã huỷ đơn');}}
+        disabled={currentBranchId === 'all'} /> :
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
             <EmptyCart />
           </div>
-        )}
+        }
       </div>
 
       <CheckoutModal open={checkoutOpen} session={activeSession} onClose={() => setCheckoutOpen(false)}
-        onConfirm={checkout} paying={paying} />
+      onConfirm={checkout} paying={paying} />
       {custModal && <NewCustomerModal onClose={() => setCustModal(false)} onCreate={createCustomer} />}
-    </div>
-  );
+    </div>);
+
 }
