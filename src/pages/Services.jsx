@@ -189,7 +189,7 @@ export default function Services() {
           {products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : products.map((p) => {
           const grp = getGroup('product', p.group_id);
           return (
-            <div key={p.id} className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-[hsl(var(--sidebar-border))] ${!p.is_active ? 'opacity-50' : ''}`}>
+            <div key={p.id} className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-[hsl(var(--popover))] ${!p.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
                   <button onClick={() => toggleActive('product', p)}>{p.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
