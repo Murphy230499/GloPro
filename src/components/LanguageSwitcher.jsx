@@ -16,7 +16,7 @@ export default function LanguageSwitcher() {
   const current = LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0];
 
   return (
-    <div className="relative rounded-md">
+    <div className="relative rounded-[14px] bg-[hsl(var(--card))]">
       <button onClick={() => setOpen((v) => !v)}
       className="flex items-center gap-1 px-1.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
         <span className="text-xl leading-none">{current.flag}</span>
