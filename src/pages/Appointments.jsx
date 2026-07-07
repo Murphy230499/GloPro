@@ -127,9 +127,9 @@ export default function Appointments() {
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="font-bold text-sm">{a.start_time?.slice(0, 5)} - {a.end_time?.slice(0, 5) || '?'}</div>
-                          <div className="text-xs text-slate-400 mr-8">{a.service_name || 'Chưa chọn dịch vụ'}</div>
+                          <div className="text-xs text-slate-400 mr-16">{a.service_name || 'Chưa chọn dịch vụ'}</div>
                         </div>
-                        <span className="text-[10px] font-semibold px-2 py-1 rounded-full mr-1" style={{ background: STATUS_COLORS[status] + '1a', color: STATUS_COLORS[status] }}>
+                        <span className="text-[10px] font-semibold py-1 rounded-full mr-3 px-20" style={{ background: STATUS_COLORS[status] + '1a', color: STATUS_COLORS[status] }}>
                           {STATUS_LABEL[status]}
                         </span>
                       </div>
