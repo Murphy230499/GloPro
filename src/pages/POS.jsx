@@ -163,7 +163,7 @@ export default function POS() {
   };
 
   return (
-    <div className="space-y-4 my-1">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thu ngân</h1>
