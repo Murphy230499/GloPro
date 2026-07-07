@@ -11,11 +11,11 @@ import Avatar from '@/components/Avatar';
 
 const STATUS_COLORS = {
   pending: '#94A3B8', confirmed: '#60A5FA', checked_in: '#FBBF24',
-  in_progress: '#A78BFA', completed: '#34D399', cancelled: '#F87171', no_show: '#FB7185',
+  in_progress: '#A78BFA', completed: '#34D399', cancelled: '#F87171', no_show: '#FB7185'
 };
 const STATUS_LABEL = {
   pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', checked_in: 'Đã check-in',
-  in_progress: 'Đang làm', completed: 'Hoàn thành', cancelled: 'Đã hủy', no_show: 'Không đến',
+  in_progress: 'Đang làm', completed: 'Hoàn thành', cancelled: 'Đã hủy', no_show: 'Không đến'
 };
 
 export default function Appointments() {
@@ -34,14 +34,14 @@ export default function Appointments() {
     const filter = { date };
     if (currentBranchId !== 'all') filter.branch_id = currentBranchId;
     Promise.all([
-      base44.entities.Appointment.filter(filter),
-      base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
-      base44.entities.Customer.list(),
-    ]).then(([data, st, cus]) => {
+    base44.entities.Appointment.filter(filter),
+    base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
+    base44.entities.Customer.list()]
+    ).then(([data, st, cus]) => {
       const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
       const enriched = data.map((a) => ({
         ...a,
-        customer_avatar_url: a.customer_id ? cusMap[a.customer_id]?.avatar_url : undefined,
+        customer_avatar_url: a.customer_id ? cusMap[a.customer_id]?.avatar_url : undefined
       }));
       setAppointments(enriched.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
       setStaff(st.filter((x) => x.is_active !== false));
@@ -88,46 +88,46 @@ export default function Appointments() {
               <LayoutGrid className="w-4 h-4" /> <span className="hidden sm:inline">Lưới</span>
             </button>
           </div>
-          <button onClick={() => { setEditing(null); setModalOpen(true); }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm shadow-sm">
+          <button onClick={() => {setEditing(null);setModalOpen(true);}}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm shadow-sm">
             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Đặt lịch</span>
           </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div>
-      ) : appointments.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+      {loading ?
+      <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div> :
+      appointments.length === 0 ?
+      <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
           <CalendarDays className="w-12 h-12 mx-auto text-slate-200 mb-3" />
           <p className="text-slate-400">Chưa có lịch hẹn nào trong ngày {date}</p>
-        </div>
-      ) : view === 'grid' ? (
-        <AppointmentGrid
-          appointments={appointments}
-          staff={staff}
-          onApptClick={(a) => { setEditing(a); setModalOpen(true); }}
-          onEmptyClick={() => { setEditing(null); setModalOpen(true); }}
-        />
-      ) : (
-        <div className="space-y-5">
+        </div> :
+      view === 'grid' ?
+      <AppointmentGrid
+        appointments={appointments}
+        staff={staff}
+        onApptClick={(a) => {setEditing(a);setModalOpen(true);}}
+        onEmptyClick={() => {setEditing(null);setModalOpen(true);}} /> :
+
+
+      <div className="space-y-5">
           {orderedStatuses.map((status) => {
-            const list = grouped[status];
-            if (!list || !list.length) return null;
-            return (
-              <div key={status}>
+          const list = grouped[status];
+          if (!list || !list.length) return null;
+          return (
+            <div key={status}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[status] }} />
                   <h3 className="font-bold text-sm">{STATUS_LABEL[status]}</h3>
                   <span className="text-xs text-slate-400">({list.length})</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {list.map((a) => (
-                    <div key={a.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+                  {list.map((a) =>
+                <div key={a.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="font-bold text-sm">{a.start_time?.slice(0, 5)} - {a.end_time?.slice(0, 5) || '?'}</div>
-                          <div className="text-xs text-slate-400">{a.service_name || 'Chưa chọn dịch vụ'}</div>
+                          <div className="text-xs text-slate-400 mx-6 my-1">{a.service_name || 'Chưa chọn dịch vụ'}</div>
                         </div>
                         <span className="text-[10px] font-semibold px-2 py-1 rounded-full" style={{ background: STATUS_COLORS[status] + '1a', color: STATUS_COLORS[status] }}>
                           {STATUS_LABEL[status]}
@@ -142,47 +142,47 @@ export default function Appointments() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-2">
                         {(() => {
-                          const staffIds = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_id).filter(Boolean);
-                          const staffNames = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_name).filter(Boolean);
-                          return staffIds.length > 0 || a.staff_name ? (
-                            <>
+                      const staffIds = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_id).filter(Boolean);
+                      const staffNames = (a.services && a.services.length ? a.services : [a]).map((s) => s.staff_name).filter(Boolean);
+                      return staffIds.length > 0 || a.staff_name ?
+                      <>
               {Array.from(new Set(staffIds.length ? staffIds : [a.staff_id])).slice(0, 3).map((sid, idx) => {
-                const stf = staff.find((s) => s.id === sid);
-                return <Avatar key={sid || idx} src={stf?.avatar_url} name={staffNames[idx] || stf?.full_name} size={20} color={stf?.avatar_color || '#FF6B9D'} />;
-              })}
+                          const stf = staff.find((s) => s.id === sid);
+                          return <Avatar key={sid || idx} src={stf?.avatar_url} name={staffNames[idx] || stf?.full_name} size={20} color={stf?.avatar_color || '#FF6B9D'} />;
+                        })}
               <span className="text-xs text-slate-500 truncate">{a.staff_name || staffNames.join(', ')}</span>
-                            </>
-                          ) : null;
-                        })()}
+                            </> :
+                      null;
+                    })()}
                       </div>
                       {a.price > 0 && <div className="text-sm font-semibold text-pink-600 mt-1">{formatVND(a.price)}</div>}
                       {a.note && <div className="text-xs text-slate-400 mt-1 italic line-clamp-2">"{a.note}"</div>}
                       <div className="flex gap-1.5 mt-3 flex-wrap">
-                        {(status === 'pending') && (
-                          <button onClick={() => updateStatus(a, 'confirmed')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-blue-50 text-blue-600 font-medium"><CheckCircle2 className="w-3.5 h-3.5" />Xác nhận</button>
-                        )}
-                        {(status === 'confirmed' || status === 'checked_in') && (
-                          <button onClick={() => updateStatus(a, 'in_progress')} className="text-xs px-2.5 py-1.5 rounded-full bg-purple-50 text-purple-600 font-medium">Bắt đầu</button>
-                        )}
-                        {status === 'in_progress' && (
-                          <button onClick={() => updateStatus(a, 'completed')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-green-50 text-green-600 font-medium"><UserCheck className="w-3.5 h-3.5" />Hoàn thành</button>
-                        )}
-                        {(status === 'confirmed' || status === 'pending') && (
-                          <button onClick={() => updateStatus(a, 'checked_in')} className="text-xs px-2.5 py-1.5 rounded-full bg-amber-50 text-amber-600 font-medium">Check-in</button>
-                        )}
-                        {status !== 'cancelled' && status !== 'completed' && (
-                          <button onClick={() => updateStatus(a, 'cancelled')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-red-50 text-red-500 font-medium"><XCircle className="w-3.5 h-3.5" />Hủy</button>
-                        )}
-                        <button onClick={() => { setEditing(a); setModalOpen(true); }} className="text-xs px-2.5 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium"><Edit3 className="w-3.5 h-3.5" /></button>
+                        {status === 'pending' &&
+                    <button onClick={() => updateStatus(a, 'confirmed')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-blue-50 text-blue-600 font-medium"><CheckCircle2 className="w-3.5 h-3.5" />Xác nhận</button>
+                    }
+                        {(status === 'confirmed' || status === 'checked_in') &&
+                    <button onClick={() => updateStatus(a, 'in_progress')} className="text-xs px-2.5 py-1.5 rounded-full bg-purple-50 text-purple-600 font-medium">Bắt đầu</button>
+                    }
+                        {status === 'in_progress' &&
+                    <button onClick={() => updateStatus(a, 'completed')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-green-50 text-green-600 font-medium"><UserCheck className="w-3.5 h-3.5" />Hoàn thành</button>
+                    }
+                        {(status === 'confirmed' || status === 'pending') &&
+                    <button onClick={() => updateStatus(a, 'checked_in')} className="text-xs px-2.5 py-1.5 rounded-full bg-amber-50 text-amber-600 font-medium">Check-in</button>
+                    }
+                        {status !== 'cancelled' && status !== 'completed' &&
+                    <button onClick={() => updateStatus(a, 'cancelled')} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-red-50 text-red-500 font-medium"><XCircle className="w-3.5 h-3.5" />Hủy</button>
+                    }
+                        <button onClick={() => {setEditing(a);setModalOpen(true);}} className="text-xs px-2.5 py-1.5 rounded-full bg-slate-100 text-slate-600 font-medium"><Edit3 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
-                  ))}
+                )}
                 </div>
-              </div>
-            );
-          })}
+              </div>);
+
+        })}
         </div>
-      )}
+      }
 
       <AppointmentModal
         open={modalOpen}
@@ -190,8 +190,8 @@ export default function Appointments() {
         onSaved={load}
         branchId={currentBranchId}
         defaultDate={date}
-        editing={editing}
-      />
-    </div>
-  );
+        editing={editing} />
+      
+    </div>);
+
 }
