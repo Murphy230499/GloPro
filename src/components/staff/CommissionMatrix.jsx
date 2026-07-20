@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
+import RevenueConfigTab from '@/components/staff/RevenueConfigTab';
 
 const TABS = [
   { id: 'service', label: 'Dịch vụ' },
@@ -566,64 +567,17 @@ export default function CommissionMatrix({ branchId }) {
           </div>
         </div>
       ) : (
-        /* Render Custom Employee Config Views (revenue) */
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-xl font-sans">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                <th className="py-4 px-5 font-semibold">Nhân viên</th>
-                <th className="py-4 px-3 text-center w-[200px] font-semibold">Mức hoa hồng</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-              {staff.map(s => {
-                const cellKey = `${activeTab}_${s.id}`;
-                const editObj = edits[cellKey] || { type: 'percent', value: 0 };
-                const isSaving = savingKey === cellKey;
-
-                return (
-                  <tr key={s.id} className="hover:bg-slate-50/20 transition-colors">
-                    <td className="py-3 px-5">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar src={s.avatar_url} name={s.full_name} size={28} color={s.avatar_color} />
-                        <div>
-                          <div className="font-semibold text-xs text-slate-750">{s.full_name}</div>
-                          <span className="text-[9px] font-medium text-slate-400 capitalize">{s.role}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="relative flex justify-center">
-                        <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-primary bg-white overflow-hidden px-2 py-1 w-28 shadow-sm transition-all">
-                          <select 
-                            value={editObj.type}
-                            onChange={(e) => {
-                              handleUpdateEdit(cellKey, { type: e.target.value });
-                              handleSaveCell(activeTab, s.id, activeTab, editObj.value, e.target.value);
-                            }}
-                            className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
-                          >
-                            <option value="percent">%</option>
-                            <option value="vnd">đ</option>
-                          </select>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editObj.value}
-                            onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
-                            onBlur={() => handleSaveCell(activeTab, s.id, activeTab)}
-                            className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5"
-                          />
-                        </div>
-                        {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        /* Render Revenue Config Tab Component */
+        <RevenueConfigTab
+          staff={staff}
+          services={services}
+          products={products}
+          packages={packages}
+          treatments={treatments}
+          serviceCombos={serviceCombos}
+          productCombos={productCombos}
+          prepaidCards={prepaidCards}
+        />
       )}
     </div>
   );

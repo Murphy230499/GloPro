@@ -4,7 +4,7 @@ import { X, User, Calendar, DollarSign, Award, Percent, BookOpen } from 'lucide-
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import Avatar from '@/components/Avatar';
-import { calculateItemCommission } from '@/lib/commissionHelper';
+import { calculateItemCommission, calculateRevenueBonus } from '@/lib/commissionHelper';
 
 export default function StaffDetail({ staff, onClose }) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -13,23 +13,26 @@ export default function StaffDetail({ staff, onClose }) {
   const [invoices, setInvoices] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [revenueBonusRules, setRevenueBonusRules] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadStaffData = async () => {
       try {
-        const [svcs, rules, invs, scheds, tmpls] = await Promise.all([
+        const [svcs, rules, invs, scheds, tmpls, revRules] = await Promise.all([
           base44.entities.Service.filter({ is_active: true }),
           base44.entities.StaffCommissionRule.list(),
           base44.entities.Invoice.list(),
           base44.entities.StaffSchedule.filter({ staff_id: staff.id }),
-          base44.entities.ShiftTemplate.list()
+          base44.entities.ShiftTemplate.list(),
+          base44.entities.RevenueBonusRule.list()
         ]);
         setServices(svcs);
         setCommissionRules(rules);
         setInvoices(invs);
         setSchedules(scheds.sort((a, b) => b.date.localeCompare(a.date)));
         setTemplates(tmpls);
+        setRevenueBonusRules(revRules || []);
       } catch (e) {
         console.error('Lỗi tải dữ liệu chi tiết nhân viên:', e);
       }
@@ -218,8 +221,10 @@ export default function StaffDetail({ staff, onClose }) {
                       <div className="text-base font-bold text-slate-800 mt-1">{formatVND(commData.totalRevenue)}</div>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng tích lũy</div>
-                      <div className="text-base font-bold text-purple-600 mt-1">{formatVND(commData.totalEarned)}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng & Thưởng tích lũy</div>
+                      <div className="text-base font-bold text-purple-600 mt-1">
+                        {formatVND(commData.totalEarned + calculateRevenueBonus(staff.id, invoices, revenueBonusRules).totalBonus)}
+                      </div>
                     </div>
                   </div>
 
@@ -257,6 +262,32 @@ export default function StaffDetail({ staff, onClose }) {
                       </div>
                     )}
                   </div>
+
+                  {/* Revenue Bonuses List */}
+                  {(() => {
+                    const revBonus = calculateRevenueBonus(staff.id, invoices, revenueBonusRules);
+                    if (revBonus.details.length === 0) return null;
+                    return (
+                      <div className="space-y-3 pt-2">
+                        <h3 className="font-bold text-sm text-slate-800">Thưởng doanh thu đạt được ({revBonus.details.length})</h3>
+                        <div className="space-y-3">
+                          {revBonus.details.map((bonus, idx) => (
+                            <div key={idx} className="p-4 bg-purple-50/40 border border-purple-100 rounded-2xl shadow-xs space-y-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="text-xs font-bold text-slate-800">{bonus.name}</div>
+                                  <div className="text-[10px] text-slate-400 mt-0.5">Cơ chế: {bonus.mechanism} • Doanh số áp dụng: {formatVND(bonus.totalRev)}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs font-bold text-purple-700">+{formatVND(bonus.earned)}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </>

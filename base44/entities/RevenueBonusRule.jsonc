@@ -1,0 +1,65 @@
+{
+  "name": "RevenueBonusRule",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "staff_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "item_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mechanism": {
+      "type": "string",
+      "enum": [
+        "threshold",
+        "tiered"
+      ]
+    },
+    "ranges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "number"
+          },
+          "to": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "vnd"
+            ]
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "type",
+          "value"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "staff_ids",
+    "item_ids",
+    "mechanism",
+    "ranges"
+  ]
+}

@@ -114,3 +114,83 @@ export function calculateItemCommission(item, commissionRules, createdTime) {
 
   return { earned, ruleLabel };
 }
+
+/**
+ * Calculates all revenue-based bonus rewards for a staff member.
+ * Supports threshold milestone matching and progressive tiered mechanisms.
+ * 
+ * @param {String} staffId Employee UUID
+ * @param {Array} invoices All invoices loaded from the DB
+ * @param {Array} bonusRules All RevenueBonusRules loaded from the DB
+ * @returns {Object} { totalBonus, details: [{ name, earned, mechanism, totalRev }] }
+ */
+export function calculateRevenueBonus(staffId, invoices, bonusRules) {
+  let totalBonus = 0;
+  const details = [];
+
+  if (!staffId || !bonusRules || bonusRules.length === 0) {
+    return { totalBonus, details };
+  }
+
+  bonusRules.forEach(rule => {
+    // 1. Check if employee is eligible
+    const staffIds = rule.staff_ids || [];
+    if (!staffIds.includes(staffId)) return;
+
+    // 2. Compute total applicable revenue from paid invoices
+    let totalRev = 0;
+    const itemIds = rule.item_ids || [];
+
+    invoices.forEach(inv => {
+      if (inv.status !== 'paid') return;
+      (inv.items || []).forEach(it => {
+        if (it.staff_id === staffId) {
+          const isItemMatched = itemIds.length === 0 || itemIds.includes(it.id) || itemIds.includes(it.name);
+          if (isItemMatched) {
+            totalRev += (it.price || 0) * (it.qty || 1);
+          }
+        }
+      });
+    });
+
+    // 3. Compute earned bonus based on selected mechanism
+    let earned = 0;
+    const sortedRanges = [...(rule.ranges || [])].sort((a, b) => a.from - b.from);
+
+    if (rule.mechanism === 'threshold') {
+      // Threshold: find the highest milestone met
+      const matchedRange = [...sortedRanges].reverse().find(rg => totalRev >= rg.from);
+      if (matchedRange) {
+        if (matchedRange.type === 'percent') {
+          earned = Math.round(totalRev * (matchedRange.value / 100));
+        } else {
+          earned = matchedRange.value;
+        }
+      }
+    } else {
+      // Tiered (Lũy tiến bậc thang)
+      sortedRanges.forEach(rg => {
+        const amtInRange = Math.max(0, Math.min(totalRev, rg.to) - rg.from);
+        if (amtInRange > 0) {
+          if (rg.type === 'percent') {
+            earned += Math.round(amtInRange * (rg.value / 100));
+          } else {
+            earned += rg.value;
+          }
+        }
+      });
+    }
+
+    if (earned > 0) {
+      totalBonus += earned;
+      details.push({
+        name: rule.name,
+        earned,
+        mechanism: rule.mechanism === 'threshold' ? 'Mốc doanh thu' : 'Lũy tiến bậc thang',
+        totalRev
+      });
+    }
+  });
+
+  return { totalBonus, details };
+}
