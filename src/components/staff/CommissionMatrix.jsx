@@ -207,15 +207,16 @@ export default function CommissionMatrix({ branchId }) {
       </div>
 
       {/* Filter and search bar */}
+      {/* Filter and search bar */}
       {isMatrixTab && (
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-slate-150 shadow-sm max-w-sm">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text"
-            placeholder={TABS.find(t => t.id === activeTab) ? `Tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...` : 'Tìm kiếm...'}
+            placeholder={TABS.find(t => t.id === activeTab) ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...` : 'tìm kiếm...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs font-semibold outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
+            className="w-full text-xs font-normal outline-none bg-transparent text-slate-700 placeholder:text-slate-400/70"
           />
         </div>
       )}
@@ -288,7 +289,7 @@ export default function CommissionMatrix({ branchId }) {
                                   value={editObj.value || ''}
                                   onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
                                   onBlur={() => handleSaveCell(item.id, s.id, item.type)}
-                                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-350"
+                                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/50 placeholder:font-normal"
                                 />
                               </div>
                               {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
