@@ -54,7 +54,7 @@ export default function StaffDetail({ staff, onClose }) {
           totalRevenue += revenue;
 
           // Compute using the unified helper
-          const { earned, ruleLabel } = calculateItemCommission(it, commissionRules);
+          const { earned, ruleLabel } = calculateItemCommission(it, commissionRules, inv.created_at || inv.date);
 
           totalEarned += earned;
           list.push({

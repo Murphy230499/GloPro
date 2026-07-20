@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Percent, DollarSign, Save, Loader2, Sparkles, Sliders, Search, UserCheck } from 'lucide-react';
+import { Percent, DollarSign, Save, Loader2, Sparkles, Sliders, Search, UserCheck, Plus, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
@@ -15,13 +15,32 @@ const TABS = [
   { id: 'product_combo', label: 'Combo sản phẩm' },
   { id: 'prepaid_card', label: 'Thẻ tiền mặt' },
   { id: 'customer_req', label: 'Khách yêu cầu' },
-  { id: 'overtime', label: 'Tăng ca' },
-  { id: 'revenue', label: 'Doanh thu' }
+  { id: 'overtime', label: 'HH theo khung giờ' },
+  { id: 'revenue', label: 'HH doanh thu' }
 ];
+
+const translateRole = (role) => {
+  const map = {
+    'main_technician': 'Thợ chính',
+    'assistant_technician': 'Thợ phụ',
+    'technician': 'Kỹ thuật viên',
+    'cashier': 'Thu ngân',
+    'manager': 'Quản lý',
+    'partner': 'Đối tác',
+    'staff': 'Nhân viên'
+  };
+  return map[role.toLowerCase()] || role;
+};
 
 export default function CommissionMatrix({ branchId }) {
   const [activeTab, setActiveTab] = useState('service');
   const [staff, setStaff] = useState([]);
+  
+  // Overtime states
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [tempSlots, setTempSlots] = useState([]);
+  const [savingOvertime, setSavingOvertime] = useState(false);
   
   // Catalog states
   const [services, setServices] = useState([]);
@@ -80,6 +99,69 @@ export default function CommissionMatrix({ branchId }) {
   useEffect(() => {
     loadData();
   }, [branchId]);
+
+  // Set default selection when staff or services load
+  useEffect(() => {
+    if (staff.length > 0 && !selectedStaffId) {
+      setSelectedStaffId(staff[0].id);
+    }
+  }, [staff, selectedStaffId]);
+
+  useEffect(() => {
+    if (services.length > 0 && !selectedServiceId) {
+      setSelectedServiceId(services[0].id);
+    }
+  }, [services, selectedServiceId]);
+
+  // Sync tempSlots from rules
+  useEffect(() => {
+    if (activeTab === 'overtime' && selectedStaffId && selectedServiceId) {
+      const matched = rules.filter(r => r.staff_id === selectedStaffId && r.item_type === 'overtime_service' && r.item_id === selectedServiceId);
+      const mapped = matched.map(r => {
+        const parts = r.commission_type.split('_');
+        const type = parts[0] || 'percent';
+        const from = parts[1] || '18:00';
+        const to = parts[2] || '19:00';
+        return {
+          id: r.id,
+          from,
+          to,
+          type,
+          value: r.commission_value
+        };
+      });
+      setTempSlots(mapped);
+    }
+  }, [activeTab, selectedStaffId, selectedServiceId, rules]);
+
+  const handleSaveOvertimeSlots = async () => {
+    setSavingOvertime(true);
+    try {
+      const matched = rules.filter(r => r.staff_id === selectedStaffId && r.item_type === 'overtime_service' && r.item_id === selectedServiceId);
+      for (const rule of matched) {
+        if (rule.id && !String(rule.id).startsWith('local_')) {
+          await base44.entities.StaffCommissionRule.delete(rule.id);
+        }
+      }
+      for (const slot of tempSlots) {
+        const payload = {
+          staff_id: selectedStaffId,
+          item_type: 'overtime_service',
+          item_id: selectedServiceId,
+          commission_type: `${slot.type}_${slot.from}_${slot.to}`,
+          commission_value: Number(slot.value) || 0
+        };
+        await base44.entities.StaffCommissionRule.create(payload);
+      }
+      const updatedRules = await base44.entities.StaffCommissionRule.list();
+      setRules(updatedRules);
+      toast.success('Đã lưu cấu hình khung giờ thành công!');
+    } catch (e) {
+      console.error('Error saving overtime rules:', e);
+      toast.error('Lỗi khi lưu cấu hình: ' + (e.message || e));
+    }
+    setSavingOvertime(false);
+  };
 
   // Sync edits state when rules or catalogs load
   useEffect(() => {
@@ -304,8 +386,152 @@ export default function CommissionMatrix({ branchId }) {
             </div>
           </div>
         )
+      ) : activeTab === 'overtime' ? (
+        /* Render Overtime Time-based 3-Column Layout */
+        <div className="grid grid-cols-12 gap-5 items-start font-sans">
+          {/* Column 1: Staff list (grouped by role) */}
+          <div className="col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm p-4 h-[550px] flex flex-col">
+            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">Nhân viên</h3>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {Object.entries(
+                staff.reduce((acc, s) => {
+                  const roleName = translateRole(s.role || 'Nhân viên');
+                  if (!acc[roleName]) acc[roleName] = [];
+                  acc[roleName].push(s);
+                  return acc;
+                }, {})
+              ).map(([roleName, members]) => (
+                <div key={roleName} className="space-y-1">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase px-2 py-1 tracking-wider bg-slate-50 rounded-lg">{roleName} ({members.length})</div>
+                  <div className="space-y-0.5">
+                    {members.map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedStaffId(s.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedStaffId === s.id ? 'bg-purple-50 text-purple-600' : 'hover:bg-slate-50 text-slate-650'}`}
+                      >
+                        <Avatar src={s.avatar_url} name={s.full_name} size={22} color={s.avatar_color} />
+                        <span className="truncate">{s.full_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 2: Services list */}
+          <div className="col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm p-4 h-[550px] flex flex-col">
+            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">Dịch vụ</h3>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {Object.entries(
+                services.reduce((acc, s) => {
+                  const catName = s.category ? (s.category === 'hair' ? 'Uốn/Duỗi/Nhuộm' : s.category === 'nail' ? 'Nail & Móng' : s.category === 'massage' ? 'Spa & Massage' : s.category) : 'Dịch vụ khác';
+                  if (!acc[catName]) acc[catName] = [];
+                  acc[catName].push(s);
+                  return acc;
+                }, {})
+              ).map(([catName, list]) => (
+                <div key={catName} className="space-y-1">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase px-2 py-1 tracking-wider bg-slate-50 rounded-lg">{catName} ({list.length})</div>
+                  <div className="space-y-0.5">
+                    {list.map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedServiceId(s.id)}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedServiceId === s.id ? 'bg-purple-50 text-purple-600' : 'hover:bg-slate-50 text-slate-650'}`}
+                      >
+                        <span className="truncate max-w-[130px]">{s.name}</span>
+                        <span className="text-[10px] text-slate-400 font-medium shrink-0">{formatVND(s.price || 0)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 3: Slots configurations */}
+          <div className="col-span-6 bg-white rounded-3xl border border-slate-100 shadow-sm p-5 h-[550px] flex flex-col">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-800 text-xs">Hoa hồng theo khung giờ</h3>
+                <p className="text-[9px] text-slate-400 font-medium mt-0.5">Thiết lập hoa hồng tăng ca cộng thêm</p>
+              </div>
+              <button 
+                onClick={handleSaveOvertimeSlots}
+                disabled={savingOvertime}
+                className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white font-bold text-[11px] rounded-xl hover:opacity-95 transition-opacity disabled:opacity-50 shadow-sm shrink-0"
+              >
+                {savingOvertime ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                Lưu
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+              {tempSlots.length === 0 ? (
+                <div className="text-center py-20 text-xs text-slate-400 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  Chưa cấu hình khung giờ nào. Bấm "+ Thêm mới" để thiết lập.
+                </div>
+              ) : (
+                tempSlots.map((slot, index) => (
+                  <div key={slot.id} className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-xs">
+                    <span className="text-[10px] text-slate-400 font-bold shrink-0">Từ</span>
+                    <input 
+                      type="time" 
+                      value={slot.from}
+                      onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, from: e.target.value } : s))}
+                      className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-20 shrink-0"
+                    />
+                    <span className="text-[10px] text-slate-400 font-bold shrink-0">Đến</span>
+                    <input 
+                      type="time" 
+                      value={slot.to}
+                      onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, to: e.target.value } : s))}
+                      className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-20 shrink-0"
+                    />
+                    <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 flex-1 shadow-sm focus-within:border-primary">
+                      <select 
+                        value={slot.type}
+                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
+                        className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                      >
+                        <option value="percent">%</option>
+                        <option value="vnd">đ</option>
+                      </select>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={slot.value || ''}
+                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, value: Math.max(0, Number(e.target.value) || 0) } : s))}
+                        className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/40"
+                      />
+                    </div>
+                    <button 
+                      onClick={() => setTempSlots(tempSlots.filter((_, j) => j !== index))}
+                      className="w-7 h-7 rounded-xl bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center border border-slate-200 hover:border-red-150 transition-colors shrink-0 shadow-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+
+              <button 
+                onClick={() => setTempSlots([...tempSlots, { id: 'new_' + Date.now(), from: '18:00', to: '19:00', type: 'percent', value: 0 }])}
+                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-2xl border border-dashed border-slate-200 hover:border-primary text-slate-450 hover:text-primary font-bold text-xs transition-colors bg-slate-50/50"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Thêm mới
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
-        /* Render Custom Employee Config Views (customer_req, overtime, revenue) */
+        /* Render Custom Employee Config Views (revenue) */
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-xl font-sans">
           <table className="w-full text-left border-collapse">
             <thead>

@@ -2,13 +2,14 @@ import { formatVND } from '@/lib/format';
 
 /**
  * Calculates total commission for an invoice item.
- * Adds customer request commission surcharge if the item was requested by the customer.
+ * Adds customer request commission surcharge and overtime (time-based) commission surcharge.
  * 
  * @param {Object} item Invoice detail item { id, name, type, price, qty, staff_id, is_customer_requested }
  * @param {Array} commissionRules All StaffCommissionRules loaded from the DB
+ * @param {String} createdTime ISO timestamp or time string of when the invoice was created
  * @returns {Object} { earned, ruleLabel }
  */
-export function calculateItemCommission(item, commissionRules) {
+export function calculateItemCommission(item, commissionRules, createdTime) {
   const staffId = item.staff_id;
   if (!staffId) return { earned: 0, ruleLabel: '—' };
 
@@ -68,6 +69,46 @@ export function calculateItemCommission(item, commissionRules) {
       }
       earned += extraEarned;
       ruleLabel = `${ruleLabel} ${reqLabel} (Yêu cầu)`;
+    }
+  }
+
+  // 3. Add overtime time-based commission if invoice falls in configured slots
+  if (createdTime && item.type === 'service') {
+    let invoiceTime = null;
+    try {
+      if (createdTime.includes('T') && createdTime.includes(':')) {
+        const d = new Date(createdTime);
+        const pad = (n) => String(n).padStart(2, '0');
+        invoiceTime = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } else if (createdTime.includes(':')) {
+        invoiceTime = createdTime.slice(0, 5);
+      }
+    } catch (e) {
+      console.error('Error parsing invoice time:', e);
+    }
+
+    if (invoiceTime) {
+      const otRules = commissionRules.filter(r => r.staff_id === staffId && r.item_type === 'overtime_service' && (r.item_id === item.id || r.item_id === item.name));
+      otRules.forEach(r => {
+        const parts = r.commission_type.split('_');
+        const type = parts[0] || 'percent';
+        const from = parts[1] || '18:00';
+        const to = parts[2] || '19:00';
+
+        if (invoiceTime >= from && invoiceTime <= to) {
+          let extraEarned = 0;
+          let otLabel = '';
+          if (type === 'percent') {
+            extraEarned = Math.round(revenue * (r.commission_value / 100));
+            otLabel = `+${r.commission_value}%`;
+          } else {
+            extraEarned = r.commission_value * qty;
+            otLabel = `+${formatVND(r.commission_value)}`;
+          }
+          earned += extraEarned;
+          ruleLabel = `${ruleLabel} ${otLabel} (Tăng ca ${from}-${to})`;
+        }
+      });
     }
   }
 
