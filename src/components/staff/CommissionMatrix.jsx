@@ -266,20 +266,19 @@ export default function CommissionMatrix({ branchId }) {
 
                         return (
                           <td key={s.id} className="py-2.5 px-3 border-r border-slate-100">
-                            <div className="flex items-center gap-1.5 justify-center">
-                              <select 
-                                value={editObj.type}
-                                onChange={(e) => {
-                                  handleUpdateEdit(cellKey, { type: e.target.value });
-                                  handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
-                                }}
-                                className="px-1.5 py-1 rounded-lg border border-slate-200 text-[10px] font-bold bg-white text-slate-700 focus:outline-none"
-                              >
-                                <option value="percent">%</option>
-                                <option value="vnd">đ</option>
-                              </select>
-
-                              <div className="relative">
+                            <div className="relative flex justify-center">
+                              <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-400 bg-white overflow-hidden px-2 py-1 w-28 shadow-sm">
+                                <select 
+                                  value={editObj.type}
+                                  onChange={(e) => {
+                                    handleUpdateEdit(cellKey, { type: e.target.value });
+                                    handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
+                                  }}
+                                  className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                                >
+                                  <option value="percent">%</option>
+                                  <option value="vnd">đ</option>
+                                </select>
                                 <input
                                   type="number"
                                   min="0"
@@ -287,10 +286,10 @@ export default function CommissionMatrix({ branchId }) {
                                   value={editObj.value || ''}
                                   onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
                                   onBlur={() => handleSaveCell(item.id, s.id, item.type)}
-                                  className="w-16 px-1.5 py-1 rounded-lg border border-slate-200 text-center text-[11px] font-bold text-slate-700 focus:outline-none focus:border-purple-400 bg-white placeholder:text-slate-350"
+                                  className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-350"
                                 />
-                                {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
                               </div>
+                              {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
                             </div>
                           </td>
                         );
@@ -309,8 +308,7 @@ export default function CommissionMatrix({ branchId }) {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
                 <th className="py-4 px-5">Nhân viên</th>
-                <th className="py-4 px-3 text-center w-[120px]">Kiểu hoa hồng</th>
-                <th className="py-4 px-3 text-center w-[150px]">Mức hoa hồng cộng thêm</th>
+                <th className="py-4 px-3 text-center w-[200px]">Mức hoa hồng</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -330,46 +328,30 @@ export default function CommissionMatrix({ branchId }) {
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-center">
-                      <div className="flex bg-slate-150 p-0.5 rounded-lg border border-slate-100 inline-flex">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateEdit(cellKey, { type: 'percent' });
-                            handleSaveCell(activeTab, s.id, activeTab, editObj.value, 'percent');
-                          }}
-                          className={`p-1 rounded-md transition-colors ${editObj.type === 'percent' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          title="Tính theo phần trăm (%)"
-                        >
-                          <Percent className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateEdit(cellKey, { type: 'vnd' });
-                            handleSaveCell(activeTab, s.id, activeTab, editObj.value, 'vnd');
-                          }}
-                          className={`p-1 rounded-md transition-colors ${editObj.type === 'vnd' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          title="Tính theo số tiền (VNĐ)"
-                        >
-                          <DollarSign className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <div className="relative inline-block">
-                        <input
-                          type="number"
-                          min="0"
-                          value={editObj.value}
-                          onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
-                          onBlur={() => handleSaveCell(activeTab, s.id, activeTab)}
-                          className="w-24 px-2 py-1 rounded-lg border border-slate-200 text-center text-xs font-bold focus:outline-none focus:border-purple-400 bg-white"
-                        />
-                        <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
-                          {editObj.type === 'percent' ? '%' : 'đ'}
-                        </span>
-                        {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
+                    <td className="py-3 px-3">
+                      <div className="relative flex justify-center">
+                        <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-400 bg-white overflow-hidden px-2 py-1 w-28 shadow-sm">
+                          <select 
+                            value={editObj.type}
+                            onChange={(e) => {
+                              handleUpdateEdit(cellKey, { type: e.target.value });
+                              handleSaveCell(activeTab, s.id, activeTab, editObj.value, e.target.value);
+                            }}
+                            className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                          >
+                            <option value="percent">%</option>
+                            <option value="vnd">đ</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="0"
+                            value={editObj.value}
+                            onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
+                            onBlur={() => handleSaveCell(activeTab, s.id, activeTab)}
+                            className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5"
+                          />
+                        </div>
+                        {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
                       </div>
                     </td>
                   </tr>
