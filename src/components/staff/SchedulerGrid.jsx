@@ -157,9 +157,8 @@ export default function SchedulerGrid({ branchId }) {
 
     let schedList = [];
     try {
-      const promises = weekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
-      const results = await Promise.all(promises);
-      schedList = results.flat();
+      const allScheds = await base44.entities.StaffSchedule.list();
+      schedList = allScheds.filter(s => weekDays.includes(s.date));
 
       const localSchedules = localStorage.getItem('glopro_staff_schedules');
       if (schedList.length === 0 && localSchedules && !localStorage.getItem('glopro_staff_schedules_synced')) {
@@ -184,9 +183,8 @@ export default function SchedulerGrid({ branchId }) {
         }
         localStorage.setItem('glopro_staff_schedules_synced', 'true');
         
-        const freshPromises = weekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
-        const freshResults = await Promise.all(freshPromises);
-        schedList = freshResults.flat();
+        const freshAll = await base44.entities.StaffSchedule.list();
+        schedList = freshAll.filter(s => weekDays.includes(s.date));
       }
     } catch (e) {
       console.error('Lỗi khi tải lịch làm việc từ API:', e);
@@ -308,9 +306,8 @@ export default function SchedulerGrid({ branchId }) {
 
     try {
       // Clear existing schedules in the target week in parallel
-      const promises = nextWeekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
-      const results = await Promise.all(promises);
-      const targetExisting = results.flat();
+      const allScheds = await base44.entities.StaffSchedule.list();
+      const targetExisting = allScheds.filter(s => nextWeekDays.includes(s.date));
       await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
 
       // Copy each schedule in parallel
@@ -377,12 +374,12 @@ export default function SchedulerGrid({ branchId }) {
       // Get source schedules
       const srcScheds = schedules.filter(s => s.date === srcDay);
 
+      const allScheds = await base44.entities.StaffSchedule.list();
+      
       // Perform copies in parallel for target days
       await Promise.all(destDays.map(async (destDay) => {
         // Delete target date existing schedules
-        const promises = [base44.entities.StaffSchedule.filter({ date: destDay })];
-        const results = await Promise.all(promises);
-        const targetExisting = results.flat();
+        const targetExisting = allScheds.filter(s => s.date === destDay);
         await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
 
         // Create copy in parallel

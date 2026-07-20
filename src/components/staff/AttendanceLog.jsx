@@ -67,17 +67,14 @@ export default function AttendanceLog({ branchId }) {
       setStaff(stList.filter(x => x.is_active !== false));
       setTemplates(tmplList);
 
-      // Load weekly schedules & attendances in parallel
-      const schedPromises = weekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
-      const attPromises = weekDays.map(d => base44.entities.StaffAttendance.filter({ date: d }));
-
-      const [schedResults, attResults] = await Promise.all([
-        Promise.all(schedPromises),
-        Promise.all(attPromises)
+      // Load weekly schedules & attendances using single list calls to avoid rate limiting
+      const [allScheds, allAtts] = await Promise.all([
+        base44.entities.StaffSchedule.list(),
+        base44.entities.StaffAttendance.list()
       ]);
 
-      setSchedules(schedResults.flat());
-      setAttendances(attResults.flat());
+      setSchedules(allScheds.filter(s => weekDays.includes(s.date)));
+      setAttendances(allAtts.filter(a => weekDays.includes(a.date)));
     } catch (e) {
       console.error('Lỗi khi tải dữ liệu chấm công:', e);
       const localStaff = localStorage.getItem('glopro_staff');
