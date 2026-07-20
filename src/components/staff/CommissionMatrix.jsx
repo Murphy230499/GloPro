@@ -520,7 +520,7 @@ export default function CommissionMatrix({ branchId }) {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 w-28 shadow-sm focus-within:border-primary">
+                      <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 w-32 shadow-sm focus-within:border-primary">
                         <select 
                           value={slot.type}
                           onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
