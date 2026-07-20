@@ -136,6 +136,30 @@ export default function CommissionMatrix({ branchId }) {
 
   const handleSaveOvertimeSlots = async () => {
     setSavingOvertime(true);
+    
+    // Validation: overlap and logical checks
+    for (let i = 0; i < tempSlots.length; i++) {
+      const a = tempSlots[i];
+      if (!a.from || !a.to) {
+        toast.error("Vui lòng điền đầy đủ thời gian Từ và Đến!");
+        setSavingOvertime(false);
+        return;
+      }
+      if (a.from >= a.to) {
+        toast.error(`Giờ Từ (${a.from}) phải nhỏ hơn giờ Đến (${a.to})!`);
+        setSavingOvertime(false);
+        return;
+      }
+      for (let j = i + 1; j < tempSlots.length; j++) {
+        const b = tempSlots[j];
+        if (a.from < b.to && b.from < a.to) {
+          toast.error(`Khung giờ trùng lặp: ${a.from}-${a.to} và ${b.from}-${b.to}!`);
+          setSavingOvertime(false);
+          return;
+        }
+      }
+    }
+
     try {
       const matched = rules.filter(r => r.staff_id === selectedStaffId && r.item_type === 'overtime_service' && r.item_id === selectedServiceId);
       for (const rule of matched) {
@@ -477,45 +501,50 @@ export default function CommissionMatrix({ branchId }) {
                 </div>
               ) : (
                 tempSlots.map((slot, index) => (
-                  <div key={slot.id} className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-xs">
-                    <span className="text-[10px] text-slate-400 font-bold shrink-0">Từ</span>
-                    <input 
-                      type="time" 
-                      value={slot.from}
-                      onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, from: e.target.value } : s))}
-                      className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-20 shrink-0"
-                    />
-                    <span className="text-[10px] text-slate-400 font-bold shrink-0">Đến</span>
-                    <input 
-                      type="time" 
-                      value={slot.to}
-                      onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, to: e.target.value } : s))}
-                      className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-20 shrink-0"
-                    />
-                    <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 flex-1 shadow-sm focus-within:border-primary">
-                      <select 
-                        value={slot.type}
-                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
-                        className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
-                      >
-                        <option value="percent">%</option>
-                        <option value="vnd">đ</option>
-                      </select>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={slot.value || ''}
-                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, value: Math.max(0, Number(e.target.value) || 0) } : s))}
-                        className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/40"
+                  <div key={slot.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">Từ</span>
+                      <input 
+                        type="time" 
+                        value={slot.from}
+                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, from: e.target.value } : s))}
+                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-24 shrink-0"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">Đến</span>
+                      <input 
+                        type="time" 
+                        value={slot.to}
+                        onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, to: e.target.value } : s))}
+                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-24 shrink-0"
                       />
                     </div>
-                    <button 
-                      onClick={() => setTempSlots(tempSlots.filter((_, j) => j !== index))}
-                      className="w-7 h-7 rounded-xl bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center border border-slate-200 hover:border-red-150 transition-colors shrink-0 shadow-xs"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 w-28 shadow-sm focus-within:border-primary">
+                        <select 
+                          value={slot.type}
+                          onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
+                          className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                        >
+                          <option value="percent">%</option>
+                          <option value="vnd">đ</option>
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={slot.value || ''}
+                          onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, value: Math.max(0, Number(e.target.value) || 0) } : s))}
+                          className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/40"
+                        />
+                      </div>
+                      <button 
+                        onClick={() => setTempSlots(tempSlots.filter((_, j) => j !== index))}
+                        className="w-7 h-7 rounded-xl bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center border border-slate-200 hover:border-red-150 transition-colors shrink-0 shadow-xs"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
