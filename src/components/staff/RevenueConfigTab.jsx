@@ -329,7 +329,7 @@ export default function RevenueConfigTab({
                 </button>
 
                 {isItemDropOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-250/70 shadow-2xl p-4.5 z-30 max-h-96 overflow-y-auto space-y-3.5 animate-in fade-in slide-in-from-top-2 duration-200 w-[450px] -left-20">
+                  <div className="absolute top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl p-5 z-30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 w-[450px] -left-20">
                     
                     {/* Item categories navigation tabs */}
                     <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-1.5">
