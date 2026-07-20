@@ -107,12 +107,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-              <Copy className="w-4 h-4" />
-            </div>
-            <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng</h2>
-          </div>
+          <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -129,7 +124,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
             <button
               type="button"
               onClick={() => { setSourceOpen(!sourceOpen); setTargetOpen(false); }}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
             >
               <span className="truncate">
                 {sourceStaffId 
@@ -177,7 +172,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
             <button
               type="button"
               onClick={() => { setTargetOpen(!targetOpen); setSourceOpen(false); }}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
             >
               <span className="truncate">
                 {targetStaffIds.length === 0 
@@ -230,11 +225,11 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex justify-end gap-2.5 pt-4">
+          <div className="flex gap-2.5 pt-4">
             <button 
               type="button" 
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-205 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
             >
               Hủy
             </button>
@@ -242,7 +237,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
               type="button" 
               onClick={handleCopy}
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Sao chép

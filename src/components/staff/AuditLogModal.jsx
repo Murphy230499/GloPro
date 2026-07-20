@@ -49,12 +49,7 @@ export default function AuditLogModal({ onClose }) {
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-              <History className="w-4 h-4" />
-            </div>
-            <h2 className="text-base font-bold text-slate-800 font-sans">Lịch sử thao tác</h2>
-          </div>
+          <h2 className="text-base font-bold text-slate-800 font-sans">Lịch sử thao tác</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -64,14 +59,14 @@ export default function AuditLogModal({ onClose }) {
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200 focus-within:border-primary transition-all mb-4 shrink-0 shadow-xs">
+        <div className="flex items-center gap-2 bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-200 focus-within:border-primary transition-all mb-4 shrink-0 shadow-sm">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text"
             placeholder="tìm kiếm lịch sử..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent text-xs font-normal outline-none w-full text-slate-700 placeholder:text-slate-400/70"
+            className="bg-transparent text-xs font-normal outline-none w-full text-slate-700 placeholder:text-slate-400/50"
           />
         </div>
 

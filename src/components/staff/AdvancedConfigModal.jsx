@@ -111,12 +111,7 @@ export default function AdvancedConfigModal({ onClose }) {
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-              <Settings className="w-4 h-4" />
-            </div>
-            <h2 className="text-base font-bold text-slate-800 font-sans">Cài đặt nâng cao</h2>
-          </div>
+          <h2 className="text-base font-bold text-slate-800 font-sans">Cài đặt nâng cao</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -168,11 +163,11 @@ export default function AdvancedConfigModal({ onClose }) {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex justify-end gap-2.5 pt-2">
+            <div className="flex gap-2.5 pt-2">
               <button 
                 type="button" 
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-205 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
               >
                 Hủy
               </button>
@@ -180,7 +175,7 @@ export default function AdvancedConfigModal({ onClose }) {
                 type="button" 
                 onClick={handleSave}
                 disabled={saving}
-                className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Lưu cài đặt
