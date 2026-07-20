@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
@@ -457,6 +457,25 @@ export default function SchedulerGrid({ branchId }) {
     }
   };
 
+  const handleClearAllSchedules = async () => {
+    if (!window.confirm('CẢNH BÁO: Hành động này sẽ xóa SẠCH TOÀN BỘ lịch xếp ca trên hệ thống. Bạn có chắc chắn muốn tiếp tục?')) return;
+    
+    setLoading(true);
+    try {
+      const allSchedules = await base44.entities.StaffSchedule.list();
+      await Promise.all(allSchedules.map(s => base44.entities.StaffSchedule.delete(s.id)));
+      
+      localStorage.removeItem('glopro_staff_schedules');
+      localStorage.removeItem('glopro_staff_schedules_synced');
+      
+      toast.success('Đã xóa sạch toàn bộ lịch xếp ca thành công');
+      loadData();
+    } catch (e) {
+      toast.error('Lỗi khi xóa lịch: ' + (e.message || e));
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Action Toolbar */}
@@ -498,6 +517,12 @@ export default function SchedulerGrid({ branchId }) {
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Đổi ca nhân sự
+          </button>
+          <button 
+            onClick={handleClearAllSchedules} 
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 font-semibold text-xs hover:bg-red-100 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Xóa tất cả lịch
           </button>
         </div>
       </div>
