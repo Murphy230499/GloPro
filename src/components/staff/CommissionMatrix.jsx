@@ -94,11 +94,12 @@ export default function CommissionMatrix({ branchId }) {
       if (activeTab === 'service_combo') return serviceCombos.map(sc => ({ id: sc.id, type: 'service_combo' }));
       if (activeTab === 'product_combo') return productCombos.map(pc => ({ id: pc.id, type: 'product_combo' }));
       if (activeTab === 'prepaid_card') return prepaidCards.map(c => ({ id: c.id, type: 'prepaid_card' }));
+      if (activeTab === 'customer_req') return services.map(s => ({ id: s.id, type: 'customer_req_service' }));
       return [];
     };
 
     const items = getActiveItems();
-    const columns = ['all', ...staff.map(s => s.id)];
+    const columns = staff.map(s => s.id);
 
     items.forEach(item => {
       columns.forEach(staffId => {
@@ -110,8 +111,8 @@ export default function CommissionMatrix({ branchId }) {
       });
     });
 
-    // 2. Setup edits for custom employee-specific tabs (customer_req, overtime, revenue)
-    if (['customer_req', 'overtime', 'revenue'].includes(activeTab)) {
+    // 2. Setup edits for custom employee-specific tabs (overtime, revenue)
+    if (['overtime', 'revenue'].includes(activeTab)) {
       staff.forEach(s => {
         const match = rules.find(r => r.staff_id === s.id && r.item_type === activeTab && r.item_id === activeTab);
         nextEdits[`${activeTab}_${s.id}`] = {
@@ -182,6 +183,7 @@ export default function CommissionMatrix({ branchId }) {
     if (activeTab === 'service_combo') return serviceCombos.map(sc => ({ ...sc, type: 'service_combo', price: sc.price }));
     if (activeTab === 'product_combo') return productCombos.map(pc => ({ ...pc, type: 'product_combo', price: pc.price }));
     if (activeTab === 'prepaid_card') return prepaidCards.map(c => ({ ...c, type: 'prepaid_card', price: c.face_value || c.price }));
+    if (activeTab === 'customer_req') return services.map(s => ({ ...s, type: 'customer_req_service', price: s.price }));
     return [];
   };
 
@@ -189,7 +191,7 @@ export default function CommissionMatrix({ branchId }) {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const isMatrixTab = !['customer_req', 'overtime', 'revenue'].includes(activeTab);
+  const isMatrixTab = !['overtime', 'revenue'].includes(activeTab);
 
   return (
     <div className="space-y-5">

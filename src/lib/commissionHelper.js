@@ -50,7 +50,12 @@ export function calculateItemCommission(item, commissionRules) {
 
   // 2. Add customer request commission if flagged
   if (item.is_customer_requested) {
-    const reqRule = commissionRules.find(r => r.staff_id === staffId && r.item_type === 'customer_req' && r.item_id === 'customer_req');
+    // Try service-specific customer request rule first, then fallback to general customer request rule
+    let reqRule = commissionRules.find(r => r.staff_id === staffId && r.item_type === 'customer_req_service' && (r.item_id === item.id || r.item_id === item.name));
+    if (!reqRule) {
+      reqRule = commissionRules.find(r => r.staff_id === staffId && r.item_type === 'customer_req' && r.item_id === 'customer_req');
+    }
+    
     if (reqRule) {
       let extraEarned = 0;
       let reqLabel = '';
