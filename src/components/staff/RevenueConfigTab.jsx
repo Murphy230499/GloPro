@@ -202,17 +202,20 @@ export default function RevenueConfigTab({
           <div key={rule.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-5 relative">
             
             {/* Rule Header Card */}
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <input 
-                type="text" 
-                value={rule.name}
-                onChange={(e) => handleUpdateRule(rule.id, { name: e.target.value })}
-                placeholder="nhập tên tùy chọn thưởng"
-                className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-750 bg-white outline-none focus:border-primary w-72 shadow-sm placeholder:text-slate-400/45 placeholder:font-normal placeholder:lowercase"
-              />
+            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tên tùy chọn thưởng</span>
+                <input 
+                  type="text" 
+                  value={rule.name}
+                  onChange={(e) => handleUpdateRule(rule.id, { name: e.target.value })}
+                  placeholder="nhập tên tùy chọn thưởng"
+                  className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-750 bg-white outline-none focus:border-primary w-80 shadow-sm placeholder:text-slate-400/45 placeholder:font-normal placeholder:lowercase"
+                />
+              </div>
               <button 
                 onClick={() => handleDeleteRule(rule.id)}
-                className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-150 hover:border-red-200 flex items-center justify-center transition-colors shadow-xs"
+                className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-150 hover:border-red-200 flex items-center justify-center transition-colors shadow-xs animate-all"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -227,9 +230,9 @@ export default function RevenueConfigTab({
                 <button
                   type="button"
                   onClick={() => { setActiveStaffDrop(isStaffDropOpen ? null : rule.id); setActiveItemDrop(null); }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm min-w-0"
                 >
-                  <span className="truncate">
+                  <span className="truncate min-w-0 flex-1 text-left">
                     {rule.staff_ids.length === 0 
                       ? 'chọn nhân viên áp dụng' 
                       : staff.filter(s => rule.staff_ids.includes(s.id)).map(s => s.full_name).join(', ')
@@ -314,9 +317,9 @@ export default function RevenueConfigTab({
                 <button
                   type="button"
                   onClick={() => { setActiveItemDrop(isItemDropOpen ? null : rule.id); setActiveStaffDrop(null); }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm min-w-0"
                 >
-                  <span className="truncate">
+                  <span className="truncate min-w-0 flex-1 text-left">
                     {rule.item_ids.length === 0 
                       ? 'chọn dịch vụ / sản phẩm áp dụng' 
                       : `đã chọn ${rule.item_ids.length} mục`
