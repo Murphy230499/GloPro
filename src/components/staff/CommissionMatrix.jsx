@@ -212,7 +212,7 @@ export default function CommissionMatrix({ branchId }) {
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text"
-            placeholder="Tìm kiếm dịch vụ / sản phẩm..."
+            placeholder={TABS.find(t => t.id === activeTab) ? `Tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...` : 'Tìm kiếm...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs font-semibold outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
@@ -232,9 +232,7 @@ export default function CommissionMatrix({ branchId }) {
               <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
-                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Mặt hàng / Dịch vụ</th>
-                    <th className="py-4 px-3 text-center w-[120px] border-r border-slate-100">Giá niêm yết</th>
-                    <th className="py-4 px-3 text-center w-[160px] border-r border-slate-100 bg-purple-50/30 text-purple-700">Hệ thống (Mặc định)</th>
+                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Dịch vụ / Sản phẩm</th>
                     {staff.map(s => (
                       <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px]">
                         <div className="flex flex-col items-center gap-1">
@@ -251,52 +249,8 @@ export default function CommissionMatrix({ branchId }) {
                       {/* Item Info (Sticky Left) */}
                       <td className="py-3 px-5 sticky left-0 bg-white z-10 border-r border-slate-100">
                         <div className="font-bold text-xs text-slate-800 truncate max-w-[180px]">{item.name}</div>
-                        <div className="text-[9px] text-slate-400 capitalize mt-0.5">{item.type.replace('_', ' ')}</div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{formatVND(item.price || 0)}</div>
                       </td>
-
-                      {/* Item Price */}
-                      <td className="py-3 px-3 text-center text-xs font-bold text-slate-650 border-r border-slate-100">
-                        {formatVND(item.price || 0)}
-                      </td>
-
-                      {/* System Default Column */}
-                      {(() => {
-                        const cellKey = `${item.id}_all`;
-                        const editObj = edits[cellKey] || { type: 'percent', value: 0 };
-                        const isSaving = savingKey === cellKey;
-
-                        return (
-                          <td className="py-2.5 px-3 border-r border-slate-100 bg-purple-50/10">
-                            <div className="flex items-center gap-1.5 justify-center">
-                              {/* Type selection dropdown */}
-                              <select 
-                                value={editObj.type}
-                                onChange={(e) => {
-                                  handleUpdateEdit(cellKey, { type: e.target.value });
-                                  handleSaveCell(item.id, 'all', item.type, editObj.value, e.target.value);
-                                }}
-                                className="px-1.5 py-1 rounded-lg border border-slate-200 text-[10px] font-bold bg-white text-slate-700 focus:outline-none"
-                              >
-                                <option value="percent">%</option>
-                                <option value="vnd">đ</option>
-                              </select>
-
-                              {/* Commission Value Input */}
-                              <div className="relative">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editObj.value}
-                                  onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
-                                  onBlur={() => handleSaveCell(item.id, 'all', item.type)}
-                                  className="w-16 px-1.5 py-1 rounded-lg border border-slate-200 text-center text-[11px] font-bold text-slate-700 focus:outline-none focus:border-purple-400 bg-white"
-                                />
-                                {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })()}
 
                       {/* Employee Columns */}
                       {staff.map(s => {
