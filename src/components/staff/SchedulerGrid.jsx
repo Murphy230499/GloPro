@@ -306,32 +306,31 @@ export default function SchedulerGrid({ branchId }) {
     d.setDate(d.getDate() + 7);
     const nextWeekDays = getWeekDays(d.toISOString().slice(0, 10));
 
-    let count = 0;
     try {
-      // Clear existing schedules in the target week first to avoid duplicates
+      // Clear existing schedules in the target week in parallel
       const promises = nextWeekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
       const results = await Promise.all(promises);
       const targetExisting = results.flat();
-      for (const old of targetExisting) {
-        await base44.entities.StaffSchedule.delete(old.id);
-      }
+      await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
 
-      // Copy each schedule
+      // Copy each schedule in parallel
+      const createPromises = [];
       for (const s of schedules) {
         const curIdx = weekDays.indexOf(s.date);
         if (curIdx !== -1) {
           const targetDate = nextWeekDays[curIdx];
-          await base44.entities.StaffSchedule.create({
+          createPromises.push(base44.entities.StaffSchedule.create({
             staff_id: s.staff_id,
             date: targetDate,
             shift_template_id: s.shift_template_id || '',
             is_off: s.is_off,
             off_type: s.off_type || ''
-          });
-          count++;
+          }));
         }
       }
-      toast.success(`Đã sao chép thành công ${count} ca xếp sang tuần tiếp theo`);
+      await Promise.all(createPromises);
+      
+      toast.success(`Đã sao chép thành công ${createPromises.length} ca xếp sang tuần tiếp theo`);
       loadData();
     } catch (e) {
       toast.error('Lỗi khi sao chép lịch: ' + (e.message || e));
@@ -345,24 +344,21 @@ export default function SchedulerGrid({ branchId }) {
       // Get all current week's schedules for source staff
       const srcScheds = schedules.filter(s => s.staff_id === srcStaffId);
       
-      for (const destStaffId of destStaffIds) {
+      // Perform copies in parallel for target staff members
+      await Promise.all(destStaffIds.map(async (destStaffId) => {
         // Delete existing dest staff schedules for this week
         const destExisting = schedules.filter(s => s.staff_id === destStaffId);
-        for (const old of destExisting) {
-          await base44.entities.StaffSchedule.delete(old.id);
-        }
+        await Promise.all(destExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
 
-        // Create new schedules
-        for (const s of srcScheds) {
-          await base44.entities.StaffSchedule.create({
-            staff_id: destStaffId,
-            date: s.date,
-            shift_template_id: s.shift_template_id || '',
-            is_off: s.is_off,
-            off_type: s.off_type || ''
-          });
-        }
-      }
+        // Create new schedules in parallel
+        await Promise.all(srcScheds.map(s => base44.entities.StaffSchedule.create({
+          staff_id: destStaffId,
+          date: s.date,
+          shift_template_id: s.shift_template_id || '',
+          is_off: s.is_off,
+          off_type: s.off_type || ''
+        })));
+      }));
 
       toast.success('Đã sao chép lịch làm việc thành công');
       setCopyStaffModal(false);
@@ -381,26 +377,23 @@ export default function SchedulerGrid({ branchId }) {
       // Get source schedules
       const srcScheds = schedules.filter(s => s.date === srcDay);
 
-      for (const destDay of destDays) {
+      // Perform copies in parallel for target days
+      await Promise.all(destDays.map(async (destDay) => {
         // Delete target date existing schedules
         const promises = [base44.entities.StaffSchedule.filter({ date: destDay })];
         const results = await Promise.all(promises);
         const targetExisting = results.flat();
-        for (const old of targetExisting) {
-          await base44.entities.StaffSchedule.delete(old.id);
-        }
+        await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
 
-        // Create copy
-        for (const s of srcScheds) {
-          await base44.entities.StaffSchedule.create({
-            staff_id: s.staff_id,
-            date: destDay,
-            shift_template_id: s.shift_template_id || '',
-            is_off: s.is_off,
-            off_type: s.off_type || ''
-          });
-        }
-      }
+        // Create copy in parallel
+        await Promise.all(srcScheds.map(s => base44.entities.StaffSchedule.create({
+          staff_id: s.staff_id,
+          date: destDay,
+          shift_template_id: s.shift_template_id || '',
+          is_off: s.is_off,
+          off_type: s.off_type || ''
+        })));
+      }));
 
       toast.success('Đã sao chép ca ngày thành công');
       setCopyDayModal(false);
