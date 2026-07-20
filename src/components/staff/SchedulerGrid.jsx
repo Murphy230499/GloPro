@@ -157,10 +157,10 @@ export default function SchedulerGrid({ branchId }) {
 
     let schedList = [];
     try {
-      schedList = await base44.entities.StaffSchedule.filter({
-        date_gte: weekDays[0],
-        date_lte: weekDays[6]
-      });
+      const promises = weekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
+      const results = await Promise.all(promises);
+      schedList = results.flat();
+
       const localSchedules = localStorage.getItem('glopro_staff_schedules');
       if (schedList.length === 0 && localSchedules && !localStorage.getItem('glopro_staff_schedules_synced')) {
         const parsed = JSON.parse(localSchedules);
@@ -183,10 +183,10 @@ export default function SchedulerGrid({ branchId }) {
           }
         }
         localStorage.setItem('glopro_staff_schedules_synced', 'true');
-        schedList = await base44.entities.StaffSchedule.filter({
-          date_gte: weekDays[0],
-          date_lte: weekDays[6]
-        });
+        
+        const freshPromises = weekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
+        const freshResults = await Promise.all(freshPromises);
+        schedList = freshResults.flat();
       }
     } catch (e) {
       console.error('Lỗi khi tải lịch làm việc từ API:', e);
@@ -309,10 +309,9 @@ export default function SchedulerGrid({ branchId }) {
     let count = 0;
     try {
       // Clear existing schedules in the target week first to avoid duplicates
-      const targetExisting = await base44.entities.StaffSchedule.filter({
-        date_gte: nextWeekDays[0],
-        date_lte: nextWeekDays[6]
-      });
+      const promises = nextWeekDays.map(d => base44.entities.StaffSchedule.filter({ date: d }));
+      const results = await Promise.all(promises);
+      const targetExisting = results.flat();
       for (const old of targetExisting) {
         await base44.entities.StaffSchedule.delete(old.id);
       }
