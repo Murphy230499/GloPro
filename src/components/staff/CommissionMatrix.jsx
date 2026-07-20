@@ -1,21 +1,27 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Percent, DollarSign, Save, Loader2, Sparkles, Sliders } from 'lucide-react';
+import { Percent, DollarSign, Save, Loader2, Sparkles, Sliders, Search, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import Avatar from '@/components/Avatar';
 
 const TABS = [
   { id: 'service', label: 'Dịch vụ' },
   { id: 'product', label: 'Sản phẩm' },
-  { id: 'package', label: 'Gói & Liệu trình' },
-  { id: 'prepaid', label: 'Thẻ & Combo' }
+  { id: 'package', label: 'Gói dịch vụ' },
+  { id: 'treatment', label: 'Liệu trình' },
+  { id: 'service_combo', label: 'Combo dịch vụ' },
+  { id: 'product_combo', label: 'Combo sản phẩm' },
+  { id: 'prepaid_card', label: 'Thẻ tiền mặt' },
+  { id: 'customer_req', label: 'Khách yêu cầu' },
+  { id: 'overtime', label: 'Tăng ca' },
+  { id: 'revenue', label: 'Doanh thu' }
 ];
 
 export default function CommissionMatrix({ branchId }) {
   const [activeTab, setActiveTab] = useState('service');
   const [staff, setStaff] = useState([]);
-  const [selectedStaffId, setSelectedStaffId] = useState('all');
   
   // Catalog states
   const [services, setServices] = useState([]);
@@ -28,10 +34,13 @@ export default function CommissionMatrix({ branchId }) {
   
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
-
-  // Local rule edits state
-  const [edits, setEdits] = useState({}); // { itemId: { type: 'percent'|'vnd', value: number } }
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Cell-specific saving status state
+  const [savingKey, setSavingKey] = useState(null); // "itemId_staffId"
+  
+  // Local edits state: edits["itemId_staffId"] = { type: 'percent'|'vnd', value: number }
+  const [edits, setEdits] = useState({});
 
   const loadData = async () => {
     setLoading(true);
@@ -62,7 +71,6 @@ export default function CommissionMatrix({ branchId }) {
       setRules(ruleList);
     } catch (e) {
       console.error('Lỗi tải danh mục cấu hình hoa hồng:', e);
-      // Fallback local storage rule list
       const localRules = localStorage.getItem('glopro_staff_commission_rules');
       setRules(localRules ? JSON.parse(localRules) : []);
     }
@@ -73,55 +81,73 @@ export default function CommissionMatrix({ branchId }) {
     loadData();
   }, [branchId]);
 
-  // Sync edits state when active tab or staffId changes
+  // Sync edits state when rules or catalogs load
   useEffect(() => {
     const nextEdits = {};
-    const filteredRules = rules.filter(r => r.staff_id === selectedStaffId);
-    
+
+    // 1. Setup matrix edits for normal items (service, product, etc.)
     const getActiveItems = () => {
       if (activeTab === 'service') return services.map(s => ({ id: s.id, type: 'service' }));
       if (activeTab === 'product') return products.map(p => ({ id: p.id, type: 'product' }));
-      if (activeTab === 'package') return [
-        ...packages.map(p => ({ id: p.id, type: 'package' })),
-        ...treatments.map(t => ({ id: t.id, type: 'treatment' }))
-      ];
-      return [
-        ...serviceCombos.map(sc => ({ id: sc.id, type: 'service_combo' })),
-        ...productCombos.map(pc => ({ id: pc.id, type: 'product_combo' })),
-        ...prepaidCards.map(c => ({ id: c.id, type: 'prepaid_card' }))
-      ];
+      if (activeTab === 'package') return packages.map(p => ({ id: p.id, type: 'package' }));
+      if (activeTab === 'treatment') return treatments.map(t => ({ id: t.id, type: 'treatment' }));
+      if (activeTab === 'service_combo') return serviceCombos.map(sc => ({ id: sc.id, type: 'service_combo' }));
+      if (activeTab === 'product_combo') return productCombos.map(pc => ({ id: pc.id, type: 'product_combo' }));
+      if (activeTab === 'prepaid_card') return prepaidCards.map(c => ({ id: c.id, type: 'prepaid_card' }));
+      return [];
     };
 
-    getActiveItems().forEach(item => {
-      const match = filteredRules.find(r => r.item_id === item.id && r.item_type === item.type);
-      nextEdits[item.id] = {
-        type: match ? match.commission_type : 'percent',
-        value: match ? match.commission_value : 0
-      };
+    const items = getActiveItems();
+    const columns = ['all', ...staff.map(s => s.id)];
+
+    items.forEach(item => {
+      columns.forEach(staffId => {
+        const match = rules.find(r => r.staff_id === staffId && r.item_id === item.id && r.item_type === item.type);
+        nextEdits[`${item.id}_${staffId}`] = {
+          type: match ? match.commission_type : 'percent',
+          value: match ? match.commission_value : 0
+        };
+      });
     });
 
-    setEdits(nextEdits);
-  }, [activeTab, selectedStaffId, rules, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards]);
+    // 2. Setup edits for custom employee-specific tabs (customer_req, overtime, revenue)
+    if (['customer_req', 'overtime', 'revenue'].includes(activeTab)) {
+      staff.forEach(s => {
+        const match = rules.find(r => r.staff_id === s.id && r.item_type === activeTab && r.item_id === activeTab);
+        nextEdits[`${activeTab}_${s.id}`] = {
+          type: match ? match.commission_type : 'percent',
+          value: match ? match.commission_value : 0
+        };
+      });
+    }
 
-  const handleUpdateEdit = (itemId, patch) => {
+    setEdits(nextEdits);
+  }, [activeTab, rules, staff, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards]);
+
+  const handleUpdateEdit = (key, patch) => {
     setEdits(prev => ({
       ...prev,
-      [itemId]: { ...prev[itemId], ...patch }
+      [key]: { ...prev[key], ...patch }
     }));
   };
 
-  const handleSaveRule = async (itemId, itemType) => {
-    setSavingId(itemId);
-    const editVal = edits[itemId] || { type: 'percent', value: 0 };
+  const handleSaveCell = async (itemId, staffId, itemType, valueOverride, typeOverride) => {
+    const key = `${itemId}_${staffId}`;
+    setSavingKey(key);
+    
+    const editVal = edits[key] || { type: 'percent', value: 0 };
+    const finalType = typeOverride !== undefined ? typeOverride : editVal.type;
+    const finalValue = valueOverride !== undefined ? Number(valueOverride) : Number(editVal.value);
+
     const payload = {
-      staff_id: selectedStaffId,
+      staff_id: staffId,
       item_type: itemType,
       item_id: itemId,
-      commission_type: editVal.type,
-      commission_value: Number(editVal.value) || 0
+      commission_type: finalType,
+      commission_value: finalValue || 0
     };
 
-    const existing = rules.find(r => r.staff_id === selectedStaffId && r.item_id === itemId && r.item_type === itemType);
+    const existing = rules.find(r => r.staff_id === staffId && r.item_id === itemId && r.item_type === itemType);
 
     try {
       if (existing) {
@@ -129,12 +155,12 @@ export default function CommissionMatrix({ branchId }) {
       } else {
         await base44.entities.StaffCommissionRule.create(payload);
       }
-      toast.success('Đã lưu quy tắc hoa hồng');
-      // Reload rule list
+      // Reload rules
       const updatedRules = await base44.entities.StaffCommissionRule.list();
       setRules(updatedRules);
     } catch (e) {
-      // Local fallback for offline mode
+      console.error('Error saving rule:', e);
+      // Local fallback
       const local = localStorage.getItem('glopro_staff_commission_rules');
       let list = local ? JSON.parse(local) : [];
       if (existing) {
@@ -144,151 +170,261 @@ export default function CommissionMatrix({ branchId }) {
       }
       localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(list));
       setRules(list);
-      toast.success('Đã lưu quy tắc hoa hồng (offline)');
     }
-    setSavingId(null);
+    setSavingKey(null);
   };
 
-  // Get active items to display
   const getDisplayItems = () => {
     if (activeTab === 'service') return services.map(s => ({ ...s, type: 'service', price: s.price }));
     if (activeTab === 'product') return products.map(p => ({ ...p, type: 'product', price: p.price }));
-    if (activeTab === 'package') return [
-      ...packages.map(p => ({ ...p, type: 'package', price: p.price })),
-      ...treatments.map(t => ({ ...t, type: 'treatment', price: t.price }))
-    ];
-    return [
-      ...serviceCombos.map(sc => ({ ...sc, type: 'service_combo', price: sc.price })),
-      ...productCombos.map(pc => ({ ...pc, type: 'product_combo', price: pc.price })),
-      ...prepaidCards.map(c => ({ ...c, type: 'prepaid_card', price: c.face_value || c.price }))
-    ];
+    if (activeTab === 'package') return packages.map(p => ({ ...p, type: 'package', price: p.price }));
+    if (activeTab === 'treatment') return treatments.map(t => ({ ...t, type: 'treatment', price: t.price }));
+    if (activeTab === 'service_combo') return serviceCombos.map(sc => ({ ...sc, type: 'service_combo', price: sc.price }));
+    if (activeTab === 'product_combo') return productCombos.map(pc => ({ ...pc, type: 'product_combo', price: pc.price }));
+    if (activeTab === 'prepaid_card') return prepaidCards.map(c => ({ ...c, type: 'prepaid_card', price: c.face_value || c.price }));
+    return [];
   };
 
-  const displayItems = getDisplayItems();
+  const filteredItems = getDisplayItems().filter(item => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const isMatrixTab = !['customer_req', 'overtime', 'revenue'].includes(activeTab);
 
   return (
-    <div className="space-y-4">
-
+    <div className="space-y-5">
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-100 px-3">
+      <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-none px-2">
         {TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === t.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
+            onClick={() => { setActiveTab(t.id); setSearchQuery(''); }}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors shrink-0 ${activeTab === t.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Table List of Items */}
-      {loading ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto" /></div>
-      ) : displayItems.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 text-slate-400 text-xs">Không tìm thấy vật phẩm nào trong danh mục này</div>
-      ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
-                  <th className="py-4 px-5">Tên Mặt hàng / Dịch vụ</th>
-                  <th className="py-4 px-3 text-center">Giá bán niêm yết</th>
-                  <th className="py-4 px-3 text-center min-w-[120px]">Kiểu hoa hồng</th>
-                  <th className="py-4 px-3 text-center min-w-[120px]">Giá trị hoa hồng</th>
-                  <th className="py-4 px-5 text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {displayItems.map((item) => {
-                  const editObj = edits[item.id] || { type: 'percent', value: 0 };
-                  const isSaving = savingId === item.id;
-                  
-                  // Check if there is a default rule to show as placeholder/helper when editing specific staff member
-                  let defaultHelp = '';
-                  if (selectedStaffId !== 'all') {
-                    const defRule = rules.find(r => r.staff_id === 'all' && r.item_id === item.id && r.item_type === item.type);
-                    if (defRule) {
-                      defaultHelp = defRule.commission_type === 'percent' 
-                        ? `(Mặc định: ${defRule.commission_value}%)`
-                        : `(Mặc định: ${formatVND(defRule.commission_value)})`;
-                    }
-                  }
-
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-5">
-                        <div className="font-semibold text-xs text-slate-800">{item.name}</div>
-                        <div className="text-[10px] text-slate-400 capitalize mt-0.5">{item.type.replace('_', ' ')}</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center text-xs font-bold text-slate-700">
-                        {formatVND(item.price || 0)}
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <div className="flex justify-center items-center">
-                          <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-100">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateEdit(item.id, { type: 'percent' })}
-                              className={`p-1 rounded-md transition-colors ${editObj.type === 'percent' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                              title="Tính theo phần trăm (%)"
-                            >
-                              <Percent className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateEdit(item.id, { type: 'vnd' })}
-                              className={`p-1 rounded-md transition-colors ${editObj.type === 'vnd' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                              title="Tính theo số tiền (VNĐ)"
-                            >
-                              <DollarSign className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="relative">
-                            <input
-                              type="number"
-                              min="0"
-                              value={editObj.value}
-                              onChange={(e) => handleUpdateEdit(item.id, { value: Math.max(0, Number(e.target.value) || 0) })}
-                              className="w-24 px-2 py-1 rounded-lg border border-slate-200 text-center text-xs font-bold focus:outline-none focus:border-purple-400 bg-white"
-                            />
-                            <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
-                              {editObj.type === 'percent' ? '%' : 'đ'}
-                            </span>
-                          </div>
-                          {defaultHelp && (
-                            <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{defaultHelp}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-5 text-center">
-                        <button
-                          onClick={() => handleSaveRule(item.id, item.type)}
-                          disabled={isSaving}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
-                        >
-                          {isSaving ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Save className="w-3.5 h-3.5" />
-                          )}
-                          Lưu
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      {/* Filter and search bar */}
+      {isMatrixTab && (
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-slate-150 shadow-sm max-w-sm">
+          <Search className="w-4 h-4 text-slate-400 shrink-0" />
+          <input 
+            type="text"
+            placeholder="Tìm kiếm dịch vụ / sản phẩm..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full text-xs font-semibold outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
+          />
         </div>
       )}
 
+      {loading ? (
+        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto" /></div>
+      ) : isMatrixTab ? (
+        /* Render Matrix Grid View */
+        filteredItems.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 text-slate-400 text-xs font-medium">Không tìm thấy vật phẩm nào trong danh mục này</div>
+        ) : (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse table-fixed">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
+                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Mặt hàng / Dịch vụ</th>
+                    <th className="py-4 px-3 text-center w-[120px] border-r border-slate-100">Giá niêm yết</th>
+                    <th className="py-4 px-3 text-center w-[160px] border-r border-slate-100 bg-purple-50/30 text-purple-700">Hệ thống (Mặc định)</th>
+                    {staff.map(s => (
+                      <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px]">
+                        <div className="flex flex-col items-center gap-1">
+                          <Avatar src={s.avatar_url} name={s.full_name} size={24} color={s.avatar_color} />
+                          <span className="text-[10px] truncate max-w-[140px]">{s.full_name}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/20 transition-colors">
+                      {/* Item Info (Sticky Left) */}
+                      <td className="py-3 px-5 sticky left-0 bg-white z-10 border-r border-slate-100">
+                        <div className="font-bold text-xs text-slate-800 truncate max-w-[180px]">{item.name}</div>
+                        <div className="text-[9px] text-slate-400 capitalize mt-0.5">{item.type.replace('_', ' ')}</div>
+                      </td>
+
+                      {/* Item Price */}
+                      <td className="py-3 px-3 text-center text-xs font-bold text-slate-650 border-r border-slate-100">
+                        {formatVND(item.price || 0)}
+                      </td>
+
+                      {/* System Default Column */}
+                      {(() => {
+                        const cellKey = `${item.id}_all`;
+                        const editObj = edits[cellKey] || { type: 'percent', value: 0 };
+                        const isSaving = savingKey === cellKey;
+
+                        return (
+                          <td className="py-2.5 px-3 border-r border-slate-100 bg-purple-50/10">
+                            <div className="flex items-center gap-1.5 justify-center">
+                              {/* Type selection dropdown */}
+                              <select 
+                                value={editObj.type}
+                                onChange={(e) => {
+                                  handleUpdateEdit(cellKey, { type: e.target.value });
+                                  handleSaveCell(item.id, 'all', item.type, editObj.value, e.target.value);
+                                }}
+                                className="px-1.5 py-1 rounded-lg border border-slate-200 text-[10px] font-bold bg-white text-slate-700 focus:outline-none"
+                              >
+                                <option value="percent">%</option>
+                                <option value="vnd">đ</option>
+                              </select>
+
+                              {/* Commission Value Input */}
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editObj.value}
+                                  onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
+                                  onBlur={() => handleSaveCell(item.id, 'all', item.type)}
+                                  className="w-16 px-1.5 py-1 rounded-lg border border-slate-200 text-center text-[11px] font-bold text-slate-700 focus:outline-none focus:border-purple-400 bg-white"
+                                />
+                                {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })()}
+
+                      {/* Employee Columns */}
+                      {staff.map(s => {
+                        const cellKey = `${item.id}_${s.id}`;
+                        const editObj = edits[cellKey] || { type: 'percent', value: 0 };
+                        const isSaving = savingKey === cellKey;
+
+                        // Check system default value as fallback helper text
+                        const systemRule = rules.find(r => r.staff_id === 'all' && r.item_id === item.id && r.item_type === item.type);
+                        const placeholderText = systemRule 
+                          ? `${systemRule.commission_value}${systemRule.commission_type === 'percent' ? '%' : 'đ'}`
+                          : '0%';
+
+                        return (
+                          <td key={s.id} className="py-2.5 px-3 border-r border-slate-100">
+                            <div className="flex items-center gap-1.5 justify-center">
+                              <select 
+                                value={editObj.type}
+                                onChange={(e) => {
+                                  handleUpdateEdit(cellKey, { type: e.target.value });
+                                  handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
+                                }}
+                                className="px-1.5 py-1 rounded-lg border border-slate-200 text-[10px] font-bold bg-white text-slate-700 focus:outline-none"
+                              >
+                                <option value="percent">%</option>
+                                <option value="vnd">đ</option>
+                              </select>
+
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder={placeholderText}
+                                  value={editObj.value || ''}
+                                  onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
+                                  onBlur={() => handleSaveCell(item.id, s.id, item.type)}
+                                  className="w-16 px-1.5 py-1 rounded-lg border border-slate-200 text-center text-[11px] font-bold text-slate-700 focus:outline-none focus:border-purple-400 bg-white placeholder:text-slate-350"
+                                />
+                                {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      ) : (
+        /* Render Custom Employee Config Views (customer_req, overtime, revenue) */
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-xl">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
+                <th className="py-4 px-5">Nhân viên</th>
+                <th className="py-4 px-3 text-center w-[120px]">Kiểu hoa hồng</th>
+                <th className="py-4 px-3 text-center w-[150px]">Mức hoa hồng cộng thêm</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {staff.map(s => {
+                const cellKey = `${activeTab}_${s.id}`;
+                const editObj = edits[cellKey] || { type: 'percent', value: 0 };
+                const isSaving = savingKey === cellKey;
+
+                return (
+                  <tr key={s.id} className="hover:bg-slate-50/20 transition-colors">
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar src={s.avatar_url} name={s.full_name} size={28} color={s.avatar_color} />
+                        <div>
+                          <div className="font-bold text-xs text-slate-800">{s.full_name}</div>
+                          <span className="text-[9px] font-bold text-slate-400 capitalize">{s.role}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <div className="flex bg-slate-150 p-0.5 rounded-lg border border-slate-100 inline-flex">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateEdit(cellKey, { type: 'percent' });
+                            handleSaveCell(activeTab, s.id, activeTab, editObj.value, 'percent');
+                          }}
+                          className={`p-1 rounded-md transition-colors ${editObj.type === 'percent' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          title="Tính theo phần trăm (%)"
+                        >
+                          <Percent className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateEdit(cellKey, { type: 'vnd' });
+                            handleSaveCell(activeTab, s.id, activeTab, editObj.value, 'vnd');
+                          }}
+                          className={`p-1 rounded-md transition-colors ${editObj.type === 'vnd' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          title="Tính theo số tiền (VNĐ)"
+                        >
+                          <DollarSign className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <div className="relative inline-block">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editObj.value}
+                          onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
+                          onBlur={() => handleSaveCell(activeTab, s.id, activeTab)}
+                          className="w-24 px-2 py-1 rounded-lg border border-slate-200 text-center text-xs font-bold focus:outline-none focus:border-purple-400 bg-white"
+                        />
+                        <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
+                          {editObj.type === 'percent' ? '%' : 'đ'}
+                        </span>
+                        {isSaving && <Loader2 className="absolute -right-5 top-1.5 w-3 h-3 text-purple-500 animate-spin" />}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
