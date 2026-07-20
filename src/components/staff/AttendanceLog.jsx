@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Play, Square, Clock, AlertTriangle, Calendar, UserCheck, Edit3, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Clock, AlertTriangle, Calendar, Edit3, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
@@ -47,10 +47,6 @@ export default function AttendanceLog({ branchId }) {
   const [attendances, setAttendances] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Kiosk console state
-  const [selectedStaffId, setSelectedStaffId] = useState('');
-  const [processing, setProcessing] = useState(false);
 
   // Edit attendance state
   const [editingCell, setEditingCell] = useState(null); // { staff, date, schedule, attendance }
@@ -133,89 +129,7 @@ export default function AttendanceLog({ branchId }) {
     return 'full';
   };
 
-  const handleKioskCheck = async (type) => {
-    if (!selectedStaffId) return toast.error('Vui lòng chọn nhân viên trước');
-    setProcessing(true);
 
-    const today = todayStr();
-    const now = new Date();
-    const timeStr = now.toTimeString().slice(0, 5); // "HH:MM"
-    const existing = attendances.find(a => a.staff_id === selectedStaffId && a.date === today);
-    
-    // Find scheduled shift
-    const schedList = schedules.filter(s => s.staff_id === selectedStaffId && s.date === today && !s.is_off);
-    const sched = schedList[0];
-    const shift = sched ? templates.find(t => t.id === sched.shift_template_id) : null;
-
-    let payload = {};
-    
-    if (type === 'in') {
-      if (existing && existing.check_in) {
-        setProcessing(false);
-        return toast.error('Nhân viên này đã check-in hôm nay rồi');
-      }
-
-      payload = {
-        staff_id: selectedStaffId,
-        date: today,
-        check_in: timeStr,
-        check_out: existing?.check_out || '',
-        status: existing?.check_out ? computeFinalStatus(timeStr, existing.check_out, shift) : 'missing_out',
-        ot_minutes: existing?.ot_minutes || 0
-      };
-
-      try {
-        if (existing) {
-          await base44.entities.StaffAttendance.update(existing.id, payload);
-        } else {
-          await base44.entities.StaffAttendance.create(payload);
-        }
-        toast.success('Chấm công VÀO CA thành công!');
-      } catch (e) {
-        toast.error('Lỗi check-in: ' + (e.message || e));
-      }
-    } else {
-      // Check-out
-      if (existing && existing.check_out) {
-        setProcessing(false);
-        return toast.error('Nhân viên này đã check-out hôm nay rồi');
-      }
-
-      const checkInTime = existing?.check_in || '';
-      
-      let otMinutes = 0;
-      if (shift) {
-        const [shEndH, shEndM] = shift.end_time.split(':').map(Number);
-        const [nowH, nowM] = timeStr.split(':').map(Number);
-        const diffMins = (nowH * 60 + nowM) - (shEndH * 60 + shEndM);
-        if (diffMins > 30) otMinutes = diffMins;
-      }
-
-      payload = {
-        staff_id: selectedStaffId,
-        date: today,
-        check_in: checkInTime,
-        check_out: timeStr,
-        status: computeFinalStatus(checkInTime, timeStr, shift),
-        ot_minutes: otMinutes
-      };
-
-      try {
-        if (existing) {
-          await base44.entities.StaffAttendance.update(existing.id, payload);
-        } else {
-          await base44.entities.StaffAttendance.create(payload);
-        }
-        toast.success('Chấm công RA CA thành công!');
-      } catch (e) {
-        toast.error('Lỗi check-out: ' + (e.message || e));
-      }
-    }
-
-    setSelectedStaffId('');
-    setProcessing(false);
-    loadData();
-  };
 
   const openEditModal = (staffMember, dateStr, sched, att) => {
     setEditingCell({ staff: staffMember, date: dateStr, schedule: sched, attendance: att });
@@ -280,41 +194,6 @@ export default function AttendanceLog({ branchId }) {
 
   return (
     <div className="space-y-6">
-      {/* Kiosk Section */}
-      <div className="bg-gradient-to-br from-purple-500 to-indigo-650 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-base font-bold flex items-center gap-1.5"><UserCheck className="w-5 h-5" /> Kiosk Chấm Công Nhanh</h3>
-          <p className="text-xs text-purple-100 mt-1">Dành cho nhân viên tự chấm công vào ca và tan ca tại cơ sở hôm nay</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select 
-            value={selectedStaffId}
-            onChange={(e) => setSelectedStaffId(e.target.value)}
-            disabled={processing}
-            className="px-3 py-2.5 rounded-xl border-none text-slate-800 text-xs font-semibold focus:outline-none min-w-[180px] shadow-sm bg-white"
-          >
-            <option value="">— Chọn tên nhân viên —</option>
-            {staff.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-          </select>
-
-          <button
-            onClick={() => handleKioskCheck('in')}
-            disabled={processing || !selectedStaffId}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 disabled:opacity-50 transition-colors shadow-sm"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" /> Vào Ca
-          </button>
-          
-          <button
-            onClick={() => handleKioskCheck('out')}
-            disabled={processing || !selectedStaffId}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-600 disabled:opacity-50 transition-colors shadow-sm"
-          >
-            <Square className="w-3.5 h-3.5 fill-current" /> Tan Ca
-          </button>
-        </div>
-      </div>
 
       {/* Grid Log View */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4">
