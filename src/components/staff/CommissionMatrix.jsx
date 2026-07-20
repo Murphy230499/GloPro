@@ -232,7 +232,9 @@ export default function CommissionMatrix({ branchId }) {
               <table className="w-full text-left border-collapse table-fixed font-sans">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold">Dịch vụ / Sản phẩm</th>
+                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold">
+                      {TABS.find(t => t.id === activeTab)?.label || 'Dịch vụ / Sản phẩm'}
+                    </th>
                     {staff.map(s => (
                       <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px] font-semibold">
                         <div className="flex flex-col items-center gap-1">
