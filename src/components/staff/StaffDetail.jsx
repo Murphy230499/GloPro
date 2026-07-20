@@ -14,18 +14,20 @@ export default function StaffDetail({ staff, onClose }) {
   const [schedules, setSchedules] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [revenueBonusRules, setRevenueBonusRules] = useState([]);
+  const [advancedConfigs, setAdvancedConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadStaffData = async () => {
       try {
-        const [svcs, rules, invs, scheds, tmpls, revRules] = await Promise.all([
+        const [svcs, rules, invs, scheds, tmpls, revRules, configs] = await Promise.all([
           base44.entities.Service.filter({ is_active: true }),
           base44.entities.StaffCommissionRule.list(),
           base44.entities.Invoice.list(),
           base44.entities.StaffSchedule.filter({ staff_id: staff.id }),
           base44.entities.ShiftTemplate.list(),
-          base44.entities.RevenueBonusRule.list()
+          base44.entities.RevenueBonusRule.list(),
+          base44.entities.StaffCommissionConfig.list()
         ]);
         setServices(svcs);
         setCommissionRules(rules);
@@ -33,6 +35,7 @@ export default function StaffDetail({ staff, onClose }) {
         setSchedules(scheds.sort((a, b) => b.date.localeCompare(a.date)));
         setTemplates(tmpls);
         setRevenueBonusRules(revRules || []);
+        setAdvancedConfigs(configs || []);
       } catch (e) {
         console.error('Lỗi tải dữ liệu chi tiết nhân viên:', e);
       }
@@ -57,7 +60,7 @@ export default function StaffDetail({ staff, onClose }) {
           totalRevenue += revenue;
 
           // Compute using the unified helper
-          const { earned, ruleLabel } = calculateItemCommission(it, commissionRules, inv.created_at || inv.date);
+          const { earned, ruleLabel } = calculateItemCommission(it, commissionRules, inv.created_at || inv.date, advancedConfigs, inv);
 
           totalEarned += earned;
           list.push({
@@ -223,7 +226,7 @@ export default function StaffDetail({ staff, onClose }) {
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
                       <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng tích lũy</div>
                       <div className="text-base font-bold text-purple-600 mt-1">
-                        {formatVND(commData.totalEarned + calculateRevenueBonus(staff.id, invoices, revenueBonusRules).totalBonus)}
+                        {formatVND(commData.totalEarned + calculateRevenueBonus(staff.id, invoices, revenueBonusRules, advancedConfigs).totalBonus)}
                       </div>
                     </div>
                   </div>
@@ -265,7 +268,7 @@ export default function StaffDetail({ staff, onClose }) {
 
                   {/* Revenue Bonuses List */}
                   {(() => {
-                    const revBonus = calculateRevenueBonus(staff.id, invoices, revenueBonusRules);
+                    const revBonus = calculateRevenueBonus(staff.id, invoices, revenueBonusRules, advancedConfigs);
                     if (revBonus.details.length === 0) return null;
                     return (
                       <div className="space-y-3 pt-2">

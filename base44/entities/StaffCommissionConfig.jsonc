@@ -1,0 +1,29 @@
+{
+  "name": "StaffCommissionConfig",
+  "type": "object",
+  "properties": {
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "service",
+        "product",
+        "package",
+        "treatment",
+        "service_combo",
+        "product_combo",
+        "prepaid_card"
+      ]
+    },
+    "calc_method": {
+      "type": "string",
+      "enum": [
+        "before_discount",
+        "after_discount"
+      ]
+    }
+  },
+  "required": [
+    "item_type",
+    "calc_method"
+  ]
+}

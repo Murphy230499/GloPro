@@ -9,11 +9,19 @@ import { formatVND } from '@/lib/format';
  * @param {String} createdTime ISO timestamp or time string of when the invoice was created
  * @returns {Object} { earned, ruleLabel }
  */
-export function calculateItemCommission(item, commissionRules, createdTime) {
+export function calculateItemCommission(item, commissionRules, createdTime, advancedConfigs, invoice) {
   const staffId = item.staff_id;
   if (!staffId) return { earned: 0, ruleLabel: '—' };
 
-  const itemPrice = item.price || 0;
+  // Determine discount factor if calculation is set to after_discount
+  const config = (advancedConfigs || []).find(c => c.item_type === item.type);
+  const isAfterDiscount = config ? config.calc_method === 'after_discount' : false;
+  let discountFactor = 1;
+  if (isAfterDiscount && invoice && invoice.subtotal > 0) {
+    discountFactor = 1 - (invoice.discount || 0) / invoice.subtotal;
+  }
+
+  const itemPrice = (item.price || 0) * discountFactor;
   const qty = item.qty || 1;
   const revenue = itemPrice * qty;
 
@@ -124,7 +132,7 @@ export function calculateItemCommission(item, commissionRules, createdTime) {
  * @param {Array} bonusRules All RevenueBonusRules loaded from the DB
  * @returns {Object} { totalBonus, details: [{ name, earned, mechanism, totalRev }] }
  */
-export function calculateRevenueBonus(staffId, invoices, bonusRules) {
+export function calculateRevenueBonus(staffId, invoices, bonusRules, advancedConfigs) {
   let totalBonus = 0;
   const details = [];
 
@@ -143,11 +151,19 @@ export function calculateRevenueBonus(staffId, invoices, bonusRules) {
 
     invoices.forEach(inv => {
       if (inv.status !== 'paid') return;
+      
+      const discountFactor = inv.subtotal > 0 ? (1 - (inv.discount || 0) / inv.subtotal) : 1;
+
       (inv.items || []).forEach(it => {
         if (it.staff_id === staffId) {
           const isItemMatched = itemIds.length === 0 || itemIds.includes(it.id) || itemIds.includes(it.name);
           if (isItemMatched) {
-            totalRev += (it.price || 0) * (it.qty || 1);
+            // Apply advanced config discount check
+            const config = (advancedConfigs || []).find(c => c.item_type === it.type);
+            const isAfterDiscount = config ? config.calc_method === 'after_discount' : false;
+            
+            const price = (it.price || 0) * (isAfterDiscount ? discountFactor : 1);
+            totalRev += price * (it.qty || 1);
           }
         }
       });

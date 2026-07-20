@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import {
-  Plus, Users, CalendarCheck2, Award, Settings2, ChevronRight, UserRoundCog, Sparkles, Loader2
+  Plus, Users, CalendarCheck2, Award, Settings2, ChevronRight, UserRoundCog, Sparkles, Loader2,
+  Copy, History, Settings
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
@@ -19,6 +20,9 @@ import ShiftTemplateManager from '@/components/staff/ShiftTemplateManager';
 import SchedulerGrid from '@/components/staff/SchedulerGrid';
 import AttendanceLog from '@/components/staff/AttendanceLog';
 import CommissionMatrix from '@/components/staff/CommissionMatrix';
+import AdvancedConfigModal from '@/components/staff/AdvancedConfigModal';
+import CopyCommissionModal from '@/components/staff/CopyCommissionModal';
+import AuditLogModal from '@/components/staff/AuditLogModal';
 
 const ROLES = {
   manager: { label: 'Quản lý', color: '#FF6B9D' },
@@ -61,6 +65,11 @@ export default function StaffPage() {
   const [showGroupManager, setShowGroupManager] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [detailStaff, setDetailStaff] = useState(null);
+
+  // Commission Modal States
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
+  const [showCopyCommission, setShowCopyCommission] = useState(false);
+  const [showAuditLog, setShowAuditLog] = useState(false);
 
   // Seeding state
   const [seeding, setSeeding] = useState(false);
@@ -218,6 +227,28 @@ export default function StaffPage() {
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" /> Thêm nhân viên
+            </button>
+          </div>
+        )}
+        {mainTab === 'commission' && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdvancedConfig(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+            >
+              <Settings className="w-4 h-4 text-purple-500" /> Cài đặt nâng cao
+            </button>
+            <button
+              onClick={() => setShowCopyCommission(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+            >
+              <Copy className="w-4 h-4 text-blue-500" /> Sao chép hoa hồng
+            </button>
+            <button
+              onClick={() => setShowAuditLog(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+            >
+              <History className="w-4 h-4 text-emerald-500" /> Lịch sử thao tác
             </button>
           </div>
         )}
@@ -424,12 +455,26 @@ export default function StaffPage() {
       )}
 
       {/* Staff Detail Panel */}
-      {detailStaff !== null && (
+      {detailStaff && (
         <StaffDetail
           staff={detailStaff}
           onClose={() => setDetailStaff(null)}
         />
       )}
+
+      {/* Commission Modal Overlays */}
+      {showAdvancedConfig && <AdvancedConfigModal onClose={() => setShowAdvancedConfig(false)} />}
+      {showCopyCommission && (
+        <CopyCommissionModal
+          staff={staff}
+          onClose={() => setShowCopyCommission(false)}
+          onRefresh={() => {
+            // Trigger state reload in app
+            loadData();
+          }}
+        />
+      )}
+      {showAuditLog && <AuditLogModal onClose={() => setShowAuditLog(false)} />}
     </div>
   );
 }

@@ -1,0 +1,24 @@
+{
+  "name": "StaffCommissionLog",
+  "type": "object",
+  "properties": {
+    "user_name": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_name",
+    "action_type",
+    "description",
+    "created_at"
+  ]
+}
