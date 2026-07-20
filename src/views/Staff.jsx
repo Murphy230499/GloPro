@@ -74,12 +74,13 @@ export default function StaffPage() {
     try {
       stList = await base44.entities.Staff.filter(filter);
       const local = localStorage.getItem('glopro_staff');
-      if (stList.length === 0 && local) {
+      if (stList.length === 0 && local && !localStorage.getItem('glopro_staff_synced')) {
         const parsed = JSON.parse(local);
         for (const st of parsed) {
           const { id, ...data } = st;
           await base44.entities.Staff.create(data);
         }
+        localStorage.setItem('glopro_staff_synced', 'true');
         stList = await base44.entities.Staff.filter(filter);
       }
     } catch (e) {
@@ -92,12 +93,13 @@ export default function StaffPage() {
     try {
       gpList = await base44.entities.StaffGroup.list();
       const localGps = localStorage.getItem('glopro_staff_groups');
-      if (gpList.length === 0 && localGps) {
+      if (gpList.length === 0 && localGps && !localStorage.getItem('glopro_staff_groups_synced')) {
         const parsed = JSON.parse(localGps);
         for (const g of parsed) {
           const { id, ...data } = g;
           await base44.entities.StaffGroup.create(data);
         }
+        localStorage.setItem('glopro_staff_groups_synced', 'true');
         gpList = await base44.entities.StaffGroup.list();
       }
     } catch (e) {

@@ -93,12 +93,13 @@ export default function SchedulerGrid({ branchId }) {
     try {
       stList = await base44.entities.Staff.filter(filter);
       const localStaff = localStorage.getItem('glopro_staff');
-      if (stList.length === 0 && localStaff) {
+      if (stList.length === 0 && localStaff && !localStorage.getItem('glopro_staff_synced')) {
         const parsed = JSON.parse(localStaff);
         for (const st of parsed) {
           const { id, ...data } = st;
           await base44.entities.Staff.create(data);
         }
+        localStorage.setItem('glopro_staff_synced', 'true');
         stList = await base44.entities.Staff.filter(filter);
       }
     } catch (e) {
@@ -111,12 +112,13 @@ export default function SchedulerGrid({ branchId }) {
     try {
       tmplList = await base44.entities.ShiftTemplate.list();
       const localTemplates = localStorage.getItem('glopro_shift_templates');
-      if (tmplList.length === 0 && localTemplates) {
+      if (tmplList.length === 0 && localTemplates && !localStorage.getItem('glopro_shift_templates_synced')) {
         const parsed = JSON.parse(localTemplates);
         for (const t of parsed) {
           const { id, ...data } = t;
           await base44.entities.ShiftTemplate.create(data);
         }
+        localStorage.setItem('glopro_shift_templates_synced', 'true');
         tmplList = await base44.entities.ShiftTemplate.list();
       }
     } catch (e) {
@@ -132,12 +134,13 @@ export default function SchedulerGrid({ branchId }) {
         date_lte: weekDays[6]
       });
       const localSchedules = localStorage.getItem('glopro_staff_schedules');
-      if (schedList.length === 0 && localSchedules) {
+      if (schedList.length === 0 && localSchedules && !localStorage.getItem('glopro_staff_schedules_synced')) {
         const parsed = JSON.parse(localSchedules);
         for (const s of parsed) {
           const { id, ...data } = s;
           await base44.entities.StaffSchedule.create(data);
         }
+        localStorage.setItem('glopro_staff_schedules_synced', 'true');
         schedList = await base44.entities.StaffSchedule.filter({
           date_gte: weekDays[0],
           date_lte: weekDays[6]
