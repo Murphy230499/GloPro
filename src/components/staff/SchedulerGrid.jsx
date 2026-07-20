@@ -17,6 +17,19 @@ const ROLES = {
 };
 
 
+// Helper to perform API operations in small batches to avoid 429 Rate Limits
+const batchPromises = async (items, fn, batchSize = 3) => {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(fn));
+    results.push(...batchResults);
+    if (i + batchSize < items.length) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+  return results;
+};
 // Helper to get Mon-Sun dates for a week
 const getWeekDays = (baseDateStr) => {
   const current = new Date(baseDateStr);
@@ -230,7 +243,11 @@ export default function SchedulerGrid({ branchId }) {
       // Delete existing schedules for this staff & day on the server
       for (const old of dayScheds) {
         if (!old.id.toString().startsWith('local_')) {
-          await base44.entities.StaffSchedule.delete(old.id);
+          try {
+            await base44.entities.StaffSchedule.delete(old.id);
+          } catch (err) {
+            console.warn(`Failed to delete schedule ${old.id}, might already be deleted:`, err);
+          }
         }
       }
 
@@ -308,26 +325,32 @@ export default function SchedulerGrid({ branchId }) {
       // Clear existing schedules in the target week in parallel
       const allScheds = await base44.entities.StaffSchedule.list();
       const targetExisting = allScheds.filter(s => nextWeekDays.includes(s.date));
-      await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
+      await batchPromises(targetExisting, async (old) => {
+        try {
+          await base44.entities.StaffSchedule.delete(old.id);
+        } catch (e) {
+          console.warn("Delete failed:", old.id, e);
+        }
+      }, 3);
 
       // Copy each schedule in parallel
-      const createPromises = [];
+      const createPayloads = [];
       for (const s of schedules) {
         const curIdx = weekDays.indexOf(s.date);
         if (curIdx !== -1) {
           const targetDate = nextWeekDays[curIdx];
-          createPromises.push(base44.entities.StaffSchedule.create({
+          createPayloads.push({
             staff_id: s.staff_id,
             date: targetDate,
             shift_template_id: s.shift_template_id || '',
             is_off: s.is_off,
             off_type: s.off_type || ''
-          }));
+          });
         }
       }
-      await Promise.all(createPromises);
+      await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       
-      toast.success(`Đã sao chép thành công ${createPromises.length} ca xếp sang tuần tiếp theo`);
+      toast.success(`Đã sao chép thành công ${createPayloads.length} ca xếp sang tuần tiếp theo`);
       loadData();
     } catch (e) {
       toast.error('Lỗi khi sao chép lịch: ' + (e.message || e));
@@ -345,16 +368,23 @@ export default function SchedulerGrid({ branchId }) {
       await Promise.all(destStaffIds.map(async (destStaffId) => {
         // Delete existing dest staff schedules for this week
         const destExisting = schedules.filter(s => s.staff_id === destStaffId);
-        await Promise.all(destExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
+        await batchPromises(destExisting, async (old) => {
+          try {
+            await base44.entities.StaffSchedule.delete(old.id);
+          } catch (e) {
+            console.warn("Delete failed:", old.id, e);
+          }
+        }, 3);
 
         // Create new schedules in parallel
-        await Promise.all(srcScheds.map(s => base44.entities.StaffSchedule.create({
+        const createPayloads = srcScheds.map(s => ({
           staff_id: destStaffId,
           date: s.date,
           shift_template_id: s.shift_template_id || '',
           is_off: s.is_off,
           off_type: s.off_type || ''
-        })));
+        }));
+        await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       }));
 
       toast.success('Đã sao chép lịch làm việc thành công');
@@ -380,16 +410,23 @@ export default function SchedulerGrid({ branchId }) {
       await Promise.all(destDays.map(async (destDay) => {
         // Delete target date existing schedules
         const targetExisting = allScheds.filter(s => s.date === destDay);
-        await Promise.all(targetExisting.map(old => base44.entities.StaffSchedule.delete(old.id)));
+        await batchPromises(targetExisting, async (old) => {
+          try {
+            await base44.entities.StaffSchedule.delete(old.id);
+          } catch (e) {
+            console.warn("Delete failed:", old.id, e);
+          }
+        }, 3);
 
         // Create copy in parallel
-        await Promise.all(srcScheds.map(s => base44.entities.StaffSchedule.create({
+        const createPayloads = srcScheds.map(s => ({
           staff_id: s.staff_id,
           date: destDay,
           shift_template_id: s.shift_template_id || '',
           is_off: s.is_off,
           off_type: s.off_type || ''
-        })));
+        }));
+        await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       }));
 
       toast.success('Đã sao chép ca ngày thành công');
@@ -460,7 +497,13 @@ export default function SchedulerGrid({ branchId }) {
     setLoading(true);
     try {
       const allSchedules = await base44.entities.StaffSchedule.list();
-      await Promise.all(allSchedules.map(s => base44.entities.StaffSchedule.delete(s.id)));
+      await batchPromises(allSchedules, async (s) => {
+        try {
+          await base44.entities.StaffSchedule.delete(s.id);
+        } catch (e) {
+          console.warn("Delete failed:", s.id, e);
+        }
+      }, 3);
       
       localStorage.removeItem('glopro_staff_schedules');
       localStorage.removeItem('glopro_staff_schedules_synced');
