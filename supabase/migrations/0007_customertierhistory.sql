@@ -1,6 +1,6 @@
 -- Migration for table: customertierhistory
 CREATE TABLE IF NOT EXISTS customertierhistory (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     customer_id UUID NOT NULL,

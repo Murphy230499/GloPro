@@ -39,3 +39,8 @@ out/
 scratch/
 .agent/
 .antigravityrules
+
+# Supabase temp config
+supabase/.temp/
+supabase/compiled_schema.sql
+
