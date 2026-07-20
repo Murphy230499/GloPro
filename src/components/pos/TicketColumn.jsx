@@ -425,7 +425,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                       </div>
                     </div>
                     <div className="mt-1.5">
-                      <StaffAssignPicker staff={staff} value={x.staff_id} onChange={(id, name) => updateCart(i, { staff_id: id, staff_name: name })} />
+                      <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} />
                     </div>
                   </div>
                 ))}
@@ -699,7 +699,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                               <span className="font-medium text-xs text-slate-700 truncate max-w-[240px]">{x.name}</span>
                               <span className="text-[10px] text-slate-400 font-semibold shrink-0">x{x.qty}</span>
                             </div>
-                            <StaffAssignPicker staff={staff} value={x.staff_id} onChange={(id, name) => updateCart(i, { staff_id: id, staff_name: name })} />
+                            <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} />
                           </div>
                         ))}
                       </div>

@@ -4,6 +4,7 @@ import { X, User, Calendar, DollarSign, Award, Percent, BookOpen } from 'lucide-
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import Avatar from '@/components/Avatar';
+import { calculateItemCommission } from '@/lib/commissionHelper';
 
 export default function StaffDetail({ staff, onClose }) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -19,7 +20,7 @@ export default function StaffDetail({ staff, onClose }) {
       try {
         const [svcs, rules, invs, scheds, tmpls] = await Promise.all([
           base44.entities.Service.filter({ is_active: true }),
-          base44.entities.StaffCommissionRule.filter({ staff_id: staff.id }),
+          base44.entities.StaffCommissionRule.list(),
           base44.entities.Invoice.list(),
           base44.entities.StaffSchedule.filter({ staff_id: staff.id }),
           base44.entities.ShiftTemplate.list()
@@ -52,29 +53,8 @@ export default function StaffDetail({ staff, onClose }) {
           const revenue = itemPrice * qty;
           totalRevenue += revenue;
 
-          // Find matching commission rule
-          // 1. Specific item rule
-          let rule = commissionRules.find(r => r.item_id === it.id || r.item_id === it.name);
-          // 2. Global rule for this item type
-          if (!rule) {
-            rule = commissionRules.find(r => r.item_type === it.type && r.item_id === 'all');
-          }
-          
-          let earned = 0;
-          let ruleLabel = 'Mặc định (30%)';
-          
-          if (rule) {
-            if (rule.commission_type === 'percent') {
-              earned = Math.round(revenue * (rule.commission_value / 100));
-              ruleLabel = `${rule.commission_value}%`;
-            } else {
-              earned = rule.commission_value * qty;
-              ruleLabel = `${formatVND(rule.commission_value)} / món`;
-            }
-          } else {
-            // Default 30% commission if no rule is found
-            earned = Math.round(revenue * 0.3);
-          }
+          // Compute using the unified helper
+          const { earned, ruleLabel } = calculateItemCommission(it, commissionRules);
 
           totalEarned += earned;
           list.push({

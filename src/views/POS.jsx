@@ -101,6 +101,7 @@ export default function POS() {
             qty: x.qty || 1,
             staff_id: x.staff_id || '',
             staff_name: x.staff_name || '',
+            is_customer_requested: !!x.is_customer_requested,
             balance: x.balance || 0,
             sessions: x.sessions || 10
           })),
@@ -205,7 +206,8 @@ export default function POS() {
               price: buyAgainPrice,
               qty: 1,
               staff_id: '',
-              staff_name: ''
+              staff_name: '',
+              is_customer_requested: false
             }],
             subtotal: buyAgainPrice,
             discount: 0,
@@ -368,6 +370,7 @@ export default function POS() {
               qty: Math.round(x.qty || 1), 
               staff_id: x.staff_id || '', 
               staff_name: x.staff_name || '',
+              is_customer_requested: !!x.is_customer_requested,
               balance: Math.round(x.balance || 0),
               sessions: Math.round(x.sessions || 10)
             };
@@ -435,6 +438,7 @@ export default function POS() {
             qty: 1, 
             staff_id: '', 
             staff_name: '',
+            is_customer_requested: false,
             balance: item.balance || item.face_value || 0,
             sessions: item.usage_count || item.sessions || 10,
             color: item.color
@@ -530,6 +534,7 @@ export default function POS() {
             qty: Math.round(x.qty || 1), 
             staff_id: x.staff_id || '', 
             staff_name: x.staff_name || '',
+            is_customer_requested: !!x.is_customer_requested,
             balance: Math.round(x.balance || 0),
             sessions: Math.round(x.sessions || 10)
           };
