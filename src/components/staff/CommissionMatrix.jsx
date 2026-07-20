@@ -229,27 +229,27 @@ export default function CommissionMatrix({ branchId }) {
         ) : (
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse table-fixed">
+              <table className="w-full text-left border-collapse table-fixed font-sans">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
-                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Dịch vụ / Sản phẩm</th>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
+                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold">Dịch vụ / Sản phẩm</th>
                     {staff.map(s => (
-                      <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px]">
+                      <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px] font-semibold">
                         <div className="flex flex-col items-center gap-1">
                           <Avatar src={s.avatar_url} name={s.full_name} size={24} color={s.avatar_color} />
-                          <span className="text-[10px] truncate max-w-[140px]">{s.full_name}</span>
+                          <span className="text-[10px] truncate max-w-[140px] font-semibold text-slate-600">{s.full_name}</span>
                         </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/20 transition-colors">
                       {/* Item Info (Sticky Left) */}
                       <td className="py-3 px-5 sticky left-0 bg-white z-10 border-r border-slate-100">
-                        <div className="font-bold text-xs text-slate-800 truncate max-w-[180px]">{item.name}</div>
-                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{formatVND(item.price || 0)}</div>
+                        <div className="font-semibold text-xs text-slate-750 truncate max-w-[180px]">{item.name}</div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">{formatVND(item.price || 0)}</div>
                       </td>
 
                       {/* Employee Columns */}
@@ -267,14 +267,14 @@ export default function CommissionMatrix({ branchId }) {
                         return (
                           <td key={s.id} className="py-2.5 px-3 border-r border-slate-100">
                             <div className="relative flex justify-center">
-                              <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-400 bg-white overflow-hidden px-2 py-1 w-28 shadow-sm">
+                              <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-primary focus-within:ring-1 focus-within:ring-primary bg-white overflow-hidden px-2 py-1 w-28 shadow-sm transition-all">
                                 <select 
                                   value={editObj.type}
                                   onChange={(e) => {
                                     handleUpdateEdit(cellKey, { type: e.target.value });
                                     handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
                                   }}
-                                  className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                                  className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
                                 >
                                   <option value="percent">%</option>
                                   <option value="vnd">đ</option>
@@ -286,7 +286,7 @@ export default function CommissionMatrix({ branchId }) {
                                   value={editObj.value || ''}
                                   onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
                                   onBlur={() => handleSaveCell(item.id, s.id, item.type)}
-                                  className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-350"
+                                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-350"
                                 />
                               </div>
                               {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
@@ -303,15 +303,15 @@ export default function CommissionMatrix({ branchId }) {
         )
       ) : (
         /* Render Custom Employee Config Views (customer_req, overtime, revenue) */
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-xl">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-xl font-sans">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
-                <th className="py-4 px-5">Nhân viên</th>
-                <th className="py-4 px-3 text-center w-[200px]">Mức hoa hồng</th>
+              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
+                <th className="py-4 px-5 font-semibold">Nhân viên</th>
+                <th className="py-4 px-3 text-center w-[200px] font-semibold">Mức hoa hồng</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
               {staff.map(s => {
                 const cellKey = `${activeTab}_${s.id}`;
                 const editObj = edits[cellKey] || { type: 'percent', value: 0 };
@@ -323,21 +323,21 @@ export default function CommissionMatrix({ branchId }) {
                       <div className="flex items-center gap-2.5">
                         <Avatar src={s.avatar_url} name={s.full_name} size={28} color={s.avatar_color} />
                         <div>
-                          <div className="font-bold text-xs text-slate-800">{s.full_name}</div>
-                          <span className="text-[9px] font-bold text-slate-400 capitalize">{s.role}</span>
+                          <div className="font-semibold text-xs text-slate-750">{s.full_name}</div>
+                          <span className="text-[9px] font-medium text-slate-400 capitalize">{s.role}</span>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-3">
                       <div className="relative flex justify-center">
-                        <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-400 bg-white overflow-hidden px-2 py-1 w-28 shadow-sm">
+                        <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-primary focus-within:ring-1 focus-within:ring-primary bg-white overflow-hidden px-2 py-1 w-28 shadow-sm transition-all">
                           <select 
                             value={editObj.type}
                             onChange={(e) => {
                               handleUpdateEdit(cellKey, { type: e.target.value });
                               handleSaveCell(activeTab, s.id, activeTab, editObj.value, e.target.value);
                             }}
-                            className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
+                            className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
                           >
                             <option value="percent">%</option>
                             <option value="vnd">đ</option>
@@ -348,7 +348,7 @@ export default function CommissionMatrix({ branchId }) {
                             value={editObj.value}
                             onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
                             onBlur={() => handleSaveCell(activeTab, s.id, activeTab)}
-                            className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5"
+                            className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5"
                           />
                         </div>
                         {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
