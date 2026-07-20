@@ -72,11 +72,11 @@ export default function SchedulerGrid({ branchId }) {
   // Dialog modal states for Copy Operations
   const [copyStaffModal, setCopyStaffModal] = useState(false);
   const [srcStaffId, setSrcStaffId] = useState('');
-  const [destStaffId, setDestStaffId] = useState('');
+  const [destStaffIds, setDestStaffIds] = useState([]);
 
   const [copyDayModal, setCopyDayModal] = useState(false);
   const [srcDay, setSrcDay] = useState('');
-  const [destDay, setDestDay] = useState('');
+  const [destDays, setDestDays] = useState([]);
 
   const [swapModal, setSwapModal] = useState(false);
   const [swapStaffA, setSwapStaffA] = useState('');
@@ -339,34 +339,35 @@ export default function SchedulerGrid({ branchId }) {
   };
 
   const handleCopyStaff = async () => {
-    if (!srcStaffId || !destStaffId) return toast.error('Vui lòng chọn đầy đủ nhân sự nguồn và nhân sự đích');
-    if (srcStaffId === destStaffId) return toast.error('Nhân sự nguồn và đích không được trùng nhau');
+    if (!srcStaffId || destStaffIds.length === 0) return toast.error('Vui lòng chọn nhân sự nguồn và ít nhất một nhân sự đích');
 
     try {
       // Get all current week's schedules for source staff
       const srcScheds = schedules.filter(s => s.staff_id === srcStaffId);
       
-      // Delete existing dest staff schedules for this week
-      const destExisting = schedules.filter(s => s.staff_id === destStaffId);
-      for (const old of destExisting) {
-        await base44.entities.StaffSchedule.delete(old.id);
+      for (const destStaffId of destStaffIds) {
+        // Delete existing dest staff schedules for this week
+        const destExisting = schedules.filter(s => s.staff_id === destStaffId);
+        for (const old of destExisting) {
+          await base44.entities.StaffSchedule.delete(old.id);
+        }
+
+        // Create new schedules
+        for (const s of srcScheds) {
+          await base44.entities.StaffSchedule.create({
+            staff_id: destStaffId,
+            date: s.date,
+            shift_template_id: s.shift_template_id || '',
+            is_off: s.is_off,
+            off_type: s.off_type || ''
+          });
+        }
       }
 
-      // Create new schedules
-      for (const s of srcScheds) {
-        await base44.entities.StaffSchedule.create({
-          staff_id: destStaffId,
-          date: s.date,
-          shift_template_id: s.shift_template_id || '',
-          is_off: s.is_off,
-          off_type: s.off_type || ''
-        });
-      }
-
-      toast.success('Đã sao chép ca xếp thành công');
+      toast.success('Đã sao chép lịch làm việc thành công');
       setCopyStaffModal(false);
       setSrcStaffId('');
-      setDestStaffId('');
+      setDestStaffIds([]);
       loadData();
     } catch (e) {
       toast.error('Lỗi sao chép: ' + (e.message || e));
@@ -374,34 +375,37 @@ export default function SchedulerGrid({ branchId }) {
   };
 
   const handleCopyDay = async () => {
-    if (!srcDay || !destDay) return toast.error('Vui lòng chọn ngày nguồn và ngày đích');
-    if (srcDay === destDay) return toast.error('Ngày nguồn và ngày đích không được trùng nhau');
+    if (!srcDay || destDays.length === 0) return toast.error('Vui lòng chọn ngày nguồn và ít nhất một ngày đích');
 
     try {
       // Get source schedules
       const srcScheds = schedules.filter(s => s.date === srcDay);
 
-      // Delete target date existing schedules
-      const targetExisting = await base44.entities.StaffSchedule.filter({ date: destDay });
-      for (const old of targetExisting) {
-        await base44.entities.StaffSchedule.delete(old.id);
-      }
+      for (const destDay of destDays) {
+        // Delete target date existing schedules
+        const promises = [base44.entities.StaffSchedule.filter({ date: destDay })];
+        const results = await Promise.all(promises);
+        const targetExisting = results.flat();
+        for (const old of targetExisting) {
+          await base44.entities.StaffSchedule.delete(old.id);
+        }
 
-      // Create copy
-      for (const s of srcScheds) {
-        await base44.entities.StaffSchedule.create({
-          staff_id: s.staff_id,
-          date: destDay,
-          shift_template_id: s.shift_template_id || '',
-          is_off: s.is_off,
-          off_type: s.off_type || ''
-        });
+        // Create copy
+        for (const s of srcScheds) {
+          await base44.entities.StaffSchedule.create({
+            staff_id: s.staff_id,
+            date: destDay,
+            shift_template_id: s.shift_template_id || '',
+            is_off: s.is_off,
+            off_type: s.off_type || ''
+          });
+        }
       }
 
       toast.success('Đã sao chép ca ngày thành công');
       setCopyDayModal(false);
       setSrcDay('');
-      setDestDay('');
+      setDestDays([]);
       loadData();
     } catch (e) {
       toast.error('Lỗi sao chép ngày: ' + (e.message || e));
@@ -485,13 +489,13 @@ export default function SchedulerGrid({ branchId }) {
             <Copy className="w-3.5 h-3.5" /> Sao chép tuần sau
           </button>
           <button 
-            onClick={() => { setSrcStaffId(''); setDestStaffId(''); setCopyStaffModal(true); }} 
+            onClick={() => { setSrcStaffId(''); setDestStaffIds([]); setCopyStaffModal(true); }} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs hover:bg-blue-100 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" /> Sao chép nhân sự
           </button>
           <button 
-            onClick={() => { setSrcDay(''); setDestDay(''); setCopyDayModal(true); }} 
+            onClick={() => { setSrcDay(''); setDestDays([]); setCopyDayModal(true); }} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-semibold text-xs hover:bg-emerald-100 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" /> Sao chép ca ngày
@@ -626,17 +630,35 @@ export default function SchedulerGrid({ branchId }) {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự nguồn (Sao chép từ)</label>
-                <select value={srcStaffId} onChange={(e) => setSrcStaffId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                <select value={srcStaffId} onChange={(e) => { setSrcStaffId(e.target.value); setDestStaffIds([]); }} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
                   <option value="">— Chọn nhân sự nguồn —</option>
                   {staff.map(x => <option key={x.id} value={x.id}>{x.full_name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự đích (Dán lịch đến)</label>
-                <select value={destStaffId} onChange={(e) => setDestStaffId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                  <option value="">— Chọn nhân sự đích —</option>
-                  {staff.map(x => <option key={x.id} value={x.id}>{x.full_name}</option>)}
-                </select>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự đích (Chọn các nhân sự dán lịch đến)</label>
+                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
+                  {staff.filter(x => x.id !== srcStaffId).map(x => (
+                    <label key={x.id} className="flex items-center gap-2 text-xs text-slate-750 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={destStaffIds.includes(x.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setDestStaffIds([...destStaffIds, x.id]);
+                          } else {
+                            setDestStaffIds(destStaffIds.filter(id => id !== x.id));
+                          }
+                        }}
+                        className="rounded border-slate-300 text-purple-650 focus:ring-purple-500 w-3.5 h-3.5"
+                      />
+                      <span>{x.full_name}</span>
+                    </label>
+                  ))}
+                  {staff.filter(x => x.id !== srcStaffId).length === 0 && (
+                    <span className="text-[10px] text-slate-400 italic">Chọn nhân sự nguồn trước</span>
+                  )}
+                </div>
               </div>
             </div>
             <button onClick={handleCopyStaff} className="w-full py-2.5 bg-purple-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-purple-600 transition-colors">Bắt đầu sao chép</button>
@@ -655,17 +677,35 @@ export default function SchedulerGrid({ branchId }) {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày nguồn (Sao chép từ)</label>
-                <select value={srcDay} onChange={(e) => setSrcDay(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                <select value={srcDay} onChange={(e) => { setSrcDay(e.target.value); setDestDays([]); }} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
                   <option value="">— Chọn ngày nguồn —</option>
                   {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d)}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày đích (Dán lịch đến)</label>
-                <select value={destDay} onChange={(e) => setDestDay(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                  <option value="">— Chọn ngày đích —</option>
-                  {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d)}</option>)}
-                </select>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày đích (Chọn các ngày dán lịch đến)</label>
+                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
+                  {weekDays.filter(d => d !== srcDay).map(d => (
+                    <label key={d} className="flex items-center gap-2 text-xs text-slate-755 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={destDays.includes(d)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setDestDays([...destDays, d]);
+                          } else {
+                            setDestDays(destDays.filter(day => day !== d));
+                          }
+                        }}
+                        className="rounded border-slate-300 text-purple-655 focus:ring-purple-500 w-3.5 h-3.5"
+                      />
+                      <span>{formatDateHeader(d)}</span>
+                    </label>
+                  ))}
+                  {!srcDay && (
+                    <span className="text-[10px] text-slate-400 italic">Chọn ngày nguồn trước</span>
+                  )}
+                </div>
               </div>
             </div>
             <button onClick={handleCopyDay} className="w-full py-2.5 bg-purple-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-purple-600 transition-colors">Bắt đầu sao chép</button>
