@@ -73,6 +73,15 @@ export default function StaffPage() {
     let stList = [];
     try {
       stList = await base44.entities.Staff.filter(filter);
+      const local = localStorage.getItem('glopro_staff');
+      if (stList.length === 0 && local) {
+        const parsed = JSON.parse(local);
+        for (const st of parsed) {
+          const { id, ...data } = st;
+          await base44.entities.Staff.create(data);
+        }
+        stList = await base44.entities.Staff.filter(filter);
+      }
     } catch (e) {
       console.error('Lỗi tải nhân viên từ API:', e);
       const local = localStorage.getItem('glopro_staff');
@@ -82,6 +91,15 @@ export default function StaffPage() {
     let gpList = [];
     try {
       gpList = await base44.entities.StaffGroup.list();
+      const localGps = localStorage.getItem('glopro_staff_groups');
+      if (gpList.length === 0 && localGps) {
+        const parsed = JSON.parse(localGps);
+        for (const g of parsed) {
+          const { id, ...data } = g;
+          await base44.entities.StaffGroup.create(data);
+        }
+        gpList = await base44.entities.StaffGroup.list();
+      }
     } catch (e) {
       console.error('Lỗi tải nhóm nhân viên từ API:', e);
       const localGps = localStorage.getItem('glopro_staff_groups');
