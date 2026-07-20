@@ -168,25 +168,6 @@ export default function CommissionMatrix({ branchId }) {
 
   return (
     <div className="space-y-4">
-      {/* Configuration Selection Bar */}
-      <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Sliders className="w-5 h-5 text-purple-500 shrink-0" />
-          <div>
-            <h4 className="text-sm font-bold text-slate-800">Cấu hình Hoa hồng Nhân viên</h4>
-            <p className="text-[10px] text-slate-400 mt-0.5">Chọn nhân viên cụ thể hoặc mặc định toàn hệ thống để cài đặt tỷ lệ nhận tiền</p>
-          </div>
-        </div>
-
-        <select
-          value={selectedStaffId}
-          onChange={(e) => setSelectedStaffId(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-purple-400 bg-white"
-        >
-          <option value="all">⭐ Mặc định Toàn hệ thống (Default)</option>
-          {staff.map(s => <option key={s.id} value={s.id}>👤 {s.full_name} ({s.role})</option>)}
-        </select>
-      </div>
 
       {/* Tab Navigation */}
       <div className="flex border-b border-slate-100 px-3">
