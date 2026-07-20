@@ -202,6 +202,9 @@ export default function CommissionMatrix({ branchId }) {
             className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors shrink-0 ${activeTab === t.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             {t.label}
+          </button>
+        ))}
+      </div>
       {/* Filter and search bar */}
       {isMatrixTab && (
         <div className="flex items-center gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 focus-within:border-primary shadow-sm max-w-sm transition-all">
