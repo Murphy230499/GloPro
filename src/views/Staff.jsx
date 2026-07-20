@@ -34,7 +34,7 @@ const ROLES = {
 const MAIN_TABS = [
   { id: 'staff', label: 'Quản lý Nhân viên', icon: Users },
   { id: 'schedule', label: 'Lịch làm việc', icon: CalendarCheck2 },
-  { id: 'attendance', label: 'Theo dõi Chấm công', icon: UserRoundCog },
+  { id: 'attendance', label: 'Chấm công', icon: UserRoundCog },
   { id: 'commission', label: 'Hoa hồng Nhân viên', icon: Award },
 ];
 
