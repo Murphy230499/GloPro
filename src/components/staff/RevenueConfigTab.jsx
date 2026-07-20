@@ -207,7 +207,8 @@ export default function RevenueConfigTab({
                 type="text" 
                 value={rule.name}
                 onChange={(e) => handleUpdateRule(rule.id, { name: e.target.value })}
-                className="text-sm font-bold text-slate-800 outline-none border-b border-transparent hover:border-slate-200 focus:border-primary pb-0.5 bg-transparent w-72"
+                placeholder="nhập tên tùy chọn thưởng"
+                className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-750 bg-white outline-none focus:border-primary w-72 shadow-sm placeholder:text-slate-400/45 placeholder:font-normal placeholder:lowercase"
               />
               <button 
                 onClick={() => handleDeleteRule(rule.id)}
@@ -226,15 +227,15 @@ export default function RevenueConfigTab({
                 <button
                   type="button"
                   onClick={() => { setActiveStaffDrop(isStaffDropOpen ? null : rule.id); setActiveItemDrop(null); }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
                 >
                   <span className="truncate">
                     {rule.staff_ids.length === 0 
-                      ? 'Chọn nhân viên áp dụng' 
+                      ? 'chọn nhân viên áp dụng' 
                       : staff.filter(s => rule.staff_ids.includes(s.id)).map(s => s.full_name).join(', ')
                     }
                   </span>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                  <ChevronDown className="w-4 h-4 text-slate-450 shrink-0 ml-2" />
                 </button>
 
                 {isStaffDropOpen && (
@@ -313,15 +314,15 @@ export default function RevenueConfigTab({
                 <button
                   type="button"
                   onClick={() => { setActiveItemDrop(isItemDropOpen ? null : rule.id); setActiveStaffDrop(null); }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
                 >
                   <span className="truncate">
                     {rule.item_ids.length === 0 
-                      ? 'Chọn dịch vụ / sản phẩm áp dụng' 
-                      : `Đã chọn ${rule.item_ids.length} mục`
+                      ? 'chọn dịch vụ / sản phẩm áp dụng' 
+                      : `đã chọn ${rule.item_ids.length} mục`
                     }
                   </span>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                  <ChevronDown className="w-4 h-4 text-slate-450 shrink-0 ml-2" />
                 </button>
 
                 {isItemDropOpen && (
@@ -454,7 +455,7 @@ export default function RevenueConfigTab({
                         <span className="text-[10px] text-slate-450 font-bold shrink-0">Từ</span>
                         <input 
                           type="number"
-                          placeholder="Nhập giá trị"
+                          placeholder="nhập giá trị"
                           value={range.from || ''}
                           onChange={(e) => {
                             const val = Math.max(0, Number(e.target.value) || 0);
@@ -462,12 +463,12 @@ export default function RevenueConfigTab({
                               ranges: rule.ranges.map((rg, idx) => idx === index ? { ...rg, from: val } : rg)
                             });
                           }}
-                          className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-full shadow-sm"
+                          className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-normal text-slate-700 bg-white outline-none focus:border-primary w-full shadow-sm placeholder:text-slate-400/40 placeholder:font-normal placeholder:lowercase"
                         />
                         <span className="text-[10px] text-slate-450 font-bold shrink-0">Đến</span>
                         <input 
                           type="number"
-                          placeholder="Nhập giá trị"
+                          placeholder="nhập giá trị"
                           value={range.to || ''}
                           onChange={(e) => {
                             const val = Math.max(0, Number(e.target.value) || 0);
@@ -475,16 +476,16 @@ export default function RevenueConfigTab({
                               ranges: rule.ranges.map((rg, idx) => idx === index ? { ...rg, to: val } : rg)
                             });
                           }}
-                          className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-full shadow-sm"
+                          className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-normal text-slate-700 bg-white outline-none focus:border-primary w-full shadow-sm placeholder:text-slate-400/40 placeholder:font-normal placeholder:lowercase"
                         />
                       </div>
 
                       {/* Reward Surcharges Inputs */}
                       <div className="col-span-3">
-                        <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 w-full shadow-sm focus-within:border-primary">
+                        <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-3 py-2 w-full shadow-sm focus-within:border-primary">
                           <input 
                             type="number"
-                            placeholder="Nhập giá trị"
+                            placeholder="nhập giá trị"
                             value={range.value || ''}
                             onChange={(e) => {
                               const val = Math.max(0, Number(e.target.value) || 0);
@@ -492,7 +493,7 @@ export default function RevenueConfigTab({
                                 ranges: rule.ranges.map((rg, idx) => idx === index ? { ...rg, value: val } : rg)
                               });
                             }}
-                            className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-1 placeholder:text-slate-400/40"
+                            className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-1 placeholder:text-slate-400/40 placeholder:font-normal placeholder:lowercase"
                           />
                           <select 
                             value={range.type}
