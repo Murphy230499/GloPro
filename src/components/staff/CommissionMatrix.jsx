@@ -16,8 +16,8 @@ const TABS = [
   { id: 'product_combo', label: 'Combo sản phẩm' },
   { id: 'prepaid_card', label: 'Thẻ tiền mặt' },
   { id: 'customer_req', label: 'Khách yêu cầu' },
-  { id: 'overtime', label: 'HH theo khung giờ' },
-  { id: 'revenue', label: 'HH doanh thu' }
+  { id: 'overtime', label: 'Theo khung giờ' },
+  { id: 'revenue', label: 'Doanh thu' }
 ];
 
 const translateRole = (role) => {

@@ -221,7 +221,7 @@ export default function StaffDetail({ staff, onClose }) {
                       <div className="text-base font-bold text-slate-800 mt-1">{formatVND(commData.totalRevenue)}</div>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng & Thưởng tích lũy</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng tích lũy</div>
                       <div className="text-base font-bold text-purple-600 mt-1">
                         {formatVND(commData.totalEarned + calculateRevenueBonus(staff.id, invoices, revenueBonusRules).totalBonus)}
                       </div>
@@ -269,7 +269,7 @@ export default function StaffDetail({ staff, onClose }) {
                     if (revBonus.details.length === 0) return null;
                     return (
                       <div className="space-y-3 pt-2">
-                        <h3 className="font-bold text-sm text-slate-800">Thưởng doanh thu đạt được ({revBonus.details.length})</h3>
+                        <h3 className="font-bold text-sm text-slate-800">Hoa hồng doanh thu đạt được ({revBonus.details.length})</h3>
                         <div className="space-y-3">
                           {revBonus.details.map((bonus, idx) => (
                             <div key={idx} className="p-4 bg-purple-50/40 border border-purple-100 rounded-2xl shadow-xs space-y-2">

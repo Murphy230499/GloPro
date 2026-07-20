@@ -53,7 +53,7 @@ export default function RevenueConfigTab({
         const list = await base44.entities.RevenueBonusRule.list();
         setRules(list || []);
       } catch (e) {
-        console.error('Lỗi tải cấu hình thưởng doanh thu:', e);
+        console.error('Lỗi tải cấu hình hoa hồng doanh thu:', e);
         const local = localStorage.getItem('glopro_revenue_bonus_rules');
         setRules(local ? JSON.parse(local) : []);
       }
@@ -79,7 +79,7 @@ export default function RevenueConfigTab({
   const handleAddRuleOption = () => {
     const newRule = {
       id: 'new_' + Date.now(),
-      name: 'Thưởng doanh thu mới',
+      name: 'Hoa hồng doanh thu mới',
       staff_ids: [],
       item_ids: [],
       mechanism: 'threshold', // threshold | tiered
@@ -104,7 +104,7 @@ export default function RevenueConfigTab({
     try {
       await base44.entities.RevenueBonusRule.delete(ruleId);
       setRules(rules.filter(r => r.id !== ruleId));
-      toast.success('Đã xóa cấu hình thưởng doanh thu!');
+      toast.success('Đã xóa cấu hình hoa hồng doanh thu!');
     } catch (e) {
       toast.error('Lỗi khi xóa: ' + (e.message || e));
     }
@@ -116,7 +116,7 @@ export default function RevenueConfigTab({
       for (const rule of rules) {
         // Validate
         if (!rule.name.trim()) {
-          toast.error("Vui lòng nhập tên cho cấu hình thưởng!");
+          toast.error("Vui lòng nhập tên cho cấu hình hoa hồng!");
           setSaving(false);
           return;
         }
@@ -143,9 +143,9 @@ export default function RevenueConfigTab({
       
       const list = await base44.entities.RevenueBonusRule.list();
       setRules(list || []);
-      toast.success('Cập nhật cấu hình thưởng doanh thu thành công!');
+      toast.success('Cập nhật cấu hình hoa hồng doanh thu thành công!');
     } catch (e) {
-      console.error('Lỗi khi lưu cấu hình thưởng doanh thu:', e);
+      console.error('Lỗi khi lưu cấu hình hoa hồng doanh thu:', e);
       toast.error('Lỗi khi lưu: ' + (e.message || e));
     }
     setSaving(false);
@@ -182,8 +182,8 @@ export default function RevenueConfigTab({
       {/* Header Block */}
       <div className="flex justify-between items-center bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
         <div>
-          <h2 className="font-bold text-slate-800 text-sm">Thưởng theo doanh thu</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Nhân viên sẽ được thưởng khi tổng doanh thu kỳ lương đạt mức đã cài đặt</p>
+          <h2 className="font-bold text-slate-800 text-sm">Hoa hồng theo doanh thu</h2>
+          <p className="text-[10px] text-slate-400 mt-1">Nhân viên sẽ được nhận hoa hồng khi tổng doanh thu kỳ lương đạt mức đã cài đặt</p>
         </div>
         <button 
           onClick={handleSaveAll}
@@ -204,12 +204,12 @@ export default function RevenueConfigTab({
             {/* Rule Header Card */}
             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tên tùy chọn thưởng</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tên cấu hình hoa hồng</span>
                 <input 
                   type="text" 
                   value={rule.name}
                   onChange={(e) => handleUpdateRule(rule.id, { name: e.target.value })}
-                  placeholder="nhập tên tùy chọn thưởng"
+                  placeholder="nhập tên cấu hình hoa hồng"
                   className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-750 bg-white outline-none focus:border-primary w-80 shadow-sm placeholder:text-slate-400/45 placeholder:font-normal placeholder:lowercase"
                 />
               </div>
@@ -420,7 +420,7 @@ export default function RevenueConfigTab({
             {/* Rates Table Configuration */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cài đặt tỉ lệ thưởng</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cài đặt tỉ lệ hoa hồng</span>
                 
                 {/* Threshold vs Tiered Mode Toggles */}
                 <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-150 shadow-xs">
@@ -445,7 +445,7 @@ export default function RevenueConfigTab({
               <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50 shadow-sm p-4 space-y-3">
                 <div className="grid grid-cols-12 gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider pb-1 px-1.5">
                   <div className="col-span-8">Mức doanh thu</div>
-                  <div className="col-span-3 text-right">Tỉ lệ thưởng</div>
+                  <div className="col-span-3 text-right">Tỉ lệ hoa hồng</div>
                   <div className="col-span-1"></div>
                 </div>
 
@@ -556,7 +556,7 @@ export default function RevenueConfigTab({
         className="flex items-center justify-center gap-1.5 w-full py-3.5 rounded-2xl border border-dashed border-slate-200 hover:border-primary text-slate-450 hover:text-primary font-bold text-xs transition-colors bg-slate-50/50 shadow-sm"
       >
         <Plus className="w-4 h-4" />
-        Thêm tùy chọn thưởng
+        Thêm tùy chọn hoa hồng
       </button>
     </div>
   );
