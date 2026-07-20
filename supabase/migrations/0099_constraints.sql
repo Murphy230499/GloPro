@@ -31,6 +31,6 @@ ALTER TABLE staff ADD CONSTRAINT fk_staff_group_id FOREIGN KEY (group_id) REFERE
 ALTER TABLE staffattendance ADD CONSTRAINT fk_staffattendance_staff_id FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL;
 ALTER TABLE staffcommissionrule ADD CONSTRAINT fk_staffcommissionrule_staff_id FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL;
 ALTER TABLE staffschedule ADD CONSTRAINT fk_staffschedule_staff_id FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL;
-ALTER TABLE staffschedule ADD CONSTRAINT fk_staffschedule_shift_template_id FOREIGN KEY (shift_template_id) REFERENCES shift(id) ON DELETE SET NULL;
+ALTER TABLE staffschedule ADD CONSTRAINT fk_staffschedule_shift_template_id FOREIGN KEY (shift_template_id) REFERENCES shifttemplate(id) ON DELETE SET NULL;
 ALTER TABLE treatment ADD CONSTRAINT fk_treatment_group_id FOREIGN KEY (group_id) REFERENCES customergroup(id) ON DELETE SET NULL;
 ALTER TABLE treatment ADD CONSTRAINT fk_treatment_branch_id FOREIGN KEY (branch_id) REFERENCES branch(id) ON DELETE SET NULL;
