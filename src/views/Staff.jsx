@@ -74,14 +74,28 @@ export default function StaffPage() {
     try {
       stList = await base44.entities.Staff.filter(filter);
       const local = localStorage.getItem('glopro_staff');
-      if (stList.length === 0 && local && !localStorage.getItem('glopro_staff_synced')) {
+      if (stList.length === 0 && local) {
         const parsed = JSON.parse(local);
+        const idMap = {};
         for (const st of parsed) {
           const { id, ...data } = st;
-          await base44.entities.Staff.create(data);
+          const created = await base44.entities.Staff.create(data);
+          if (created && created.id) {
+            idMap[id] = created.id;
+          }
         }
-        localStorage.setItem('glopro_staff_synced', 'true');
+        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
         stList = await base44.entities.Staff.filter(filter);
+      } else if (local) {
+        const parsed = JSON.parse(local);
+        const idMap = {};
+        for (const st of parsed) {
+          const matched = stList.find(x => x.name === st.name || x.phone === st.phone);
+          if (matched) {
+            idMap[st.id] = matched.id;
+          }
+        }
+        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
       }
     } catch (e) {
       console.error('Lỗi tải nhân viên từ API:', e);
@@ -93,14 +107,28 @@ export default function StaffPage() {
     try {
       gpList = await base44.entities.StaffGroup.list();
       const localGps = localStorage.getItem('glopro_staff_groups');
-      if (gpList.length === 0 && localGps && !localStorage.getItem('glopro_staff_groups_synced')) {
+      if (gpList.length === 0 && localGps) {
         const parsed = JSON.parse(localGps);
+        const idMap = {};
         for (const g of parsed) {
           const { id, ...data } = g;
-          await base44.entities.StaffGroup.create(data);
+          const created = await base44.entities.StaffGroup.create(data);
+          if (created && created.id) {
+            idMap[id] = created.id;
+          }
         }
-        localStorage.setItem('glopro_staff_groups_synced', 'true');
+        localStorage.setItem('glopro_group_id_map', JSON.stringify(idMap));
         gpList = await base44.entities.StaffGroup.list();
+      } else if (localGps) {
+        const parsed = JSON.parse(localGps);
+        const idMap = {};
+        for (const g of parsed) {
+          const matched = gpList.find(x => x.name === g.name);
+          if (matched) {
+            idMap[g.id] = matched.id;
+          }
+        }
+        localStorage.setItem('glopro_group_id_map', JSON.stringify(idMap));
       }
     } catch (e) {
       console.error('Lỗi tải nhóm nhân viên từ API:', e);

@@ -93,14 +93,28 @@ export default function SchedulerGrid({ branchId }) {
     try {
       stList = await base44.entities.Staff.filter(filter);
       const localStaff = localStorage.getItem('glopro_staff');
-      if (stList.length === 0 && localStaff && !localStorage.getItem('glopro_staff_synced')) {
+      if (stList.length === 0 && localStaff) {
         const parsed = JSON.parse(localStaff);
+        const idMap = {};
         for (const st of parsed) {
           const { id, ...data } = st;
-          await base44.entities.Staff.create(data);
+          const created = await base44.entities.Staff.create(data);
+          if (created && created.id) {
+            idMap[id] = created.id;
+          }
         }
-        localStorage.setItem('glopro_staff_synced', 'true');
+        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
         stList = await base44.entities.Staff.filter(filter);
+      } else if (localStaff) {
+        const parsed = JSON.parse(localStaff);
+        const idMap = {};
+        for (const st of parsed) {
+          const matched = stList.find(x => x.name === st.name || x.phone === st.phone);
+          if (matched) {
+            idMap[st.id] = matched.id;
+          }
+        }
+        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
       }
     } catch (e) {
       console.error('Lỗi khi tải danh sách nhân viên xếp lịch từ API:', e);
@@ -112,14 +126,28 @@ export default function SchedulerGrid({ branchId }) {
     try {
       tmplList = await base44.entities.ShiftTemplate.list();
       const localTemplates = localStorage.getItem('glopro_shift_templates');
-      if (tmplList.length === 0 && localTemplates && !localStorage.getItem('glopro_shift_templates_synced')) {
+      if (tmplList.length === 0 && localTemplates) {
         const parsed = JSON.parse(localTemplates);
+        const idMap = {};
         for (const t of parsed) {
           const { id, ...data } = t;
-          await base44.entities.ShiftTemplate.create(data);
+          const created = await base44.entities.ShiftTemplate.create(data);
+          if (created && created.id) {
+            idMap[id] = created.id;
+          }
         }
-        localStorage.setItem('glopro_shift_templates_synced', 'true');
+        localStorage.setItem('glopro_tmpl_id_map', JSON.stringify(idMap));
         tmplList = await base44.entities.ShiftTemplate.list();
+      } else if (localTemplates) {
+        const parsed = JSON.parse(localTemplates);
+        const idMap = {};
+        for (const t of parsed) {
+          const matched = tmplList.find(x => x.name === t.name);
+          if (matched) {
+            idMap[t.id] = matched.id;
+          }
+        }
+        localStorage.setItem('glopro_tmpl_id_map', JSON.stringify(idMap));
       }
     } catch (e) {
       console.error('Lỗi khi tải ca làm việc mẫu từ API:', e);
@@ -136,9 +164,23 @@ export default function SchedulerGrid({ branchId }) {
       const localSchedules = localStorage.getItem('glopro_staff_schedules');
       if (schedList.length === 0 && localSchedules && !localStorage.getItem('glopro_staff_schedules_synced')) {
         const parsed = JSON.parse(localSchedules);
+        const staffMap = JSON.parse(localStorage.getItem('glopro_staff_id_map') || '{}');
+        const tmplMap = JSON.parse(localStorage.getItem('glopro_tmpl_id_map') || '{}');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        
         for (const s of parsed) {
           const { id, ...data } = s;
-          await base44.entities.StaffSchedule.create(data);
+          if (staffMap[data.staff_id]) {
+            data.staff_id = staffMap[data.staff_id];
+          }
+          if (tmplMap[data.shift_template_id]) {
+            data.shift_template_id = tmplMap[data.shift_template_id];
+          }
+          const isStaffUuidValid = uuidRegex.test(data.staff_id);
+          const isTmplUuidValid = !data.shift_template_id || uuidRegex.test(data.shift_template_id);
+          if (isStaffUuidValid && isTmplUuidValid) {
+            await base44.entities.StaffSchedule.create(data);
+          }
         }
         localStorage.setItem('glopro_staff_schedules_synced', 'true');
         schedList = await base44.entities.StaffSchedule.filter({
