@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
@@ -5,6 +6,7 @@ const translations = {
     'nav.dashboard': 'Tổng quan', 'nav.appointments': 'Lịch hẹn', 'nav.pos': 'Thu ngân',
     'nav.customers': 'Khách hàng', 'nav.staff': 'Nhân viên', 'nav.catalog': 'Danh mục',
     'nav.reports': 'Báo cáo', 'nav.settings': 'Cài đặt', 'nav.more': 'Khác', 'nav.all_features': 'Tất cả chức năng',
+    'nav.discounts': 'Giảm giá',
     'top.all_branches': 'Tất cả cơ sở',
     'common.add': 'Thêm', 'common.edit': 'Sửa', 'common.delete': 'Xoá', 'common.save': 'Lưu',
     'common.cancel': 'Huỷ', 'common.loading': 'Đang tải...', 'common.search': 'Tìm...', 'common.manage_groups': 'Quản lý nhóm',
@@ -18,6 +20,7 @@ const translations = {
     'nav.dashboard': 'Overview', 'nav.appointments': 'Appointments', 'nav.pos': 'Checkout',
     'nav.customers': 'Customers', 'nav.staff': 'Staff', 'nav.catalog': 'Catalog',
     'nav.reports': 'Reports', 'nav.settings': 'Settings', 'nav.more': 'More', 'nav.all_features': 'All features',
+    'nav.discounts': 'Discounts',
     'top.all_branches': 'All branches',
     'common.add': 'Add', 'common.edit': 'Edit', 'common.delete': 'Delete', 'common.save': 'Save',
     'common.cancel': 'Cancel', 'common.loading': 'Loading...', 'common.search': 'Search...', 'common.manage_groups': 'Manage groups',
@@ -31,6 +34,7 @@ const translations = {
     'nav.dashboard': '概览', 'nav.appointments': '预约', 'nav.pos': '收银',
     'nav.customers': '客户', 'nav.staff': '员工', 'nav.catalog': '目录',
     'nav.reports': '报告', 'nav.settings': '设置', 'nav.more': '更多', 'nav.all_features': '所有功能',
+    'nav.discounts': '折扣',
     'top.all_branches': '所有门店',
     'common.add': '添加', 'common.edit': '编辑', 'common.delete': '删除', 'common.save': '保存',
     'common.cancel': '取消', 'common.loading': '加载中...', 'common.search': '搜索...', 'common.manage_groups': '管理分组',
@@ -44,6 +48,7 @@ const translations = {
     'nav.dashboard': '개요', 'nav.appointments': '예약', 'nav.pos': '결제',
     'nav.customers': '고객', 'nav.staff': '직원', 'nav.catalog': '카탈로그',
     'nav.reports': '보고서', 'nav.settings': '설정', 'nav.more': '더보기', 'nav.all_features': '전체 기능',
+    'nav.discounts': '할인',
     'top.all_branches': '전체 지점',
     'common.add': '추가', 'common.edit': '수정', 'common.delete': '삭제', 'common.save': '저장',
     'common.cancel': '취소', 'common.loading': '로딩중...', 'common.search': '검색...', 'common.manage_groups': '그룹 관리',
@@ -57,6 +62,7 @@ const translations = {
     'nav.dashboard': '概要', 'nav.appointments': '予約', 'nav.pos': 'レジ',
     'nav.customers': '顧客', 'nav.staff': 'スタッフ', 'nav.catalog': 'カタログ',
     'nav.reports': 'レポート', 'nav.settings': '設定', 'nav.more': 'その他', 'nav.all_features': '全機能',
+    'nav.discounts': '割引',
     'top.all_branches': '全店舗',
     'common.add': '追加', 'common.edit': '編集', 'common.delete': '削除', 'common.save': '保存',
     'common.cancel': 'キャンセル', 'common.loading': '読み込み中...', 'common.search': '検索...', 'common.manage_groups': 'グループ管理',
@@ -68,13 +74,17 @@ const translations = {
   },
 };
 
-const LanguageContext = createContext();
+const LanguageContext = createContext({
+  lang: 'vi',
+  setLang: () => {},
+  t: (key) => key,
+});
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'vi');
+  const [lang, setLang] = useState(() => typeof window !== 'undefined' ? (localStorage.getItem('app_lang') || 'vi') : 'vi');
 
   useEffect(() => {
-    localStorage.setItem('app_lang', lang);
+    if (typeof window !== 'undefined') localStorage.setItem('app_lang', lang);
   }, [lang]);
 
   const t = (key) => translations[lang]?.[key] || translations.en?.[key] || key;

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
@@ -44,11 +45,11 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{item?.id ? 'Sửa thẻ tiền mặt' : 'Tạo thẻ tiền mặt'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{item?.id ? 'Sửa thẻ tiền mặt' : 'Tạo thẻ tiền mặt'}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="mb-5 max-w-[300px] mx-auto">
@@ -57,35 +58,35 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Tên thẻ *</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên thẻ *</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="VD: Thẻ VIP 500K" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              placeholder="VD: Thẻ VIP 500K" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Mã thẻ</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mã thẻ</label>
             <div className="flex gap-2">
               <input value={form.card_code} onChange={(e) => setForm({ ...form, card_code: e.target.value })}
                 className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono" />
               <button onClick={() => setForm({ ...form, card_code: genCardCode() })}
-                className="px-3 py-2.5 rounded-xl bg-slate-100 text-sm font-medium">Random</button>
+                className="px-3 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-200 transition-colors text-xs font-bold text-slate-600">Random</button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Mệnh giá (₫)</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mệnh giá (₫)</label>
               <input type="number" value={form.face_value || ''} onChange={(e) => setForm({ ...form, face_value: Number(e.target.value) || 0 })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
               <div className="text-xs text-slate-400 mt-1">{formatVND(form.face_value)}</div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Giá bán (₫)</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giá bán (₫)</label>
               <input type="number" value={form.selling_price || ''} onChange={(e) => setForm({ ...form, selling_price: Number(e.target.value) || 0 })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
               <div className="text-xs text-slate-400 mt-1">{formatVND(form.selling_price)}</div>
             </div>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Màu thẻ</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Màu thẻ</label>
             <div className="flex items-center gap-2 flex-wrap">
               {COLORS.map((c) => (
                 <button key={c.v} onClick={() => setForm({ ...form, color: c.v })}
@@ -95,20 +96,20 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
             </div>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Hạn sử dụng (tháng)</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Hạn sử dụng (tháng)</label>
             <input type="number" value={form.expiry_months || ''} onChange={(e) => setForm({ ...form, expiry_months: Number(e.target.value) || 0 })}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" placeholder="0 = không giới hạn" />
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" placeholder="0 = không giới hạn" />
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Mô tả</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mô tả</label>
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm resize-none" />
+              rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white resize-none" />
           </div>
           <ImageUpload label="Ảnh (tuỳ chọn)" value={form.image_url} onChange={(v) => setForm({ ...form, image_url: v })} />
         </div>
 
         <button onClick={submit} disabled={!form.name.trim()}
-          className="w-full mt-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm disabled:opacity-50">
+          className="w-full mt-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans disabled:opacity-50">
           {item?.id ? 'Lưu thay đổi' : 'Tạo thẻ'}
         </button>
       </div>

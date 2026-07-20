@@ -42,9 +42,36 @@
       "type": "string",
       "format": "date"
     },
+    "color": {
+      "type": "string"
+    },
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "invoice_code": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "completed",
+        "deleted"
+      ],
+      "default": "active"
+    },
+    "is_deleted": {
+      "type": "boolean",
+      "default": false
+    },
+    "suspended_at": {
+      "type": "string",
+      "format": "date"
     }
   },
   "required": [

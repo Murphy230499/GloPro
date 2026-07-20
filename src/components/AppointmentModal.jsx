@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -15,13 +16,14 @@ const SOURCES = [
 
 const emptyRow = () => ({ service_id: '', service_name: '', price: 0, duration_minutes: 0, staff_id: '', staff_name: '' });
 
-export default function AppointmentModal({ open, onClose, onSaved, branchId, defaultDate, editing }) {
+export default function AppointmentModal({ open, onClose, onSaved, branchId, defaultDate, editing, defaultCustomer }) {
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
   const [form, setForm] = useState({});
   const [rows, setRows] = useState([emptyRow()]);
   const [saving, setSaving] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +45,7 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
         ...editing,
         date: editing.date || defaultDate || new Date().toISOString().slice(0, 10)
       });
+      setIsNewCustomer(!editing.customer_id && !!editing.customer_name);
       if (editing.services && editing.services.length) {
         setRows(editing.services.map((s) => ({
           service_id: s.service_id || '', service_name: s.service_name || '',
@@ -60,14 +63,16 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
         start_time: '09:00',
         source: 'reception',
         status: 'confirmed',
-        customer_name: '',
-        customer_phone: '',
+        customer_id: defaultCustomer?.id || '',
+        customer_name: defaultCustomer?.name || '',
+        customer_phone: defaultCustomer?.phone || '',
         note: '',
         is_customer_requested_staff: false
       });
+      setIsNewCustomer(false);
       setRows([emptyRow()]);
     }
-  }, [open, editing, defaultDate]);
+  }, [open, editing, defaultDate, defaultCustomer]);
 
   if (!open) return null;
 
@@ -101,12 +106,14 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
 
   const onCustomerChange = (id, name, phone) => {
     if (id === 'new') {
+      setIsNewCustomer(true);
       set('customer_id', '');
       set('customer_name', '');
       set('customer_phone', '');
       return;
     }
     if (id) {
+      setIsNewCustomer(false);
       set('customer_id', id);
       set('customer_name', name);
       set('customer_phone', phone || '');
@@ -116,7 +123,11 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
   const totalPrice = rows.reduce((s, r) => s + (r.price || 0), 0);
 
   const save = async () => {
-    if (!form.customer_name) return toast.error('Vui lòng nhập tên khách');
+    if (isNewCustomer) {
+      if (!form.customer_name?.trim()) return toast.error('Vui lòng nhập tên khách');
+    } else {
+      if (!form.customer_id) return toast.error('Vui lòng chọn khách hàng');
+    }
     if (!form.date || !form.start_time) return toast.error('Thiếu ngày/giờ hẹn');
     const validRows = rows.filter((r) => r.service_id);
     setSaving(true);
@@ -159,43 +170,51 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{editing ? 'Sửa lịch hẹn' : 'Tạo lịch hẹn'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+          <h2 className="text-base font-bold text-slate-800 font-sans">{editing ? 'Sửa lịch hẹn' : 'Tạo lịch hẹn'}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Khách hàng</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Khách hàng</label>
             <CustomerPicker
               customers={customers}
               value={form.customer_id || ''}
               onAddNew={() => onCustomerChange('new')}
               onChange={(id, name, phone) => onCustomerChange(id, name, phone)} />
             
-            {!form.customer_id &&
-            <div className="grid grid-cols-2 gap-2 mt-2">
-                <input placeholder="Tên khách" value={form.customer_name || ''} onChange={(e) => set('customer_name', e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                <input placeholder="Số điện thoại" value={form.customer_phone || ''} onChange={(e) => set('customer_phone', e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+            {isNewCustomer && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <input 
+                  placeholder="Tên khách *" 
+                  value={form.customer_name || ''} 
+                  onChange={(e) => set('customer_name', e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                />
+                <input 
+                  placeholder="Số điện thoại" 
+                  value={form.customer_phone || ''} 
+                  onChange={(e) => set('customer_phone', e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                />
               </div>
-            }
+            )}
           </div>
 
           {/* Multi-service rows */}
           <div>
-            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Dịch vụ</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Dịch vụ</label>
             <div className="space-y-2">
               {rows.map((r, i) =>
               <div key={i} className="bg-slate-50 rounded-xl p-2.5 mx-1">
                   <div className="flex items-center gap-2">
                     <select value={r.service_id} onChange={(e) => onServicePick(i, e.target.value)}
-                  className="flex-1 px-2.5 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+                  className="flex-1 px-2.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white">
                       <option value="">— Chọn dịch vụ —</option>
                       {services.map((s) =>
                     <option key={s.id} value={s.id}>{s.name} — {formatVND(s.price)}</option>
@@ -229,32 +248,32 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">Ngày</label>
               <input type="date" value={form.date || ''} onChange={(e) => set('date', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">Bắt đầu</label>
               <input type="time" value={form.start_time || ''} onChange={(e) => onStartTimeChange(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">Kết thúc</label>
               <input type="time" value={form.end_time || ''} onChange={(e) => set('end_time', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-sm font-medium text-slate-600 mb-1.5 block">Nguồn đặt</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Nguồn đặt</label>
               <select value={form.source || 'reception'} onChange={(e) => set('source', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white">
                 {SOURCES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-600 mb-1.5 block">Trạng thái</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Trạng thái</label>
               <select value={form.status || 'confirmed'} onChange={(e) => set('status', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white">
                 <option value="pending">Chờ xác nhận</option>
                 <option value="confirmed">Đã xác nhận</option>
                 <option value="checked_in">Đã check-in</option>
@@ -267,9 +286,9 @@ export default function AppointmentModal({ open, onClose, onSaved, branchId, def
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-600 mb-1.5 block">Ghi chú</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ghi chú</label>
             <textarea value={form.note || ''} onChange={(e) => set('note', e.target.value)} rows={2}
-            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" placeholder="Sở thích, dị ứng, yêu cầu..." />
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" placeholder="Sở thích, dị ứng, yêu cầu..." />
           </div>
         </div>
 

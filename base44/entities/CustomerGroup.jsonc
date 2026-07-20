@@ -1,0 +1,19 @@
+{
+  "name": "CustomerGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "default": "#FF6B9D"
+    },
+    "branch_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

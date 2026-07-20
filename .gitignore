@@ -30,3 +30,12 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
+
+# Next.js build output
+.next/
+out/
+
+# Temp scratch scripts
+scratch/
+.agent/
+.antigravityrules

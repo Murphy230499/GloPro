@@ -1,0 +1,47 @@
+{
+  "name": "ShiftTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "default": "#A78BFA"
+    },
+    "note": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "late_grace_minutes": {
+      "type": "number",
+      "default": 0
+    },
+    "early_grace_minutes": {
+      "type": "number",
+      "default": 0
+    },
+    "overtime_after_minutes": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "start_time",
+    "end_time"
+  ]
+}
+

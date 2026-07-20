@@ -1,0 +1,26 @@
+{
+  "name": "StaffSchedule",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "shift_template_id": {
+      "type": "string"
+    },
+    "is_off": {
+      "type": "boolean",
+      "default": false
+    },
+    "off_type": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "staff_id",
+    "date"
+  ]
+}

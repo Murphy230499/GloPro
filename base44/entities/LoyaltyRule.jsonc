@@ -1,0 +1,65 @@
+{
+  "name": "LoyaltyRule",
+  "type": "object",
+  "properties": {
+    "earn_on_service": {
+      "type": "boolean",
+      "default": true
+    },
+    "earn_on_product": {
+      "type": "boolean",
+      "default": true
+    },
+    "earn_on_package": {
+      "type": "boolean",
+      "default": true
+    },
+    "earn_on_treatment": {
+      "type": "boolean",
+      "default": true
+    },
+    "earn_on_prepaid_card": {
+      "type": "boolean",
+      "default": false
+    },
+    "earn_on_booking": {
+      "type": "boolean",
+      "default": true
+    },
+    "earn_on_referral": {
+      "type": "boolean",
+      "default": true
+    },
+    "points_per_vnd": {
+      "type": "number",
+      "default": 10000
+    },
+    "booking_points": {
+      "type": "number",
+      "default": 50
+    },
+    "referral_points": {
+      "type": "number",
+      "default": 100
+    },
+    "reset_schedule": {
+      "type": "string",
+      "enum": [
+        "none",
+        "annually",
+        "half_yearly",
+        "quarterly",
+        "inactivity_duration"
+      ],
+      "default": "none"
+    },
+    "reset_inactivity_days": {
+      "type": "number",
+      "default": 365
+    },
+    "excluded_item_ids": {
+      "type": "string",
+      "default": "[]"
+    }
+  }
+}

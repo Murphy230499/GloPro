@@ -1,9 +1,20 @@
+'use client';
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
-const AuthContext = createContext();
+const AuthContext = createContext({
+  user: null,
+  isAuthenticated: false,
+  isLoadingAuth: true,
+  isLoadingPublicSettings: true,
+  authError: null,
+  appPublicSettings: null,
+  login: () => {},
+  logout: () => {},
+  navigateToLogin: () => {},
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -118,18 +129,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     
-    if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+    base44.auth.logout();
+    if (shouldRedirect && typeof window !== 'undefined') {
+      window.location.href = '/login';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    if (typeof window !== 'undefined') window.location.href = '/login';
   };
 
   return (

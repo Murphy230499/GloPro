@@ -1,0 +1,29 @@
+{
+  "name": "CustomerTierHistory",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "old_tier_name": {
+      "type": "string"
+    },
+    "new_tier_name": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "customer_id",
+    "customer_name",
+    "new_tier_name"
+  ]
+}

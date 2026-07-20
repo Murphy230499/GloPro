@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit3, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -67,21 +68,21 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Quản lý nhóm {type === 'service' ? 'dịch vụ' : type === 'product' ? 'sản phẩm' : type === 'package' ? 'gói dịch vụ' : 'liệu trình'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
+          <h2 className="text-base font-bold text-slate-800 font-sans">Quản lý nhóm {type === 'service' ? 'dịch vụ' : type === 'product' ? 'sản phẩm' : type === 'package' ? 'gói dịch vụ' : 'liệu trình'}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="space-y-2 mb-4">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên nhóm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" onKeyDown={(e) => e.key === 'Enter' && save()} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên nhóm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" onKeyDown={(e) => e.key === 'Enter' && save()} />
           <div className="flex items-center gap-1.5 flex-wrap">
             {COLORS.map((c) => (
               <button key={c} onClick={() => setColor(c)} className={`w-7 h-7 rounded-full transition-all ${color === c ? 'ring-2 ring-offset-2 ring-slate-400' : ''}`} style={{ background: c }} />
             ))}
           </div>
-          <button onClick={save} className="w-full py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+          <button onClick={save} className="w-full py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
             {editingId ? 'Cập nhật nhóm' : 'Thêm nhóm'}
           </button>
           {editingId && (

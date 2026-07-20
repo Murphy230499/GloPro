@@ -41,6 +41,23 @@
     },
     "avatar_url": {
       "type": "string"
+    },
+    "group_id": {
+      "type": "string"
+    },
+    "service_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "can_be_booked": {
+      "type": "boolean",
+      "default": true
+    },
+    "max_concurrent_bookings": {
+      "type": "number",
+      "default": 1
     }
   },
   "required": [

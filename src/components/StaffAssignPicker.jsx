@@ -1,17 +1,40 @@
+'use client';
 import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 
 export default function StaffAssignPicker({ staff, value, onChange, placeholder = '— Phân KTV —' }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, openUp: false });
   const selected = staff.find((s) => s.id === value);
+
+  const handleToggle = (e) => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // Dropdown is max-h-56 which is 224px. We need around 240px space.
+    const openUp = spaceBelow < 245 && spaceAbove > spaceBelow;
+
+    setCoords({
+      top: openUp ? rect.top - 4 : rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      openUp
+    });
+    setOpen(true);
+  };
 
   return (
     <div className="relative mt-2">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+        onClick={handleToggle}
+        className="w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-primary transition-colors"
       >
         {selected ? (
           <>
@@ -21,12 +44,19 @@ export default function StaffAssignPicker({ staff, value, onChange, placeholder 
         ) : (
           <span className="text-slate-400">{placeholder}</span>
         )}
-        <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-400" />
+        <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-400 shrink-0 mr-1" />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute z-40 left-0 right-0 mt-1 bg-white rounded-xl border border-slate-100 shadow-lg py-1 max-h-56 overflow-y-auto">
+          <div className="fixed inset-0 z-[60] bg-transparent" onClick={() => setOpen(false)} />
+          <div
+            className={`fixed z-[70] bg-white rounded-xl border border-slate-150 shadow-2xl py-1 max-h-56 overflow-y-auto ${coords.openUp ? '-translate-y-full' : ''}`}
+            style={{
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
+              width: `${coords.width}px`
+            }}
+          >
             <button
               type="button"
               onClick={() => { onChange('', ''); setOpen(false); }}

@@ -1,0 +1,19 @@
+{
+  "name": "CustomerSegment",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "conditions": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "default": "#34D399"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

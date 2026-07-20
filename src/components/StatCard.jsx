@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 
 export default function StatCard({ icon: Icon, label, value, color = '#FF6B9D', sub }) {

@@ -1,12 +1,18 @@
+'use client';
+
 import React, { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CalendarDays, ShoppingCart, Users, UserSquare,
-  Scissors, BarChart3, Settings as SettingsIcon, Grid, X } from
+  Scissors, BarChart3, Settings as SettingsIcon, Grid, X, Megaphone } from
 'lucide-react';
 import { Toaster as SonnerToaster, toast } from 'sonner';
 import { useT } from '@/lib/i18n';
+import { useBranch } from '@/lib/BranchContext';
 import TopBar from '@/components/TopBar';
+import AppointmentModal from '@/components/AppointmentModal';
+import POSInvoiceModal from '@/components/POSInvoiceModal';
 
 export { toast };
 
@@ -17,44 +23,42 @@ const NAV = [
 { to: '/customers', tkey: 'nav.customers', icon: Users, color: '#FBBF24' },
 { to: '/staff', tkey: 'nav.staff', icon: UserSquare, color: '#F97316' },
 { to: '/services', tkey: 'nav.catalog', icon: Scissors, color: '#A78BFA' },
+{ to: '/discounts', tkey: 'nav.discounts', icon: Megaphone, color: '#FF4B82' },
 { to: '/reports', tkey: 'nav.reports', icon: BarChart3, color: '#C084FC' },
 { to: '/settings', tkey: 'nav.settings', icon: SettingsIcon, color: '#94A3B8' }];
 
 
 const MOBILE_TABS = NAV.slice(0, 4);
 
-export default function Layout() {
+export default function Layout({ children }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const location = useLocation();
+  const [apptOpen, setApptOpen] = useState(false);
+  const [invOpen, setInvOpen] = useState(false);
+  const pathname = usePathname();
   const { t } = useT();
+  const { currentBranchId } = useBranch();
 
   const NavItem = ({ item, onClick }) => {
     const Icon = item.icon;
+    const isActive = item.end ? pathname === item.to : pathname.startsWith(item.to);
     return (
-      <NavLink
-        to={item.to}
-        end={item.end}
+      <Link
+        href={item.to}
         onClick={onClick}
-        className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-        isActive ?
-        'text-white shadow-sm' :
-        'text-slate-600 hover:bg-slate-100'}`
-
-        }
-        style={({ isActive }) =>
-        isActive ? { background: item.color } : undefined
-        }>
-        
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          isActive ? 'text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'
+        }`}
+        style={isActive ? { background: item.color } : undefined}
+      >
         <Icon className="w-5 h-5 shrink-0" />
         <span>{t(item.tkey)}</span>
-      </NavLink>);
-
+      </Link>
+    );
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-body">
-      <TopBar />
+      <TopBar onNewAppointment={() => setApptOpen(true)} onNewInvoice={() => setInvOpen(true)} />
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed top-16 left-0 bottom-0 w-64 flex-col bg-white border-r border-slate-100 z-30">
@@ -68,7 +72,7 @@ export default function Layout() {
       {/* Content */}
       <main className="md:ml-64 pb-20 md:pb-8 min-h-screen">
         <div className="max-w-[1600px] md:px-8 md:py-8 bg-[hsl(var(--background))]">
-          <Outlet />
+          {children}
         </div>
       </main>
 
@@ -77,20 +81,19 @@ export default function Layout() {
         <div className="grid grid-cols-5">
           {MOBILE_TABS.map((item) => {
             const Icon = item.icon;
-            const active = item.end ? location.pathname === '/' : location.pathname.startsWith(item.to);
+            const active = item.end ? pathname === item.to : pathname.startsWith(item.to);
             return (
-              <NavLink key={item.to} to={item.to} end={item.end} className="flex flex-col items-center justify-center py-2 gap-0.5">
+              <Link key={item.to} href={item.to} className="flex flex-col items-center justify-center py-2 gap-0.5">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
                   style={active ? { background: item.color } : undefined}>
-                  
                   <Icon className="w-5 h-5" style={{ color: active ? 'white' : '#94A3B8' }} />
                 </div>
                 <span className="text-[10px] font-medium" style={{ color: active ? item.color : '#94A3B8' }}>
                   {t(item.tkey)}
                 </span>
-              </NavLink>);
-
+              </Link>
+            );
           })}
           <button onClick={() => setMoreOpen(true)} className="flex flex-col items-center justify-center py-2 gap-0.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100">
@@ -120,19 +123,17 @@ export default function Layout() {
               {NAV.map((item) => {
               const Icon = item.icon;
               return (
-                <NavLink
+                <Link
                   key={item.to}
-                  to={item.to}
-                  end={item.end}
+                  href={item.to}
                   onClick={() => setMoreOpen(false)}
                   className="flex flex-col items-center gap-1.5">
-                  
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: item.color + '1a' }}>
                       <Icon className="w-6 h-6" style={{ color: item.color }} />
                     </div>
                     <span className="text-xs font-medium text-slate-600">{t(item.tkey)}</span>
-                  </NavLink>);
-
+                </Link>
+              );
             })}
             </div>
           </div>
@@ -140,6 +141,27 @@ export default function Layout() {
       }
 
       <SonnerToaster position="top-center" richColors closeButton />
+
+      <AppointmentModal
+        open={apptOpen}
+        onClose={() => setApptOpen(false)}
+        onSaved={() => {
+          window.dispatchEvent(new Event('reload-data'));
+        }}
+        branchId={currentBranchId}
+      />
+
+      <POSInvoiceModal
+        open={invOpen}
+        customer={null}
+        onClose={() => {
+          setInvOpen(false);
+          window.dispatchEvent(new Event('reload-data'));
+        }}
+        onSaved={() => {
+          window.dispatchEvent(new Event('reload-data'));
+        }}
+      />
     </div>);
 
 }

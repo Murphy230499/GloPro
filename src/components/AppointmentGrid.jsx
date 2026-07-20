@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { UserPlus, Clock } from 'lucide-react';
 import Avatar from '@/components/Avatar';

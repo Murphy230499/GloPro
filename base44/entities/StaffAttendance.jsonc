@@ -1,0 +1,39 @@
+{
+  "name": "StaffAttendance",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "check_in": {
+      "type": "string"
+    },
+    "check_out": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "full",
+        "late",
+        "early_leave",
+        "late_early",
+        "missing_in",
+        "missing_out",
+        "no_show",
+        "overtime"
+      ]
+    },
+    "ot_minutes": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "staff_id",
+    "date"
+  ]
+}

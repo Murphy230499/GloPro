@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';

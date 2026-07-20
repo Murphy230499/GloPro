@@ -1,6 +1,7 @@
+'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, CalendarPlus, CalendarX, CheckCircle2, XCircle, UserX } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { todayStr, formatVND } from '@/lib/format';
@@ -21,7 +22,7 @@ export default function NotificationCenter() {
     try {return new Set(JSON.parse(localStorage.getItem('gp_notif_read') || '[]'));} catch {return new Set();}
   });
   const ref = useRef(null);
-  const nav = useNavigate();
+  const router = useRouter();
   const { currentBranchId } = useBranch();
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function NotificationCenter() {
     const ids = new Set([...readIds, it.id]);
     setReadIds(ids);
     localStorage.setItem('gp_notif_read', JSON.stringify([...ids]));
-    nav(it.to);
+    router.push(it.to);
     setOpen(false);
   };
 

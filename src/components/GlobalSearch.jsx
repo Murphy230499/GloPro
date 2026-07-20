@@ -1,6 +1,7 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, User, CalendarDays, Scissors, Package, UserSquare, LayoutDashboard, BarChart3, Settings as SettingsIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
@@ -23,7 +24,7 @@ export default function GlobalSearch() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const nav = useNavigate();
+  const router = useRouter();
   const { currentBranchId } = useBranch();
   const ref = useRef(null);
 
@@ -75,7 +76,7 @@ export default function GlobalSearch() {
     return () => {active = false;clearTimeout(t);};
   }, [q, currentBranchId]);
 
-  const go = (to) => {nav(to);setOpen(false);setQ('');};
+  const go = (to) => {router.push(to);setOpen(false);setQ('');};
 
   return (
     <div ref={ref} className="relative w-full max-w-xl">

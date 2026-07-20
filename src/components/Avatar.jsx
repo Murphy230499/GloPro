@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 
 export default function Avatar({ src, name, size = 40, color = '#FF6B9D', className = '', ring = false }) {

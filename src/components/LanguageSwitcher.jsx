@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import { useT } from '@/lib/i18n';

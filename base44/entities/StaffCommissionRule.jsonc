@@ -1,0 +1,32 @@
+{
+  "name": "StaffCommissionRule",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string"
+    },
+    "item_type": {
+      "type": "string"
+    },
+    "item_id": {
+      "type": "string"
+    },
+    "commission_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "vnd"
+      ]
+    },
+    "commission_value": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "staff_id",
+    "item_type",
+    "item_id",
+    "commission_type",
+    "commission_value"
+  ]
+}

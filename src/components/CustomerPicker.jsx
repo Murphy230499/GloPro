@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import Avatar from '@/components/Avatar';

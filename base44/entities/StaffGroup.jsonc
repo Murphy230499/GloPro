@@ -1,0 +1,19 @@
+{
+  "name": "StaffGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "default": "#A78BFA"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

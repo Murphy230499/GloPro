@@ -1,0 +1,46 @@
+{
+  "name": "CustomerTier",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "min_spend": {
+      "type": "number",
+      "default": 0
+    },
+    "min_points": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_percent": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "maintenance_period": {
+      "type": "string",
+      "enum": [
+        "year",
+        "6_months",
+        "quarter",
+        "upgrade_duration"
+      ],
+      "default": "year"
+    },
+    "maintenance_days": {
+      "type": "number",
+      "default": 365
+    },
+    "color": {
+      "type": "string",
+      "default": "#FF6B9D"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

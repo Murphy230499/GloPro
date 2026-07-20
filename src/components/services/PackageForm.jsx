@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/Layout';
@@ -32,18 +33,18 @@ export default function PackageForm({ item, groups, services, onClose, onSave })
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-3xl p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{item.id ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4" /></button>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{item.id ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ'}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
-          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên gói dịch vụ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên gói dịch vụ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
 
           <div>
-            <label className="text-xs text-slate-400">Nhóm gói</label>
-            <select value={f.group_id} onChange={(e) => setF({ ...f, group_id: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Nhóm gói</label>
+            <select value={f.group_id} onChange={(e) => setF({ ...f, group_id: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white">
               <option value="">— Chọn nhóm —</option>
               {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
@@ -51,36 +52,36 @@ export default function PackageForm({ item, groups, services, onClose, onSave })
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-slate-400">Giá gói (VNĐ)</label>
-              <input type="number" value={f.price || ''} onChange={(e) => setF({ ...f, price: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giá gói (VNĐ)</label>
+              <input type="number" value={f.price || ''} onChange={(e) => setF({ ...f, price: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400">Số lần sử dụng</label>
-              <input type="number" value={f.usage_count || ''} onChange={(e) => setF({ ...f, usage_count: Number(e.target.value) || 1 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Số lần sử dụng</label>
+              <input type="number" value={f.usage_count || ''} onChange={(e) => setF({ ...f, usage_count: Number(e.target.value) || 1 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-slate-400">Hạn dùng (tháng)</label>
-              <input type="number" value={f.expiry_months || ''} onChange={(e) => setF({ ...f, expiry_months: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Hạn dùng (tháng)</label>
+              <input type="number" value={f.expiry_months || ''} onChange={(e) => setF({ ...f, expiry_months: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400">Hạn dùng (ngày)</label>
-              <input type="number" value={f.expiry_days || ''} onChange={(e) => setF({ ...f, expiry_days: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Hạn dùng (ngày)</label>
+              <input type="number" value={f.expiry_days || ''} onChange={(e) => setF({ ...f, expiry_days: Number(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
             </div>
           </div>
 
-          <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+          <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
 
           <div>
-            <label className="text-xs text-slate-400 font-semibold">Dịch vụ trong gói</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Dịch vụ trong gói</label>
             <div className="flex gap-1.5 mt-1">
-              <select value={selService} onChange={(e) => setSelService(e.target.value)} className="flex-1 px-2.5 py-2 rounded-xl border border-slate-200 text-sm">
+              <select value={selService} onChange={(e) => setSelService(e.target.value)} className="flex-1 px-2.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white">
                 <option value="">— Chọn dịch vụ —</option>
                 {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-              <button type="button" onClick={addService} className="px-3 rounded-xl bg-slate-100 flex items-center justify-center"><Plus className="w-4 h-4" /></button>
+              <button type="button" onClick={addService} className="px-3 rounded-xl bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><Plus className="w-4 h-4" /></button>
             </div>
             {f.services.length > 0 && (
               <div className="mt-2 space-y-1">
@@ -96,9 +97,9 @@ export default function PackageForm({ item, groups, services, onClose, onSave })
 
           <ImageUpload value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} label="Hình minh hoạ" />
         </div>
-        <div className="flex gap-2 mt-4">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-100 font-semibold text-sm">Hủy</button>
-          <button onClick={() => (f.name ? onSave(f) : toast.error('Nhập tên gói'))} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">Lưu</button>
+        <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
+          <button onClick={() => (f.name ? onSave(f) : toast.error('Nhập tên gói'))} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">Lưu</button>
         </div>
       </div>
     </div>
