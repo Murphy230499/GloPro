@@ -92,6 +92,15 @@ export default function SchedulerGrid({ branchId }) {
     let stList = [];
     try {
       stList = await base44.entities.Staff.filter(filter);
+      const localStaff = localStorage.getItem('glopro_staff');
+      if (stList.length === 0 && localStaff) {
+        const parsed = JSON.parse(localStaff);
+        for (const st of parsed) {
+          const { id, ...data } = st;
+          await base44.entities.Staff.create(data);
+        }
+        stList = await base44.entities.Staff.filter(filter);
+      }
     } catch (e) {
       console.error('Lỗi khi tải danh sách nhân viên xếp lịch từ API:', e);
       const localStaff = localStorage.getItem('glopro_staff');
@@ -101,6 +110,15 @@ export default function SchedulerGrid({ branchId }) {
     let tmplList = [];
     try {
       tmplList = await base44.entities.ShiftTemplate.list();
+      const localTemplates = localStorage.getItem('glopro_shift_templates');
+      if (tmplList.length === 0 && localTemplates) {
+        const parsed = JSON.parse(localTemplates);
+        for (const t of parsed) {
+          const { id, ...data } = t;
+          await base44.entities.ShiftTemplate.create(data);
+        }
+        tmplList = await base44.entities.ShiftTemplate.list();
+      }
     } catch (e) {
       console.error('Lỗi khi tải ca làm việc mẫu từ API:', e);
       const localTemplates = localStorage.getItem('glopro_shift_templates');
@@ -113,6 +131,18 @@ export default function SchedulerGrid({ branchId }) {
         date_gte: weekDays[0],
         date_lte: weekDays[6]
       });
+      const localSchedules = localStorage.getItem('glopro_staff_schedules');
+      if (schedList.length === 0 && localSchedules) {
+        const parsed = JSON.parse(localSchedules);
+        for (const s of parsed) {
+          const { id, ...data } = s;
+          await base44.entities.StaffSchedule.create(data);
+        }
+        schedList = await base44.entities.StaffSchedule.filter({
+          date_gte: weekDays[0],
+          date_lte: weekDays[6]
+        });
+      }
     } catch (e) {
       console.error('Lỗi khi tải lịch làm việc từ API:', e);
       const localSchedules = localStorage.getItem('glopro_staff_schedules');
