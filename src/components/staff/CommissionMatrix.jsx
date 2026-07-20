@@ -319,7 +319,13 @@ export default function CommissionMatrix({ branchId }) {
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text"
-            placeholder={TABS.find(t => t.id === activeTab) ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...` : 'tìm kiếm...'}
+            placeholder={
+              activeTab === 'customer_req'
+                ? 'tìm kiếm dịch vụ...'
+                : TABS.find(t => t.id === activeTab)
+                  ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...`
+                  : 'tìm kiếm...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs font-normal outline-none bg-transparent text-slate-700 placeholder:text-slate-400/70"
@@ -340,7 +346,7 @@ export default function CommissionMatrix({ branchId }) {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
                     <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold">
-                      {TABS.find(t => t.id === activeTab)?.label || 'Dịch vụ / Sản phẩm'}
+                      {activeTab === 'customer_req' ? 'Dịch vụ' : (TABS.find(t => t.id === activeTab)?.label || 'Dịch vụ / Sản phẩm')}
                     </th>
                     {staff.map(s => (
                       <th key={s.id} className="py-4 px-3 text-center w-[160px] border-r border-slate-100 min-w-[160px] font-semibold">
