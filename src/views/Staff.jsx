@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   Plus, Users, CalendarCheck2, Award, Settings2, ChevronRight, UserRoundCog, Sparkles, Loader2,
-  Copy, History, Settings
+  Copy, History, Settings, Receipt, CalendarDays, Clock
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
@@ -23,6 +24,8 @@ import CommissionMatrix from '@/components/staff/CommissionMatrix';
 import AdvancedConfigModal from '@/components/staff/AdvancedConfigModal';
 import CopyCommissionModal from '@/components/staff/CopyCommissionModal';
 import AuditLogModal from '@/components/staff/AuditLogModal';
+import PayrollManager from '@/components/staff/PayrollManager';
+import StaffPayrollDetailView from '@/components/staff/StaffPayrollDetailView';
 
 const ROLES = {
   manager: { label: 'Quản lý', color: '#FF6B9D' },
@@ -40,22 +43,32 @@ const MAIN_TABS = [
   { id: 'schedule', label: 'Lịch làm việc', icon: CalendarCheck2 },
   { id: 'attendance', label: 'Chấm công', icon: UserRoundCog },
   { id: 'commission', label: 'Hoa hồng Nhân viên', icon: Award },
+  { id: 'payroll', label: 'Bảng tính lương', icon: Receipt },
 ];
 
 const SCHEDULE_SUB_TABS = [
-  { id: 'grid', label: 'Bảng xếp ca tuần' },
-  { id: 'templates', label: 'Quản lý ca' },
+  { id: 'grid', label: 'Bảng xếp ca tuần', icon: CalendarDays },
+  { id: 'templates', label: 'Quản lý ca làm việc', icon: Clock },
 ];
 
 
 export default function StaffPage() {
   const { currentBranchId } = useBranch();
+  const searchParams = useSearchParams();
+  const urlTab = searchParams?.get('tab');
+  
   const [staff, setStaff] = useState([]);
   const [staffGroups, setStaffGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [mainTab, setMainTab] = useState('staff');
+  const [mainTab, setMainTab] = useState(urlTab || 'staff');
   const [scheduleSubTab, setScheduleSubTab] = useState('grid');
+
+  useEffect(() => {
+    if (urlTab) {
+      setMainTab(urlTab);
+    }
+  }, [urlTab]);
 
   // Filter state
   const [searchQ, setSearchQ] = useState('');
@@ -65,6 +78,7 @@ export default function StaffPage() {
   const [showGroupManager, setShowGroupManager] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [detailStaff, setDetailStaff] = useState(null);
+  const [selectedPayrollStaff, setSelectedPayrollStaff] = useState(null);
 
   // Commission Modal States
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
@@ -206,6 +220,18 @@ export default function StaffPage() {
     return matchQ && matchG;
   });
 
+  if (selectedPayrollStaff) {
+    return (
+      <StaffPayrollDetailView 
+        staffData={selectedPayrollStaff} 
+        onBack={() => {
+          setSelectedPayrollStaff(null);
+          setMainTab('payroll');
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Page Header */}
@@ -224,7 +250,7 @@ export default function StaffPage() {
             </button>
             <button
               onClick={() => setEditingStaff({})}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" /> Thêm nhân viên
             </button>
@@ -236,7 +262,7 @@ export default function StaffPage() {
               onClick={() => setShowAdvancedConfig(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
             >
-              <Settings className="w-4 h-4 text-purple-500" /> Cài đặt nâng cao
+              <Settings className="w-4 h-4 text-orange-500" /> Cài đặt nâng cao
             </button>
             <button
               onClick={() => setShowCopyCommission(true)}
@@ -264,7 +290,7 @@ export default function StaffPage() {
               onClick={() => setMainTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
                 mainTab === tab.id
-                  ? 'bg-purple-500 text-white shadow-sm'
+                  ? 'bg-orange-500 text-white shadow-sm font-bold'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -284,12 +310,12 @@ export default function StaffPage() {
               placeholder="Tìm theo tên hoặc SĐT..."
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
-              className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-400"
+              className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-orange-500"
             />
             <select
               value={filterGroup}
               onChange={(e) => setFilterGroup(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-purple-400"
+              className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-orange-500"
             >
               <option value="all">Tất cả nhóm</option>
               {staffGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -305,7 +331,7 @@ export default function StaffPage() {
             </div>
           ) : filteredStaff.length === 0 && !searchQ && filterGroup === 'all' ? (
             <EmptyStateSeeder
-              icon={<Users className="w-8 h-8 text-purple-500" />}
+              icon={<Users className="w-8 h-8 text-orange-500" />}
               title="Chưa có nhân viên nào"
               description="Thêm nhân viên đầu tiên của bạn hoặc tạo nhanh 10 nhân viên mẫu để thiết lập ca làm việc và xếp lịch."
               onSeed={handleSeedData}
@@ -353,7 +379,7 @@ export default function StaffPage() {
                         </div>
                       </div>
 
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-purple-500 transition-colors mt-1 shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-500 transition-colors mt-1 shrink-0" />
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-slate-400">
@@ -370,7 +396,7 @@ export default function StaffPage() {
                         {s.can_be_booked !== false ? '✔ Nhận lịch hẹn' : '✗ Không nhận lịch'}
                       </span>
                       {s.service_ids?.length > 0 && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-50 text-purple-600 border border-purple-100">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-orange-50 text-orange-600 border border-orange-100">
                           {s.service_ids.length} dịch vụ
                         </span>
                       )}
@@ -398,19 +424,20 @@ export default function StaffPage() {
         </div>
       )}
 
-      {/* ========= TAB 2: Schedule (with sub-tabs) ========= */}
+      {/* ========= TAB 2: Schedule (with underline tab bar) ========= */}
       {mainTab === 'schedule' && (
-        <div className="space-y-4">
-          {/* Sub-tabs */}
-          <div className="flex gap-2 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm w-fit">
-            {SCHEDULE_SUB_TABS.map(t => (
+        <div className="space-y-4 font-body">
+          {/* Underline Sub-tab Navigation Bar matching user image */}
+          <div className="flex items-center gap-5 border-b border-slate-200/80 overflow-x-auto whitespace-nowrap scrollbar-none px-1">
+            {SCHEDULE_SUB_TABS.map((t) => (
               <button
                 key={t.id}
+                type="button"
                 onClick={() => setScheduleSubTab(t.id)}
-                className={`px-4 py-2 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+                className={`py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                   scheduleSubTab === t.id
-                    ? 'bg-purple-500 text-white shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50'
+                    ? 'border-orange-500 text-orange-500'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
                 {t.label}
@@ -431,6 +458,11 @@ export default function StaffPage() {
       {/* ========= TAB 4: Commission Matrix ========= */}
       {mainTab === 'commission' && (
         <CommissionMatrix branchId={currentBranchId} />
+      )}
+
+      {/* ========= TAB 5: Payroll Manager ========= */}
+      {mainTab === 'payroll' && (
+        <PayrollManager staff={staff} onSelectStaffForDetail={setSelectedPayrollStaff} />
       )}
 
       {/* ========= Modals ========= */}

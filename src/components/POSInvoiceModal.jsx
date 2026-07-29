@@ -7,14 +7,25 @@ import { toast } from '@/components/Layout';
 import CatalogColumn from '@/components/pos/CatalogColumn';
 import TicketColumn from '@/components/pos/TicketColumn';
 import CheckoutModal from '@/components/pos/CheckoutModal';
+import NewCustomerModal from '@/components/pos/NewCustomerModal';
 import { useBranch } from '@/lib/BranchContext';
+import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 
-export default function POSInvoiceModal({ open, customer, initialCart = [], onClose, onSaved }) {
+export default function POSInvoiceModal({ open, customer, initialCart = [], existingInvoice = null, onClose, onSaved }) {
   const { currentBranchId, branches } = useBranch();
   // POS tab and search states
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const [catalogTab, setCatalogTab] = useState('service');
   const [search, setSearch] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [custModal, setCustModal] = useState(false);
+  const [custQuery, setCustQuery] = useState('');
   const [paying, setPaying] = useState(false);
 
   // Database lists
@@ -55,6 +66,28 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
       setGroups(gr);
       setStaff(st.filter(x => x.is_active));
       setCustomers(c);
+
+      const allCatalog = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
+      setSession(prev => {
+        if (!prev) return null;
+        const fullCust = (existingInvoice && existingInvoice.customer_id)
+          ? c.find(item => item && String(item.id) === String(existingInvoice.customer_id))
+          : null;
+        
+        const enrichedCart = (prev.cart || []).map(cartItem => {
+          const match = allCatalog.find(cat => cat && (cat.name === cartItem.name || String(cat.id) === String(cartItem.id)));
+          return {
+            ...cartItem,
+            image_url: cartItem.image_url || (match ? (match.image_url || match.image || '') : ''),
+            color: cartItem.color || (match ? (match.color || '') : '')
+          };
+        });
+        return {
+          ...prev,
+          cart: enrichedCart,
+          customer: fullCust || prev.customer
+        };
+      });
     }).catch(err => {
       console.error('Lỗi tải danh mục POS:', err);
     });
@@ -69,12 +102,6 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
     const initSession = async () => {
       loadData();
       
-      const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
-      let resolvedBranchId = (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId;
-      if (!resolvedBranchId && branches && branches.length > 0) {
-        resolvedBranchId = branches[0].id;
-      }
-      
       const mapCartItem = item => ({
         id: item.id || Math.random().toString(),
         name: item.name,
@@ -84,16 +111,59 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
         qty: item.qty || 1,
         staff_id: item.staff_id || '',
         staff_name: item.staff_name || '',
-        color: item.color
+        color: item.color || '',
+        image_url: item.image_url || item.image || '',
+        duration_minutes: item.duration_minutes || item.duration || 0
       });
+
+      if (existingInvoice) {
+        const mappedCart = (existingInvoice.items || []).map(mapCartItem);
+        let resolvedCustomer = customer;
+        if (!resolvedCustomer && existingInvoice) {
+          if (existingInvoice.customer_name && existingInvoice.customer_name !== 'Khách vãng lai') {
+            resolvedCustomer = { name: existingInvoice.customer_name, id: existingInvoice.customer_id || null };
+          } else {
+            resolvedCustomer = null;
+          }
+        }
+
+        setSession({
+          id: existingInvoice.id,
+          saleCode: existingInvoice.invoice_code || ('SC' + String(Math.floor(100000 + Math.random() * 900000))),
+          customer: resolvedCustomer,
+          cart: mappedCart,
+          discount: existingInvoice.discount_amount || existingInvoice.discount || 0,
+          discountType: existingInvoice.discount_type || 'vnd',
+          discountValue: existingInvoice.discount_amount || existingInvoice.discount || 0,
+          tip: existingInvoice.tip || 0,
+          tipSplits: (existingInvoice.tip_splits || []).map(ts => ({ staffId: ts.staff_id, amount: ts.amount })),
+          createdAt: existingInvoice.date ? new Date(existingInvoice.date) : new Date(),
+          logs: getNormalizedLogs(existingInvoice)
+        });
+        return;
+      }
+      
+      const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
+      let resolvedBranchId = (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId;
+      if (!resolvedBranchId && branches && branches.length > 0) {
+        resolvedBranchId = branches[0].id;
+      }
 
       const initialCartMapped = (initialCart || []).map(mapCartItem);
       const subtotal = Math.round(initialCartMapped.reduce((s, x) => s + (x.price || 0) * (x.qty || 1), 0));
       
+      const initialLog = {
+        id: 'log_create_' + Date.now(),
+        action: `Tạo hoá đơn #${saleCode}`,
+        details: `Khởi tạo hoá đơn cho ${customer?.name || 'Khách vãng lai'}`,
+        time: new Date().toISOString(),
+        user: 'Lễ tân'
+      };
+
       try {
         const createdInvoice = await base44.entities.Invoice.create({
           invoice_code: saleCode,
-          customer_name: customer?.name || 'Khách vãng lai',
+          customer_name: customer?.name || '',
           customer_id: customer?.id || null,
           branch_id: resolvedBranchId,
           items: initialCartMapped.map((x) => ({
@@ -104,14 +174,17 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
             staff_id: x.staff_id || '',
             staff_name: x.staff_name || '',
             balance: Math.round(x.balance || 0),
-            sessions: Math.round(x.sessions || 10)
+            sessions: Math.round(x.sessions || 10),
+            image_url: x.image_url || x.image || '',
+            color: x.color || ''
           })),
           subtotal,
           discount: 0,
           total: subtotal,
           tip: 0,
           status: 'unpaid',
-          date: todayStr()
+          date: todayStr(),
+          logs: [initialLog]
         });
 
         setSession({
@@ -123,7 +196,8 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
           discountType: 'vnd',
           discountValue: 0,
           tip: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
+          logs: [initialLog]
         });
       } catch (e) {
         console.error('Error creating unpaid invoice:', e);
@@ -136,7 +210,8 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
           discountType: 'vnd',
           discountValue: 0,
           tip: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
+          logs: [initialLog]
         });
       }
     };
@@ -164,21 +239,23 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
               staff_id: x.staff_id || '',
               staff_name: x.staff_name || '',
               balance: Math.round(x.balance || 0),
-              sessions: Math.round(x.sessions || 10)
+              sessions: Math.round(x.sessions || 10),
+              image_url: x.image_url || x.image || '',
+              color: x.color || ''
             })),
             subtotal,
             discount,
             total,
             tip: Math.round(session.tip || 0),
-            tip_splits: (session.tipSplits || []).map(s => ({ staff_id: s.staffId, amount: Math.round(s.amount || 0) }))
+            tip_splits: (session.tipSplits || []).map(s => ({ staff_id: s.staffId, amount: Math.round(s.amount || 0) })),
+            logs: JSON.stringify(getNormalizedLogs(session))
           });
         } catch (e) {
           console.error('Error syncing invoice to db:', e);
         }
       };
 
-      const timer = setTimeout(syncInvoiceToDb, 500);
-      return () => clearTimeout(timer);
+      syncInvoiceToDb();
     }
   }, [
     session?.cart, 
@@ -187,7 +264,8 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
     session?.discountType, 
     session?.discount,
     session?.tip, 
-    session?.tipSplits
+    session?.tipSplits,
+    session?.logs
   ]);
 
   if (!open || !session) return null;
@@ -196,7 +274,47 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
   const handleUpdateSession = (patch) => {
     setSession(prev => {
       if (!prev) return null;
-      const merged = { ...prev, ...patch };
+      let logs = getNormalizedLogs(prev);
+
+      if (patch.customer !== undefined && patch.customer !== prev.customer) {
+        if (patch.customer) {
+          logs = [...logs, createLogEntry('Chọn khách hàng', patch.customer.name, 'Lễ tân')];
+        } else if (prev.customer) {
+          logs = [...logs, createLogEntry('Bỏ chọn khách hàng', prev.customer.name, 'Lễ tân')];
+        }
+      }
+
+      if (patch.discountValue !== undefined && patch.discountValue !== prev.discountValue) {
+        logs = [...logs, createLogEntry('Thay đổi giảm giá hóa đơn', `Mức giảm: ${patch.discountValue}`, 'Lễ tân')];
+      }
+
+      if (patch.cart !== undefined) {
+        const oldCart = prev.cart || [];
+        const newCart = patch.cart || [];
+        if (newCart.length > oldCart.length) {
+          const added = newCart[newCart.length - 1];
+          if (added) {
+            logs = [...logs, createLogEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`, 'Lễ tân')];
+          }
+        } else if (newCart.length < oldCart.length) {
+          const removed = oldCart.find((x) => !newCart.some((y) => y.id === x.id || (y.name === x.name && y.type === x.type)));
+          if (removed) {
+            logs = [...logs, createLogEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`, 'Lễ tân')];
+          }
+        } else {
+          newCart.forEach((item, idx) => {
+            const oldItem = oldCart[idx];
+            if (oldItem && oldItem.qty !== item.qty) {
+              logs = [...logs, createLogEntry(`Thay đổi số lượng ${item.name}`, `${oldItem.qty} -> ${item.qty}`, 'Lễ tân')];
+            }
+            if (oldItem && oldItem.staff_id !== item.staff_id) {
+              logs = [...logs, createLogEntry(`Phân công nhân viên ${item.name}`, item.staff_name || 'Lễ tân', 'Lễ tân')];
+            }
+          });
+        }
+      }
+
+      const merged = { ...prev, ...patch, logs };
       const subtotal = (merged.cart || []).reduce((s, x) => s + (x.price || 0) * (x.qty || 1), 0);
       const discount = merged.discountType === 'percent'
         ? Math.round(subtotal * ((merged.discountValue || 0) / 100))
@@ -232,7 +350,9 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
           staff_name: '',
           balance: item.balance || item.face_value || 0,
           sessions: item.usage_count || item.sessions || 10,
-          color: item.color
+          color: item.color,
+          duration_minutes: item.duration_minutes || item.duration || 0,
+          image_url: item.image_url || item.image || ''
         }]
       });
     }
@@ -375,11 +495,19 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 animate-in fade-in duration-200">
-      <div className="bg-slate-50 rounded-3xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-3 bg-slate-950/65 backdrop-blur-xs animate-in fade-in duration-200 pointer-events-auto select-none"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div 
+        className="bg-slate-50 rounded-3xl w-full max-w-[1360px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Top Header Row */}
-        <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-slate-100 shrink-0">
+        <div className="bg-white px-5 py-2.5 flex justify-between items-center border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             <h2 className="text-sm font-bold text-slate-800">Tạo Hóa Đơn Trực Tiếp</h2>
@@ -395,7 +523,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
         {/* Unified POS Content Area */}
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Left panel: CatalogColumn */}
-          <div className="flex-1 overflow-y-auto flex flex-col bg-white">
+          <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0">
             <CatalogColumn
               tab={catalogTab}
               setTab={setCatalogTab}
@@ -416,7 +544,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
           </div>
 
           {/* Right panel: TicketColumn */}
-          <div className="w-[380px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100">
+          <div className="w-[450px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100 shrink-0">
             <TicketColumn
               session={session}
               staff={staff}
@@ -424,7 +552,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
               onUpdate={handleUpdateSession}
               onPickCustomer={(c) => handleUpdateSession({ customer: c })}
               onClearCustomer={() => handleUpdateSession({ customer: null })}
-              onNewCustomer={() => {}}
+              onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
               onCheckout={() => setCheckoutOpen(true)}
               onCancel={onClose}
               onReview={() => {}}
@@ -433,6 +561,32 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], onCl
         </div>
 
       </div>
+
+      {/* New Customer Modal */}
+      {custModal && (
+        <NewCustomerModal
+          initialQuery={custQuery}
+          onClose={() => setCustModal(false)}
+          onCreate={async (custData) => {
+            try {
+              const created = await base44.entities.Customer.create({
+                name: custData.name,
+                phone: custData.phone,
+                gender: custData.gender,
+                notes: custData.note,
+                points: 0,
+                total_spent: 0
+              });
+              toast.success('Đã thêm khách hàng mới');
+              setCustomers((prev) => [created, ...prev]);
+              handleUpdateSession({ customer: created });
+              setCustModal(false);
+            } catch (err) {
+              toast.error('Lỗi khi tạo khách hàng: ' + (err.message || err));
+            }
+          }}
+        />
+      )}
 
       {/* Checkout Payment Modal */}
       {checkoutOpen && (

@@ -37,7 +37,7 @@ export default function SettingsPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Cài đặt</h1>
           <p className="text-slate-400 text-sm mt-1">Quản lý các cơ sở trong chuỗi</p>
         </div>
-        <button onClick={() => setEditing({})} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+        <button onClick={() => setEditing({})} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-850 text-white font-semibold text-sm shadow-sm transition-all">
           <Plus className="w-4 h-4" /> Thêm cơ sở
         </button>
       </div>

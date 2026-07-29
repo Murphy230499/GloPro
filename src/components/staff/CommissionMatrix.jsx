@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Percent, DollarSign, Save, Loader2, Sparkles, Sliders, Search, UserCheck, Plus, Trash2 } from 'lucide-react';
+import { Save, Loader2, Search, Plus, Trash2, ChevronDown, Copy, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
 import RevenueConfigTab from '@/components/staff/RevenueConfigTab';
+import GroupCommissionModal from './GroupCommissionModal';
+import CopyTabCommissionModal from './CopyTabCommissionModal';
 
 const TABS = [
   { id: 'service', label: 'Dịch vụ' },
@@ -55,6 +57,9 @@ export default function CommissionMatrix({ branchId }) {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [groups, setGroups] = useState([]);
+  const [showGroupCommissionModal, setShowGroupCommissionModal] = useState(false);
+  const [showCopyTabModal, setShowCopyTabModal] = useState(false);
   
   // Cell-specific saving status state
   const [savingKey, setSavingKey] = useState(null); // "itemId_staffId"
@@ -88,7 +93,22 @@ export default function CommissionMatrix({ branchId }) {
       setServiceCombos(svcCombos);
       setProductCombos(prodCombos);
       setPrepaidCards(cards);
-      setRules(ruleList);
+      setRules(ruleList || []);
+
+      let groupList = [];
+      try {
+        groupList = await base44.entities.ServiceGroup.list();
+      } catch (err) {
+        console.warn("Failed to load groups in CommissionMatrix, trying filter", err);
+        try {
+          groupList = await base44.entities.ServiceGroup.filter(filter);
+        } catch (filterErr) {
+          console.error("Failed to load groups in CommissionMatrix entirely", filterErr);
+          const local = localStorage.getItem('glopro_service_groups');
+          groupList = local ? JSON.parse(local) : [];
+        }
+      }
+      setGroups(groupList || []);
     } catch (e) {
       console.error('Lỗi tải danh mục cấu hình hoa hồng:', e);
       const localRules = localStorage.getItem('glopro_staff_commission_rules');
@@ -282,6 +302,143 @@ export default function CommissionMatrix({ branchId }) {
     setSavingKey(null);
   };
 
+  const handleSaveGroupCommission = async ({
+    selectedStaffIds,
+    scope,
+    selectedGroupId,
+    selectedItemIds,
+    value,
+    type
+  }) => {
+    let targetItemIds = [];
+    const displayItems = getDisplayItems();
+
+    if (scope === 'all') {
+      targetItemIds = displayItems.map(i => i.id);
+    } else if (scope === 'group') {
+      targetItemIds = displayItems.filter(i => i.group_id === selectedGroupId).map(i => i.id);
+    } else if (scope === 'items') {
+      targetItemIds = selectedItemIds;
+    }
+
+    if (targetItemIds.length === 0) {
+      toast.success('Không có vật phẩm nào phù hợp để áp dụng.');
+      return;
+    }
+
+    const itemType = activeTab;
+    const local = localStorage.getItem('glopro_staff_commission_rules');
+    let localList = local ? JSON.parse(local) : [];
+    const operations = [];
+
+    for (const staffId of selectedStaffIds) {
+      for (const itemId of targetItemIds) {
+        const payload = {
+          staff_id: staffId,
+          item_type: itemType,
+          item_id: itemId,
+          commission_type: type,
+          commission_value: value
+        };
+
+        const existing = rules.find(r => r.staff_id === staffId && r.item_id === itemId && r.item_type === itemType);
+
+        const op = (async () => {
+          try {
+            if (existing) {
+              await base44.entities.StaffCommissionRule.update(existing.id, payload);
+            } else {
+              await base44.entities.StaffCommissionRule.create(payload);
+            }
+          } catch (err) {
+            console.warn("API bulk update failed, syncing to local store", err);
+            if (existing) {
+              localList = localList.map(r => r.id === existing.id ? { ...r, ...payload } : r);
+            } else {
+              localList.push({ id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), ...payload });
+            }
+          }
+        })();
+        operations.push(op);
+      }
+    }
+
+    await Promise.all(operations);
+
+    try {
+      const updatedRules = await base44.entities.StaffCommissionRule.list();
+      setRules(updatedRules && updatedRules.length > 0 ? updatedRules : localList);
+      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(updatedRules && updatedRules.length > 0 ? updatedRules : localList));
+    } catch {
+      setRules(localList);
+      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
+    }
+
+    toast.success('Cập nhật hoa hồng nhóm thành công!');
+  };
+
+  const handleSaveCopyTabCommission = async ({
+    sourceStaffId,
+    targetStaffIds
+  }) => {
+    const itemType = activeTab;
+    const sourceRules = rules.filter(r => r.staff_id === sourceStaffId && r.item_type === itemType);
+
+    if (sourceRules.length === 0) {
+      toast.error('Nhân viên nguồn không có cấu hình hoa hồng nào ở tab này!');
+      return;
+    }
+
+    const local = localStorage.getItem('glopro_staff_commission_rules');
+    let localList = local ? JSON.parse(local) : [];
+    const operations = [];
+
+    for (const targetId of targetStaffIds) {
+      for (const srcRule of sourceRules) {
+        const payload = {
+          staff_id: targetId,
+          item_type: itemType,
+          item_id: srcRule.item_id,
+          commission_type: srcRule.commission_type,
+          commission_value: srcRule.commission_value
+        };
+
+        const existing = rules.find(r => r.staff_id === targetId && r.item_id === srcRule.item_id && r.item_type === itemType);
+
+        const op = (async () => {
+          try {
+            if (existing) {
+              await base44.entities.StaffCommissionRule.update(existing.id, payload);
+            } else {
+              await base44.entities.StaffCommissionRule.create(payload);
+            }
+          } catch (err) {
+            console.warn("API copy failed, syncing to local store", err);
+            if (existing) {
+              localList = localList.map(r => r.id === existing.id ? { ...r, ...payload } : r);
+            } else {
+              localList.push({ id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), ...payload });
+            }
+          }
+        })();
+        operations.push(op);
+      }
+    }
+
+    await Promise.all(operations);
+
+    try {
+      const updatedRules = await base44.entities.StaffCommissionRule.list();
+      setRules(updatedRules && updatedRules.length > 0 ? updatedRules : localList);
+      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(updatedRules && updatedRules.length > 0 ? updatedRules : localList));
+    } catch {
+      setRules(localList);
+      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
+    }
+
+    toast.success('Sao chép hoa hồng thành công!');
+  };
+
   const getDisplayItems = () => {
     if (activeTab === 'service') return services.map(s => ({ ...s, type: 'service', price: s.price }));
     if (activeTab === 'product') return products.map(p => ({ ...p, type: 'product', price: p.price }));
@@ -303,39 +460,63 @@ export default function CommissionMatrix({ branchId }) {
   return (
     <div className="space-y-5">
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-none px-2">
-        {TABS.map(t => (
+      <div className="flex items-center gap-5 border-b border-slate-200/80 overflow-x-auto whitespace-nowrap scrollbar-none px-1 font-body">
+        {TABS.map((t) => (
           <button
             key={t.id}
+            type="button"
             onClick={() => { setActiveTab(t.id); setSearchQuery(''); }}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors shrink-0 ${activeTab === t.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            className={`py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+              activeTab === t.id
+                ? 'border-orange-500 text-orange-500'
+                : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      {/* Filter and search bar */}
+      {/* Filter and search bar with action buttons */}
       {isMatrixTab && (
-        <div className="flex items-center gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 focus-within:border-primary shadow-sm max-w-sm transition-all">
-          <Search className="w-4 h-4 text-slate-400 shrink-0" />
-          <input 
-            type="text"
-            placeholder={
-              activeTab === 'customer_req'
-                ? 'tìm kiếm dịch vụ...'
-                : TABS.find(t => t.id === activeTab)
-                  ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...`
-                  : 'tìm kiếm...'
-            }
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs font-normal outline-none bg-transparent text-slate-700 placeholder:text-slate-400/70"
-          />
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 focus-within:border-orange-500 shadow-sm w-full max-w-sm transition-all">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input 
+              type="text"
+              placeholder={
+                activeTab === 'customer_req'
+                  ? 'tìm kiếm dịch vụ...'
+                  : TABS.find(t => t.id === activeTab)
+                    ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...`
+                    : 'tìm kiếm...'
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full text-xs font-normal outline-none bg-transparent text-slate-700 placeholder:text-slate-400/70"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGroupCommissionModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold text-xs rounded-xl shadow-xs transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Cài đặt nhóm
+            </button>
+            <button
+              onClick={() => setShowCopyTabModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold text-xs rounded-xl shadow-xs transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Sao chép
+            </button>
+          </div>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto" /></div>
+        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100"><div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto" /></div>
       ) : isMatrixTab ? (
         /* Render Matrix Grid View */
         filteredItems.length === 0 ? (
@@ -383,29 +564,42 @@ export default function CommissionMatrix({ branchId }) {
                         return (
                           <td key={s.id} className="py-2.5 px-3 border-r border-slate-100">
                             <div className="relative flex justify-center">
-                              <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-primary bg-white overflow-hidden px-2 py-1 w-28 shadow-sm transition-all">
-                                <select 
-                                  value={editObj.type}
-                                  onChange={(e) => {
-                                    handleUpdateEdit(cellKey, { type: e.target.value });
-                                    handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
-                                  }}
-                                  className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
-                                >
-                                  <option value="percent">%</option>
-                                  <option value="vnd">đ</option>
-                                </select>
+                              <div className="flex items-center border border-slate-200 rounded-xl focus-within:border-orange-500 bg-white px-2.5 py-1 w-28 shadow-sm transition-all">
                                 <input
-                                  type="number"
-                                  min="0"
+                                  type="text"
                                   placeholder={placeholderText}
-                                  value={editObj.value || ''}
-                                  onChange={(e) => handleUpdateEdit(cellKey, { value: Math.max(0, Number(e.target.value) || 0) })}
+                                  value={editObj.type === 'vnd' && editObj.value ? new Intl.NumberFormat('vi-VN').format(editObj.value) : (editObj.value || '')}
+                                  onChange={(e) => {
+                                    const rawVal = editObj.type === 'vnd' 
+                                      ? e.target.value.replace(/\./g, '').replace(/,/g, '.') 
+                                      : e.target.value.replace(/,/g, '.');
+                                    const numVal = Number(rawVal);
+                                    if (!isNaN(numVal)) {
+                                      handleUpdateEdit(cellKey, { value: Math.max(0, numVal || 0) });
+                                    } else if (e.target.value === '') {
+                                      handleUpdateEdit(cellKey, { value: 0 });
+                                    }
+                                  }}
                                   onBlur={() => handleSaveCell(item.id, s.id, item.type)}
-                                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/50 placeholder:font-normal"
+                                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-1.5 placeholder:text-slate-400/50 placeholder:font-normal"
                                 />
+                                <div className="relative flex items-center shrink-0 pr-1 pl-1.5 border-l border-slate-100">
+                                  <select 
+                                    value={editObj.type}
+                                    onChange={(e) => {
+                                      handleUpdateEdit(cellKey, { type: e.target.value });
+                                      handleSaveCell(item.id, s.id, item.type, editObj.value, e.target.value);
+                                    }}
+                                    className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer focus:ring-0 focus:outline-none appearance-none pr-3 select-none"
+                                    style={{ background: 'none' }}
+                                  >
+                                    <option value="percent">%</option>
+                                    <option value="vnd">đ</option>
+                                  </select>
+                                  <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 pointer-events-none" />
+                                </div>
                               </div>
-                              {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-purple-500 animate-spin" />}
+                              {isSaving && <Loader2 className="absolute -right-3 top-2.5 w-3 h-3 text-orange-500 animate-spin" />}
                             </div>
                           </td>
                         );
@@ -440,7 +634,7 @@ export default function CommissionMatrix({ branchId }) {
                         key={s.id}
                         type="button"
                         onClick={() => setSelectedStaffId(s.id)}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedStaffId === s.id ? 'bg-purple-50 text-purple-600' : 'hover:bg-slate-50 text-slate-650'}`}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedStaffId === s.id ? 'bg-orange-50 text-orange-600' : 'hover:bg-slate-50 text-slate-655'}`}
                       >
                         <Avatar src={s.avatar_url} name={s.full_name} size={22} color={s.avatar_color} />
                         <span className="truncate">{s.full_name}</span>
@@ -472,7 +666,7 @@ export default function CommissionMatrix({ branchId }) {
                         key={s.id}
                         type="button"
                         onClick={() => setSelectedServiceId(s.id)}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedServiceId === s.id ? 'bg-purple-50 text-purple-600' : 'hover:bg-slate-50 text-slate-650'}`}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-colors text-xs font-semibold ${selectedServiceId === s.id ? 'bg-orange-50 text-orange-600' : 'hover:bg-slate-50 text-slate-655'}`}
                       >
                         <span className="truncate max-w-[130px]">{s.name}</span>
                         <span className="text-[10px] text-slate-400 font-medium shrink-0">{formatVND(s.price || 0)}</span>
@@ -494,7 +688,7 @@ export default function CommissionMatrix({ branchId }) {
               <button 
                 onClick={handleSaveOvertimeSlots}
                 disabled={savingOvertime}
-                className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white font-bold text-[11px] rounded-xl hover:opacity-95 transition-opacity disabled:opacity-50 shadow-sm shrink-0"
+                className="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white font-bold text-[11px] rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-sm shrink-0"
               >
                 {savingOvertime ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                 Lưu
@@ -515,35 +709,39 @@ export default function CommissionMatrix({ branchId }) {
                         type="time" 
                         value={slot.from}
                         onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, from: e.target.value } : s))}
-                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-24 shrink-0"
+                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-orange-500 w-24 shrink-0"
                       />
                       <span className="text-[10px] text-slate-400 font-bold shrink-0">Đến</span>
                       <input 
                         type="time" 
                         value={slot.to}
                         onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, to: e.target.value } : s))}
-                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-primary w-24 shrink-0"
+                        className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-orange-500 w-24 shrink-0"
                       />
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden px-2 py-1 w-32 shadow-sm focus-within:border-primary">
-                        <select 
-                          value={slot.type}
-                          onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
-                          className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-500 cursor-pointer pr-1 focus:ring-0 focus:outline-none w-8 select-none"
-                        >
-                          <option value="percent">%</option>
-                          <option value="vnd">đ</option>
-                        </select>
+                      <div className="flex items-center border border-slate-200 rounded-xl bg-white px-3 py-1 w-32 shadow-sm focus-within:border-orange-500 transition-all">
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={slot.value || ''}
                           onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, value: Math.max(0, Number(e.target.value) || 0) } : s))}
-                          className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-0.5 placeholder:text-slate-400/40"
+                          className="bg-transparent border-none outline-none text-xs text-slate-700 w-full text-right focus:ring-0 focus:outline-none pr-1.5 placeholder:text-slate-400/40"
                         />
+                        <div className="relative flex items-center shrink-0 pr-1 pl-1.5 border-l border-slate-100">
+                          <select 
+                            value={slot.type}
+                            onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, type: e.target.value } : s))}
+                            className="bg-transparent border-none outline-none text-xs font-semibold text-slate-500 cursor-pointer focus:ring-0 focus:outline-none appearance-none pr-3 select-none"
+                            style={{ background: 'none' }}
+                          >
+                            <option value="percent">%</option>
+                            <option value="vnd">đ</option>
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 pointer-events-none" />
+                        </div>
                       </div>
                       <button 
                         onClick={() => setTempSlots(tempSlots.filter((_, j) => j !== index))}
@@ -558,7 +756,7 @@ export default function CommissionMatrix({ branchId }) {
 
               <button 
                 onClick={() => setTempSlots([...tempSlots, { id: 'new_' + Date.now(), from: '18:00', to: '19:00', type: 'percent', value: 0 }])}
-                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-2xl border border-dashed border-slate-200 hover:border-primary text-slate-450 hover:text-primary font-bold text-xs transition-colors bg-slate-50/50"
+                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-2xl border border-dashed border-slate-200 hover:border-orange-500 text-slate-450 hover:text-orange-600 font-bold text-xs transition-colors bg-slate-50/50"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Thêm mới
@@ -569,6 +767,7 @@ export default function CommissionMatrix({ branchId }) {
       ) : (
         /* Render Revenue Config Tab Component */
         <RevenueConfigTab
+          branchId={branchId}
           staff={staff}
           services={services}
           products={products}
@@ -579,6 +778,26 @@ export default function CommissionMatrix({ branchId }) {
           prepaidCards={prepaidCards}
         />
       )}
+
+      {/* Group Commission Modal */}
+      <GroupCommissionModal
+        isOpen={showGroupCommissionModal}
+        onClose={() => setShowGroupCommissionModal(false)}
+        staff={staff}
+        activeTab={activeTab}
+        items={getDisplayItems()}
+        groups={groups}
+        onSave={handleSaveGroupCommission}
+      />
+
+      {/* Copy Commission Tab Modal */}
+      <CopyTabCommissionModal
+        isOpen={showCopyTabModal}
+        onClose={() => setShowCopyTabModal(false)}
+        staff={staff}
+        activeTab={activeTab}
+        onSave={handleSaveCopyTabCommission}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Plus, Scissors, Package, Edit3, ToggleLeft, ToggleRight, Trash2, Gift, Sparkles, Layers, Boxes, Archive, Tag, AlertTriangle, CreditCard } from 'lucide-react';
+import { Plus, Scissors, Package, Edit3, ToggleLeft, ToggleRight, Trash2, Gift, Sparkles, Layers, Boxes, Archive, Tag, AlertTriangle, CreditCard, RotateCcw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
@@ -24,8 +24,7 @@ const TABS = [
 { v: 'treatment', l: 'Liệu trình', i: Sparkles, grp: 'treatment' },
 { v: 'service_combo', l: 'Combo dịch vụ', i: Layers, grp: null },
 { v: 'product_combo', l: 'Combo sản phẩm', i: Boxes, grp: null },
-{ v: 'prepaid_card', l: 'Thẻ tiền mặt', i: CreditCard, grp: null },
-{ v: 'inventory', l: 'Kho hàng', i: Archive, grp: null }];
+{ v: 'prepaid_card', l: 'Thẻ tiền mặt', i: CreditCard, grp: null }];
 
 
 const ENTITY_MAP = { service: 'Service', product: 'Product', package: 'ServicePackage', treatment: 'Treatment', service_combo: 'ServiceCombo', product_combo: 'ProductCombo', prepaid_card: 'PrepaidCard' };
@@ -53,23 +52,46 @@ export default function Services() {
     setLoading(true);
     const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
     Promise.all([
-    base44.entities.Service.filter(filter),
-    base44.entities.Product.filter(filter),
-    base44.entities.ServicePackage.filter(filter),
-    base44.entities.Treatment.filter(filter),
-    base44.entities.ServiceCombo.filter(filter),
-    base44.entities.ProductCombo.filter(filter),
-    base44.entities.PrepaidCard.filter(filter),
-    base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })]
-    ).then(([s, p, pk, t, sc, pc, gc, g]) => {
-      setServices(s);
-      setProducts(p);
-      setPackages(pk);
-      setTreatments(t);
-      setServiceCombos(sc);
-      setProductCombos(pc);
-      setPrepaidCards(gc);
-      setGroups(g);
+      base44.entities.Service.filter(filter),
+      base44.entities.Product.filter(filter),
+      base44.entities.ServicePackage.filter(filter),
+      base44.entities.Treatment.filter(filter),
+      base44.entities.ServiceCombo.filter(filter),
+      base44.entities.ProductCombo.filter(filter),
+      base44.entities.PrepaidCard.filter(filter),
+      base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })
+    ]).then(async ([s, p, pk, t, sc, pc, gc, g]) => {
+      // Auto seed if catalog is empty
+      if (s.length === 0 && p.length === 0 && pk.length === 0 && t.length === 0 && sc.length === 0 && pc.length === 0 && gc.length === 0) {
+        await seedServiceData(currentBranchId);
+        const [s2, p2, pk2, t2, sc2, pc2, gc2, g2] = await Promise.all([
+          base44.entities.Service.filter(filter),
+          base44.entities.Product.filter(filter),
+          base44.entities.ServicePackage.filter(filter),
+          base44.entities.Treatment.filter(filter),
+          base44.entities.ServiceCombo.filter(filter),
+          base44.entities.ProductCombo.filter(filter),
+          base44.entities.PrepaidCard.filter(filter),
+          base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })
+        ]);
+        setServices(s2);
+        setProducts(p2);
+        setPackages(pk2);
+        setTreatments(t2);
+        setServiceCombos(sc2);
+        setProductCombos(pc2);
+        setPrepaidCards(gc2);
+        setGroups(g2);
+      } else {
+        setServices(s);
+        setProducts(p);
+        setPackages(pk);
+        setTreatments(t);
+        setServiceCombos(sc);
+        setProductCombos(pc);
+        setPrepaidCards(gc);
+        setGroups(g);
+      }
       setLoading(false);
     }).catch(() => {setLoading(false);});
   };
@@ -79,10 +101,10 @@ export default function Services() {
     setSeeding(true);
     try {
       const result = await seedServiceData(currentBranchId, (msg) => setSeedProgress(msg || ''));
-      toast.success(`Đã tạo: ${result.services} dịch vụ, ${result.products} sản phẩm, ${result.packages} gói`);
+      toast.success(`Đã khôi phục: ${result.services} dịch vụ, ${result.products} sản phẩm, ${result.packages} gói, ${result.treatments} liệu trình`);
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error('Lỗi khôi phục: ' + (e.message || e));
     } finally {
       setSeeding(false);
       setSeedProgress('');
@@ -368,16 +390,32 @@ export default function Services() {
           <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo, thẻ tiền mặt và kho</p>
         </div>
         <div className="flex items-center gap-2">
-          {currentTab.grp &&
-          <button onClick={() => setGroupModal(currentTab.grp)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
-              <Tag className="w-4 h-4" /> Quản lý nhóm
+          <button
+            onClick={handleSeedServices}
+            disabled={seeding}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+            title="Khôi phục lại toàn bộ dữ liệu mẫu danh mục"
+          >
+            <RotateCcw className={`w-4 h-4 text-purple-600 ${seeding ? 'animate-spin' : ''}`} />
+            <span>{seeding ? (seedProgress || 'Đang khôi phục...') : 'Khôi phục dữ liệu mẫu'}</span>
+          </button>
+
+          {currentTab.grp && (
+            <button 
+              onClick={() => setGroupModal(currentTab.grp)} 
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
+            >
+              <Tag className="w-4 h-4 text-purple-600" /> Quản lý nhóm
             </button>
-          }
-          {tab !== 'inventory' &&
-          <button onClick={() => setEditing({ type: tab })} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+          )}
+          {tab !== 'inventory' && (
+            <button 
+              onClick={() => setEditing({ type: tab })} 
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
+            >
               <Plus className="w-4 h-4" /> Thêm {ADD_LABEL[tab]}
             </button>
-          }
+          )}
         </div>
       </div>
 
@@ -389,10 +427,10 @@ export default function Services() {
             <button
               key={t.v}
               onClick={() => setTab(t.v)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
                 tab === t.v
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  ? 'bg-purple-600 text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -403,9 +441,8 @@ export default function Services() {
       </div>
 
       {/* Content */}
-      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" /></div>
       ) : services.length === 0 && products.length === 0 && packages.length === 0 && treatments.length === 0 && serviceCombos.length === 0 && productCombos.length === 0 && prepaidCards.length === 0 ? (
         <EmptyStateSeeder
           icon={<Scissors className="w-8 h-8 text-pink-400" />}
@@ -418,51 +455,6 @@ export default function Services() {
           addLabel={`Thêm ${ADD_LABEL[tab] || 'mới'}`}
           seedLabel="Tạo dữ liệu mẫu"
         />
-      ) : tab === 'inventory' ? (
-        /* Inventory */
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : (
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500 text-xs">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium">Sản phẩm</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">SKU</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Đơn vị</th>
-                  <th className="text-right px-4 py-3 font-medium">Tồn kho</th>
-                  <th className="text-right px-4 py-3 font-medium">Ngưỡng cảnh báo</th>
-                  <th className="text-right px-4 py-3 font-medium hidden sm:table-cell">Giá trị kho</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => {
-                  const lowStock = (p.stock || 0) <= (p.min_stock || 0) && p.min_stock > 0;
-                  return (
-                    <tr key={p.id} className={`border-t border-slate-50 ${lowStock ? 'bg-red-50/40' : ''}`}>
-                      <td className="px-4 py-3 font-medium">{p.name}</td>
-                      <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{p.sku || '—'}</td>
-                      <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{p.unit || 'cái'}</td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`font-semibold ${lowStock ? 'text-red-500' : 'text-slate-700'}`}>{p.stock || 0}</span>
-                        {lowStock && <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-red-400"><AlertTriangle className="w-3 h-3" />Thấp</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <input type="number" value={p.min_stock || ''} onChange={(e) => saveMinStock(p, Number(e.target.value) || 0)} className="w-16 px-1.5 py-1 rounded-lg border border-slate-200 text-xs text-center" />
-                      </td>
-                      <td className="px-4 py-3 text-right hidden sm:table-cell font-semibold">{formatVND((p.stock || 0) * (p.cost_price || 0))}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => adjustStock(p, -1)} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-bold">−</button>
-                          <button onClick={() => adjustStock(p, 1)} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-bold">+</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
       ) : (
         /* Flat non-grouped lists (service, product, package, treatment, combos, prepaid card) */
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

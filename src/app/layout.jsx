@@ -1,15 +1,19 @@
 import './globals.css';
+import { CopilotProvider, CopilotDrawer } from '@/ai-copilot';
 
 export const metadata = {
-  title: 'GloPro - Salon Management',
-  description: 'Professional salon and spa management system',
+  title: 'GloPro - Salon Management System',
+  description: 'Professional AI-driven salon and spa management platform',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="vi">
       <body>
-        {children}
+        <CopilotProvider>
+          {children}
+          <CopilotDrawer />
+        </CopilotProvider>
       </body>
     </html>
   );

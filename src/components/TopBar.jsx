@@ -1,16 +1,37 @@
 'use client';
 import React, { useState } from 'react';
-import { Sparkles, MapPin, ChevronDown, Check, CalendarDays, Receipt } from 'lucide-react';
+import { Sparkles, MapPin, ChevronDown, Check, CalendarDays, Receipt, CloudUpload } from 'lucide-react';
 import { useBranch } from '@/lib/BranchContext';
 import GlobalSearch from '@/components/GlobalSearch';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProfileMenu from '@/components/ProfileMenu';
 import { useT } from '@/lib/i18n';
+import { syncAllDataToSupabase } from '@/lib/syncSupabase';
+import { toast } from '@/components/Layout';
 
 export default function TopBar({ onNewAppointment, onNewInvoice }) {
   const { branches, currentBranchId, setBranch, currentBranch } = useBranch();
   const [branchMenu, setBranchMenu] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const { t } = useT();
+
+  const handleSyncSupabase = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncAllDataToSupabase((msg) => {
+        if (msg) toast.info(msg);
+      });
+      if (res.errors && res.errors.length > 0) {
+        toast.warning(`Đã đẩy dữ liệu: ${res.services} Dịch vụ, ${res.products} Sản phẩm, ${res.customers} Khách hàng, ${res.staff} Nhân viên! (${res.errors.length} cảnh báo)`);
+      } else {
+        toast.success(`Thành công! Đã đẩy ${res.services} Dịch vụ, ${res.products} Sản phẩm, ${res.customers} Khách hàng, ${res.staff} Nhân viên lên Supabase Database!`);
+      }
+    } catch (e) {
+      toast.error('Lỗi kết nối Supabase: ' + (e.message || e));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
@@ -54,6 +75,7 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
 
         {/* Right cluster */}
         <div className="flex items-center gap-2 shrink-0">
+
           <button
             onClick={onNewAppointment}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"

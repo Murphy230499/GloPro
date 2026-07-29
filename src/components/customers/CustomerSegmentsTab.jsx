@@ -314,7 +314,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
                   key={s.id}
                   onClick={() => setSelectedSegId(s.id)}
                   className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                    isSelected ? 'bg-slate-50 border-primary shadow-xs' : 'border-slate-100 hover:bg-slate-50/50'
+                    isSelected ? 'bg-slate-50 border-amber-500 shadow-xs' : 'border-slate-100 hover:bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
@@ -338,14 +338,14 @@ export default function CustomerSegmentsTab({ createTrigger }) {
         <div className="border-b border-slate-100 pb-2 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-sm text-slate-800">Khách hàng thuộc tập</h3>
-            <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full font-sans">
+            <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full font-sans">
               {matchedCustomers.length} khách
             </span>
           </div>
           {activeSegment && matchedCustomers.length > 0 && (
             <button 
               onClick={() => setShowAwardModal(true)}
-              className="px-2.5 py-1.5 bg-pink-500 hover:bg-pink-650 text-white rounded-xl text-[10px] font-bold shadow-xs transition-all flex items-center gap-1.5 font-sans"
+              className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-bold shadow-xs transition-all flex items-center gap-1.5 font-sans"
             >
               <Gift className="w-3.5 h-3.5" /> Tặng khuyến mãi
             </button>
@@ -360,13 +360,13 @@ export default function CustomerSegmentsTab({ createTrigger }) {
           <div className="overflow-y-auto flex-grow max-h-[350px] space-y-3 pt-2">
             {matchedCustomers.map((c) => (
               <div key={c.id} className="flex items-center gap-3 p-2 rounded-xl bg-slate-50 border border-slate-100">
-                <Avatar src={c.avatar_url} name={c.name} size={36} color="#E879A9" />
+                <Avatar src={c.avatar_url} name={c.name} size={36} color="#FBBF24" />
                 <div className="text-left min-w-0 flex-1 font-sans">
                   <div className="font-bold text-xs text-slate-700 truncate">{c.name}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5 font-normal">SĐT: {c.phone}</div>
                 </div>
                 <div className="text-right shrink-0 font-sans">
-                  <div className="text-xs font-bold text-pink-600">{formatVND(c.total_spent || 0)}</div>
+                  <div className="text-xs font-bold text-amber-500">{formatVND(c.total_spent || 0)}</div>
                   <div className="text-[9px] text-slate-400 mt-0.5 font-normal">{c.visit_count || 0} lần đến</div>
                 </div>
               </div>
@@ -408,28 +408,28 @@ export default function CustomerSegmentsTab({ createTrigger }) {
             <div className="space-y-4 font-sans text-xs flex-grow">
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Tên tập khách hàng</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Khách sinh nhật tháng 7..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Khách sinh nhật tháng 7..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Số ngày chưa ghé lớn hơn (ngày)</label>
-                <input type="number" value={lastVisitDays} onChange={(e) => setLastVisitDays(e.target.value)} placeholder="Ví dụ: 30" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <input type="number" value={lastVisitDays} onChange={(e) => setLastVisitDays(e.target.value)} placeholder="Ví dụ: 30" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Tổng chi tiêu lớn hơn (VNĐ)</label>
-                <input type="number" value={totalSpent} onChange={(e) => setTotalSpent(e.target.value)} placeholder="Ví dụ: 5,000,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <input type="number" value={totalSpent} onChange={(e) => setTotalSpent(e.target.value)} placeholder="Ví dụ: 5,000,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Số lần ghé bằng</label>
-                  <input type="number" value={visitCount} onChange={(e) => setVisitCount(e.target.value)} placeholder="Ví dụ: 1" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <input type="number" value={visitCount} onChange={(e) => setVisitCount(e.target.value)} placeholder="Ví dụ: 1" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Tháng sinh nhật</label>
                   <div className="relative">
-                    <select value={birthdayMonth} onChange={(e) => setBirthdayMonth(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                    <select value={birthdayMonth} onChange={(e) => setBirthdayMonth(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none focus:border-amber-500">
                       <option value="">— Chọn tháng —</option>
                       {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>)}
                     </select>
@@ -441,7 +441,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Giới tính</label>
                 <div className="relative">
-                  <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                  <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none focus:border-amber-500">
                     <option value="">— Tất cả giới tính —</option>
                     <option value="female">Nữ</option>
                     <option value="male">Nam</option>
@@ -464,7 +464,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
             {/* Footer buttons */}
             <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
               <button type="button" onClick={resetFormAndClose} className="flex-1 py-2.5 rounded-xl bg-slate-250 hover:bg-slate-300 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
-              <button type="button" onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+              <button type="button" onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 transition-colors font-sans">
                 {editingId ? 'Cập nhật' : 'Tạo tập khách'}
               </button>
             </div>
@@ -504,8 +504,8 @@ export default function CustomerSegmentsTab({ createTrigger }) {
                         <td className="p-3 text-center font-semibold text-slate-600">{stat.awardedCount}</td>
                         <td className="p-3 text-center font-bold text-emerald-600">{stat.usedCount}</td>
                         <td className="p-3 text-center font-semibold text-slate-500">{stat.unusedCount}</td>
-                        <td className="p-3 text-center font-semibold text-red-500">{stat.expiredCount}</td>
-                        <td className="p-3 text-right font-bold text-pink-600">{formatVND(stat.totalCost)}</td>
+                        <td className="p-3 text-right font-bold text-red-500">{formatVND(stat.expiredCount)}</td>
+                        <td className="p-3 text-right font-bold text-amber-600">{formatVND(stat.totalCost)}</td>
                         <td className="p-3 text-right font-bold text-slate-700">{formatVND(stat.totalRevenue)}</td>
                       </tr>
                     ))}
@@ -540,9 +540,9 @@ export default function CustomerSegmentsTab({ createTrigger }) {
                           <tr key={u.id} className="hover:bg-slate-50/50">
                             <td className="p-3 font-semibold text-slate-700">{u.customer_name}</td>
                             <td className="p-3 text-slate-600">{u.campaign_name}</td>
-                            <td className="p-3 font-semibold text-primary">{u.invoice_code}</td>
+                            <td className="p-3 font-semibold text-amber-500">{u.invoice_code}</td>
                             <td className="p-3 text-right font-bold text-slate-700">{formatVND(u.invoice_total)}</td>
-                            <td className="p-3 text-right font-bold text-pink-600">{formatVND(u.discount_amount)}</td>
+                            <td className="p-3 text-right font-bold text-amber-600">{formatVND(u.discount_amount)}</td>
                             <td className="p-3 text-center text-slate-450">{u.date}</td>
                           </tr>
                         ))}
@@ -562,8 +562,8 @@ export default function CustomerSegmentsTab({ createTrigger }) {
           <div className="bg-slate-50 rounded-3xl p-6 max-w-md w-full border border-slate-105 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in scale-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
               <div>
-                <h3 className="text-base font-bold text-slate-800 font-sans">Tặng KM cho Tập khách hàng</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">Tập: {activeSegment?.name}</p>
+                <h3 className="text-base font-bold text-slate-800 font-sans">Tặng khuyến mãi cho tập khách hàng</h3>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5 font-sans">Tập: {activeSegment?.name}</p>
               </div>
               <button 
                 onClick={() => setShowAwardModal(false)} 
@@ -575,7 +575,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
 
             <div className="space-y-4 font-sans text-xs flex-grow">
               <div>
-                <label className="block font-bold text-slate-500 mb-2">Chọn chương trình muốn tặng (Có thể chọn nhiều)</label>
+                <label className="block font-bold text-slate-500 mb-2">Chọn chương trình muốn tặng (có thể chọn nhiều)</label>
                 {availableCampaigns.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 bg-white rounded-xl border border-slate-200">
                     Chưa có chương trình khuyến mãi nào được tạo. Hãy tạo chương trình trong tab "Chương trình KM" trước.
@@ -595,7 +595,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
                             }
                           }}
                           className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                            isSelected ? 'bg-primary/5 border-primary' : 'bg-white border-slate-200 hover:bg-slate-50'
+                            isSelected ? 'bg-amber-50 border-amber-500' : 'bg-white border-slate-200 hover:bg-slate-50'
                           }`}
                         >
                           <div className="text-left">
@@ -608,7 +608,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
                             type="checkbox" 
                             checked={isSelected} 
                             readOnly 
-                            className="rounded text-primary focus:ring-primary w-4 h-4"
+                            className="rounded text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer"
                           />
                         </div>
                       );
@@ -623,7 +623,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
               <button 
                 onClick={handleAwardCampaigns} 
                 disabled={availableCampaigns.length === 0}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 disabled:opacity-50 transition-all font-sans"
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 disabled:opacity-50 transition-colors font-sans"
               >
                 Xác nhận tặng
               </button>

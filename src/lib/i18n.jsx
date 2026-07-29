@@ -5,7 +5,7 @@ const translations = {
   vi: {
     'nav.dashboard': 'Tổng quan', 'nav.appointments': 'Lịch hẹn', 'nav.pos': 'Thu ngân',
     'nav.customers': 'Khách hàng', 'nav.staff': 'Nhân viên', 'nav.catalog': 'Danh mục',
-    'nav.reports': 'Báo cáo', 'nav.settings': 'Cài đặt', 'nav.more': 'Khác', 'nav.all_features': 'Tất cả chức năng',
+    'nav.inventory': 'Quản lý kho', 'nav.reports': 'Báo cáo', 'nav.settings': 'Cài đặt', 'nav.more': 'Khác', 'nav.all_features': 'Tất cả chức năng',
     'nav.discounts': 'Giảm giá',
     'top.all_branches': 'Tất cả cơ sở',
     'common.add': 'Thêm', 'common.edit': 'Sửa', 'common.delete': 'Xoá', 'common.save': 'Lưu',

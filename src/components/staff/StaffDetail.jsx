@@ -96,7 +96,7 @@ export default function StaffDetail({ staff, onClose }) {
               <h2 className="text-base font-bold text-slate-800">{staff.full_name}</h2>
               <p className="text-xs text-slate-400 capitalize font-semibold mt-0.5">{staff.role}</p>
               <div className="flex gap-2 mt-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">
                   {staff.can_be_booked ? 'Nhận lịch hẹn' : 'Không nhận lịch'}
                 </span>
                 {staff.can_be_booked && (
@@ -117,19 +117,19 @@ export default function StaffDetail({ staff, onClose }) {
         <div className="flex border-b border-slate-100 px-6 shrink-0 bg-white">
           <button 
             onClick={() => setActiveTab('profile')} 
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'profile' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'profile' ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
           >
             <User className="w-3.5 h-3.5 inline mr-1" /> Hồ sơ & Chuyên môn
           </button>
           <button 
             onClick={() => setActiveTab('schedule')} 
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'schedule' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'schedule' ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
           >
             <Calendar className="w-3.5 h-3.5 inline mr-1" /> Lịch làm việc
           </button>
           <button 
             onClick={() => setActiveTab('commission')} 
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'commission' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors ${activeTab === 'commission' ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400 hover:text-slate-650'}`}
           >
             <DollarSign className="w-3.5 h-3.5 inline mr-1" /> Doanh số & Hoa hồng
           </button>
@@ -156,14 +156,14 @@ export default function StaffDetail({ staff, onClose }) {
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5"><Award className="w-4 h-4 text-purple-500" /> Mô tả chuyên môn</h3>
+                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5"><Award className="w-4 h-4 text-orange-500" /> Mô tả chuyên môn</h3>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 leading-relaxed">
                       {staff.specialties || 'Chưa có mô tả chuyên môn cụ thể.'}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-purple-500" /> Danh sách dịch vụ được phép thực hiện ({staff.service_ids?.length || 0})</h3>
+                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-orange-500" /> Danh sách dịch vụ được phép thực hiện ({staff.service_ids?.length || 0})</h3>
                     {(!staff.service_ids || staff.service_ids.length === 0) ? (
                       <p className="text-xs text-slate-400 italic">Chưa cấu hình dịch vụ chuyên môn cho nhân sự này.</p>
                     ) : (
@@ -197,7 +197,7 @@ export default function StaffDetail({ staff, onClose }) {
                         } else {
                           const matched = templates.find(t => t.id === s.shift_template_id);
                           label = matched ? `${matched.name} (${matched.start_time} - ${matched.end_time})` : 'Ca làm';
-                          badgeStyle = 'bg-purple-50 text-purple-700 border border-purple-100';
+                          badgeStyle = 'bg-orange-50 text-purple-700 border border-orange-100';
                         }
 
                         return (
@@ -225,7 +225,7 @@ export default function StaffDetail({ staff, onClose }) {
                     </div>
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
                       <div className="text-[10px] font-bold text-slate-400 uppercase">Hoa hồng tích lũy</div>
-                      <div className="text-base font-bold text-purple-600 mt-1">
+                      <div className="text-base font-bold text-orange-600 mt-1">
                         {formatVND(commData.totalEarned + calculateRevenueBonus(staff.id, invoices, revenueBonusRules, advancedConfigs).totalBonus)}
                       </div>
                     </div>
@@ -252,12 +252,12 @@ export default function StaffDetail({ staff, onClose }) {
                               </div>
                               <div className="text-right">
                                 <div className="text-xs font-bold text-slate-700">{formatVND(item.revenue)}</div>
-                                <div className="text-[10px] text-purple-500 font-bold mt-0.5">Hoa hồng: {item.ruleLabel}</div>
+                                <div className="text-[10px] text-orange-500 font-bold mt-0.5">Hoa hồng: {item.ruleLabel}</div>
                               </div>
                             </div>
                             
-                            <div className="flex justify-between items-center bg-purple-50/50 p-2 rounded-xl text-xs font-bold border border-purple-50/60 mt-1">
-                              <span className="text-purple-600">Hoa hồng nhận:</span>
+                            <div className="flex justify-between items-center bg-orange-50/50 p-2 rounded-xl text-xs font-bold border border-orange-50/60 mt-1">
+                              <span className="text-orange-600">Hoa hồng nhận:</span>
                               <span className="text-purple-700">{formatVND(item.earned)}</span>
                             </div>
                           </div>
@@ -275,7 +275,7 @@ export default function StaffDetail({ staff, onClose }) {
                         <h3 className="font-bold text-sm text-slate-800">Hoa hồng doanh thu đạt được ({revBonus.details.length})</h3>
                         <div className="space-y-3">
                           {revBonus.details.map((bonus, idx) => (
-                            <div key={idx} className="p-4 bg-purple-50/40 border border-purple-100 rounded-2xl shadow-xs space-y-2">
+                            <div key={idx} className="p-4 bg-orange-50/40 border border-orange-100 rounded-2xl shadow-xs space-y-2">
                               <div className="flex justify-between items-start">
                                 <div>
                                   <div className="text-xs font-bold text-slate-800">{bonus.name}</div>

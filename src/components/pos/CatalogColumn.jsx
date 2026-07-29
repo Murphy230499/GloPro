@@ -276,37 +276,37 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-1 px-2 pt-3 border-b border-slate-100 overflow-x-auto">
+      <div className="flex items-center gap-1 px-2 pt-2 border-b border-slate-100 overflow-x-auto">
         {TABS.map((t) => {
           const Icon = t.i;
           return (
             <button key={t.v} onClick={() => setTab(t.v)}
-              className={`flex items-center gap-1 pb-2.5 px-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t.v ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+              className={`flex items-center gap-1 pb-2 px-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t.v ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
               <Icon className="w-3.5 h-3.5" /> {t.l}
             </button>
           );
         })}
       </div>
 
-      <div className="px-4 py-3 flex gap-2">
-        <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 flex-1">
-          <Search className="w-4 h-4 text-slate-400" />
+      <div className="px-3 py-2 flex gap-2">
+        <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-1.5 flex-1">
+          <Search className="w-3.5 h-3.5 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm..." className="bg-transparent outline-none text-sm flex-1" />
+            placeholder="Tìm..." className="bg-transparent outline-none text-xs flex-1" />
         </div>
         <button
           onClick={() => setIsSorting(!isSorting)}
           title="Sắp xếp bảng giá"
-          className={`flex items-center justify-center w-10 h-10 rounded-xl border transition-all shrink-0 relative group/btn ${isSorting ? 'bg-primary/10 border-primary text-primary shadow-xs' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+          className={`flex items-center justify-center w-8.5 h-8.5 rounded-xl border transition-all shrink-0 relative group/btn ${isSorting ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-xs' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
         >
-          <Move className="w-4 h-4" />
+          <Move className="w-3.5 h-3.5" />
           <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/btn:block bg-slate-800 text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50 transition-all pointer-events-none">
             Sắp xếp bảng giá
           </span>
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-3 pb-3">
         {catList.length === 0 ? (
           <div className="text-center py-16 text-slate-300 text-sm">Không tìm thấy</div>
         ) : (
@@ -316,21 +316,21 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
             return (
               <div
                 key={cat.key}
-                className={`mb-3 p-1.5 rounded-2xl border transition-all group ${isSorting && cat.groupId ? 'border-primary/20 bg-primary/5/10' : 'bg-slate-50/20 border-slate-100/30 hover:bg-slate-50/50'}`}
+                className={`mb-2 p-1 rounded-2xl border transition-all group ${isSorting && cat.groupId ? 'border-emerald-500/20 bg-emerald-50/50' : 'bg-slate-50/20 border-slate-100/30 hover:bg-slate-50/50'}`}
                 draggable={isSorting && !!cat.groupId}
                 onDragStart={(e) => handleGroupDragStart(e, cat.groupId)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleGroupDrop(e, cat.groupId)}
               >
                 <button onClick={() => !isSorting && toggleCat(cat.key)}
-                  className={`w-full flex items-center gap-2 mb-1.5 py-1 ${isSorting && cat.groupId ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-                  <h4 className="text-sm font-bold text-slate-700">{cat.label}</h4>
-                  <span className="text-xs text-slate-400">({list.length})</span>
-                  {isSorting && cat.groupId && <span className="text-[10px] text-primary ml-auto font-bold animate-pulse">Kéo để xếp nhóm</span>}
+                  className={`w-full flex items-center gap-2 mb-1 py-0.5 ${isSorting && cat.groupId ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                  <h4 className="text-xs font-bold text-slate-700">{cat.label}</h4>
+                  <span className="text-[11px] text-slate-400">({list.length})</span>
+                  {isSorting && cat.groupId && <span className="text-[10px] text-emerald-600 ml-auto font-bold animate-pulse">Kéo để xếp nhóm</span>}
                 </button>
                 {!isCollapsed && (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {list.map((item) => {
                       const Icon = itemIcon();
                       return (
@@ -341,11 +341,11 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
                           onDragStart={(e) => { e.stopPropagation(); handleItemDragStart(e, item.id, item); }}
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => { e.stopPropagation(); handleItemDrop(e, item.id, item); }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left border ${isSorting ? 'cursor-grab active:cursor-grabbing hover:border-primary/30 hover:bg-primary/5 bg-white border-dashed border-slate-200 shadow-xs' : 'cursor-pointer hover:bg-slate-50 border-transparent'}`}
+                          className={`w-full flex items-center justify-between p-1.5 px-2 rounded-xl transition-all text-left border ${isSorting ? 'cursor-grab active:cursor-grabbing hover:border-emerald-500/30 hover:bg-emerald-50/50 bg-white border-dashed border-slate-200 shadow-xs' : 'cursor-pointer hover:bg-slate-50 border-transparent'}`}
                         >
                           {isSorting && <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0 -ml-1 mr-0.5" />}
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
                               {tab === 'prepaid_card' ? (
                                 <div className="w-full h-full p-1.5 flex flex-col justify-between relative select-none" style={{ backgroundColor: item.color || '#FF6B9D' }}>
                                   <div className="absolute inset-0 bg-gradient-to-tr from-black/25 via-transparent to-white/20" />
@@ -368,7 +368,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
                               {getItemSub(item) && <div className="text-xs text-slate-400">{getItemSub(item)}</div>}
                             </div>
                           </div>
-                          <span className="font-bold text-sm text-pink-600 shrink-0">{formatVND(getItemPrice(item))}</span>
+                          <span className="font-bold text-sm text-emerald-600 shrink-0">{formatVND(getItemPrice(item))}</span>
                         </button>
                       );
                     })}

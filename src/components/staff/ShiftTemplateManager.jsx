@@ -171,7 +171,7 @@ export default function ShiftTemplateManager({ onChanged }) {
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans"
         >
           <Plus className="w-4 h-4" /> Thêm ca làm việc
         </button>
@@ -199,7 +199,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                 }}
               >
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-bold text-sm text-slate-800">{t.name}</h4>
                     <span 
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
@@ -210,6 +210,11 @@ export default function ShiftTemplateManager({ onChanged }) {
                     >
                       {t.is_active !== false ? 'Hoạt động' : 'Tạm dừng'}
                     </span>
+                    {t.name === 'Ca hành chính' && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50">
+                        Ca mặc định tự gán
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-xs text-slate-500 font-semibold">
@@ -281,7 +286,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                   value={name} 
                   onChange={(e) => setName(e.target.value)} 
                   placeholder="Nhập tên ca làm việc" 
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
 
@@ -293,7 +298,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                     <select 
                       value={branchIdField} 
                       onChange={(e) => setBranchIdField(e.target.value)} 
-                      className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white appearance-none"
+                      className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
                     >
                       <option value="">— Chọn chi nhánh —</option>
                       {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -311,7 +316,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                     type="time" 
                     value={startTime} 
                     onChange={(e) => setStartTime(e.target.value)} 
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                   />
                 </div>
                 <div>
@@ -320,7 +325,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                     type="time" 
                     value={endTime} 
                     onChange={(e) => setEndTime(e.target.value)} 
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                   />
                 </div>
               </div>
@@ -335,7 +340,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                       min="0"
                       value={lateGrace} 
                       onChange={(e) => setLateGrace(Number(e.target.value) || 0)} 
-                      className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                      className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
                   </div>
@@ -348,7 +353,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                       min="0"
                       value={earlyGrace} 
                       onChange={(e) => setEarlyGrace(Number(e.target.value) || 0)} 
-                      className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                      className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
                   </div>
@@ -364,7 +369,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                     min="0"
                     value={overtimeAfter} 
                     onChange={(e) => setOvertimeAfter(Number(e.target.value) || 0)} 
-                    className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                    className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
                 </div>
@@ -422,7 +427,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                   onChange={(e) => setNote(e.target.value)} 
                   placeholder="Nhập ghi chú ca làm việc" 
                   rows={2}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
 
@@ -432,7 +437,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                   type="checkbox" 
                   checked={isActive} 
                   onChange={(e) => setIsActive(e.target.checked)} 
-                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" 
+                  className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" 
                 />
                 <span>Đang hoạt động</span>
               </label>
@@ -448,7 +453,7 @@ export default function ShiftTemplateManager({ onChanged }) {
               </button>
               <button 
                 onClick={save} 
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans"
+                className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans"
               >
                 {editingId ? 'Lưu' : 'Tạo'}
               </button>

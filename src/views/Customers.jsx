@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, Plus, X, Phone, Calendar, Gift, Edit3, Crown, Tag, Users, Trash2, ChevronDown, ChevronLeft, ChevronRight, Mail, MapPin, Sparkles, MessageSquare, PlusCircle, User, Check, ShieldCheck, Play, ArrowRight, UserCheck, CalendarDays, MoreHorizontal, Filter, RotateCw, Receipt, RotateCcw, Printer, CreditCard, QrCode, Megaphone } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, Plus, X, Phone, Calendar, Gift, Edit3, Crown, Tag, Users, Trash2, ChevronDown, ChevronLeft, ChevronRight, Mail, MapPin, Sparkles, MessageSquare, PlusCircle, User, Check, ShieldCheck, Play, ArrowRight, UserCheck, CalendarDays, MoreHorizontal, Filter, RotateCw, Receipt, RotateCcw, Printer, CreditCard, QrCode, Megaphone, Percent } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatVND, formatDate, todayStr } from '@/lib/format';
 import { toast } from '@/components/Layout';
@@ -13,7 +13,7 @@ import CustomerSegmentsTab from '@/components/customers/CustomerSegmentsTab';
 import LoyaltyPointsTab from '@/components/customers/LoyaltyPointsTab';
 import AppointmentModal from '@/components/AppointmentModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
-import { loadCustomerTiers, loadCustomerTierHistory } from '@/utils/loyaltyFallbacks';
+import { loadCustomerTiers, loadCustomerTierHistory, getTierIcon } from '@/utils/loyaltyFallbacks';
 import EmptyStateSeeder from '@/components/EmptyStateSeeder';
 import { seedCustomerData } from '@/lib/seeders/customerSeeder';
 
@@ -50,7 +50,10 @@ class CustomerDetailErrorBoundary extends React.Component {
 }
 
 export default function Customers() {
-
+  const searchParams = useSearchParams();
+  const urlId = searchParams?.get('id') || searchParams?.get('customerId');
+  const urlName = searchParams?.get('name');
+  const urlPhone = searchParams?.get('phone') || searchParams?.get('search');
 
   const [customers, setCustomers] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -69,7 +72,6 @@ export default function Customers() {
   const [tierCreateTrigger, setTierCreateTrigger] = useState(0);
   const [segmentCreateTrigger, setSegmentCreateTrigger] = useState(0);
 
-
   const handleOpenDetail = (c) => {
     setDetail(c);
   };
@@ -77,7 +79,6 @@ export default function Customers() {
   const handleCloseDetail = () => {
     setDetail(null);
   };
-
 
   const load = () => {
     Promise.all([
@@ -124,11 +125,29 @@ export default function Customers() {
       setLoading(false);
     });
   };
+
   useEffect(() => {
     load();
     window.addEventListener('reload-data', load);
     return () => window.removeEventListener('reload-data', load);
   }, []);
+
+  useEffect(() => {
+    if (!customers || customers.length === 0) return;
+    if (urlId) {
+      const found = customers.find(c => String(c.id) === String(urlId));
+      if (found) setDetail(found);
+    } else if (urlName) {
+      const q = decodeURIComponent(urlName).toLowerCase();
+      const found = customers.find(c => (c.name || '').toLowerCase() === q || (c.name || '').toLowerCase().includes(q));
+      if (found) setDetail(found);
+    } else if (urlPhone) {
+      const q = decodeURIComponent(urlPhone);
+      setSearch(q);
+      const found = customers.find(c => (c.phone || '').includes(q));
+      if (found) setDetail(found);
+    }
+  }, [searchParams, customers]);
 
   const filtered = (customers || []).filter((c) => {
     if (!c) return false;
@@ -289,7 +308,7 @@ export default function Customers() {
             <button onClick={() => setGroupManagerOpen(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-semibold text-sm">
               <Tag className="w-4 h-4 text-slate-400" /> Quản lý nhóm
             </button>
-            <button onClick={() => {setEditing({});}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm">
+            <button onClick={() => {setEditing({});}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors">
               <Plus className="w-4 h-4" /> Thêm khách
             </button>
           </div>
@@ -297,7 +316,7 @@ export default function Customers() {
         {tab === 'tiers' && (
           <button 
             onClick={() => setTierCreateTrigger(prev => prev + 1)} 
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm font-sans"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm font-sans hover:bg-amber-600 transition-colors"
           >
             <Plus className="w-4 h-4" /> Tạo hạng thành viên
           </button>
@@ -305,7 +324,7 @@ export default function Customers() {
         {tab === 'segments' && (
           <button 
             onClick={() => setSegmentCreateTrigger(prev => prev + 1)} 
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm font-sans"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm font-sans hover:bg-amber-600 transition-colors"
           >
             <Plus className="w-4 h-4" /> Tạo tập khách hàng
           </button>
@@ -317,7 +336,7 @@ export default function Customers() {
         <button onClick={() => setTab('list')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
             tab === 'list' 
-              ? 'bg-primary text-white shadow-sm' 
+              ? 'bg-amber-500 text-white shadow-sm' 
               : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -327,7 +346,7 @@ export default function Customers() {
         <button onClick={() => setTab('tiers')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
             tab === 'tiers' 
-              ? 'bg-primary text-white shadow-sm' 
+              ? 'bg-amber-500 text-white shadow-sm' 
               : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -337,7 +356,7 @@ export default function Customers() {
         <button onClick={() => setTab('segments')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
             tab === 'segments' 
-              ? 'bg-primary text-white shadow-sm' 
+              ? 'bg-amber-500 text-white shadow-sm' 
               : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -347,7 +366,7 @@ export default function Customers() {
         <button onClick={() => setTab('points')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
             tab === 'points' 
-              ? 'bg-primary text-white shadow-sm' 
+              ? 'bg-amber-500 text-white shadow-sm' 
               : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -378,7 +397,7 @@ export default function Customers() {
               seedLabel="Tạo 12 khách hàng mẫu"
             />
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {(filtered || []).map((c) => {
                 const isVIP = (c && c.total_spent || 0) > 5000000;
                 const custGroup = (customerGroups || []).find(g => g && g.id === c.group_id);
@@ -387,54 +406,67 @@ export default function Customers() {
                 const tier = sortedTiers.find(t => t && ((c.total_spent || 0) >= t.min_spend || (c.points || 0) >= t.min_points));
 
                 return (
-                  <div key={c.id} className="relative text-left rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow bg-[hsl(var(--secondary))] flex flex-col justify-between">
+                  <div key={c.id} className="relative text-left rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-shadow bg-white flex flex-col justify-between font-sans">
                     {custGroup && (
-                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full text-white font-bold z-10" style={{ backgroundColor: custGroup.color }}>
+                      <span className="absolute top-2.5 right-2.5 text-[9px] px-1.5 py-0.5 rounded-full text-white font-bold z-10 truncate max-w-[85px]" style={{ backgroundColor: custGroup.color }}>
                         {custGroup.name}
                       </span>
                     )}
                     
                     {/* Clickable Card Body Area */}
-                    <div onClick={() => handleOpenDetail(c)} className="cursor-pointer space-y-3 flex-grow">
-                      <div className="flex items-center gap-3">
-                        <Avatar src={c.avatar_url} name={c.name} size={48} color="#E879A9" />
-                        <div className="flex-1 min-w-0 pr-12">
-                          <div className="font-bold truncate flex items-center gap-1.5 flex-wrap">
-                            {c.name} 
-                            {isVIP && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                    <div onClick={() => handleOpenDetail(c)} className="cursor-pointer space-y-2.5 flex-grow">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar src={c.avatar_url} name={c.name} size={40} color="#E879A9" />
+                        <div className="flex-1 min-w-0 pr-10">
+                          <div className="font-bold text-xs text-slate-900 truncate flex items-center gap-1 leading-tight">
+                            <span>{c.name}</span>
                             {tier && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-md text-white font-bold inline-block" style={{ backgroundColor: tier.color }}>
-                                {tier.name}
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-md text-white font-bold shrink-0 flex items-center gap-1 shadow-2xs" style={{ backgroundColor: tier.color || '#F97316' }}>
+                                {getTierIcon(tier.name, tier.id, "w-2.5 h-2.5 shrink-0")}
+                                <span>{tier.name}</span>
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone}</div>
+                          <div className="text-[11px] text-slate-400 font-normal flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{c.phone}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 text-center">
-                        <div><div className="font-bold text-sm">{c.visit_count || 0}</div><div className="text-[10px] text-slate-400">lần đến</div></div>
-                        <div><div className="font-bold text-sm">{c.points || 0}</div><div className="text-[10px] text-slate-400">điểm</div></div>
-                        <div><div className="font-bold text-sm text-pink-600">{formatVND(c.total_spent || 0).replace('₫', '')}</div><div className="text-[10px] text-slate-400">VNĐ</div></div>
+
+                      <div className="grid grid-cols-3 text-center bg-slate-50/80 rounded-xl p-2 border border-slate-100">
+                        <div>
+                          <div className="font-bold text-xs text-slate-800">{c.visit_count || 0}</div>
+                          <div className="text-[9px] text-slate-400 font-medium">lần đến</div>
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-slate-800">{c.points || 0}</div>
+                          <div className="text-[9px] text-slate-400 font-medium">điểm</div>
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-pink-600">{formatVND(c.total_spent || 0).replace('₫', '')}</div>
+                          <div className="text-[9px] text-slate-400 font-medium">VNĐ</div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Bottom toolbar for edit & delete */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50 shrink-0">
-                      <button onClick={() => handleOpenDetail(c)} className="text-[10px] text-primary font-bold hover:underline">
+                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 shrink-0">
+                      <button onClick={() => handleOpenDetail(c)} className="text-[11px] text-orange-500 font-bold hover:underline cursor-pointer">
                         Xem chi tiết &rarr;
                       </button>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setEditing(c); }} 
-                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" 
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
                           title="Sửa thông tin"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(c.id); }} 
-                          className="p-1.5 text-red-400 hover:text-red-650 hover:bg-red-50 rounded-lg transition-colors" 
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
                           title="Xóa khách hàng"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -476,6 +508,13 @@ const formatAppointmentId = (id) => {
   const positiveHash = Math.abs(hash) % 1000000;
   return `SC_${String(positiveHash).padStart(6, '0')}`;
 };
+
+const SCOPES = {
+  'total': 'Toàn bộ đơn hàng',
+  'service': 'Dịch vụ',
+  'product': 'Sản phẩm'
+};
+const isExpired = (date) => date && new Date(date) < new Date(new Date().setHours(0,0,0,0));
 
 function CustomerDetail({ customer, customerGroups = [], customerTiers = [], invoices = [], memberships = [], onClose, onEdit, onDelete, onInvoiceCreated }) {
   const router = useRouter();
@@ -544,6 +583,43 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
   const [invFilterOpen, setInvFilterOpen] = useState(false);
   const [printingInvoice, setPrintingInvoice] = useState(null);
   const [isDraftPrint, setIsDraftPrint] = useState(false);
+
+  // Gifts & Promotions states
+  const [customerGifts, setCustomerGifts] = useState([]);
+  const [allPromotions, setAllPromotions] = useState([]);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'promotions' && customer?.id) {
+      const localGifts = JSON.parse(localStorage.getItem('glopro_customer_gifts') || '{}');
+      setCustomerGifts(localGifts[customer.id] || []);
+      const localPromos = JSON.parse(localStorage.getItem('glopro_promotions') || '[]');
+      setAllPromotions(localPromos);
+    }
+  }, [activeTab, customer?.id]);
+
+  const handleGivePromo = (promo) => {
+    try {
+      const localStr = localStorage.getItem('glopro_customer_gifts') || '{}';
+      const gifts = JSON.parse(localStr);
+      
+      if (!gifts[customer.id]) {
+        gifts[customer.id] = [];
+      }
+      
+      gifts[customer.id].push({
+        promo_id: promo.id,
+        assigned_at: new Date().toISOString()
+      });
+
+      localStorage.setItem('glopro_customer_gifts', JSON.stringify(gifts));
+      setCustomerGifts(gifts[customer.id]);
+      setShowGiftModal(false);
+      toast.success('Đã tặng ưu đãi cho khách hàng');
+    } catch (err) {
+      toast.error('Lỗi khi tặng ưu đãi');
+    }
+  };
 
   const [staffList, setStaffList] = useState([]);
   const [servicesList, setServicesList] = useState([]);
@@ -963,9 +1039,9 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
         status: 'unpaid',
         date: todayStr()
       });
-      toast.success(`Đã tự động đẩy đơn treo sang POS • ${saleCode}`);
+      toast.success(`Đã tự động đẩy hóa đơn tạm tính sang POS • ${saleCode}`);
     } catch (e) {
-      console.error('Lỗi khi tự động tạo hóa đơn treo:', e);
+      console.error('Lỗi khi tự động tạo hóa đơn tạm tính:', e);
     }
   };
 
@@ -1178,7 +1254,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 value={purchasedSearch} 
                 onChange={(e) => setPurchasedSearch(e.target.value)} 
                 placeholder="Tìm tên, mã HĐ, nhân viên..." 
-                className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none w-48 font-normal font-sans"
+                className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 focus:outline-none w-48 font-normal font-sans transition-colors"
               />
             </div>
           </div>
@@ -1206,13 +1282,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
                   return (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3.5 font-bold text-primary">
+                      <td className="px-4 py-3.5 font-bold text-amber-600">
                         <button 
                           onClick={() => {
                             handleCloseMembershipModal();
                             router.push(`/invoices/${item.invoice_id}`);
                           }} 
-                          className="hover:underline text-left font-bold"
+                          className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
                         >
                           {item.invoice_code || '—'}
                         </button>
@@ -1238,7 +1314,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       <td className="px-4 py-3.5 text-center">
                         <button
                           onClick={() => handleBuyAgain(item)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-primary hover:bg-pink-50 hover:border-pink-100 transition-colors mx-auto relative group"
+                          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors mx-auto relative group"
                           title="Mua lại"
                         >
                           <RotateCw className="w-3.5 h-3.5" />
@@ -1317,11 +1393,11 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             )}
           </div>
 
-          <button onClick={handleBookNow} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold shadow-sm hover:opacity-95 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
+          <button onClick={handleBookNow} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
             <CalendarDays className="w-3.5 h-3.5" /> Đặt lịch ngay
           </button>
 
-          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-pink-50 text-primary border border-pink-100 rounded-xl text-xs font-semibold shadow-xs hover:bg-pink-100/50 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
+          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-xs font-bold shadow-xs hover:bg-amber-100 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
             <Receipt className="w-3.5 h-3.5" /> Tạo hóa đơn
           </button>
         </div>
@@ -1342,8 +1418,9 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold text-lg text-slate-800">{customer.name}</h3>
                   {tier && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full text-white font-medium" style={{ backgroundColor: tier.color }}>
-                      Hạng: {tier.name}
+                    <span className="text-[10px] px-2.5 py-1 rounded-full text-white font-bold shadow-xs flex items-center gap-1.5 inline-flex" style={{ backgroundColor: tier.color || '#F97316' }}>
+                      {getTierIcon(tier.name, tier.id, "w-3.5 h-3.5 shrink-0 text-white")}
+                      <span>Hạng: {tier.name}</span>
                     </span>
                   )}
                   {custGroup && (
@@ -1378,7 +1455,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 <div className="text-xs text-slate-400 mt-1">Tích điểm</div>
               </div>
               <div>
-                <div className="text-2xl font-semibold text-pink-600">
+                <div className="text-2xl font-semibold text-amber-600">
                   {formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}
                 </div>
                 <div className="text-xs text-slate-400 mt-1">Chi tiêu (đ)</div>
@@ -1387,16 +1464,16 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
           </div>
 
           {/* Sub Navigation Tabs */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-2 shadow-xs">
-            <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+          <div className="border-b border-slate-200 overflow-x-auto whitespace-nowrap no-scrollbar px-2">
+            <div className="flex gap-2">
               {tabsList.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`py-3 px-4 text-xs font-bold border-b-2 transition-all shrink-0 ${
                     activeTab === tab.id 
-                      ? 'bg-primary/10 text-primary border border-primary/20 shadow-xs' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      ? 'border-amber-500 text-amber-600' 
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   {tab.label}
@@ -1423,13 +1500,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         placeholder="Tìm theo mã, KTV, dịch vụ..." 
                         value={searchAppt}
                         onChange={(e) => { setSearchAppt(e.target.value); setCurrentPage(1); }}
-                        className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs outline-none focus:border-primary text-slate-700"
+                        className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-slate-700 transition-colors"
                       />
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     </div>
                     <button 
                       onClick={() => setFilterPanelOpen(!filterPanelOpen)} 
-                      className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-semibold transition-all ${filterPanelOpen ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-650 bg-white hover:bg-slate-50'}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-semibold transition-all ${filterPanelOpen ? 'border-amber-500 bg-amber-50 text-amber-600' : 'border-slate-200 text-slate-650 bg-white hover:bg-slate-50'}`}
                     >
                       <Filter className="w-3.5 h-3.5" /> Lọc
                     </button>
@@ -1444,7 +1521,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       <select 
                         value={filterStaff}
                         onChange={(e) => { setFilterStaff(e.target.value); setCurrentPage(1); }}
-                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-primary outline-none"
+                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-colors"
                       >
                         <option value="">Tất cả nhân viên</option>
                         {(staffList || []).filter(Boolean).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
@@ -1456,7 +1533,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       <select 
                         value={filterService}
                         onChange={(e) => { setFilterService(e.target.value); setCurrentPage(1); }}
-                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-primary outline-none"
+                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-colors"
                       >
                         <option value="">Tất cả dịch vụ</option>
                         {(servicesList || []).filter(Boolean).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
@@ -1468,7 +1545,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       <select 
                         value={filterStatus}
                         onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-primary outline-none"
+                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-colors"
                       >
                         <option value="">Tất cả trạng thái</option>
                         {Object.entries(statusMap).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -1482,14 +1559,14 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                           type="date" 
                           value={filterStartDate}
                           onChange={(e) => { setFilterStartDate(e.target.value); setCurrentPage(1); }}
-                          className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] text-slate-700 focus:border-primary outline-none"
+                          className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] text-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-colors"
                         />
                         <span className="text-slate-400">-</span>
                         <input 
                           type="date" 
                           value={filterEndDate}
                           onChange={(e) => { setFilterEndDate(e.target.value); setCurrentPage(1); }}
-                          className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] text-slate-700 focus:border-primary outline-none"
+                          className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] text-slate-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -1560,7 +1637,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                               <tr key={appt.id} className="hover:bg-slate-50/55 transition-colors">
                                 <td 
                                   onClick={() => setSelectedApptDetail(appt)}
-                                  className="py-3 font-medium text-primary hover:underline cursor-pointer"
+                                  className="py-3 font-bold text-amber-600 hover:underline cursor-pointer"
                                 >
                                   #{formatAppointmentId(appt.id)}
                                 </td>
@@ -1752,12 +1829,12 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         value={invSearch} 
                         onChange={(e) => setInvSearch(e.target.value)} 
                         placeholder="Tìm mã hóa đơn, tên hàng..." 
-                        className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none w-48 font-normal"
+                        className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 w-48 font-normal transition-colors"
                       />
                     </div>
                     <button 
                       onClick={() => setInvFilterOpen(!invFilterOpen)} 
-                      className={`p-2 rounded-xl border transition-colors flex items-center justify-center ${invFilterOpen ? 'bg-pink-50 text-primary border-pink-100' : 'bg-white text-slate-500 border-slate-200'}`}
+                      className={`p-2 rounded-xl border transition-colors flex items-center justify-center ${invFilterOpen ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                     >
                       <Filter className="w-3.5 h-3.5" />
                     </button>
@@ -1772,7 +1849,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         type="date" 
                         value={invStartDate} 
                         onChange={(e) => setInvStartDate(e.target.value)} 
-                        className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none font-normal"
+                        className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-pink-500 font-normal transition-colors"
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -1781,13 +1858,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         type="date" 
                         value={invEndDate} 
                         onChange={(e) => setInvEndDate(e.target.value)} 
-                        className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none font-normal"
+                        className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-pink-500 font-normal transition-colors"
                       />
                     </div>
                     {(invStartDate || invEndDate || invSearch) && (
                       <button 
                         onClick={() => { setInvStartDate(''); setInvEndDate(''); setInvSearch(''); }} 
-                        className="text-[10px] text-primary font-bold hover:underline ml-auto"
+                        className="text-[10px] text-pink-600 font-bold hover:underline ml-auto"
                       >
                         Xóa bộ lọc
                       </button>
@@ -1823,10 +1900,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
                           return (
                             <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-4 py-3.5 font-bold text-primary">
+                              <td className="px-4 py-3.5 font-bold">
                                 <button 
                                   onClick={() => router.push(`/invoices/${inv.id}`)} 
-                                  className="hover:underline text-left font-bold"
+                                  className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
                                 >
                                   {inv.invoice_code || '—'}
                                 </button>
@@ -1849,7 +1926,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   })}
                                 </div>
                               </td>
-                              <td className="px-4 py-3.5 font-bold text-right text-pink-650">
+                              <td className="px-4 py-3.5 font-bold text-right text-amber-600">
                                 {formatVND(inv.total)}
                               </td>
                               <td className="px-4 py-3.5">
@@ -1970,12 +2047,115 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             )}
 
             {activeTab === 'promotions' && (
-              <div className="space-y-4 text-center py-12 text-slate-450 text-xs">
-                <Gift className="w-8 h-8 text-primary mx-auto opacity-75 mb-2" />
-                <div className="font-semibold">Ưu đãi hạng thành viên hiện tại:</div>
-                <div className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto font-normal">
-                  Khách hàng hiện hưởng chính sách giảm giá mặc định {tier ? `${tier.discount_percent}%` : '0%'} đối với tất cả dịch vụ trong phân hạng {tier?.name || 'thành viên thường'}.
+              <div className="space-y-4 text-left">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-800">Khuyến mãi & Quà tặng của khách</h4>
+                    <div className="text-[11px] text-slate-400 mt-0.5">Mặc định hưởng ưu đãi hạng: <span className="font-semibold text-pink-600">{tier ? `${tier.discount_percent}%` : '0%'}</span> ({tier?.name || 'thường'})</div>
+                  </div>
+                  <button 
+                    onClick={() => setShowGiftModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-600 font-semibold text-xs hover:bg-amber-100 transition-colors border border-amber-200 flex items-center gap-1"
+                  >
+                    <Gift className="w-3.5 h-3.5" /> Tặng ưu đãi
+                  </button>
                 </div>
+
+                {showGiftModal && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowGiftModal(false)} />
+                    <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold font-sans text-slate-800">Tặng Khuyến mãi</h2>
+                        <button onClick={() => setShowGiftModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium truncate mb-4">Khách hàng: <span className="font-bold text-slate-700">{customer.name}</span></p>
+                      
+                      <div className="flex-1 overflow-y-auto bg-slate-50 rounded-2xl p-3 space-y-3">
+                        {allPromotions.filter(p => p.isGiftable).length === 0 ? (
+                          <div className="py-8 text-center text-xs text-slate-400">Không có chương trình khuyến mãi nào đang bật tính năng Quà tặng.</div>
+                        ) : (
+                          allPromotions.filter(p => p.isGiftable).map(p => (
+                            <div key={p.id} className="flex justify-between items-center p-3 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-pink-200 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                                  <Percent className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <div className="font-bold text-xs text-slate-800 truncate">{p.name}</div>
+                                  <div className="text-[10px] text-slate-500">Giảm <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></div>
+                                </div>
+                              </div>
+                              <button onClick={() => handleGivePromo(p)} className="px-3 py-1.5 bg-pink-600 text-white text-[10px] font-bold rounded-xl hover:bg-pink-700 transition-colors shadow-sm">Tặng</button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {customerGifts.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400 font-sans">
+                    Khách hàng chưa có quà tặng nào trong ví.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {customerGifts.map((gift, idx) => {
+                      const p = allPromotions.find(p => p.id === gift.promo_id);
+                      if (!p) return null;
+                      
+                      const isUsed = gift.used;
+                      const expired = !isUsed && isExpired(p.expiryDate);
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`p-2.5 px-3 rounded-xl border ${
+                            isUsed 
+                              ? 'bg-slate-50 border-slate-200 opacity-60' 
+                              : expired 
+                              ? 'bg-red-50/20 border-red-200/60 opacity-80' 
+                              : 'bg-white border-slate-200/80 hover:border-amber-400 hover:shadow-sm'
+                          } transition-all font-sans relative flex items-center gap-2.5`}
+                        >
+                          <span className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-white ${isUsed || expired ? 'bg-slate-300' : 'bg-pink-500'}`}>
+                            <Percent className="w-3.5 h-3.5" />
+                          </span>
+
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="font-bold text-xs text-slate-800 truncate" title={p.name}>{p.name}</div>
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase shrink-0 ${
+                                isUsed 
+                                  ? 'bg-slate-200 text-slate-600' 
+                                  : expired 
+                                  ? 'bg-red-50 text-red-500 border border-red-100' 
+                                  : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              }`}>
+                                {isUsed ? 'Đã dùng' : expired ? 'Hết hạn' : 'Chưa dùng'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5 font-medium truncate">
+                              <span>Giảm <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></span>
+                              <span className="text-slate-300">•</span>
+                              <span className="truncate">{SCOPES[p.type] || 'Tất cả'}</span>
+                              {p.expiryDate && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-slate-400">HSD: {formatDate(p.expiryDate)}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -2040,12 +2220,12 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Ghi chú da khô, tình trạng kích ứng hoặc yêu cầu KTV riêng..." 
-                    className="w-full px-4 py-3 text-xs border border-slate-200 rounded-2xl outline-none focus:border-primary min-h-[90px] text-slate-700 resize-none font-normal"
+                    className="w-full px-4 py-3 text-xs border border-slate-200 rounded-2xl outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 min-h-[90px] text-slate-700 resize-none font-normal transition-colors"
                   />
                   <div className="flex justify-end">
                     <button 
                       onClick={handleAddNote}
-                      className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-semibold shadow-xs hover:bg-primary/95 transition-all flex items-center gap-1.5"
+                      className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
                     >
                       <PlusCircle className="w-4 h-4" /> Thêm ghi chú mới
                     </button>
@@ -2839,7 +3019,8 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
       base44.entities.Staff.list().catch(() => []),
       base44.entities.Customer.list().catch(() => [])
     ]).then(([st, cu]) => {
-      setStaffList(st);
+      const activeStaff = (st || []).filter(x => x && x.is_active !== false && x.status !== 'inactive');
+      setStaffList(activeStaff);
       setCustomerList(cu);
     });
   }, []);
@@ -2884,7 +3065,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 value={f.last_name} 
                 onChange={(e) => setF({ ...f, last_name: e.target.value })} 
                 placeholder="Ví dụ: Nguyễn" 
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary bg-white text-slate-700" 
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
             <div>
@@ -2893,7 +3074,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 value={f.first_name} 
                 onChange={(e) => setF({ ...f, first_name: e.target.value })} 
                 placeholder="Ví dụ: Anh" 
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary bg-white text-slate-700" 
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
           </div>
@@ -2906,7 +3087,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 value={f.phone} 
                 onChange={(e) => setF({ ...f, phone: e.target.value })} 
                 placeholder="Số điện thoại *" 
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary bg-white text-slate-700" 
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
             <div>
@@ -2915,7 +3096,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 value={f.email} 
                 onChange={(e) => setF({ ...f, email: e.target.value })} 
                 placeholder="Địa chỉ email" 
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary bg-white text-slate-700" 
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
           </div>
@@ -2927,7 +3108,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
               value={f.address} 
               onChange={(e) => setF({ ...f, address: e.target.value })} 
               placeholder="Địa chỉ" 
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary bg-white text-slate-700" 
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
             />
           </div>
 
@@ -3013,7 +3194,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                   type="checkbox" 
                   checked={f.notify_email} 
                   onChange={(e) => setF({ ...f, notify_email: e.target.checked })} 
-                  className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4" 
+                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" 
                 />
                 <span className="text-xs font-medium text-slate-600">Email</span>
               </label>
@@ -3023,7 +3204,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                   type="checkbox" 
                   checked={f.notify_sms} 
                   onChange={(e) => setF({ ...f, notify_sms: e.target.checked })} 
-                  className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4" 
+                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" 
                 />
                 <span className="text-xs font-medium text-slate-600">SMS</span>
               </label>
@@ -3038,7 +3219,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
               <button 
                 type="button" 
                 onClick={() => setF({ ...f, referred_type: 'staff', referred_id: '' })} 
-                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'staff' ? 'bg-white border-primary text-primary shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'staff' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
                 Nhân viên
               </button>
@@ -3046,7 +3227,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
               <button 
                 type="button" 
                 onClick={() => setF({ ...f, referred_type: 'customer', referred_id: '' })} 
-                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'customer' ? 'bg-white border-primary text-primary shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'customer' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
                 Khách hàng
               </button>
@@ -3054,7 +3235,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
               <button 
                 type="button" 
                 onClick={() => setF({ ...f, referred_type: 'none', referred_id: '' })} 
-                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'none' ? 'bg-white border-primary text-primary shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'none' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
                 Không có
               </button>
@@ -3065,7 +3246,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 <button
                   type="button"
                   onClick={() => setPickerOpen(!pickerOpen)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 focus:border-primary transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 focus:border-amber-500 transition-colors text-left"
                 >
                   {selectedReferred ? (
                     <>
@@ -3110,7 +3291,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                               }}
                               className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 text-xs text-left"
                             >
-                              <Avatar src={c.avatar_url} name={c.name} size={24} color="#FF6B9D" />
+                              <Avatar src={c.avatar_url} name={c.name} size={24} color="#FBBF24" />
                               <span className="truncate text-slate-700">{c.name}</span>
                             </button>
                           ))
@@ -3130,7 +3311,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
               onChange={(e) => setF({ ...f, note: e.target.value })} 
               placeholder="Ghi chú (dị ứng, sở thích...)" 
               rows={3} 
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 resize-none bg-white" 
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 resize-none bg-white" 
             />
           </div>
 
@@ -3146,7 +3327,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           <button onClick={onClose} className="flex-1 py-3 rounded-2xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">
             Hủy
           </button>
-          <button onClick={handleSave} className="flex-1 py-3 rounded-2xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+          <button onClick={handleSave} className="flex-1 py-3 rounded-2xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 transition-colors font-sans">
             Lưu
           </button>
         </div>

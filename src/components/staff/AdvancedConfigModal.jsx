@@ -121,7 +121,7 @@ export default function AdvancedConfigModal({ onClose }) {
         </div>
 
         {loading ? (
-          <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin text-purple-500 mx-auto" /></div>
+          <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto" /></div>
         ) : (
           <div className="space-y-5">
             {/* Warning note */}
@@ -175,7 +175,7 @@ export default function AdvancedConfigModal({ onClose }) {
                 type="button" 
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Lưu cài đặt

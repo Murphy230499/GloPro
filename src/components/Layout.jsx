@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CalendarDays, ShoppingCart, Users, UserSquare,
-  Scissors, BarChart3, Settings as SettingsIcon, Grid, X, Megaphone } from
+  Scissors, BarChart3, Settings as SettingsIcon, Grid, X, Megaphone, Boxes } from
 'lucide-react';
 import { Toaster as SonnerToaster, toast } from 'sonner';
 import { useT } from '@/lib/i18n';
@@ -13,6 +13,7 @@ import { useBranch } from '@/lib/BranchContext';
 import TopBar from '@/components/TopBar';
 import AppointmentModal from '@/components/AppointmentModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
+ 
 
 export { toast };
 
@@ -23,6 +24,7 @@ const NAV = [
 { to: '/customers', tkey: 'nav.customers', icon: Users, color: '#FBBF24' },
 { to: '/staff', tkey: 'nav.staff', icon: UserSquare, color: '#F97316' },
 { to: '/services', tkey: 'nav.catalog', icon: Scissors, color: '#A78BFA' },
+{ to: '/inventory', tkey: 'nav.inventory', icon: Boxes, color: '#8B5CF6' },
 { to: '/discounts', tkey: 'nav.discounts', icon: Megaphone, color: '#FF4B82' },
 { to: '/reports', tkey: 'nav.reports', icon: BarChart3, color: '#C084FC' },
 { to: '/settings', tkey: 'nav.settings', icon: SettingsIcon, color: '#94A3B8' }];
@@ -57,24 +59,26 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-body">
+    <div className="h-screen flex flex-col bg-slate-50 font-body overflow-hidden">
       <TopBar onNewAppointment={() => setApptOpen(true)} onNewInvoice={() => setInvOpen(true)} />
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed top-16 left-0 bottom-0 w-64 flex-col bg-white border-r border-slate-100 z-30">
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV.map((item) =>
-          <NavItem key={item.to} item={item} />
-          )}
-        </nav>
-      </aside>
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex w-64 shrink-0 flex-col bg-white border-r border-slate-100 z-30">
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {NAV.map((item) =>
+            <NavItem key={item.to} item={item} />
+            )}
+          </nav>
+        </aside>
 
-      {/* Content */}
-      <main className="md:ml-64 pb-20 md:pb-8 min-h-screen">
-        <div className="max-w-[1600px] md:px-8 md:py-8 bg-[hsl(var(--background))]">
-          {children}
-        </div>
-      </main>
+        {/* Content */}
+        <main className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0 flex flex-col" id="main-content">
+          <div className="max-w-[1600px] w-full mx-auto md:px-8 md:py-6 flex-1 flex flex-col min-h-0 bg-[hsl(var(--background))]">
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* Mobile bottom tabs */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/90 backdrop-blur-lg border-t border-slate-100">
@@ -162,6 +166,8 @@ export default function Layout({ children }) {
           window.dispatchEvent(new Event('reload-data'));
         }}
       />
-    </div>);
 
+
+    </div>
+  );
 }

@@ -48,11 +48,11 @@ export default function CustomerPicker({ customers, value, onChange, onAddNew })
             <div className="max-h-56 overflow-y-auto py-1">
               <button
                 type="button"
-                onClick={() => { onAddNew?.(); setOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm text-pink-600 font-semibold"
+                onClick={() => { onAddNew?.(q); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm text-emerald-600 font-semibold"
               >
-                <div className="w-7 h-7 rounded-full bg-pink-50 flex items-center justify-center text-pink-500">+</div>
-                Khách mới
+                <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">+</div>
+                Thêm mới khách hàng
               </button>
               {filtered.map((c) => (
                 <button

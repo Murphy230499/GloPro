@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Check, Trash2, AlertCircle, AlertTriangle, CheckCircle, QrCode, Printer, ShieldCheck } from 'lucide-react';
+import { X, Plus, Check, Trash2, AlertCircle, AlertTriangle, CheckCircle, QrCode, Printer, ShieldCheck, ChevronDown } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
@@ -38,6 +38,18 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   const total = netTotal + tip;
   const paidSum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const remaining = total - paidSum;
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
 
   // Track previous paying value to detect error recovery
   const prevPayingRef = React.useRef(paying);
@@ -268,8 +280,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   if (isEditingTip) {
     const tempTotalTip = tempSplits.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="relative bg-white w-full max-w-md rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 pointer-events-auto select-none" onClick={() => setIsEditingTip(false)}>
+        <div className="relative bg-white w-full max-w-md rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[85vh] select-auto" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <h2 className="text-lg font-bold text-slate-800">Chia tiền tip</h2>
@@ -292,6 +304,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                       value={split.staffId}
                       onChange={(id) => setTempSplits(tempSplits.map((x, j) => j === index ? { ...x, staffId: id } : x))}
                       placeholder="Chọn nhân viên"
+                      color="emerald-500"
                     />
                   </div>
                   <div className="relative w-32 shrink-0">
@@ -345,8 +358,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
     const change = Math.max(0, totalPayments - total);
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="relative bg-white w-full max-w-md rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 pointer-events-auto select-none" onClick={onClose}>
+        <div className="relative bg-white w-full max-w-md rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[90vh] select-auto" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <div>
@@ -370,7 +383,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               
               <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
                 <span className="font-bold text-slate-800">Tổng thanh toán</span>
-                <span className="text-xl font-black text-primary">{formatVND(total)}</span>
+                <span className="text-xl font-black text-emerald-600">{formatVND(total)}</span>
               </div>
 
               <div className="border-t border-slate-200/60 pt-3 space-y-2 text-sm text-slate-600">
@@ -380,7 +393,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                     <span className="font-semibold text-slate-800">{formatVND(p.amount)}</span>
                   </div>
                 ))}
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-emerald-600">
                   <span>Tiền thừa (Change)</span>
                   <span className="font-bold">{formatVND(change)}</span>
                 </div>
@@ -392,7 +405,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               <span className="text-sm font-semibold text-slate-700">In hóa đơn sau khi thanh toán</span>
               <button 
                 onClick={() => setPrintBill(!printBill)}
-                className={`w-11 h-6 rounded-full p-0.5 transition-colors focus:outline-none ${printBill ? 'bg-primary' : 'bg-slate-200'}`}
+                className={`w-11 h-6 rounded-full p-0.5 transition-colors focus:outline-none ${printBill ? 'bg-emerald-600' : 'bg-slate-200'}`}
               >
                 <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${printBill ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
@@ -401,10 +414,10 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
           {/* Footer */}
           <div className="px-6 py-5 border-t border-slate-100 flex items-center justify-between gap-3">
-            <button onClick={() => setStep('payment')} className="text-primary font-bold hover:underline text-sm px-2">Sửa</button>
+            <button onClick={() => setStep('payment')} className="text-emerald-600 font-bold hover:underline text-sm px-2">Sửa</button>
             <div className="flex gap-2 shrink-0 ml-auto">
-              <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-              <button onClick={handleProceed} className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors">Xác nhận</button>
+              <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">Hủy</button>
+              <button onClick={handleProceed} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-sm">Xác nhận</button>
             </div>
           </div>
         </div>
@@ -415,8 +428,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   // 3. Payment Processing Loader Rendering (Image 2)
   if (step === 'processing') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="relative bg-white w-full max-w-sm rounded-3xl border border-slate-100 shadow-xl p-8 text-center space-y-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 pointer-events-auto select-none">
+        <div className="relative bg-white w-full max-w-sm rounded-3xl border border-slate-100 shadow-xl p-8 text-center space-y-6 select-auto" onClick={(e) => e.stopPropagation()}>
           <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto text-green-500 animate-bounce">
             <CheckCircle className="w-10 h-10" />
           </div>
@@ -448,8 +461,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
     const change = Math.max(0, totalPayments - total);
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 overflow-y-auto">
-        <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col my-8">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto pointer-events-auto select-none" onClick={handleReceiptDone}>
+        <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col my-8 select-auto" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 no-print">
             <span className="text-sm font-bold text-slate-700">Xem hóa đơn thanh toán</span>
             <button onClick={handleReceiptDone} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
@@ -565,7 +578,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
             </button>
             <button 
               onClick={handleReceiptDone} 
-              className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1.5"
             >
               Hoàn thành
             </button>
@@ -577,8 +590,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
   // 5. Main Checkout Flow Rendering ('payment' step)
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative bg-white w-full max-w-lg rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 pointer-events-auto select-none" onClick={onClose}>
+      <div className="relative bg-white w-full max-w-lg rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[90vh] select-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-800">Thanh toán hóa đơn</h2>
@@ -588,13 +601,13 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 font-sans">
           {/* Select tip block */}
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
-              <span>Chọn tiền Tip</span>
+              <span>Chọn tiền tip</span>
               <div className="text-xs text-slate-400">
-                Số tiền Tip: <span className="font-bold text-slate-600 ml-1">{formatVND(tip)}</span>
+                Số tiền tip: <span className="font-bold text-slate-700 ml-1">{formatVND(tip)}</span>
               </div>
             </div>
 
@@ -616,15 +629,18 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
             </div>
 
             {/* Custom Input */}
-            <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden focus-within:border-primary h-11">
-              <select
-                value={tipUnit}
-                onChange={(e) => handleTipUnitChange(e.target.value)}
-                className="px-3 border-r border-slate-200 bg-slate-50 h-full text-xs font-bold text-slate-600 outline-none cursor-pointer"
-              >
-                <option value="vnd">đ</option>
-                <option value="percent">%</option>
-              </select>
+            <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden focus-within:border-emerald-500 h-11 bg-white">
+              <div className="relative h-full flex items-center shrink-0">
+                <select
+                  value={tipUnit}
+                  onChange={(e) => handleTipUnitChange(e.target.value)}
+                  className="pl-3.5 pr-7 border-r border-slate-200 bg-slate-50/80 h-full text-xs font-bold text-slate-600 outline-none cursor-pointer appearance-none"
+                >
+                  <option value="vnd">đ</option>
+                  <option value="percent">%</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
               <input
                 type="number"
                 value={customTip}
@@ -636,7 +652,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
             {/* Splits list display */}
             {tip > 0 && (
-              <div className="text-xs text-slate-505 bg-slate-50 p-2.5 rounded-xl flex items-center justify-between">
+              <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl flex items-center justify-between border border-slate-100">
                 <span className="truncate">
                   {tipSplits.length > 0 ? (
                     <>
@@ -646,10 +662,10 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                       }).join(', ')}
                     </>
                   ) : (
-                    "Tip chưa được chia cho nhân viên"
+                    "Tiền tip chưa được chia cho nhân viên"
                   )}
                 </span>
-                <button onClick={handleOpenEditTip} className="text-primary font-bold hover:underline shrink-0 ml-2">Sửa</button>
+                <button onClick={handleOpenEditTip} className="text-emerald-600 font-bold hover:underline shrink-0 ml-2">Sửa</button>
               </div>
             )}
           </div>
@@ -661,27 +677,31 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
             <div className="space-y-2">
               {payments.map((p, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <select 
-                    value={p.method} 
-                    onChange={(e) => setPayments(payments.map((x, j) => j === i ? { ...x, method: e.target.value } : x))}
-                    className="flex-1 px-3 py-2.5 pr-8 rounded-xl border border-slate-200 text-sm bg-white text-slate-700 font-semibold outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    {METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                  </select>
-                  <div className="relative w-32 shrink-0">
+                  <div className="relative flex-1">
+                    <select 
+                      value={p.method} 
+                      onChange={(e) => setPayments(payments.map((x, j) => j === i ? { ...x, method: e.target.value } : x))}
+                      className="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-700 font-semibold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 appearance-none cursor-pointer"
+                    >
+                      {METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                  <div className="relative w-36 shrink-0">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">đ</span>
                     <input 
                       type="number" 
                       value={p.amount || ''} 
                       onChange={(e) => setPayments(payments.map((x, j) => j === i ? { ...x, amount: Number(e.target.value) || 0 } : x))} 
-                      placeholder="Nhập số tiền"
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-right pl-6" 
+                      placeholder="0"
+                      className="w-full pl-7 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-right" 
                     />
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">đ</span>
                   </div>
                   {i === 0 ? (
                     <button 
                       onClick={() => setPayments([...payments, { method: 'cash', amount: 0 }])}
-                      className="p-2.5 rounded-xl bg-primary text-white hover:bg-primary/95 transition-colors shrink-0"
+                      className="p-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shrink-0 shadow-2xs"
+                      title="Thêm phương thức"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -689,6 +709,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                     <button 
                       onClick={() => setPayments(payments.filter((_, j) => j !== i))}
                       className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 transition-colors shrink-0"
+                      title="Xoá phương thức"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -700,38 +721,38 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
           {/* Warnings & Messages */}
           {remaining > 0 ? (
-            <div className="bg-red-50 text-red-600 border border-red-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-xs">
+            <div className="bg-red-50 text-red-600 border border-red-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-2xs">
               <span className="flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 Cần thanh toán thêm {formatVND(remaining)}
               </span>
-              <button onClick={handleAddRemainingToCash} className="text-red-700 hover:underline">Thêm vào Tiền mặt</button>
+              <button onClick={handleAddRemainingToCash} className="text-red-700 hover:underline cursor-pointer">Thêm vào tiền mặt</button>
             </div>
           ) : remaining < 0 ? (
-            <div className="bg-green-50 text-green-600 border border-green-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-xs">
+            <div className="bg-emerald-50 text-emerald-700 border border-emerald-100/80 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-2xs">
               <span className="flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4 shrink-0" />
+                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
                 Tiền thừa: {formatVND(-remaining)}
               </span>
-              <button onClick={handleAddChangeToTip} className="text-green-700 hover:underline">Thêm vào Tiền Tip</button>
+              <button onClick={handleAddChangeToTip} className="text-emerald-800 hover:underline cursor-pointer">Thêm vào tiền tip</button>
             </div>
           ) : (
-            <div className="bg-green-50 text-green-600 border border-green-100 rounded-xl px-4 py-2.5 flex items-center gap-1.5 text-xs font-bold shadow-xs">
-              <CheckCircle className="w-4 h-4 shrink-0" />
+            <div className="bg-emerald-50 text-emerald-700 border border-emerald-100/80 rounded-xl px-4 py-2.5 flex items-center gap-1.5 text-xs font-bold shadow-2xs">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
               Đủ thanh toán ✓
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50/50 px-6 py-5 border-t border-slate-100 flex items-center justify-between gap-4">
+        <div className="bg-slate-50/50 px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4 shrink-0 font-sans">
           <div className="flex flex-col">
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tổng thanh toán</span>
-            <span className="text-xl font-black text-slate-800">{formatVND(total)}</span>
+            <span className="text-xs text-slate-400 font-bold">Tổng thanh toán</span>
+            <span className="text-xl font-black text-slate-800 tracking-tight">{formatVND(total)}</span>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-            <button onClick={handleContinue} disabled={paying || remaining > 1} className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors disabled:opacity-50">
+            <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">Hủy</button>
+            <button onClick={handleContinue} disabled={paying || remaining > 1} className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs">
               Tiếp tục
             </button>
           </div>

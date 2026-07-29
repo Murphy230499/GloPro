@@ -24,7 +24,7 @@ export default function Reports() {
       base44.entities.Staff.filter(filter),
     ]).then(([inv, st]) => {
       setInvoices(inv);
-      setStaff(st);
+      setStaff(st.filter((x) => x.is_active !== false));
       setLoading(false);
     });
   }, [currentBranchId]);

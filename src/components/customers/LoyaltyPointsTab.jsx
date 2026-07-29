@@ -173,7 +173,7 @@ export default function LoyaltyPointsTab({ onChanged }) {
       <div className="col-span-12 md:col-span-6 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-5">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
           <h3 className="font-bold text-sm text-slate-800">Quy tắc tích luỹ điểm</h3>
-          <button onClick={handleSave} disabled={saving} className="px-3.5 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 transition-all flex items-center gap-1.5 shadow-sm">
+          <button onClick={handleSave} disabled={saving} className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors flex items-center gap-1.5 shadow-sm">
             <Save className="w-3.5 h-3.5" /> {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
           </button>
         </div>
@@ -186,7 +186,7 @@ export default function LoyaltyPointsTab({ onChanged }) {
               <span className="text-[10px] text-slate-400 font-semibold">Quy đổi số tiền chi tiêu của hóa đơn sang 1 điểm tích lũy.</span>
             </div>
             <div className="relative w-36 shrink-0">
-              <input type="number" value={pointsPerVnd} onChange={(e) => setPointsPerVnd(e.target.value)} className="w-full pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-sm text-right text-slate-700 outline-none focus:border-primary bg-white" />
+              <input type="number" value={pointsPerVnd} onChange={(e) => setPointsPerVnd(e.target.value)} className="w-full pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-sm text-right text-slate-700 outline-none focus:border-amber-500 bg-white" />
               <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">đ</span>
             </div>
           </div>
@@ -197,27 +197,27 @@ export default function LoyaltyPointsTab({ onChanged }) {
             
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer select-none">
-                <input type="checkbox" checked={earnOnService} onChange={(e) => setEarnOnService(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4" />
+                <input type="checkbox" checked={earnOnService} onChange={(e) => setEarnOnService(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" />
                 <span className="text-xs font-medium text-slate-600">Dùng dịch vụ</span>
               </label>
 
               <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer select-none">
-                <input type="checkbox" checked={earnOnProduct} onChange={(e) => setEarnOnProduct(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4" />
+                <input type="checkbox" checked={earnOnProduct} onChange={(e) => setEarnOnProduct(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" />
                 <span className="text-xs font-medium text-slate-600">Mua sản phẩm</span>
               </label>
 
               <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer select-none">
-                <input type="checkbox" checked={earnOnPackage} onChange={(e) => setEarnOnPackage(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4" />
+                <input type="checkbox" checked={earnOnPackage} onChange={(e) => setEarnOnPackage(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" />
                 <span className="text-xs font-medium text-slate-600">Mua gói dịch vụ</span>
               </label>
 
               <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer select-none">
-                <input type="checkbox" checked={earnOnTreatment} onChange={(e) => setEarnOnTreatment(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4" />
+                <input type="checkbox" checked={earnOnTreatment} onChange={(e) => setEarnOnTreatment(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" />
                 <span className="text-xs font-medium text-slate-600">Mua liệu trình</span>
               </label>
 
               <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer select-none">
-                <input type="checkbox" checked={earnOnPrepaidCard} onChange={(e) => setEarnOnPrepaidCard(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4" />
+                <input type="checkbox" checked={earnOnPrepaidCard} onChange={(e) => setEarnOnPrepaidCard(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer" />
                 <span className="text-xs font-medium text-slate-600">Mua thẻ tiền mặt</span>
               </label>
             </div>
@@ -230,18 +230,18 @@ export default function LoyaltyPointsTab({ onChanged }) {
             <div className="grid grid-cols-2 gap-3.5">
               <div>
                 <label className="flex items-center gap-2 mb-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={earnOnBooking} onChange={(e) => setEarnOnBooking(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-3.5 h-3.5" />
+                  <input type="checkbox" checked={earnOnBooking} onChange={(e) => setEarnOnBooking(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer" />
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Đặt lịch trước</span>
                 </label>
-                <input type="number" disabled={!earnOnBooking} value={bookingPoints} onChange={(e) => setBookingPoints(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary disabled:opacity-40 text-slate-700 bg-white" placeholder="Số điểm thưởng..." />
+                <input type="number" disabled={!earnOnBooking} value={bookingPoints} onChange={(e) => setBookingPoints(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-amber-500 disabled:opacity-40 text-slate-700 bg-white" placeholder="Số điểm thưởng..." />
               </div>
 
               <div>
                 <label className="flex items-center gap-2 mb-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={earnOnReferral} onChange={(e) => setEarnOnReferral(e.target.checked)} className="rounded border-slate-350 text-primary focus:ring-primary w-3.5 h-3.5" />
+                  <input type="checkbox" checked={earnOnReferral} onChange={(e) => setEarnOnReferral(e.target.checked)} className="rounded border-slate-350 text-amber-500 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer" />
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Giới thiệu khách</span>
                 </label>
-                <input type="number" disabled={!earnOnReferral} value={referralPoints} onChange={(e) => setReferralPoints(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary disabled:opacity-40 text-slate-700 bg-white" placeholder="Số điểm thưởng..." />
+                <input type="number" disabled={!earnOnReferral} value={referralPoints} onChange={(e) => setReferralPoints(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-amber-500 disabled:opacity-40 text-slate-700 bg-white" placeholder="Số điểm thưởng..." />
               </div>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function LoyaltyPointsTab({ onChanged }) {
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Chu kỳ reset điểm</label>
                 <div className="relative">
-                  <select value={resetSchedule} onChange={(e) => setResetSchedule(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm outline-none bg-white text-slate-700 appearance-none">
+                  <select value={resetSchedule} onChange={(e) => setResetSchedule(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm outline-none bg-white text-slate-700 appearance-none focus:border-amber-500">
                     <option value="none">Không reset</option>
                     <option value="annually">Hằng năm</option>
                     <option value="half_yearly">Hằng 6 tháng</option>
@@ -268,7 +268,7 @@ export default function LoyaltyPointsTab({ onChanged }) {
               {resetSchedule === 'inactivity_duration' && (
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">Số ngày không ghé tối đa</label>
-                  <input type="number" value={resetInactivityDays} onChange={(e) => setResetInactivityDays(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary text-slate-700 bg-white" placeholder="Ví dụ: 365" />
+                  <input type="number" value={resetInactivityDays} onChange={(e) => setResetInactivityDays(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-amber-500 text-slate-700 bg-white" placeholder="Ví dụ: 365" />
                 </div>
               )}
             </div>

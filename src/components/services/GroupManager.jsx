@@ -76,13 +76,13 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
         </div>
 
         <div className="space-y-2 mb-4">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên nhóm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" onKeyDown={(e) => e.key === 'Enter' && save()} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên nhóm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" onKeyDown={(e) => e.key === 'Enter' && save()} />
           <div className="flex items-center gap-1.5 flex-wrap">
             {COLORS.map((c) => (
               <button key={c} onClick={() => setColor(c)} className={`w-7 h-7 rounded-full transition-all ${color === c ? 'ring-2 ring-offset-2 ring-slate-400' : ''}`} style={{ background: c }} />
             ))}
           </div>
-          <button onClick={save} className="w-full py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+          <button onClick={save} className="w-full py-2.5 rounded-xl bg-purple-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
             {editingId ? 'Cập nhật nhóm' : 'Thêm nhóm'}
           </button>
           {editingId && (

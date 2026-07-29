@@ -107,7 +107,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                   value={f.full_name} 
                   onChange={(e) => setF({ ...f, full_name: e.target.value })} 
                   placeholder="Họ tên nhân viên..." 
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
               <div>
@@ -116,7 +116,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                   value={f.phone} 
                   onChange={(e) => setF({ ...f, phone: e.target.value })} 
                   placeholder="Số điện thoại..." 
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
             </div>
@@ -128,7 +128,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                   <select 
                     value={f.branch_id} 
                     onChange={(e) => setF({ ...f, branch_id: e.target.value })} 
-                    className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white font-semibold appearance-none"
+                    className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white font-semibold appearance-none"
                     disabled={branchId !== 'all'}
                   >
                     <option value="">— Chọn chi nhánh —</option>
@@ -145,7 +145,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                 <select 
                   value={f.role} 
                   onChange={(e) => setF({ ...f, role: e.target.value })} 
-                  className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white appearance-none"
+                  className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
                 >
                   {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
@@ -162,7 +162,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                   value={f.base_salary || ''} 
                   onChange={(e) => setF({ ...f, base_salary: Number(e.target.value) || 0 })} 
                   placeholder="Lương cơ bản..." 
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
               <div>
@@ -192,7 +192,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                 onChange={(e) => setF({ ...f, specialties: e.target.value })} 
                 placeholder="Ghi chú về nhân viên..." 
                 rows={2}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
               />
             </div>
 
@@ -212,7 +212,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                 }}
                 onFocus={() => setShowSpecialtiesDropdown(true)}
                 placeholder={f.service_ids.length === 0 ? "Chọn dịch vụ chuyên môn" : `Đã chọn ${f.service_ids.length} dịch vụ`}
-                className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" 
+                className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
               />
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
 
@@ -238,7 +238,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                                 setF({ ...f, service_ids: [] });
                               }
                             }}
-                            className="w-3.5 h-3.5 text-primary border-slate-300 rounded focus:ring-primary"
+                            className="w-3.5 h-3.5 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
                           />
                           <span>Tất cả</span>
                         </label>
@@ -272,7 +272,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                                         setF({ ...f, service_ids: f.service_ids.filter(id => !ids.includes(id)) });
                                       }
                                     }}
-                                    className="w-3.5 h-3.5 text-primary border-slate-300 rounded focus:ring-primary" 
+                                    className="w-3.5 h-3.5 text-orange-500 border-slate-300 rounded focus:ring-orange-500" 
                                   />
                                   <span>{g.name}</span>
                                 </label>
@@ -284,7 +284,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                                         type="checkbox" 
                                         checked={f.service_ids.includes(s.id)}
                                         onChange={() => handleToggleService(s.id)}
-                                        className="w-3.5 h-3.5 text-primary border-slate-300 rounded focus:ring-primary" 
+                                        className="w-3.5 h-3.5 text-orange-500 border-slate-300 rounded focus:ring-orange-500" 
                                       />
                                       <span className="truncate">{s.name}</span>
                                     </label>
@@ -314,7 +314,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                 type="checkbox" 
                 checked={f.can_be_booked} 
                 onChange={(e) => setF({ ...f, can_be_booked: e.target.checked })} 
-                className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" 
+                className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" 
               />
             </div>
 
@@ -328,7 +328,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                     max="10" 
                     value={f.max_concurrent_bookings} 
                     onChange={(e) => setF({ ...f, max_concurrent_bookings: Math.max(1, Number(e.target.value) || 1) })} 
-                    className="w-16 px-2 py-1 rounded-lg border border-slate-200 text-center text-xs font-bold focus:outline-none focus:border-primary bg-white text-slate-700" 
+                    className="w-16 px-2 py-1 rounded-lg border border-slate-200 text-center text-xs font-bold focus:outline-none focus:border-orange-500 bg-white text-slate-700" 
                   />
                 </div>
                 <p className="text-[10px] text-slate-400">Thường đặt là 1. Nếu cho phép đặt trùng ca để phục vụ nhiều khách cùng lúc (ví dụ: làm móng hoặc ủ tóc), hãy tăng chỉ số này.</p>
@@ -341,7 +341,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
         {/* Footer */}
         <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
-          <button onClick={handleSubmit} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">Lưu</button>
+          <button onClick={handleSubmit} className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans">Lưu</button>
         </div>
 
       </div>

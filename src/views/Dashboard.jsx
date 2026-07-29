@@ -10,7 +10,7 @@ import TopRevenueList from '@/components/TopRevenueList';
 
 const STATUS_COLORS = {
   pending: '#94A3B8', confirmed: '#60A5FA', checked_in: '#FBBF24',
-  in_progress: '#A78BFA', completed: '#34D399', cancelled: '#F87171', no_show: '#FB7185'
+  in_progress: '#A78BFA', completed: '#34D399', cancelled: '#F87171', no_show: '#F97316'
 };
 const STATUS_LABEL = {
   pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', checked_in: 'Đã check-in',
@@ -67,7 +67,7 @@ export default function Dashboard() {
       setInvoices(inv);
       setAppointments(appts);
       setCustomers(cus);
-      setStaff(st);
+      setStaff(st.filter((x) => x.is_active !== false));
       setLoading(false);
     });
   }, [currentBranchId]);

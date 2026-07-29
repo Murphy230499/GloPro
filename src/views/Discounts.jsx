@@ -1,9 +1,15 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Megaphone, Ticket, Plus, Edit3, Trash2, Calendar, Sparkles, Percent, ChevronDown, X } from 'lucide-react';
+import { Megaphone, Ticket, Plus, Edit3, Trash2, Calendar, Sparkles, Percent, ChevronDown, X, Clock, Gift } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import { reloadPromotions, reloadVouchers } from '@/utils/promos';
+import { base44 } from '@/api/base44Client';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import VoucherDetailModal from '@/components/discounts/VoucherDetailModal';
+import PromoDetailModal from '@/components/discounts/PromoDetailModal';
+import GiftPromoModal from '@/components/discounts/GiftPromoModal';
 
 const SCOPES = {
   service: 'Chỉ dịch vụ',
@@ -14,6 +20,202 @@ const SCOPES = {
 const VALUE_TYPES = {
   percent: 'Giảm theo phần trăm (%)',
   fixed: 'Giảm số tiền cụ thể (đ)'
+};
+
+const ApplicableItemsDropdown = ({ items, groups, selectedIds, onChange, placeholder, itemType }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const getGroupedItems = () => {
+    const grouped = {};
+    items.forEach(item => {
+      const groupObj = groups.find(g => g.id === item.group_id);
+      const groupName = groupObj ? groupObj.name : 'Chưa phân nhóm';
+      if (!grouped[groupName]) grouped[groupName] = [];
+      grouped[groupName].push(item);
+    });
+    return grouped;
+  };
+
+  const groupedItems = getGroupedItems();
+
+  const handleSelectAll = (checked) => {
+    if (checked) onChange(items.map(i => i.id));
+    else onChange([]);
+  };
+
+  const handleToggleGroup = (groupItems, checked) => {
+    const groupItemIds = groupItems.map(i => i.id);
+    if (checked) {
+      onChange([...new Set([...selectedIds, ...groupItemIds])]);
+    } else {
+      onChange(selectedIds.filter(id => !groupItemIds.includes(id)));
+    }
+  };
+
+  const handleToggleItem = (id, checked) => {
+    if (checked) onChange([...selectedIds, id]);
+    else onChange(selectedIds.filter(i => i !== id));
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-normal text-slate-700 shadow-sm"
+      >
+        <span className="truncate font-normal text-slate-650">
+          {selectedIds.length === 0 
+            ? placeholder 
+            : selectedIds.length === items.length 
+              ? `Tất cả ${itemType}` 
+              : `Đã chọn ${selectedIds.length} ${itemType}`}
+        </span>
+        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-2xl z-30 flex flex-col max-h-60 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
+            <input
+              type="text"
+              placeholder="tìm kiếm..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400/50"
+            />
+          </div>
+          <div className="overflow-y-auto p-2 space-y-2">
+            <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={selectedIds.length === items.length && items.length > 0}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 accent-pink-500 cursor-pointer"
+              />
+              <span className="text-xs font-normal text-slate-755">Chọn tất cả</span>
+            </label>
+
+            {Object.entries(groupedItems).map(([groupName, groupMembers]) => {
+              const visibleMembers = groupMembers.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+              if (visibleMembers.length === 0) return null;
+
+              const isGroupAllSelected = visibleMembers.every(m => selectedIds.includes(m.id));
+
+              return (
+                <div key={groupName} className="space-y-0.5">
+                  <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isGroupAllSelected}
+                      onChange={(e) => handleToggleGroup(visibleMembers, e.target.checked)}
+                      className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 accent-pink-500 cursor-pointer"
+                    />
+                    <span className="text-[10px] font-normal text-slate-400 uppercase tracking-wider">{groupName}</span>
+                  </label>
+                  
+                  <div className="space-y-0.5 pl-4">
+                    {visibleMembers.map(m => {
+                      const isSelected = selectedIds.includes(m.id);
+                      return (
+                        <label
+                          key={m.id}
+                          className={`flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none ${isSelected ? 'bg-slate-100/60 font-medium' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleToggleItem(m.id, e.target.checked)}
+                            className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 accent-pink-500 cursor-pointer"
+                          />
+                          <span className="text-xs font-normal text-slate-700 flex-1 truncate">{m.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+const DateRangePicker = ({ startDate, endDate, onChange, placeholder = "Chọn khoảng thời gian" }) => {
+  const formatD = (d) => d ? d.split('-').reverse().join('/') : '';
+  const display = (startDate && endDate) ? `${formatD(startDate)} - ${formatD(endDate)}` : startDate ? formatD(startDate) : placeholder;
+
+  const handleSelect = (range) => {
+    if (range) {
+      const start = range.from ? new Date(range.from.getTime() - range.from.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '';
+      const end = range.to ? new Date(range.to.getTime() - range.to.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '';
+      onChange(start, end);
+    } else {
+      onChange('', '');
+    }
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white shadow-sm"
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Calendar className="w-3.5 h-3.5 text-pink-500 shrink-0" />
+            <span className="truncate">{display}</span>
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-slate-200" align="start">
+        <CalendarUI
+          mode="range"
+          selected={{
+            from: startDate ? new Date(startDate) : undefined,
+            to: endDate ? new Date(endDate) : undefined,
+          }}
+          onSelect={handleSelect}
+          numberOfMonths={2}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const DatePicker = ({ value, onChange, placeholder = "Chọn ngày" }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white shadow-sm"
+        >
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-pink-500" />
+            <span>{value ? value.split('-').reverse().join('/') : placeholder}</span>
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-slate-200" align="start">
+        <CalendarUI
+          mode="single"
+          selected={value ? new Date(value) : undefined}
+          onSelect={(date) => {
+            if (date) {
+              const d = new Date(date);
+              d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+              onChange(d.toISOString().slice(0, 10));
+            }
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 function genVoucherCode() {
@@ -32,11 +234,17 @@ export default function Discounts() {
   const [promotions, setPromotions] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [usages, setUsages] = useState([]);
+  const [selectedVoucherForDetail, setSelectedVoucherForDetail] = useState(null);
+  const [selectedPromoForDetail, setSelectedPromoForDetail] = useState(null);
+  const [services, setServices] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [serviceGroups, setServiceGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form modals
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [giftingPromo, setGiftingPromo] = useState(null);
 
   // Promotion Form state
   const [editingPromoId, setEditingPromoId] = useState(null);
@@ -45,6 +253,20 @@ export default function Discounts() {
   const [promoValueType, setPromoValueType] = useState('percent');
   const [promoValue, setPromoValue] = useState('');
   const [promoExpiry, setPromoExpiry] = useState('');
+  const [promoApplicableItems, setPromoApplicableItems] = useState([]);
+  
+  const [promoStartDate, setPromoStartDate] = useState('');
+  const [promoMinSpend, setPromoMinSpend] = useState('');
+  const [promoMaxDiscount, setPromoMaxDiscount] = useState('');
+  const [promoUsageLimit, setPromoUsageLimit] = useState('1');
+  const [promoTargetAudience, setPromoTargetAudience] = useState('all');
+  
+  const [promoIsAdvancedTime, setPromoIsAdvancedTime] = useState(false);
+  const [promoTimeType, setPromoTimeType] = useState('daily');
+  const [promoTimeStart, setPromoTimeStart] = useState('00:00');
+  const [promoTimeEnd, setPromoTimeEnd] = useState('23:59');
+  const [promoDaysOfWeek, setPromoDaysOfWeek] = useState([]);
+  const [promoDaysOfMonth, setPromoDaysOfMonth] = useState('');
 
   // Voucher Form state
   const [editingVoucherId, setEditingVoucherId] = useState(null);
@@ -56,7 +278,25 @@ export default function Discounts() {
   const [voucherExpiry, setVoucherExpiry] = useState('');
   const [voucherQty, setVoucherQty] = useState('10');
 
-  const loadData = () => {
+  // TikTok-style advanced states
+  const [voucherStartDate, setVoucherStartDate] = useState('');
+  const [voucherMinSpend, setVoucherMinSpend] = useState('');
+  const [voucherMaxDiscount, setVoucherMaxDiscount] = useState('');
+  const [voucherUsageLimit, setVoucherUsageLimit] = useState('1');
+  const [voucherVisibility, setVoucherVisibility] = useState('public');
+  const [voucherTargetAudience, setVoucherTargetAudience] = useState('all');
+  
+  // Advanced time scheduling
+  const [voucherIsAdvancedTime, setVoucherIsAdvancedTime] = useState(false);
+  const [voucherTimeType, setVoucherTimeType] = useState('daily');
+  const [voucherTimeStart, setVoucherTimeStart] = useState('00:00');
+  const [voucherTimeEnd, setVoucherTimeEnd] = useState('23:59');
+  const [voucherDaysOfWeek, setVoucherDaysOfWeek] = useState([]);
+  const [voucherDaysOfMonth, setVoucherDaysOfMonth] = useState('');
+  const [voucherApplicableItems, setVoucherApplicableItems] = useState([]);
+  const [voucherIsAutoApply, setVoucherIsAutoApply] = useState(false);
+
+  const loadData = async () => {
     setLoading(true);
     try {
       // Load Promotions
@@ -70,8 +310,19 @@ export default function Discounts() {
       // Load Promo Usages (to count usage statistics)
       const localUsages = localStorage.getItem('glopro_promo_usages');
       setUsages(localUsages ? JSON.parse(localUsages) : []);
+
+      // Fetch from Base44
+      const [fetchedServices, fetchedProducts, fetchedServiceGroups] = await Promise.all([
+        base44.entities.Service.list().catch(() => []),
+        base44.entities.Product.list().catch(() => []),
+        base44.entities.ServiceGroup.list().catch(() => [])
+      ]);
+      
+      setServices(fetchedServices || []);
+      setProducts(fetchedProducts || []);
+      setServiceGroups(fetchedServiceGroups || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error loading discounts data:', e);
     }
     setLoading(false);
   };
@@ -92,6 +343,19 @@ export default function Discounts() {
     setPromoValueType('percent');
     setPromoValue('');
     setPromoExpiry('');
+    setPromoApplicableItems([]);
+    
+    setPromoStartDate('');
+    setPromoMinSpend('');
+    setPromoMaxDiscount('');
+    setPromoUsageLimit('1');
+    setPromoTargetAudience('all');
+    setPromoIsAdvancedTime(false);
+    setPromoTimeType('daily');
+    setPromoTimeStart('00:00');
+    setPromoTimeEnd('23:59');
+    setPromoDaysOfWeek([]);
+    setPromoDaysOfMonth('');
   };
 
   const handleSavePromo = () => {
@@ -110,7 +374,20 @@ export default function Discounts() {
         type: promoScope,
         valueType: promoValueType,
         value: Number(promoValue),
+        startDate: promoStartDate,
         expiryDate: promoExpiry,
+        minSpend: promoMinSpend ? Number(promoMinSpend) : null,
+        maxDiscount: promoMaxDiscount ? Number(promoMaxDiscount) : null,
+        usageLimit: Number(promoUsageLimit),
+        targetAudience: promoTargetAudience,
+        isAdvancedTime: promoIsAdvancedTime,
+        timeType: promoTimeType,
+        timeStart: promoTimeStart,
+        timeEnd: promoTimeEnd,
+        daysOfWeek: promoDaysOfWeek,
+        daysOfMonth: promoDaysOfMonth,
+        applicableItems: promoApplicableItems,
+        isGiftable: true, // Always true now per user request
         created_at: new Date().toISOString().split('T')[0]
       };
 
@@ -136,9 +413,21 @@ export default function Discounts() {
     setEditingPromoId(p.id);
     setPromoName(p.name);
     setPromoScope(p.type);
-    setPromoValueType(p.valueType);
-    setPromoValue(p.value.toString());
+    setPromoValueType(p.valueType || 'percent');
+    setPromoValue(p.value);
+    setPromoStartDate(p.startDate || '');
     setPromoExpiry(p.expiryDate || '');
+    setPromoMinSpend(p.minSpend || '');
+    setPromoMaxDiscount(p.maxDiscount || '');
+    setPromoUsageLimit(p.usageLimit || '1');
+    setPromoTargetAudience(p.targetAudience || 'all');
+    setPromoIsAdvancedTime(p.isAdvancedTime || false);
+    setPromoTimeType(p.timeType || 'daily');
+    setPromoTimeStart(p.timeStart || '00:00');
+    setPromoTimeEnd(p.timeEnd || '23:59');
+    setPromoDaysOfWeek(p.daysOfWeek || []);
+    setPromoDaysOfMonth(p.daysOfMonth || '');
+    setPromoApplicableItems(p.applicableItems || []);
     setShowPromoModal(true);
   };
 
@@ -167,6 +456,20 @@ export default function Discounts() {
     setVoucherValue('');
     setVoucherExpiry('');
     setVoucherQty('10');
+    setVoucherStartDate('');
+    setVoucherMinSpend('');
+    setVoucherMaxDiscount('');
+    setVoucherUsageLimit('1');
+    setVoucherVisibility('public');
+    setVoucherTargetAudience('all');
+    setVoucherIsAdvancedTime(false);
+    setVoucherTimeType('daily');
+    setVoucherTimeStart('00:00');
+    setVoucherTimeEnd('23:59');
+    setVoucherDaysOfWeek([]);
+    setVoucherDaysOfMonth('');
+    setVoucherApplicableItems([]);
+    setVoucherIsAutoApply(false);
   };
 
   const handleSaveVoucher = () => {
@@ -174,7 +477,9 @@ export default function Discounts() {
     if (!voucherCode.trim()) return toast.error('Vui lòng nhập mã voucher');
     if (!voucherValue || Number(voucherValue) <= 0) return toast.error('Vui lòng nhập giá trị giảm hợp lệ');
     if (voucherValueType === 'percent' && Number(voucherValue) > 100) return toast.error('Phần trăm giảm không được lớn hơn 100%');
-    if (!voucherExpiry) return toast.error('Vui lòng chọn ngày hết hạn');
+    if (!voucherStartDate) return toast.error('Vui lòng chọn ngày bắt đầu');
+    if (!voucherExpiry) return toast.error('Vui lòng chọn ngày kết thúc');
+    if (voucherStartDate > voucherExpiry) return toast.error('Ngày bắt đầu không được lớn hơn ngày kết thúc');
     if (!voucherQty || Number(voucherQty) <= 0) return toast.error('Vui lòng nhập số lượng phát hành hợp lệ');
 
     // Check code duplication
@@ -194,6 +499,20 @@ export default function Discounts() {
         value: Number(voucherValue),
         expiryDate: voucherExpiry,
         quantity: Number(voucherQty),
+        startDate: voucherStartDate,
+        minSpend: Number(voucherMinSpend) || 0,
+        maxDiscount: voucherValueType === 'percent' ? (Number(voucherMaxDiscount) || 0) : 0,
+        usageLimit: Number(voucherUsageLimit) || 1,
+        visibility: voucherVisibility,
+        targetAudience: voucherTargetAudience,
+        isAdvancedTime: voucherIsAdvancedTime,
+        timeType: voucherTimeType,
+        timeStart: voucherTimeStart,
+        timeEnd: voucherTimeEnd,
+        daysOfWeek: voucherDaysOfWeek,
+        daysOfMonth: voucherDaysOfMonth,
+        applicableItems: voucherApplicableItems,
+        isAutoApply: voucherIsAutoApply,
         created_at: new Date().toISOString().split('T')[0]
       };
 
@@ -226,6 +545,20 @@ export default function Discounts() {
     setVoucherValue(v.value.toString());
     setVoucherExpiry(v.expiryDate || '');
     setVoucherQty(v.quantity.toString());
+    setVoucherStartDate(v.startDate || '');
+    setVoucherMinSpend(v.minSpend ? v.minSpend.toString() : '');
+    setVoucherMaxDiscount(v.maxDiscount ? v.maxDiscount.toString() : '');
+    setVoucherUsageLimit(v.usageLimit ? v.usageLimit.toString() : '1');
+    setVoucherVisibility(v.visibility || 'public');
+    setVoucherTargetAudience(v.targetAudience || 'all');
+    setVoucherIsAdvancedTime(v.isAdvancedTime || false);
+    setVoucherTimeType(v.timeType || 'daily');
+    setVoucherTimeStart(v.timeStart || '00:00');
+    setVoucherTimeEnd(v.timeEnd || '23:59');
+    setVoucherDaysOfWeek(v.daysOfWeek || []);
+    setVoucherDaysOfMonth(v.daysOfMonth || '');
+    setVoucherApplicableItems(v.applicableItems || []);
+    setVoucherIsAutoApply(v.isAutoApply || false);
     setShowVoucherModal(true);
   };
 
@@ -257,7 +590,7 @@ export default function Discounts() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-left">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 font-sans">Giảm giá</h1>
-          <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider font-sans">
+          <p className="text-xs text-slate-400 font-semibold mt-0.5 font-sans">
             Quản lý chương trình khuyến mãi và voucher giảm giá
           </p>
         </div>
@@ -265,14 +598,14 @@ export default function Discounts() {
         {activeTab === 'promos' ? (
           <button 
             onClick={() => { resetPromoForm(); setShowPromoModal(true); }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-sm hover:opacity-95 transition-all font-sans"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans"
           >
             <Plus className="w-4 h-4" /> Tạo chương trình
           </button>
         ) : (
           <button 
             onClick={() => { resetVoucherForm(); setShowVoucherModal(true); }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-sm hover:opacity-95 transition-all font-sans"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans"
           >
             <Plus className="w-4 h-4" /> Tạo voucher
           </button>
@@ -280,30 +613,34 @@ export default function Discounts() {
       </div>
 
       {/* Tabs Menu Bar */}
-      <div className="flex gap-1.5 pb-1">
-        <button onClick={() => setActiveTab('promos')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'promos' ? 'bg-primary text-white border border-primary shadow-sm' : 'bg-white text-slate-655 border border-slate-200 hover:border-slate-350 hover:bg-slate-50'}`}>
-          <Megaphone className="w-3.5 h-3.5" /> Chương trình KM
+      <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm max-w-max">
+        <button 
+          onClick={() => setActiveTab('promos')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+            activeTab === 'promos'
+              ? 'bg-pink-500 text-white shadow-sm'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <Megaphone className="w-4 h-4 shrink-0" />
+          Chương trình KM
         </button>
-        <button onClick={() => setActiveTab('vouchers')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'vouchers' ? 'bg-primary text-white border border-primary shadow-sm' : 'bg-white text-slate-655 border border-slate-200 hover:border-slate-350 hover:bg-slate-50'}`}>
-          <Ticket className="w-3.5 h-3.5" /> Voucher giảm giá
+        <button 
+          onClick={() => setActiveTab('vouchers')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+            activeTab === 'vouchers'
+              ? 'bg-pink-500 text-white shadow-sm'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <Ticket className="w-4 h-4 shrink-0" />
+          Voucher giảm giá
         </button>
       </div>
 
       {/* TAB 1: CTKM */}
       {activeTab === 'promos' && (
         <div className="space-y-5">
-          <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex flex-wrap items-center justify-between gap-3 text-left">
-            <div className="text-left space-y-0.5 font-sans">
-              <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                <Megaphone className="w-4 h-4 text-primary" /> Thiết lập Chương trình Khuyến mãi (CTKM)
-              </div>
-              <div className="text-[10px] text-slate-400 font-semibold">
-                Tạo các gói khuyến mãi giảm giá dịch vụ, sản phẩm hoặc toàn hóa đơn để gửi tặng khách hàng theo tập phân khúc.
-              </div>
-            </div>
-          </div>
 
           <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4 text-left">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -315,40 +652,77 @@ export default function Discounts() {
             ) : promotions.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-400 font-sans">Chưa có chương trình khuyến mãi tự tạo nào. Hãy nhấn nút "Tạo chương trình" ở góc trên.</div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {promotions.map((p) => {
-                  const expired = isExpired(p.expiryDate);
-                  return (
-                    <div key={p.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col justify-between gap-3 font-sans relative overflow-hidden">
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <span className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white ${expired ? 'bg-slate-300' : 'bg-primary'}`}>
-                            <Percent className="w-4 h-4" />
-                          </span>
-                          <div className="text-left min-w-0">
-                            <div className="font-bold text-xs text-slate-700 truncate">{p.name}</div>
-                            <div className="text-[10px] text-slate-450 mt-1 font-semibold">
-                              Mức giảm: <span className="text-primary font-bold">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span>
-                            </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5 font-normal">
-                              Phạm vi: <span className="font-semibold text-slate-650">{SCOPES[p.type]}</span>
-                            </div>
-                          </div>
-                        </div>
+                  const pUsagesCount = usages.filter(u => String(u.promo_id) === String(p.id)).length;
+                  const today = new Date().toISOString().split('T')[0];
+                  const isPast = p.expiryDate && today > p.expiryDate;
+                  const isUpcoming = p.startDate && today < p.startDate;
+                  const isSoldOut = p.usageLimit && pUsagesCount >= p.usageLimit;
 
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${expired ? 'bg-red-55 text-red-500 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-                          {expired ? 'Hết hạn' : 'Đang chạy'}
-                        </span>
+                  let timeStatus = { label: 'Đang diễn ra', style: 'bg-emerald-50 text-emerald-600 border border-emerald-100' };
+                  if (isUpcoming) {
+                    timeStatus = { label: 'Sắp diễn ra', style: 'bg-blue-50 text-blue-600 border border-blue-100' };
+                  } else if (isPast) {
+                    timeStatus = { label: 'Đã hoàn thành', style: 'bg-slate-100 text-slate-500 border border-slate-200' };
+                  } else if (isSoldOut) {
+                    timeStatus = { label: 'Hết lượt', style: 'bg-amber-50 text-amber-600 border border-amber-100' };
+                  }
+
+                  return (
+                    <div 
+                      key={p.id} 
+                      onClick={() => setSelectedPromoForDetail(p)} 
+                      className="bg-white border-2 border-pink-200/90 rounded-2xl hover:shadow-xl hover:-translate-y-0.5 hover:border-pink-500 cursor-pointer flex font-sans relative overflow-hidden transition-all group shadow-sm"
+                    >
+                      {/* Left Ticket Stub */}
+                      <div className={`w-14 shrink-0 flex flex-col items-center justify-center relative p-2 border-r border-dashed border-white/40 ${isPast || isSoldOut ? 'bg-slate-400 text-white' : 'bg-gradient-to-b from-pink-500 to-rose-500 text-white'}`}>
+                        <Percent className="w-5 h-5" />
+                        <span className="text-[8px] font-black uppercase tracking-widest mt-1 opacity-90">CTKM</span>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 mt-1">
-                        <div className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" /> Hết hạn: {p.expiryDate}
+                      {/* Notches on Left & Right Edges */}
+                      <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 bg-slate-50 rounded-full border-r-2 border-pink-200/90 z-10 pointer-events-none" />
+                      <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 bg-slate-50 rounded-full border-l-2 border-pink-200/90 z-10 pointer-events-none" />
+
+                      {/* Ticket Body Content */}
+                      <div className="flex-1 p-3.5 flex flex-col justify-between gap-2.5 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="text-left min-w-0">
+                            <div className="font-bold text-xs text-slate-800 truncate" title={p.name}>{p.name}</div>
+                            <div className="text-[10px] text-slate-500 mt-1 font-medium">
+                              Mức giảm: <span className="text-pink-600 font-bold">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-0.5 font-normal truncate">
+                              Phạm vi: <span className="font-medium text-slate-600">{SCOPES[p.type]} {p.applicableItems?.length > 0 && `(${p.applicableItems.length})`}</span>
+                            </div>
+                          </div>
+
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${timeStatus.style}`}>
+                            {timeStatus.label}
+                          </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleEditPromo(p)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors" title="Sửa"><Edit3 className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => handleDeletePromo(p.id)} className="p-1.5 text-red-400 hover:text-red-650 rounded-lg hover:bg-red-50 transition-colors" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
+                        {p.isGiftable && (
+                          <div>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setGiftingPromo(p); }}
+                              className="w-full py-1.5 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 font-bold text-[11px] transition-colors flex items-center justify-center gap-1.5 border border-pink-100/80"
+                            >
+                              <Gift className="w-3.5 h-3.5" /> Tặng quà cho khách
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2 mt-0.5">
+                          <div className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" /> HSD: {p.expiryDate || 'Vô thời hạn'}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button onClick={(e) => { e.stopPropagation(); handleEditPromo(p); }} className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 transition-colors" title="Sửa"><Edit3 className="w-3.5 h-3.5" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeletePromo(p.id); }} className="p-1 text-red-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -363,10 +737,10 @@ export default function Discounts() {
       {/* TAB 2: VOUCHER */}
       {activeTab === 'vouchers' && (
         <div className="space-y-5">
-          <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex flex-wrap items-center justify-between gap-3 text-left">
+          <div className="bg-pink-50 rounded-2xl p-4 border border-pink-100 flex flex-wrap items-center justify-between gap-3 text-left">
             <div className="text-left space-y-0.5 font-sans">
               <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                <Ticket className="w-4 h-4 text-primary" /> Thiết lập Voucher giảm giá
+                <Ticket className="w-4 h-4 text-pink-600" /> Thiết lập Voucher giảm giá
               </div>
               <div className="text-[10px] text-slate-400 font-semibold">
                 Phát hành các mã Voucher giảm giá độc lập. Khách hàng hoặc thu ngân có thể nhập trực tiếp mã này trên POS khi thanh toán hóa đơn.
@@ -384,52 +758,73 @@ export default function Discounts() {
             ) : vouchers.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-400 font-sans">Chưa có mã voucher tự phát hành nào. Hãy nhấn nút "Tạo voucher" ở góc trên.</div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {vouchers.map((v) => {
-                  const expired = isExpired(v.expiryDate);
                   const usageCount = getVoucherUsageCount(v.code);
                   const remaining = Math.max(0, v.quantity - usageCount);
                   const isSoldOut = remaining <= 0;
 
-                  return (
-                    <div key={v.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col justify-between gap-3 font-sans relative overflow-hidden">
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <span className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white ${expired || isSoldOut ? 'bg-slate-300' : 'bg-primary'}`}>
-                            <Ticket className="w-4 h-4" />
-                          </span>
-                          <div className="text-left min-w-0">
-                            <div className="font-bold text-xs text-slate-700 truncate">{v.name}</div>
-                            <div className="font-mono text-[10px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-lg inline-block mt-1">
-                              MÃ: {v.code}
-                            </div>
-                            <div className="text-[10px] text-slate-450 mt-1.5 font-semibold">
-                              Mức giảm: <span className="text-slate-750 font-bold">{v.valueType === 'percent' ? `${v.value}%` : formatVND(v.value)}</span>
-                            </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5 font-normal">
-                              Phạm vi: <span className="font-semibold text-slate-650">{SCOPES[v.type]}</span>
-                            </div>
-                          </div>
-                        </div>
+                  const today = new Date().toISOString().split('T')[0];
+                  let timeStatus = { label: 'Đang diễn ra', style: 'bg-emerald-50 text-emerald-600 border border-emerald-100' };
+                  
+                  if (v.startDate && today < v.startDate) {
+                    timeStatus = { label: 'Sắp diễn ra', style: 'bg-blue-50 text-blue-600 border border-blue-100' };
+                  } else if (v.expiryDate && today > v.expiryDate) {
+                    timeStatus = { label: 'Đã hoàn thành', style: 'bg-slate-100 text-slate-500 border border-slate-200' };
+                  } else if (isSoldOut) {
+                    timeStatus = { label: 'Hết lượt', style: 'bg-amber-50 text-amber-600 border border-amber-100' };
+                  }
+                  
+                  const isPast = v.expiryDate && today > v.expiryDate;
 
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${expired ? 'bg-red-50 text-red-500 border border-red-100' : isSoldOut ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-                            {expired ? 'Hết hạn' : isSoldOut ? 'Hết lượt' : 'Hoạt động'}
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-500">
-                            Lượt dùng: <span className="text-slate-800 font-bold">{usageCount}</span> / {v.quantity}
-                          </span>
-                        </div>
+                  return (
+                    <div 
+                      key={v.id} 
+                      onClick={() => setSelectedVoucherForDetail(v)} 
+                      className="bg-white border-2 border-amber-200/90 rounded-2xl hover:shadow-xl hover:-translate-y-0.5 hover:border-amber-500 transition-all cursor-pointer flex font-sans relative overflow-hidden group shadow-sm"
+                    >
+                      {/* Left Ticket Stub */}
+                      <div className={`w-14 shrink-0 flex flex-col items-center justify-center relative p-2 border-r border-dashed border-white/40 ${isPast || isSoldOut ? 'bg-slate-400 text-white' : 'bg-gradient-to-b from-amber-500 to-orange-500 text-white'}`}>
+                        <Ticket className="w-5 h-5" />
+                        <span className="text-[8px] font-black uppercase tracking-widest mt-1 opacity-90">VOUCHER</span>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 mt-1">
-                        <div className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" /> Hết hạn: {v.expiryDate}
+                      {/* Notches on Left & Right Edges */}
+                      <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 bg-slate-50 rounded-full border-r-2 border-amber-200/90 z-10 pointer-events-none" />
+                      <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 bg-slate-50 rounded-full border-l-2 border-amber-200/90 z-10 pointer-events-none" />
+
+                      {/* Ticket Body Content */}
+                      <div className="flex-1 p-3.5 flex flex-col justify-between gap-2.5 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="text-left min-w-0">
+                            <div className="font-bold text-xs text-slate-800 truncate" title={v.name}>{v.name}</div>
+                            <div className="text-[10px] text-pink-600 font-bold bg-pink-50 border border-pink-100 px-2 py-0.5 rounded-lg inline-block mt-1">
+                              MÃ: {v.code}
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-1.5 font-medium">
+                              Mức giảm: <span className="text-slate-800 font-bold">{v.valueType === 'percent' ? `${v.value}%` : formatVND(v.value)}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-1 font-normal flex flex-wrap items-center gap-1">
+                              <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">{SCOPES[v.type]} {v.applicableItems?.length > 0 && `(${v.applicableItems.length})`}</span>
+                              {v.minSpend > 0 && <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100 font-medium">Đơn &gt; {formatVND(v.minSpend)}</span>}
+                              {v.visibility === 'private' && <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">Mã ẩn</span>}
+                            </div>
+                          </div>
+
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${timeStatus.style}`}>
+                            {timeStatus.label}
+                          </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleEditVoucher(v)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors" title="Sửa"><Edit3 className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => handleDeleteVoucher(v.id)} className="p-1.5 text-red-400 hover:text-red-650 rounded-lg hover:bg-red-50 transition-colors" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2 mt-0.5">
+                          <div className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" /> HSD: {v.expiryDate || 'Vô thời hạn'}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button onClick={(e) => { e.stopPropagation(); handleEditVoucher(v); }} className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 transition-colors" title="Sửa"><Edit3 className="w-3.5 h-3.5" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteVoucher(v.id); }} className="p-1 text-red-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -443,16 +838,14 @@ export default function Discounts() {
 
       {/* FORM MODAL 1: CTKM */}
       {showPromoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" onClick={() => setShowPromoModal(false)}>
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-100 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in scale-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
-              <div>
-                <h3 className="text-base font-bold text-slate-800 font-sans">{editingPromoId ? 'Chỉnh sửa CTKM' : 'Tạo chương trình khuyến mãi mới'}</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">Cấu hình điều kiện ưu đãi</p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center z-50" onClick={() => setShowPromoModal(false)}>
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" />
+          <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-base font-bold text-slate-800 font-sans">{editingPromoId ? 'Sửa Khuyến mãi' : 'Thêm Khuyến mãi'}</h2>
               <button 
                 onClick={() => setShowPromoModal(false)} 
-                className="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -461,7 +854,7 @@ export default function Discounts() {
             <div className="space-y-4 font-sans text-xs">
               <div>
                 <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên chương trình khuyến mãi</label>
-                <input value={promoName} onChange={(e) => setPromoName(e.target.value)} placeholder="Ví dụ: Tri ân VIP, Khuyến mãi Thu..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <input value={promoName} onChange={(e) => setPromoName(e.target.value)} placeholder="Ví dụ: Tri ân VIP, Khuyến mãi Thu..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -478,6 +871,29 @@ export default function Discounts() {
                 </div>
 
                 <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Đơn tối thiểu (đ)</label>
+                  <input type="number" value={promoMinSpend} onChange={(e) => setPromoMinSpend(e.target.value)} placeholder="0 đ (Không bắt buộc)" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              </div>
+
+              {(promoScope === 'service' || promoScope === 'product') && (
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">
+                    Chọn {promoScope === 'service' ? 'dịch vụ' : 'sản phẩm'} áp dụng
+                  </label>
+                  <ApplicableItemsDropdown
+                    items={promoScope === 'service' ? services : products}
+                    groups={serviceGroups}
+                    selectedIds={promoApplicableItems}
+                    onChange={setPromoApplicableItems}
+                    placeholder={`Chọn ${promoScope === 'service' ? 'dịch vụ' : 'sản phẩm'}...`}
+                    itemType={promoScope === 'service' ? 'dịch vụ' : 'sản phẩm'}
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label className="block font-bold text-slate-500 mb-1 text-[11px]">Kiểu giảm giá</label>
                   <div className="relative">
                     <select value={promoValueType} onChange={(e) => setPromoValueType(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
@@ -487,24 +903,105 @@ export default function Discounts() {
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giá trị giảm giá</label>
-                  <input type="number" value={promoValue} onChange={(e) => setPromoValue(e.target.value)} placeholder={promoValueType === 'percent' ? 'Ví dụ: 10 (%)' : 'Ví dụ: 50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
-                </div>
 
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ngày hết hạn</label>
-                  <input type="date" value={promoExpiry} onChange={(e) => setPromoExpiry(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mức giảm</label>
+                  <input type="number" value={promoValue} onChange={(e) => setPromoValue(e.target.value)} placeholder={promoValueType === 'percent' ? 'Ví dụ: 10 (%)' : 'Ví dụ: 50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
                 </div>
               </div>
+
+              {promoValueType === 'percent' && (
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mức giảm tối đa (đ)</label>
+                  <input type="number" value={promoMaxDiscount} onChange={(e) => setPromoMaxDiscount(e.target.value)} placeholder="Không giới hạn nếu để trống" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Thời gian áp dụng</label>
+                <DateRangePicker 
+                  startDate={promoStartDate} 
+                  endDate={promoExpiry} 
+                  onChange={(start, end) => {
+                    setPromoStartDate(start);
+                    setPromoExpiry(end);
+                  }} 
+                  placeholder="Chọn khoảng thời gian (Từ ngày - Đến ngày)"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="advTimePromo" checked={promoIsAdvancedTime} onChange={(e) => setPromoIsAdvancedTime(e.target.checked)} className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 accent-pink-500" />
+                <label htmlFor="advTimePromo" className="text-[11px] font-bold text-slate-600 cursor-pointer">Cài đặt thời gian nâng cao</label>
+              </div>
+
+              {promoIsAdvancedTime && (
+                <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-3 relative overflow-hidden">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Khung giờ áp dụng</label>
+                      <div className="flex items-center gap-1">
+                        <input type="time" value={promoTimeStart} onChange={(e) => setPromoTimeStart(e.target.value)} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                        <span className="text-slate-400">-</span>
+                        <input type="time" value={promoTimeEnd} onChange={(e) => setPromoTimeEnd(e.target.value)} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Chu kỳ lặp</label>
+                      <div className="relative">
+                        <select value={promoTimeType} onChange={(e) => {
+                          setPromoTimeType(e.target.value);
+                          if (e.target.value === 'weekly' && promoDaysOfWeek.length === 0) setPromoDaysOfWeek([1,2,3,4,5,6,0]);
+                        }} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                          <option value="daily">Hàng ngày</option>
+                          <option value="weekly">Hàng tuần</option>
+                          <option value="monthly">Hàng tháng</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {promoTimeType === 'weekly' && (
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1.5 text-[10px]">Áp dụng vào các ngày trong tuần</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[{v: 1, l: 'T2'}, {v: 2, l: 'T3'}, {v: 3, l: 'T4'}, {v: 4, l: 'T5'}, {v: 5, l: 'T6'}, {v: 6, l: 'T7'}, {v: 0, l: 'CN'}].map(day => (
+                          <button
+                            key={day.v}
+                            type="button"
+                            onClick={() => {
+                              if (promoDaysOfWeek.includes(day.v)) setPromoDaysOfWeek(promoDaysOfWeek.filter(d => d !== day.v));
+                              else setPromoDaysOfWeek([...promoDaysOfWeek, day.v]);
+                            }}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${promoDaysOfWeek.includes(day.v) ? 'bg-pink-100 text-pink-600 border border-pink-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
+                          >
+                            {day.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {promoTimeType === 'monthly' && (
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Các ngày trong tháng (cách nhau bởi dấu phẩy)</label>
+                      <input type="text" value={promoDaysOfMonth} onChange={(e) => setPromoDaysOfMonth(e.target.value)} placeholder="Ví dụ: 1, 15, 30" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giới hạn / người</label>
+                <input type="number" value={promoUsageLimit} onChange={(e) => setPromoUsageLimit(e.target.value)} min="1" placeholder="1" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+              </div>
+
             </div>
 
             <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
               <button onClick={() => setShowPromoModal(false)} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
-              <button onClick={handleSavePromo} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+              <button onClick={handleSavePromo} className="flex-1 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-xs shadow-sm hover:bg-pink-600 transition-all font-sans">
                 {editingPromoId ? 'Cập nhật' : 'Tạo mới'}
               </button>
             </div>
@@ -514,42 +1011,34 @@ export default function Discounts() {
 
       {/* FORM MODAL 2: VOUCHER */}
       {showVoucherModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" onClick={() => setShowVoucherModal(false)}>
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-100 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in scale-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
-              <div>
-                <h3 className="text-base font-bold text-slate-800 font-sans">{editingVoucherId ? 'Chỉnh sửa Voucher' : 'Phát hành Voucher mới'}</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">Nhập thông tin mã giảm giá</p>
-              </div>
-              <button 
-                onClick={() => setShowVoucherModal(false)} 
-                className="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
-              >
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={() => setShowVoucherModal(false)}>
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" />
+          <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-base font-bold text-slate-800 font-sans">{editingVoucherId ? 'Sửa Voucher' : 'Thêm Voucher'}</h2>
+              <button onClick={() => setShowVoucherModal(false)} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-4 font-sans text-xs">
-              <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên Voucher *</label>
-                <input value={voucherName} onChange={(e) => setVoucherName(e.target.value)} placeholder="Ví dụ: Voucher Chào xuân, Khai trương..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
-              </div>
+            <div className="space-y-3 font-sans text-xs">
+              <input value={voucherName} onChange={(e) => setVoucherName(e.target.value)} placeholder="Tên Voucher" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
 
               <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mã Voucher *</label>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mã Voucher</label>
                 <div className="flex gap-2">
-                  <input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())} placeholder="Ví dụ: GP50K" className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-mono outline-none focus:border-primary text-slate-700 bg-white" />
-                  <button onClick={() => setVoucherCode(genVoucherCode())} className="px-3 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-200 transition-colors text-xs font-bold text-slate-655 font-sans">
+                  <input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())} placeholder="Ví dụ: GP50K" className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                  <button onClick={() => setVoucherCode(genVoucherCode())} className="px-3 rounded-xl bg-slate-200/50 hover:bg-slate-200 transition-colors text-xs font-bold text-slate-655 font-sans whitespace-nowrap">
                     Tạo mã ngẫu nhiên
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-500 mb-1 text-[11px]">Phạm vi áp dụng</label>
                   <div className="relative">
-                    <select value={voucherScope} onChange={(e) => setVoucherScope(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                    <select value={voucherScope} onChange={(e) => setVoucherScope(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
                       <option value="invoice">Toàn hóa đơn</option>
                       <option value="service">Chỉ dịch vụ</option>
                       <option value="product">Chỉ sản phẩm</option>
@@ -559,42 +1048,205 @@ export default function Discounts() {
                 </div>
 
                 <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Đơn tối thiểu (đ)</label>
+                  <input type="number" value={voucherMinSpend} onChange={(e) => setVoucherMinSpend(e.target.value)} placeholder="0 đ (Không bắt buộc)" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              </div>
+
+              {(voucherScope === 'service' || voucherScope === 'product') && (
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">
+                    Chọn {voucherScope === 'service' ? 'dịch vụ' : 'sản phẩm'} áp dụng
+                  </label>
+                  <ApplicableItemsDropdown
+                    items={voucherScope === 'service' ? services : products}
+                    groups={serviceGroups}
+                    selectedIds={voucherApplicableItems}
+                    onChange={setVoucherApplicableItems}
+                    placeholder={`Chọn ${voucherScope === 'service' ? 'dịch vụ' : 'sản phẩm'}...`}
+                    itemType={voucherScope === 'service' ? 'dịch vụ' : 'sản phẩm'}
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
                   <label className="block font-bold text-slate-500 mb-1 text-[11px]">Kiểu giảm giá</label>
                   <div className="relative">
-                    <select value={voucherValueType} onChange={(e) => setVoucherValueType(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
-                      <option value="fixed">Giảm số tiền cụ thể (đ)</option>
-                      <option value="percent">Giảm theo phần trăm (%)</option>
+                    <select value={voucherValueType} onChange={(e) => setVoucherValueType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                      <option value="fixed">Số tiền (đ)</option>
+                      <option value="percent">Phần trăm (%)</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mức giảm</label>
+                  <input type="number" value={voucherValue} onChange={(e) => setVoucherValue(e.target.value)} placeholder={voucherValueType === 'percent' ? '10 (%)' : '50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              </div>
+
+              {voucherValueType === 'percent' && (
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mức giảm tối đa (đ)</label>
+                  <input type="number" value={voucherMaxDiscount} onChange={(e) => setVoucherMaxDiscount(e.target.value)} placeholder="Không giới hạn nếu để trống" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Thời gian áp dụng</label>
+                <DateRangePicker 
+                  startDate={voucherStartDate} 
+                  endDate={voucherExpiry} 
+                  onChange={(start, end) => {
+                    setVoucherStartDate(start);
+                    setVoucherExpiry(end);
+                  }} 
+                  placeholder="Chọn khoảng thời gian (Từ ngày - Đến ngày)"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="advTime" checked={voucherIsAdvancedTime} onChange={(e) => setVoucherIsAdvancedTime(e.target.checked)} className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 accent-pink-500" />
+                <label htmlFor="advTime" className="text-[11px] font-bold text-slate-600 cursor-pointer">Cài đặt thời gian nâng cao</label>
+              </div>
+
+              {voucherIsAdvancedTime && (
+                <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-3 relative overflow-hidden">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Khung giờ áp dụng</label>
+                      <div className="flex items-center gap-1">
+                        <input type="time" value={voucherTimeStart} onChange={(e) => setVoucherTimeStart(e.target.value)} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                        <span className="text-slate-400">-</span>
+                        <input type="time" value={voucherTimeEnd} onChange={(e) => setVoucherTimeEnd(e.target.value)} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Chu kỳ lặp</label>
+                      <div className="relative">
+                        <select value={voucherTimeType} onChange={(e) => {
+                          setVoucherTimeType(e.target.value);
+                          if (e.target.value === 'weekly' && voucherDaysOfWeek.length === 0) setVoucherDaysOfWeek([1,2,3,4,5,6,0]);
+                        }} className="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                          <option value="daily">Hàng ngày</option>
+                          <option value="weekly">Hàng tuần</option>
+                          <option value="monthly">Hàng tháng</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {voucherTimeType === 'weekly' && (
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1.5 text-[10px]">Áp dụng vào các ngày trong tuần</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[{v: 1, l: 'T2'}, {v: 2, l: 'T3'}, {v: 3, l: 'T4'}, {v: 4, l: 'T5'}, {v: 5, l: 'T6'}, {v: 6, l: 'T7'}, {v: 0, l: 'CN'}].map(day => (
+                          <button
+                            key={day.v}
+                            type="button"
+                            onClick={() => {
+                              if (voucherDaysOfWeek.includes(day.v)) setVoucherDaysOfWeek(voucherDaysOfWeek.filter(d => d !== day.v));
+                              else setVoucherDaysOfWeek([...voucherDaysOfWeek, day.v]);
+                            }}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${voucherDaysOfWeek.includes(day.v) ? 'bg-pink-100 text-pink-600 border border-pink-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
+                          >
+                            {day.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {voucherTimeType === 'monthly' && (
+                    <div>
+                      <label className="block font-bold text-slate-500 mb-1 text-[10px]">Các ngày trong tháng (cách nhau bởi dấu phẩy)</label>
+                      <input type="text" value={voucherDaysOfMonth} onChange={(e) => setVoucherDaysOfMonth(e.target.value)} placeholder="Ví dụ: 1, 15, 30" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tổng phát hành</label>
+                  <input type="number" value={voucherQty} onChange={(e) => setVoucherQty(e.target.value)} placeholder="100" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giới hạn / người</label>
+                  <input type="number" value={voucherUsageLimit} onChange={(e) => setVoucherUsageLimit(e.target.value)} min="1" placeholder="1" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Loại voucher</label>
+                  <div className="relative">
+                    <select value={voucherVisibility} onChange={(e) => setVoucherVisibility(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                      <option value="public">Công khai</option>
+                      <option value="private">Mã ẩn</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mục tiêu</label>
+                  <div className="relative">
+                    <select value={voucherTargetAudience} onChange={(e) => setVoucherTargetAudience(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                      <option value="all">Tất cả khách hàng</option>
+                      <option value="new_customer">Khách mới</option>
+                      <option value="returning_customer">Khách cũ</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giá trị giảm giá *</label>
-                  <input type="number" value={voucherValue} onChange={(e) => setVoucherValue(e.target.value)} placeholder={voucherValueType === 'percent' ? 'Ví dụ: 10 (%)' : 'Ví dụ: 50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
-                </div>
+              <div className="mt-3 bg-pink-50 border border-pink-100 p-3 rounded-2xl flex items-center justify-between">
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Số lượng phát hành *</label>
-                  <input type="number" value={voucherQty} onChange={(e) => setVoucherQty(e.target.value)} placeholder="Ví dụ: 100" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <div className="font-bold text-xs text-pink-700">Tự động áp dụng</div>
+                  <div className="text-[10px] text-pink-500 mt-0.5">Tự động chọn voucher này vào hóa đơn nếu đủ điều kiện.</div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ngày hết hạn *</label>
-                <input type="date" value={voucherExpiry} onChange={(e) => setVoucherExpiry(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" checked={voucherIsAutoApply} onChange={(e) => setVoucherIsAutoApply(e.target.checked)} />
+                  <div className="w-9 h-5 bg-pink-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                </label>
               </div>
             </div>
 
             <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
-              <button onClick={() => setShowVoucherModal(false)} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-655 font-sans">Hủy</button>
-              <button onClick={handleSaveVoucher} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+              <button onClick={() => setShowVoucherModal(false)} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
+              <button onClick={handleSaveVoucher} className="flex-1 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs shadow-sm transition-all font-sans">
                 {editingVoucherId ? 'Cập nhật' : 'Tạo mới'}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {selectedPromoForDetail && (
+        <PromoDetailModal 
+          promo={selectedPromoForDetail} 
+          usages={usages} 
+          onClose={() => setSelectedPromoForDetail(null)} 
+        />
+      )}
+
+      {selectedVoucherForDetail && (
+        <VoucherDetailModal 
+          voucher={selectedVoucherForDetail} 
+          usages={usages} 
+          onClose={() => setSelectedVoucherForDetail(null)} 
+        />
+      )}
+
+      {giftingPromo && (
+        <GiftPromoModal
+          promo={giftingPromo}
+          onClose={() => setGiftingPromo(null)}
+        />
       )}
     </div>
   );

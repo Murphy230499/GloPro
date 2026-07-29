@@ -1,10 +1,23 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertTriangle, Calendar, Edit3, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Clock, AlertTriangle, Calendar, Edit3, X, ChevronLeft, ChevronRight, Check, CalendarDays, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
 import { todayStr } from '@/lib/format';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+
+const ROLES = {
+  manager: { label: 'Quản lý', color: '#FF6B9D' },
+  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
+  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
+  barber: { label: 'Barber', color: '#34D399' },
+  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
+  nail_tech: { label: 'Nail tech', color: '#F472B6' },
+  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
+  cashier: { label: 'Thu ngân', color: '#94A3B8' },
+};
 
 const STATUS_CONFIG = {
   full: { label: 'Đúng giờ', color: '#3B82F6', bg: '#EFF6FF', border: '#DBEAFE' },
@@ -199,10 +212,49 @@ export default function AttendanceLog({ branchId }) {
             <button onClick={() => changeWeek(-1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-700">
-              <Calendar className="w-3.5 h-3.5 text-purple-500" />
-              <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs font-semibold text-slate-700 transition-colors shadow-none"
+                >
+                  <CalendarDays className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-slate-200" align="start">
+                <CalendarUI
+                  mode="single"
+                  selected={new Date(baseDate)}
+                  onSelect={(date) => {
+                    if (date) {
+                      setBaseDate(date.toISOString().slice(0, 10));
+                    }
+                  }}
+                  modifiers={{
+                    // Highlight all days in the currently selected week
+                    selectedWeek: (date) => {
+                      const selectedMon = new Date(baseDate);
+                      const day = selectedMon.getDay();
+                      const diff = selectedMon.getDate() - day + (day === 0 ? -6 : 1);
+                      const mon = new Date(selectedMon.setDate(diff));
+                      mon.setHours(0,0,0,0);
+
+                      const sun = new Date(mon);
+                      sun.setDate(mon.getDate() + 6);
+                      sun.setHours(23,59,59,999);
+
+                      return date >= mon && date <= sun;
+                    }
+                  }}
+                  modifiersClassNames={{
+                    selectedWeek: "bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-none first:rounded-l-md last:rounded-r-md font-semibold"
+                  }}
+                  className="p-3"
+                />
+              </PopoverContent>
+            </Popover>
             <button onClick={() => changeWeek(1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500">
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -227,9 +279,9 @@ export default function AttendanceLog({ branchId }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[180px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Tên nhân viên</th>
+                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Nhân sự</th>
                   {weekDays.map(d => (
-                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[130px]">{formatDateHeader(d)}</th>
+                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[160px]">{formatDateHeader(d)}</th>
                   ))}
                 </tr>
               </thead>
@@ -237,12 +289,17 @@ export default function AttendanceLog({ branchId }) {
                 {staff.map(s => (
                   <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50/20 transition-colors">
                     {/* Column 1: Staff Profile */}
-                    <td className="p-4 sticky left-0 bg-white z-10 border-r border-slate-100">
-                      <div className="flex items-center gap-2.5">
+                    <td className="py-3 px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
+                      <div className="flex items-center gap-3">
                         <Avatar src={s.avatar_url} name={s.full_name} size={32} color={s.avatar_color} />
                         <div className="min-w-0">
-                          <div className="truncate font-bold text-xs text-slate-800">{s.full_name}</div>
-                          <span className="inline-block text-[9px] font-bold text-slate-450 capitalize mt-0.5">{s.role}</span>
+                          <div className="truncate font-semibold text-xs text-slate-800">{s.full_name}</div>
+                          <span 
+                            className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
+                            style={{ background: (ROLES[s.role]?.color || '#94A3B8') + '15', color: ROLES[s.role]?.color || '#94A3B8' }}
+                          >
+                            {ROLES[s.role]?.label || s.role}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -286,28 +343,25 @@ export default function AttendanceLog({ branchId }) {
                                       borderLeftColor: cfg.color
                                     }}
                                   >
-                                    <div className="flex justify-between items-center">
-                                      <span className="font-bold text-[10px]" style={{ color: cfg.color }}>{shiftName}</span>
+                                    <div className="flex items-center justify-between gap-1 w-full text-[10px]">
+                                      <span className="font-bold truncate max-w-[70px]" style={{ color: cfg.color }} title={shiftName}>{shiftName}</span>
+                                      <span className="text-[9px] text-slate-550 font-semibold shrink-0">{shiftTime}</span>
                                       
                                       {/* Edit Attendance Button on Hover */}
                                       <button 
                                         onClick={() => openEditModal(s, date, sched, att)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-slate-200/50 text-slate-500"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-md hover:bg-slate-200/50 text-slate-500 shrink-0"
                                         title="Chỉnh sửa chấm công"
                                       >
-                                        <Edit3 className="w-3 h-3" />
+                                        <Edit3 className="w-2.5 h-2.5" />
                                       </button>
                                     </div>
 
                                     {sched.is_off ? (
-                                      <>
-                                        <span className="text-[9px] text-slate-500 font-bold block mt-0.5">Nghỉ nguyên ngày</span>
-                                        <span className="text-[9px] text-slate-400 block font-semibold mt-0.5">💡 Vắng mặt</span>
-                                      </>
+                                      <div className="text-[9px] text-slate-400 font-semibold mt-0.5">Nghỉ nguyên ngày</div>
                                     ) : (
                                       <>
-                                        <span className="text-[9px] text-slate-450 font-semibold block mt-0.5">{shiftTime}</span>
-                                        <div className="text-[9px] font-bold text-slate-700 mt-1 flex items-center gap-1">
+                                        <div className="text-[9px] font-bold text-slate-700 mt-0.5 flex items-center gap-1">
                                           <span>⏰ {checkInLabel} - {checkOutLabel}</span>
                                         </div>
                                         
@@ -361,7 +415,7 @@ export default function AttendanceLog({ branchId }) {
                   type="checkbox"
                   checked={editIsOff}
                   onChange={(e) => setEditIsOff(e.target.checked)}
-                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                  className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-4 h-4"
                 />
                 <span>Nhân viên nghỉ làm hôm nay (Vắng mặt)</span>
               </label>
@@ -374,7 +428,7 @@ export default function AttendanceLog({ branchId }) {
                       type="time" 
                       value={editCheckIn}
                       onChange={(e) => setEditCheckIn(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-purple-400"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-orange-400"
                     />
                   </div>
                   <div>
@@ -383,7 +437,7 @@ export default function AttendanceLog({ branchId }) {
                       type="time" 
                       value={editCheckOut}
                       onChange={(e) => setEditCheckOut(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-purple-400"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-orange-400"
                     />
                   </div>
                 </div>
@@ -399,7 +453,7 @@ export default function AttendanceLog({ branchId }) {
               </button>
               <button 
                 onClick={handleSaveEdit} 
-                className="flex-1 py-2.5 rounded-xl bg-purple-500 text-white text-xs font-bold hover:bg-purple-600 transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 transition-colors"
               >
                 Lưu chỉnh sửa
               </button>

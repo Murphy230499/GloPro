@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 
-export default function StaffAssignPicker({ staff, value, isRequested = false, onChange, placeholder = '— Phân KTV —' }) {
+export default function StaffAssignPicker({ staff, value, isRequested = false, onChange, placeholder = '— Phân KTV —', color = 'emerald-500' }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, openUp: false });
   const selected = staff.find((s) => s.id === value);
@@ -29,12 +29,26 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
     setOpen(true);
   };
 
+  const getFocusBorderClass = () => {
+    if (color === 'orange-500') return 'focus:border-orange-500';
+    if (color === 'purple-500') return 'focus:border-purple-500';
+    if (color === 'pink-500') return 'focus:border-pink-500';
+    return 'focus:border-emerald-500';
+  };
+
+  const getCheckboxTextClass = () => {
+    if (color === 'orange-500') return 'text-orange-500 focus:ring-orange-500';
+    if (color === 'purple-500') return 'text-purple-500 focus:ring-purple-500';
+    if (color === 'pink-500') return 'text-pink-500 focus:ring-pink-500';
+    return 'text-emerald-500 focus:ring-emerald-500';
+  };
+
   return (
     <div className="relative mt-2">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-primary transition-colors"
+        className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none ${getFocusBorderClass()} transition-colors`}
       >
         {selected ? (
           <>
@@ -47,14 +61,14 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
         <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-400 shrink-0 mr-1" />
       </button>
       {selected && (
-        <label className="flex items-center gap-1.5 cursor-pointer select-none pl-1 mt-1">
+        <label className="flex items-center gap-2 cursor-pointer select-none pl-1 mt-2.5 mb-1 py-0.5 group">
           <input 
             type="checkbox"
-            checked={isRequested}
+            checked={!!isRequested}
             onChange={(e) => onChange(value, selected.full_name, e.target.checked)}
-            className="w-3.5 h-3.5 text-pink-500 border-slate-200 rounded focus:ring-0 focus:outline-none cursor-pointer"
+            className={`w-4 h-4 ${getCheckboxTextClass()} border-slate-300 rounded-md focus:ring-0 focus:outline-none cursor-pointer transition-all shrink-0`}
           />
-          <span className="text-[10px] font-medium text-slate-500">Khách yêu cầu</span>
+          <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-800 transition-colors">Khách yêu cầu</span>
         </label>
       )}
       {open && (

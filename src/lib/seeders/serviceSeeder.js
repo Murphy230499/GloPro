@@ -48,6 +48,61 @@ const PACKAGES = [
   },
 ];
 
+const TREATMENTS = [
+  {
+    name: 'Liệu trình Chăm sóc da chuyên sâu (10 buổi)',
+    price: 2500000,
+    total_sessions: 10,
+    group: 'Spa & Massage',
+    description: 'Liệu trình chăm sóc da mụn & dưỡng sáng da VIP'
+  },
+  {
+    name: 'Liệu trình Phục hồi tóc cháy/hư tổn (5 buổi)',
+    price: 1800000,
+    total_sessions: 5,
+    group: 'Chăm sóc tóc',
+    description: 'Phục hồi Keratin + Hấp dầu Nano 5 buổi'
+  }
+];
+
+const SERVICE_COMBOS = [
+  {
+    name: 'Combo Cắt tóc + Gội dưỡng sinh + Nhuộm',
+    price: 490000,
+    items_count: 3,
+    description: 'Gói combo tiết kiệm 20% cho quý khách làm trọn bộ tóc'
+  },
+  {
+    name: 'Combo Sơn gel + Tháo gel + Dưỡng móng',
+    price: 150000,
+    items_count: 3,
+    description: 'Trọn gói móng xinh cuốn hút'
+  }
+];
+
+const PRODUCT_COMBOS = [
+  {
+    name: 'Bộ đôi Dầu gội Argan + Kem dưỡng tóc',
+    price: 360000,
+    description: 'Combo dưỡng tóc chuyên sâu tại nhà'
+  }
+];
+
+const PREPAID_CARDS = [
+  {
+    name: 'Thẻ Tiền Mặt Membership Silver (Nạp 2Tr tặng 300k)',
+    value: 2300000,
+    price: 2000000,
+    card_code: 'CARD-SILVER-01'
+  },
+  {
+    name: 'Thẻ Tiền Mặt Membership Gold (Nạp 5Tr tặng 1Tr)',
+    value: 6000000,
+    price: 5000000,
+    card_code: 'CARD-GOLD-01'
+  }
+];
+
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
     const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
@@ -63,7 +118,7 @@ async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
 
 export async function seedServiceData(branchId, onProgress) {
   const b = branchId === 'all' ? '' : branchId;
-  let created = { groups: 0, services: 0, products: 0, packages: 0 };
+  let created = { groups: 0, services: 0, products: 0, packages: 0, treatments: 0, serviceCombos: 0, productCombos: 0, prepaidCards: 0 };
 
   // 1. Create service groups
   onProgress?.('Đang tạo nhóm dịch vụ...');
@@ -113,7 +168,52 @@ export async function seedServiceData(branchId, onProgress) {
     created.packages++;
   }
 
+  // 5. Create treatments
+  onProgress?.('Đang tạo liệu trình...');
+  for (const trt of TREATMENTS) {
+    const { group, ...rest } = trt;
+    await upsertEntity(base44.entities.Treatment, 'name', trt.name, b, {
+      ...rest,
+      branch_id: b,
+      group_id: groupIdMap[group] || '',
+      is_active: true,
+    });
+    created.treatments++;
+  }
+
+  // 6. Create service combos
+  onProgress?.('Đang tạo combo dịch vụ...');
+  for (const sc of SERVICE_COMBOS) {
+    await upsertEntity(base44.entities.ServiceCombo, 'name', sc.name, b, {
+      ...sc,
+      branch_id: b,
+      is_active: true,
+    });
+    created.serviceCombos++;
+  }
+
+  // 7. Create product combos
+  onProgress?.('Đang tạo combo sản phẩm...');
+  for (const pc of PRODUCT_COMBOS) {
+    await upsertEntity(base44.entities.ProductCombo, 'name', pc.name, b, {
+      ...pc,
+      branch_id: b,
+      is_active: true,
+    });
+    created.productCombos++;
+  }
+
+  // 8. Create prepaid cards
+  onProgress?.('Đang tạo thẻ tiền mặt...');
+  for (const card of PREPAID_CARDS) {
+    await upsertEntity(base44.entities.PrepaidCard, 'name', card.name, b, {
+      ...card,
+      branch_id: b,
+      is_active: true,
+    });
+    created.prepaidCards++;
+  }
+
   onProgress?.(null);
   return created;
 }
-

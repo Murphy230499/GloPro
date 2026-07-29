@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2, CalendarDays, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 const ROLES = {
   manager: { label: 'Quản lý', color: '#FF6B9D' },
@@ -95,6 +97,24 @@ export default function SchedulerGrid({ branchId }) {
   const [swapStaffA, setSwapStaffA] = useState('');
   const [swapStaffB, setSwapStaffB] = useState('');
   const [swapDay, setSwapDay] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMsg, setProcessingMsg] = useState('Đang xử lý...');
+  const [autoCopyEnabled, setAutoCopyEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('glopro_auto_copy_schedule');
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  const handleToggleAutoCopy = (e) => {
+    const val = e.target.checked;
+    setAutoCopyEnabled(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('glopro_auto_copy_schedule', JSON.stringify(val));
+    }
+    toast.success(val ? 'Đã BẬT tự động sao chép lịch tuần mới' : 'Đã TẮT tự động sao chép lịch tuần mới');
+  };
 
   const weekDays = getWeekDays(baseDate);
 
@@ -102,9 +122,14 @@ export default function SchedulerGrid({ branchId }) {
     setLoading(true);
     const filter = branchId === 'all' ? {} : { branch_id: branchId };
     
-    let stList = [];
     try {
-      stList = await base44.entities.Staff.filter(filter);
+      const [stListRaw, tmplListRaw, allScheds] = await Promise.all([
+        base44.entities.Staff.filter(filter).catch(() => []),
+        base44.entities.ShiftTemplate.list().catch(() => []),
+        base44.entities.StaffSchedule.list().catch(() => [])
+      ]);
+
+      let stList = stListRaw;
       const localStaff = localStorage.getItem('glopro_staff');
       if (stList.length === 0 && localStaff) {
         const parsed = JSON.parse(localStaff);
@@ -118,26 +143,9 @@ export default function SchedulerGrid({ branchId }) {
         }
         localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
         stList = await base44.entities.Staff.filter(filter);
-      } else if (localStaff) {
-        const parsed = JSON.parse(localStaff);
-        const idMap = {};
-        for (const st of parsed) {
-          const matched = stList.find(x => x.name === st.name || x.phone === st.phone);
-          if (matched) {
-            idMap[st.id] = matched.id;
-          }
-        }
-        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
       }
-    } catch (e) {
-      console.error('Lỗi khi tải danh sách nhân viên xếp lịch từ API:', e);
-      const localStaff = localStorage.getItem('glopro_staff');
-      stList = localStaff ? JSON.parse(localStaff) : [];
-    }
 
-    let tmplList = [];
-    try {
-      tmplList = await base44.entities.ShiftTemplate.list();
+      let tmplList = tmplListRaw;
       const localTemplates = localStorage.getItem('glopro_shift_templates');
       if (tmplList.length === 0 && localTemplates) {
         const parsed = JSON.parse(localTemplates);
@@ -151,64 +159,56 @@ export default function SchedulerGrid({ branchId }) {
         }
         localStorage.setItem('glopro_tmpl_id_map', JSON.stringify(idMap));
         tmplList = await base44.entities.ShiftTemplate.list();
-      } else if (localTemplates) {
-        const parsed = JSON.parse(localTemplates);
-        const idMap = {};
-        for (const t of parsed) {
-          const matched = tmplList.find(x => x.name === t.name);
-          if (matched) {
-            idMap[t.id] = matched.id;
+      }
+
+      let schedList = allScheds.filter(s => weekDays.includes(s.date));
+
+      // AUTO-COPY FEATURE: Only run if autoCopyEnabled is true
+      if (autoCopyEnabled && schedList.length === 0 && allScheds.length > 0) {
+        const minCurrentDate = weekDays[0];
+        // Find prior schedules (dates earlier than current week's Monday)
+        const priorScheds = allScheds.filter(s => s.date < minCurrentDate);
+        if (priorScheds.length > 0) {
+          // Find the most recent date in prior schedules
+          const maxPriorDate = priorScheds.reduce((max, s) => s.date > max ? s.date : max, priorScheds[0].date);
+          const sourceWeekDays = getWeekDays(maxPriorDate);
+          const sourceScheds = priorScheds.filter(s => sourceWeekDays.includes(s.date));
+
+          if (sourceScheds.length > 0) {
+            // Build create payloads mapping each day index (0-6) from source week to current week
+            const createPayloads = sourceScheds.map(s => {
+              const dayIdx = sourceWeekDays.indexOf(s.date);
+              if (dayIdx !== -1) {
+                return {
+                  staff_id: s.staff_id,
+                  date: weekDays[dayIdx],
+                  shift_template_id: s.shift_template_id || '',
+                  is_off: s.is_off,
+                  off_type: s.off_type || ''
+                };
+              }
+              return null;
+            }).filter(Boolean);
+
+            if (createPayloads.length > 0) {
+              await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
+              toast.success(`Đã tự động sao chép ${createPayloads.length} ca xếp từ tuần trước sang tuần này`);
+              // Re-fetch fresh schedules list
+              const freshAll = await base44.entities.StaffSchedule.list().catch(() => []);
+              schedList = freshAll.filter(s => weekDays.includes(s.date));
+            }
           }
         }
-        localStorage.setItem('glopro_tmpl_id_map', JSON.stringify(idMap));
       }
+
+      setStaff(stList.filter(x => x.is_active !== false));
+      setTemplates(tmplList);
+      setSchedules(schedList);
     } catch (e) {
-      console.error('Lỗi khi tải ca làm việc mẫu từ API:', e);
-      const localTemplates = localStorage.getItem('glopro_shift_templates');
-      tmplList = localTemplates ? JSON.parse(localTemplates) : [];
+      console.error('Lỗi khi tải dữ liệu xếp lịch:', e);
+    } finally {
+      setLoading(false);
     }
-
-    let schedList = [];
-    try {
-      const allScheds = await base44.entities.StaffSchedule.list();
-      schedList = allScheds.filter(s => weekDays.includes(s.date));
-
-      const localSchedules = localStorage.getItem('glopro_staff_schedules');
-      if (schedList.length === 0 && localSchedules && !localStorage.getItem('glopro_staff_schedules_synced')) {
-        const parsed = JSON.parse(localSchedules);
-        const staffMap = JSON.parse(localStorage.getItem('glopro_staff_id_map') || '{}');
-        const tmplMap = JSON.parse(localStorage.getItem('glopro_tmpl_id_map') || '{}');
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        
-        for (const s of parsed) {
-          const { id, ...data } = s;
-          if (staffMap[data.staff_id]) {
-            data.staff_id = staffMap[data.staff_id];
-          }
-          if (tmplMap[data.shift_template_id]) {
-            data.shift_template_id = tmplMap[data.shift_template_id];
-          }
-          const isStaffUuidValid = uuidRegex.test(data.staff_id);
-          const isTmplUuidValid = !data.shift_template_id || uuidRegex.test(data.shift_template_id);
-          if (isStaffUuidValid && isTmplUuidValid) {
-            await base44.entities.StaffSchedule.create(data);
-          }
-        }
-        localStorage.setItem('glopro_staff_schedules_synced', 'true');
-        
-        const freshAll = await base44.entities.StaffSchedule.list();
-        schedList = freshAll.filter(s => weekDays.includes(s.date));
-      }
-    } catch (e) {
-      console.error('Lỗi khi tải lịch làm việc từ API:', e);
-      const localSchedules = localStorage.getItem('glopro_staff_schedules');
-      schedList = localSchedules ? JSON.parse(localSchedules) : [];
-    }
-
-    setStaff(stList.filter(x => x.is_active !== false));
-    setTemplates(tmplList);
-    setSchedules(schedList);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -321,6 +321,8 @@ export default function SchedulerGrid({ branchId }) {
     d.setDate(d.getDate() + 7);
     const nextWeekDays = getWeekDays(d.toISOString().slice(0, 10));
 
+    setIsProcessing(true);
+    setProcessingMsg('Đang sao chép lịch sang tuần tiếp theo...');
     try {
       // Clear existing schedules in the target week in parallel
       const allScheds = await base44.entities.StaffSchedule.list();
@@ -351,15 +353,19 @@ export default function SchedulerGrid({ branchId }) {
       await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       
       toast.success(`Đã sao chép thành công ${createPayloads.length} ca xếp sang tuần tiếp theo`);
-      loadData();
+      await loadData();
     } catch (e) {
       toast.error('Lỗi khi sao chép lịch: ' + (e.message || e));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleCopyStaff = async () => {
     if (!srcStaffId || destStaffIds.length === 0) return toast.error('Vui lòng chọn nhân sự nguồn và ít nhất một nhân sự đích');
 
+    setIsProcessing(true);
+    setProcessingMsg('Đang sao chép lịch nhân sự...');
     try {
       // Get all current week's schedules for source staff
       const srcScheds = schedules.filter(s => s.staff_id === srcStaffId);
@@ -391,25 +397,37 @@ export default function SchedulerGrid({ branchId }) {
       setCopyStaffModal(false);
       setSrcStaffId('');
       setDestStaffIds([]);
-      loadData();
+      await loadData();
     } catch (e) {
       toast.error('Lỗi sao chép: ' + (e.message || e));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleCopyDay = async () => {
     if (!srcDay || destDays.length === 0) return toast.error('Vui lòng chọn ngày nguồn và ít nhất một ngày đích');
 
-    try {
-      // Get source schedules
-      const srcScheds = schedules.filter(s => s.date === srcDay);
+    const srcScheds = schedules.filter(s => s.date === srcDay);
+    if (srcScheds.length === 0) {
+      return toast.error(`Ngày nguồn (${formatDateHeader(srcDay)}) chưa có lịch làm việc nào để sao chép`);
+    }
 
+    setIsProcessing(true);
+    setProcessingMsg('Đang sao chép ca ngày...');
+    try {
       const allScheds = await base44.entities.StaffSchedule.list();
+      // Filter by branch to avoid cross-branch deletions
+      const branchFilter = branchId === 'all' ? allScheds : allScheds.filter(s => {
+        // Match by staff branch — only delete schedules belonging to our staff
+        const staffIds = srcScheds.map(x => x.staff_id);
+        return staffIds.includes(s.staff_id);
+      });
       
       // Perform copies in parallel for target days
       await Promise.all(destDays.map(async (destDay) => {
-        // Delete target date existing schedules
-        const targetExisting = allScheds.filter(s => s.date === destDay);
+        // Delete target date existing schedules (only for same staff)
+        const targetExisting = branchFilter.filter(s => s.date === destDay);
         await batchPromises(targetExisting, async (old) => {
           try {
             await base44.entities.StaffSchedule.delete(old.id);
@@ -429,13 +447,15 @@ export default function SchedulerGrid({ branchId }) {
         await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       }));
 
-      toast.success('Đã sao chép ca ngày thành công');
+      toast.success(`Đã sao chép ${srcScheds.length} ca từ ${formatDateHeader(srcDay)} sang ${destDays.length} ngày`);
       setCopyDayModal(false);
       setSrcDay('');
       setDestDays([]);
-      loadData();
+      await loadData();
     } catch (e) {
       toast.error('Lỗi sao chép ngày: ' + (e.message || e));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -443,6 +463,8 @@ export default function SchedulerGrid({ branchId }) {
     if (!swapStaffA || !swapStaffB || !swapDay) return toast.error('Vui lòng chọn đầy đủ nhân sự và ngày đổi ca');
     if (swapStaffA === swapStaffB) return toast.error('Vui lòng chọn 2 nhân sự khác nhau');
 
+    setIsProcessing(true);
+    setProcessingMsg('Đang đổi ca nhân sự...');
     try {
       const schedA = getCellSchedule(swapStaffA, swapDay);
       const schedB = getCellSchedule(swapStaffB, swapDay);
@@ -485,19 +507,25 @@ export default function SchedulerGrid({ branchId }) {
       setSwapStaffA('');
       setSwapStaffB('');
       setSwapDay('');
-      loadData();
+      await loadData();
     } catch (e) {
       toast.error('Lỗi hoán đổi ca: ' + (e.message || e));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleClearAllSchedules = async () => {
-    if (!window.confirm('CẢNH BÁO: Hành động này sẽ xóa SẠCH TOÀN BỘ lịch xếp ca trên hệ thống. Bạn có chắc chắn muốn tiếp tục?')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa TOÀN BỘ lịch xếp ca của TUẦN HÀNG ĐANG XEM?')) return;
     
-    setLoading(true);
+    setIsProcessing(true);
+    setProcessingMsg('Đang xóa lịch của tuần hiện tại...');
     try {
       const allSchedules = await base44.entities.StaffSchedule.list();
-      await batchPromises(allSchedules, async (s) => {
+      // Filter schedules to only target days in current week
+      const currentWeekSchedules = allSchedules.filter(s => weekDays.includes(s.date));
+      
+      await batchPromises(currentWeekSchedules, async (s) => {
         try {
           await base44.entities.StaffSchedule.delete(s.id);
         } catch (e) {
@@ -505,64 +533,126 @@ export default function SchedulerGrid({ branchId }) {
         }
       }, 3);
       
-      localStorage.removeItem('glopro_staff_schedules');
-      localStorage.removeItem('glopro_staff_schedules_synced');
+      // Update local storage fallback if any
+      const local = localStorage.getItem('glopro_staff_schedules');
+      if (local) {
+        const parsed = JSON.parse(local);
+        const filtered = parsed.filter(s => !weekDays.includes(s.date));
+        localStorage.setItem('glopro_staff_schedules', JSON.stringify(filtered));
+      }
       
-      toast.success('Đã xóa sạch toàn bộ lịch xếp ca thành công');
-      loadData();
+      toast.success(`Đã xóa sạch ${currentWeekSchedules.length} ca làm việc của tuần hiện tại`);
+      await loadData();
     } catch (e) {
       toast.error('Lỗi khi xóa lịch: ' + (e.message || e));
-      setLoading(false);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="space-y-4">
       {/* Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-2">
-          <button onClick={() => changeWeek(-1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-700">
-            <Calendar className="w-3.5 h-3.5 text-purple-500" />
-            <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
-          </div>
-          <button onClick={() => changeWeek(1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-3 bg-white p-3.5 rounded-3xl border border-slate-100 shadow-sm overflow-x-auto whitespace-nowrap scrollbar-none">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => changeWeek(-1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 shrink-0" title="Tuần trước">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs font-semibold text-slate-700 shrink-0 transition-colors shadow-none"
+                >
+                  <CalendarDays className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-slate-200" align="start">
+                <Calendar
+                  mode="single"
+                  selected={new Date(baseDate)}
+                  onSelect={(date) => {
+                    if (date) {
+                      setBaseDate(date.toISOString().slice(0, 10));
+                      setActiveCell(null);
+                    }
+                  }}
+                  modifiers={{
+                    // Highlight all days in the currently selected week
+                    selectedWeek: (date) => {
+                      const selectedMon = new Date(baseDate);
+                      const day = selectedMon.getDay();
+                      const diff = selectedMon.getDate() - day + (day === 0 ? -6 : 1);
+                      const mon = new Date(selectedMon.setDate(diff));
+                      mon.setHours(0,0,0,0);
 
-        <div className="flex flex-wrap gap-2">
+                      const sun = new Date(mon);
+                      sun.setDate(mon.getDate() + 6);
+                      sun.setHours(23,59,59,999);
+
+                      return date >= mon && date <= sun;
+                    }
+                  }}
+                  modifiersClassNames={{
+                    selectedWeek: "bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-none first:rounded-l-md last:rounded-r-md font-semibold"
+                  }}
+                  className="p-3"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <button onClick={() => changeWeek(1)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 shrink-0" title="Tuần sau">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50/70 border border-orange-100 cursor-pointer select-none shrink-0">
+            <input 
+              type="checkbox" 
+              checked={autoCopyEnabled} 
+              onChange={handleToggleAutoCopy}
+              className="w-3.5 h-3.5 text-orange-600 rounded border-orange-300 focus:ring-0 cursor-pointer"
+            />
+            <span className="text-xs font-bold text-orange-700">Tự động lặp lịch</span>
+          </label>
           <button 
+            disabled={isProcessing}
             onClick={handleCopyWeek} 
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-600 font-semibold text-xs hover:bg-purple-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Copy className="w-3.5 h-3.5" /> Sao chép tuần sau
           </button>
           <button 
+            disabled={isProcessing}
             onClick={() => { setSrcStaffId(''); setDestStaffIds([]); setCopyStaffModal(true); }} 
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Copy className="w-3.5 h-3.5" /> Sao chép nhân sự
           </button>
           <button 
+            disabled={isProcessing}
             onClick={() => { setSrcDay(''); setDestDays([]); setCopyDayModal(true); }} 
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-semibold text-xs hover:bg-emerald-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-semibold text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Copy className="w-3.5 h-3.5" /> Sao chép ca ngày
           </button>
           <button 
+            disabled={isProcessing}
             onClick={() => { setSwapStaffA(''); setSwapStaffB(''); setSwapDay(''); setSwapModal(true); }} 
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Đổi ca nhân sự
           </button>
           <button 
+            disabled={isProcessing}
             onClick={handleClearAllSchedules} 
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 font-semibold text-xs hover:bg-red-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 font-semibold text-xs hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Trash2 className="w-3.5 h-3.5" /> Xóa tất cả lịch
+            <Trash2 className="w-3.5 h-3.5" /> Xóa lịch tuần này
           </button>
         </div>
       </div>
@@ -661,7 +751,7 @@ export default function SchedulerGrid({ branchId }) {
                           ) : (
                             <button
                               onClick={() => openAssignModal(s, date)}
-                              className="w-full py-3.5 px-2.5 rounded-xl border border-dashed border-slate-200 text-slate-300 hover:text-slate-650 hover:border-solid hover:border-purple-300 transition-all flex flex-col items-center justify-center min-h-[64px]"
+                              className="w-full py-3.5 px-2.5 rounded-xl border border-dashed border-slate-200 text-slate-300 hover:text-slate-650 hover:border-solid hover:border-orange-300 transition-all flex flex-col items-center justify-center min-h-[64px]"
                             >
                               <Plus className="w-3.5 h-3.5 opacity-40 hover:opacity-100" />
                             </button>
@@ -708,7 +798,7 @@ export default function SchedulerGrid({ branchId }) {
                             setDestStaffIds(destStaffIds.filter(id => id !== x.id));
                           }
                         }}
-                        className="rounded border-slate-300 text-purple-650 focus:ring-purple-500 w-3.5 h-3.5"
+                        className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-3.5 h-3.5"
                       />
                       <span>{x.full_name}</span>
                     </label>
@@ -719,7 +809,7 @@ export default function SchedulerGrid({ branchId }) {
                 </div>
               </div>
             </div>
-            <button onClick={handleCopyStaff} className="w-full py-2.5 bg-purple-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-purple-600 transition-colors">Bắt đầu sao chép</button>
+            <button onClick={handleCopyStaff} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Bắt đầu sao chép</button>
           </div>
         </div>
       )}
@@ -744,8 +834,8 @@ export default function SchedulerGrid({ branchId }) {
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày đích (Chọn các ngày dán lịch đến)</label>
                 <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
                   {weekDays.filter(d => d !== srcDay).map(d => (
-                    <label key={d} className="flex items-center gap-2 text-xs text-slate-755 cursor-pointer select-none">
-                      <input 
+                    <label key={d} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                      <input
                         type="checkbox"
                         checked={destDays.includes(d)}
                         onChange={(e) => {
@@ -755,7 +845,7 @@ export default function SchedulerGrid({ branchId }) {
                             setDestDays(destDays.filter(day => day !== d));
                           }
                         }}
-                        className="rounded border-slate-300 text-purple-655 focus:ring-purple-500 w-3.5 h-3.5"
+                        className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 w-3.5 h-3.5"
                       />
                       <span>{formatDateHeader(d)}</span>
                     </label>
@@ -766,11 +856,10 @@ export default function SchedulerGrid({ branchId }) {
                 </div>
               </div>
             </div>
-            <button onClick={handleCopyDay} className="w-full py-2.5 bg-purple-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-purple-600 transition-colors">Bắt đầu sao chép</button>
+            <button onClick={handleCopyDay} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Bắt đầu sao chép</button>
           </div>
         </div>
       )}
-
       {/* Swap Shifts Modal */}
       {swapModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setSwapModal(false)}>
@@ -804,7 +893,7 @@ export default function SchedulerGrid({ branchId }) {
                 </div>
               </div>
             </div>
-            <button onClick={handleSwapShifts} className="w-full py-2.5 bg-purple-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-purple-600 transition-colors">Xác nhận đổi ca</button>
+            <button onClick={handleSwapShifts} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Xác nhận đổi ca</button>
           </div>
         </div>
       )}
@@ -868,7 +957,7 @@ export default function SchedulerGrid({ branchId }) {
                               );
                             }}
                             className={`w-11 h-6 rounded-full transition-colors relative outline-none shrink-0 ${
-                              selectedShiftIds.includes(t.id) && !isOff ? 'bg-blue-600' : 'bg-slate-200'
+                              selectedShiftIds.includes(t.id) && !isOff ? 'bg-orange-500' : 'bg-slate-200'
                             }`}
                           >
                             <div 
@@ -960,12 +1049,25 @@ export default function SchedulerGrid({ branchId }) {
               </button>
               <button 
                 onClick={() => handleAssignShifts(assignModalCell.staff.id, assignModalCell.date, selectedShiftIds, isOff, offType)} 
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans"
+                className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans"
               >
                 Lưu
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Global AJAX Loading Overlay */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 select-none">
+          <div className="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-3 border border-slate-100 max-w-xs w-full text-center">
+            <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
+            <div>
+              <p className="text-sm font-bold text-slate-800 font-sans">{processingMsg}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 font-sans">Vui lòng chờ trong giây lát...</p>
+            </div>
           </div>
         </div>
       )}

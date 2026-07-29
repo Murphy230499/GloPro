@@ -1,4 +1,34 @@
+import React from 'react';
+import { Crown, Gem, Award, Shield, Medal, Sparkles, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+
+/**
+ * Get matching Lucide icon for any customer tier (VIP, Diamond, Gold, Silver, Bronze, Standard, etc.)
+ */
+export function getTierIcon(tierName = '', tierId = '', className = "w-3 h-3 shrink-0 inline-block") {
+  const name = String(tierName || '').toLowerCase();
+  const id = String(tierId || '').toLowerCase();
+
+  if (name.includes('kim cương') || name.includes('diamond') || id.includes('diamond')) {
+    return <Gem className={className} />;
+  }
+  if (name.includes('vip') || id.includes('vip')) {
+    return <Crown className={className} />;
+  }
+  if (name.includes('vàng') || name.includes('gold') || id.includes('gold')) {
+    return <Award className={className} />;
+  }
+  if (name.includes('bạc') || name.includes('silver') || id.includes('silver')) {
+    return <Shield className={className} />;
+  }
+  if (name.includes('đồng') || name.includes('bronze') || id.includes('bronze')) {
+    return <Medal className={className} />;
+  }
+  if (name.includes('bạch kim') || name.includes('platinum') || id.includes('platinum')) {
+    return <Star className={className} />;
+  }
+  return <Sparkles className={className} />;
+}
 
 // Safe JSON parser helper
 const safeParse = (str, fallback = []) => {

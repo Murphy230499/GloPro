@@ -4,7 +4,7 @@ import { Plus, Edit3, Trash2, ShieldCheck, Play, Sparkles, ChevronDown, X } from
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import { base44 } from '@/api/base44Client';
-import { loadCustomerTiers, saveCustomerTier, deleteCustomerTier, saveCustomerTierHistory, loadCustomerTierHistory } from '@/utils/loyaltyFallbacks';
+import { loadCustomerTiers, saveCustomerTier, deleteCustomerTier, saveCustomerTierHistory, loadCustomerTierHistory, getTierIcon } from '@/utils/loyaltyFallbacks';
 
 const COLORS = ['#FF6B9D', '#34D399', '#60A5FA', '#A78BFA', '#FBBF24', '#F97316', '#FB7185', '#06B6D4', '#94A3B8'];
 const PERIOD_LABELS = {
@@ -162,15 +162,15 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
   return (
     <div className="space-y-5">
       {/* Simulation Box */}
-      <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex flex-wrap items-center justify-between gap-3 text-left">
+      <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100/50 flex flex-wrap items-center justify-between gap-3 text-left">
         <div className="text-left space-y-0.5">
-          <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-primary" /> Xét duyệt nâng & hạ hạng tự động</div>
+          <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-amber-500" /> Xét duyệt nâng & hạ hạng tự động</div>
           <div className="text-[10px] text-slate-400 font-semibold">Chạy quét toàn bộ chi tiêu và điểm tích luỹ khách hàng theo chu kỳ thiết lập.</div>
         </div>
         <button
           onClick={runMaintenanceCheck}
           disabled={runningCheck}
-          className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-95 disabled:opacity-50 transition-all flex items-center gap-1.5 shrink-0"
+          className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-amber-600 disabled:opacity-50 transition-all flex items-center gap-1.5 shrink-0"
         >
           <Play className="w-3.5 h-3.5 fill-white" /> {runningCheck ? 'Đang xét hạng...' : 'Chạy xét duy trì hạng'}
         </button>
@@ -191,8 +191,8 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
             {tiers.map((t) => (
               <div key={t.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-white" style={{ background: t.color }}>
-                    <Sparkles className="w-2.5 h-2.5" />
+                  <span className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-white shadow-2xs" style={{ background: t.color }}>
+                    {getTierIcon(t.name, t.id, "w-3 h-3 text-white")}
                   </span>
                   <div className="text-left font-sans">
                     <div className="font-bold text-xs text-slate-700">{t.name}</div>
@@ -237,28 +237,28 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
             <div className="space-y-4 font-sans text-xs">
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Tên hạng thành viên</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Hạng Vàng, VIP, Diamond..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Hạng Vàng, VIP, Diamond..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Tổng chi tiêu tối thiểu</label>
-                  <input type="number" value={minSpend} onChange={(e) => setMinSpend(e.target.value)} placeholder="Ví dụ: 5,000,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <input type="number" value={minSpend} onChange={(e) => setMinSpend(e.target.value)} placeholder="Ví dụ: 5,000,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Hoặc số điểm tối thiểu</label>
-                  <input type="number" value={minPoints} onChange={(e) => setMinPoints(e.target.value)} placeholder="Ví dụ: 500" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <input type="number" value={minPoints} onChange={(e) => setMinPoints(e.target.value)} placeholder="Ví dụ: 500" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Giảm giá mặc định (%)</label>
-                  <input type="number" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} placeholder="Ví dụ: 5" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <input type="number" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} placeholder="Ví dụ: 5" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Hoặc giảm giá số tiền</label>
-                  <input type="number" value={discountAmount} onChange={(e) => setDiscountAmount(e.target.value)} placeholder="Ví dụ: 50,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                  <input type="number" value={discountAmount} onChange={(e) => setDiscountAmount(e.target.value)} placeholder="Ví dụ: 50,000" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                 </div>
               </div>
 
@@ -266,7 +266,7 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
                 <div>
                   <label className="block font-bold text-slate-500 mb-1">Chu kỳ duy trì</label>
                   <div className="relative">
-                    <select value={maintenancePeriod} onChange={(e) => setMaintenancePeriod(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none">
+                    <select value={maintenancePeriod} onChange={(e) => setMaintenancePeriod(e.target.value)} className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none focus:border-amber-500">
                       <option value="year">Hằng năm</option>
                       <option value="6_months">Hằng 6 tháng</option>
                       <option value="quarter">Hằng quý</option>
@@ -278,7 +278,7 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
                 {maintenancePeriod === 'upgrade_duration' && (
                   <div>
                     <label className="block font-bold text-slate-500 mb-1">Số ngày duy trì</label>
-                    <input type="number" value={maintenanceDays} onChange={(e) => setMaintenanceDays(e.target.value)} placeholder="365" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                    <input type="number" value={maintenanceDays} onChange={(e) => setMaintenanceDays(e.target.value)} placeholder="365" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
                   </div>
                 )}
               </div>
@@ -296,7 +296,7 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
             {/* Footer buttons */}
             <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
               <button onClick={resetFormAndClose} className="flex-1 py-2.5 rounded-xl bg-slate-250 hover:bg-slate-300 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
-              <button onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
+              <button onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 transition-colors font-sans">
                 {editingId ? 'Cập nhật' : 'Thêm hạng'}
               </button>
             </div>

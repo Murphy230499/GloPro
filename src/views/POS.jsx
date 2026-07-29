@@ -9,6 +9,7 @@ import { todayStr, formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import { loadCustomerTiers } from '@/utils/loyaltyFallbacks';
 import CatalogColumn from '@/components/pos/CatalogColumn';
+import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 
 const getCurrentUser = () => {
   try {
@@ -78,39 +79,80 @@ export default function POS() {
 
   const editInvoiceId = searchParams.get('edit_invoice_id');
 
-  const loadUnpaidInvoices = (selectId = null) => {
-    const filter = currentBranchId === 'all' ? { status: 'unpaid' } : { branch_id: currentBranchId, status: 'unpaid' };
-    return Promise.all([
-      base44.entities.Invoice.filter(filter),
-      base44.entities.Customer.list()
-    ]).then(([data, cusList]) => {
+  const loadUnpaidInvoices = async (selectId = null) => {
+    try {
+      const [invs, cusList, s, p, pk, t, sc, pc, gc] = await Promise.all([
+        base44.entities.Invoice.list(),
+        base44.entities.Customer.list(),
+        base44.entities.Service.list(),
+        base44.entities.Product.list(),
+        base44.entities.ServicePackage.list(),
+        base44.entities.Treatment.list(),
+        base44.entities.ServiceCombo.list(),
+        base44.entities.ProductCombo.list(),
+        base44.entities.PrepaidCard.list()
+      ]);
+
+      const allCat = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
+      const branchInvs = (currentBranchId === 'all' || !currentBranchId)
+        ? invs
+        : invs.filter(x => String(x.branch_id) === String(currentBranchId));
+      const unpaidInvs = branchInvs.filter(x => x.status === 'unpaid');
       const cusMap = Object.fromEntries(cusList.map(c => [c.id, c]));
-      const sorted = data.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
+      const sorted = unpaidInvs.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
       const mapped = sorted.map((inv, idx) => {
-        const cObj = inv.customer_id ? cusMap[inv.customer_id] : null;
+        let cObj = inv.customer_id ? (cusMap[inv.customer_id] || cusList.find(c => c && String(c.id) === String(inv.customer_id))) : null;
+        let resolvedCustomer = null;
+        if (cObj) {
+          resolvedCustomer = {
+            id: cObj.id,
+            name: cObj.name,
+            avatar_url: cObj.avatar_url,
+            phone: cObj.phone || '',
+            points: cObj.points || 0,
+            total_spent: cObj.total_spent || 0
+          };
+        } else if (inv.customer_name && inv.customer_name !== 'Khách vãng lai') {
+          resolvedCustomer = {
+            id: inv.customer_id || null,
+            name: inv.customer_name,
+            phone: '',
+            points: 0,
+            total_spent: 0
+          };
+        } else {
+          resolvedCustomer = null;
+        }
+
         return {
           id: inv.id,
           seqNum: idx + 1,
           saleCode: inv.invoice_code,
-          customer: cObj ? { id: cObj.id, name: cObj.name, avatar_url: cObj.avatar_url, points: cObj.points, total_spent: cObj.total_spent } : null,
-          cart: (inv.items || []).map(x => ({
-            name: x.name,
-            type: x.type,
-            price: x.price,
-            originalPrice: x.price,
-            qty: x.qty || 1,
-            staff_id: x.staff_id || '',
-            staff_name: x.staff_name || '',
-            is_customer_requested: !!x.is_customer_requested,
-            balance: x.balance || 0,
-            sessions: x.sessions || 10
-          })),
-          discountValue: inv.discount || 0,
-          discountType: 'vnd',
+          customer: resolvedCustomer,
+          cart: (inv.items || []).map(x => {
+            const match = allCat.find(cat => cat && (cat.name === x.name || String(cat.id) === String(x.id)));
+            return {
+              id: x.id || Math.random().toString(),
+              name: x.name,
+              type: x.type || 'service',
+              price: x.price || 0,
+              originalPrice: x.price || 0,
+              qty: x.qty || 1,
+              staff_id: x.staff_id || '',
+              staff_name: x.staff_name || '',
+              is_customer_requested: !!x.is_customer_requested,
+              balance: x.balance || 0,
+              sessions: x.sessions || 10,
+              image_url: x.image_url || x.image || (match ? (match.image_url || match.image || '') : ''),
+              color: x.color || (match ? (match.color || '') : '')
+            };
+          }),
+          discountValue: inv.discount_amount || inv.discount || 0,
+          discountType: inv.discount_type || 'vnd',
           tip: inv.tip || 0,
           tipSplits: (inv.tip_splits || []).map(ts => ({ staffId: ts.staff_id, amount: ts.amount })),
           isRestoredFromInvoice: true,
-          logs: []
+          logs: getNormalizedLogs(inv)
         };
       });
       setSessions(mapped);
@@ -121,9 +163,9 @@ export default function POS() {
       } else {
         setActiveId(null);
       }
-    }).catch(err => {
-      console.error('Lỗi khi tải hóa đơn treo:', err);
-    });
+    } catch (err) {
+      console.error('Lỗi khi tải hóa đơn tạm tính:', err);
+    }
   };
 
   const [services, setServices] = useState([]);
@@ -141,6 +183,7 @@ export default function POS() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [custModal, setCustModal] = useState(false);
+  const [custQuery, setCustQuery] = useState('');
   const [paying, setPaying] = useState(false);
   const [customerTiers, setCustomerTiers] = useState([]);
 
@@ -167,9 +210,22 @@ export default function POS() {
       setProductCombos(pc.filter((x) => x.is_active));
       setPrepaidCards(gc.filter((x) => x.is_active));
       setGroups(gr);
-      setStaff(st);
+      setStaff(st.filter((x) => x.is_active !== false));
       setCustomers(c);
       setCustomerTiers(ct);
+
+      const allCat = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
+      setSessions(prev => (prev || []).map(sess => ({
+        ...sess,
+        cart: (sess.cart || []).map(item => {
+          const match = allCat.find(cat => cat && (cat.name === item.name || String(cat.id) === String(item.id)));
+          return {
+            ...item,
+            image_url: item.image_url || (match ? (match.image_url || match.image || '') : ''),
+            color: item.color || (match ? (match.color || '') : '')
+          };
+        })
+      })));
     });
   };
 
@@ -198,8 +254,8 @@ export default function POS() {
           const newInv = await base44.entities.Invoice.create({
             invoice_code: saleCode,
             customer_name: custObj?.name || 'Khách vãng lai',
-            customer_id: buyAgainCustomerId,
-            branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId,
+            customer_id: custObj?.id || '',
+            branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
             items: [{
               name: buyAgainName,
               type: dbType,
@@ -247,168 +303,171 @@ export default function POS() {
 
   const activeSession = sessions.find((s) => s.id === activeId);
 
-  const patchSession = async (patch) => {
-    let updatedSession = null;
-    setSessions((arr) => arr.map((s) => {
-      if (s.id !== activeId) return s;
-      
-      let logs = s.logs || [];
-      const user = getCurrentUser();
-      const time = new Date();
-      const createEntry = (action, details) => ({ id: Math.random().toString(), action, details, user, time });
+  const syncSessionToDb = async (updatedSession) => {
+    if (!updatedSession || !updatedSession.id || String(updatedSession.id).startsWith('direct_pos_')) return;
+    const cart = updatedSession.cart || [];
+    const subtotal = cart.reduce((sum, x) => sum + (x.price || 0) * (x.qty || 1), 0);
+    const discount = updatedSession.discountType === 'percent' ? Math.round(subtotal * ((updatedSession.discountValue || 0) / 100)) : (updatedSession.discountValue || 0);
+    const total = Math.max(0, subtotal - discount) + (updatedSession.tip || 0);
 
-      // Detect customer changes
-      if ('customer' in patch) {
-        if (patch.customer) {
-          logs = [...logs, createEntry('Chọn khách hàng', patch.customer.name)];
-          // Find customer tier and auto apply discount
-          const cust = patch.customer;
-          const sortedTiers = [...customerTiers].sort((a, b) => b.min_spend - a.min_spend);
-          const tier = sortedTiers.find(t => (cust.total_spent || 0) >= t.min_spend || (cust.points || 0) >= t.min_points);
-          if (tier) {
-            if (tier.discount_percent > 0) {
-              patch.discountType = 'percent';
-              patch.discountValue = tier.discount_percent;
-            } else if (tier.discount_amount > 0) {
-              patch.discountType = 'vnd';
-              patch.discountValue = tier.discount_amount;
-            }
+    try {
+      await base44.entities.Invoice.update(updatedSession.id, {
+        invoice_code: updatedSession.saleCode || ('SC' + String(Math.floor(100000 + Math.random() * 900000))),
+        customer_id: updatedSession.customer?.id || '',
+        customer_name: (updatedSession.customer?.name && updatedSession.customer.name.trim()) ? updatedSession.customer.name.trim() : 'Khách vãng lai',
+        items: cart.map((x) => {
+          let dbType = x.type;
+          if (dbType !== 'service' && dbType !== 'product') {
+            dbType = 'package';
           }
-        } else if (s.customer) {
-          logs = [...logs, createEntry('Bỏ chọn khách hàng', s.customer.name)];
-          // Reset default discount
-          patch.discountType = 'vnd';
-          patch.discountValue = 0;
-        }
-      }
+          return { 
+            name: x.name, 
+            type: dbType, 
+            price: Math.round(x.price || 0), 
+            qty: Math.round(x.qty || 1), 
+            staff_id: x.staff_id || '', 
+            staff_name: x.staff_name || '',
+            is_customer_requested: !!x.is_customer_requested,
+            balance: Math.round(x.balance || 0),
+            sessions: Math.round(x.sessions || 10),
+            image_url: x.image_url || x.image || '',
+            color: x.color || ''
+          };
+        }),
+        subtotal: Math.round(subtotal),
+        discount: Math.round(discount),
+        total: Math.round(total),
+        tip: Math.round(updatedSession.tip || 0),
+        tip_splits: (updatedSession.tipSplits || []).map(s => ({ staff_id: s.staffId, amount: Math.round(s.amount || 0) })),
+        logs: JSON.stringify(updatedSession.logs || [])
+      });
+    } catch (err) {
+      console.error('Failed to sync session updates to DB:', err);
+    }
+  };
 
-      // Detect discount changes
-      if ('discount' in patch && patch.discount !== s.discount) {
-        logs = [...logs, createEntry('Thay đổi giảm giá hóa đơn', `${formatVND(s.discount)} -> ${formatVND(patch.discount)}`)];
-      }
+  const patchSession = (patch) => {
+    if (!activeId) return;
+    const currentSession = sessions.find((s) => s.id === activeId);
+    if (!currentSession) return;
 
-      // Detect promo changes
-      if ('promo' in patch) {
-        if (patch.promo) {
-          logs = [...logs, createEntry('Áp dụng CTKM', patch.promo.name)];
-        } else if (s.promo) {
-          logs = [...logs, createEntry('Hủy áp dụng CTKM', s.promo.name)];
-        }
-      }
+    let logs = getNormalizedLogs(currentSession);
+    const createEntry = (action, details) => createLogEntry(action, details, getCurrentUser());
 
-      // Detect voucher changes
-      if ('voucher' in patch) {
-        if (patch.voucher) {
-          logs = [...logs, createEntry('Áp dụng Voucher', patch.voucher.name)];
-        } else if (s.voucher) {
-          logs = [...logs, createEntry('Hủy áp dụng Voucher', s.voucher.name)];
-        }
-      }
-
-      // Detect item deletion or cart edits
-      if ('cart' in patch) {
-        if (patch.cart.length > s.cart.length) {
-          const added = patch.cart.find((x) => !s.cart.some((y) => y.name === x.name && y.type === x.type));
-          if (added) {
-            logs = [...logs, createEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`)];
-          } else {
-            // Qty increased during add
-            patch.cart.forEach((y) => {
-              const x = s.cart.find((item) => item.name === y.name && item.type === y.type);
-              if (x && y.qty > x.qty) {
-                logs = [...logs, createEntry(`Tăng số lượng ${y.name}`, `${x.qty} -> ${y.qty}`)];
-              }
-            });
+    // Detect customer changes
+    if ('customer' in patch) {
+      if (patch.customer) {
+        logs = [...logs, createEntry('Chọn khách hàng', patch.customer.name)];
+        // Find customer tier and auto apply discount
+        const cust = patch.customer;
+        const sortedTiers = [...customerTiers].sort((a, b) => b.min_spend - a.min_spend);
+        const tier = sortedTiers.find(t => (cust.total_spent || 0) >= t.min_spend || (cust.points || 0) >= t.min_points);
+        if (tier) {
+          if (tier.discount_percent > 0) {
+            patch.discountType = 'percent';
+            patch.discountValue = tier.discount_percent;
+          } else if (tier.discount_amount > 0) {
+            patch.discountType = 'vnd';
+            patch.discountValue = tier.discount_amount;
           }
-        } else if (patch.cart.length < s.cart.length) {
-          // Item removed
-          const removed = s.cart.find((x) => !patch.cart.some((y) => y.name === x.name && y.type === x.type));
-          if (removed) {
-            logs = [...logs, createEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`)];
-          }
-        } else if (patch.cart.length === s.cart.length) {
-          // Item qty or price updated
-          s.cart.forEach((x, idx) => {
-            const y = patch.cart[idx];
-            if (y && (y.qty !== x.qty || y.price !== x.price || y.staff_id !== x.staff_id)) {
-              const changes = [];
-              if (y.qty !== x.qty) changes.push(`Số lượng: ${x.qty} -> ${y.qty}`);
-              if (y.price !== x.price) changes.push(`Giá bán: ${formatVND(x.price)} -> ${formatVND(y.price)}`);
-              if (y.staff_id !== x.staff_id) changes.push(`Nhên viên: ${x.staff_name || 'Chưa chọn'} -> ${y.staff_name || 'Chưa chọn'}`);
-              logs = [...logs, createEntry(`Chỉnh sửa ${x.name}`, changes.join(', '))];
+        }
+      } else if (currentSession.customer) {
+        logs = [...logs, createEntry('Bỏ chọn khách hàng', currentSession.customer.name)];
+        // Reset default discount
+        patch.discountType = 'vnd';
+        patch.discountValue = 0;
+      }
+    }
+
+    // Detect discount changes
+    if ('discount' in patch && patch.discount !== currentSession.discount) {
+      logs = [...logs, createEntry('Thay đổi giảm giá hóa đơn', `${formatVND(currentSession.discount)} -> ${formatVND(patch.discount)}`)];
+    }
+
+    // Detect promo changes
+    if ('promo' in patch) {
+      if (patch.promo) {
+        logs = [...logs, createEntry('Áp dụng CTKM', patch.promo.name)];
+      } else if (currentSession.promo) {
+        logs = [...logs, createEntry('Hủy áp dụng CTKM', currentSession.promo.name)];
+      }
+    }
+
+    // Detect voucher changes
+    if ('voucher' in patch) {
+      if (patch.voucher) {
+        logs = [...logs, createEntry('Áp dụng Voucher', patch.voucher.name)];
+      } else if (currentSession.voucher) {
+        logs = [...logs, createEntry('Hủy áp dụng Voucher', currentSession.voucher.name)];
+      }
+    }
+
+    // Detect item deletion or cart edits
+    if ('cart' in patch) {
+      if (patch.cart.length > currentSession.cart.length) {
+        const added = patch.cart.find((x) => !currentSession.cart.some((y) => y.name === x.name && y.type === x.type));
+        if (added) {
+          logs = [...logs, createEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`)];
+        } else {
+          // Qty increased during add
+          patch.cart.forEach((y) => {
+            const x = currentSession.cart.find((item) => item.name === y.name && item.type === y.type);
+            if (x && y.qty > x.qty) {
+              logs = [...logs, createEntry(`Tăng số lượng ${y.name}`, `${x.qty} -> ${y.qty}`)];
             }
           });
         }
-      }
-
-      const updated = { ...s, ...patch, logs };
-      updatedSession = updated;
-      return updated;
-    }));
-
-    // Async sync updated session data back to base44 database record
-    if (updatedSession) {
-      const cart = updatedSession.cart || [];
-      const subtotal = cart.reduce((sum, x) => sum + (x.price || 0) * (x.qty || 1), 0);
-      const discount = updatedSession.discountType === 'percent' ? Math.round(subtotal * ((updatedSession.discountValue || 0) / 100)) : (updatedSession.discountValue || 0);
-      const total = Math.max(0, subtotal - discount) + updatedSession.tip;
-
-      try {
-        await base44.entities.Invoice.update(updatedSession.id, {
-          invoice_code: updatedSession.saleCode || ('SC' + String(Math.floor(100000 + Math.random() * 900000))),
-          customer_id: updatedSession.customer?.id || null,
-          customer_name: (updatedSession.customer?.name && updatedSession.customer.name.trim()) ? updatedSession.customer.name.trim() : 'Khách vãng lai',
-          items: cart.map((x) => {
-            let dbType = x.type;
-            if (dbType !== 'service' && dbType !== 'product') {
-              dbType = 'package';
-            }
-            return { 
-              name: x.name, 
-              type: dbType, 
-              price: Math.round(x.price || 0), 
-              qty: Math.round(x.qty || 1), 
-              staff_id: x.staff_id || '', 
-              staff_name: x.staff_name || '',
-              is_customer_requested: !!x.is_customer_requested,
-              balance: Math.round(x.balance || 0),
-              sessions: Math.round(x.sessions || 10)
-            };
-          }),
-          subtotal,
-          discount,
-          total,
-          tip: Math.round(updatedSession.tip || 0),
-          tip_splits: (updatedSession.tipSplits || []).map(s => ({ staff_id: s.staffId, amount: Math.round(s.amount || 0) })),
+      } else if (patch.cart.length < currentSession.cart.length) {
+        // Item removed
+        const removed = currentSession.cart.find((x) => !patch.cart.some((y) => y.name === x.name && y.type === x.type));
+        if (removed) {
+          logs = [...logs, createEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`)];
+        }
+      } else if (patch.cart.length === currentSession.cart.length) {
+        // Item qty or price updated
+        currentSession.cart.forEach((x, idx) => {
+          const y = patch.cart[idx];
+          if (y && (y.qty !== x.qty || y.price !== x.price || y.staff_id !== x.staff_id)) {
+            const changes = [];
+            if (y.qty !== x.qty) changes.push(`Số lượng: ${x.qty} -> ${y.qty}`);
+            if (y.price !== x.price) changes.push(`Giá bán: ${formatVND(x.price)} -> ${formatVND(y.price)}`);
+            if (y.staff_id !== x.staff_id) changes.push(`Nhân viên: ${x.staff_name || 'Chưa chọn'} -> ${y.staff_name || 'Chưa chọn'}`);
+            logs = [...logs, createEntry(`Chỉnh sửa ${x.name}`, changes.join(', '))];
+          }
         });
-      } catch (err) {
-        console.error('Failed to sync session updates to DB:', err);
       }
     }
+
+    const updatedSession = { ...currentSession, ...patch, logs };
+
+    setSessions((arr) => arr.map((s) => (s.id === activeId ? updatedSession : s)));
+    syncSessionToDb(updatedSession);
   };
 
   const createSale = async () => {
     try {
       const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
+      const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, 'Khởi tạo hoá đơn cho Khách vãng lai', 'Lễ tân');
       
       const newInv = await base44.entities.Invoice.create({
         invoice_code: saleCode,
         customer_name: 'Khách vãng lai',
-        customer_id: null,
-        branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId,
+        customer_id: '',
+        branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
         items: [],
         subtotal: 0,
         discount: 0,
         total: 0,
         tip: 0,
         status: 'unpaid',
-        date: todayStr()
+        date: todayStr(),
+        logs: JSON.stringify([initialLog])
       });
 
       await loadUnpaidInvoices(newInv.id);
-      toast.success(`Đã tạo đơn treo mới • ${saleCode}`);
+      toast.success(`Đã tạo hóa đơn tạm tính mới • ${saleCode}`);
     } catch (e) {
-      toast.error('Lỗi khi tạo hóa đơn treo: ' + (e.message || e));
+      toast.error('Lỗi khi tạo hóa đơn tạm tính: ' + (e.message || e));
     }
   };
 
@@ -422,15 +481,14 @@ export default function POS() {
     let session = activeSession;
     if (!session) {
       try {
-        const allInvoices = await base44.entities.Invoice.list();
-        const seq = allInvoices.length + 1;
         const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
+        const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, `Khởi tạo hoá đơn & thêm ${item.name}`, 'Lễ tân');
         
         const newInv = await base44.entities.Invoice.create({
           invoice_code: saleCode,
-          customer_name: 'Khách vãng lai',
-          customer_id: null,
-          branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId,
+          customer_name: '',
+          customer_id: '',
+          branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
           items: [{ 
             name: item.name, 
             type, 
@@ -441,20 +499,23 @@ export default function POS() {
             is_customer_requested: false,
             balance: item.balance || item.face_value || 0,
             sessions: item.usage_count || item.sessions || 10,
-            color: item.color
+            color: item.color,
+            duration_minutes: item.duration_minutes || item.duration || 0,
+            image_url: item.image_url || item.image || ''
           }],
           subtotal: item.price,
           discount: 0,
           total: item.price,
           tip: 0,
           status: 'unpaid',
-          date: todayStr()
+          date: todayStr(),
+          logs: JSON.stringify([initialLog])
         });
 
         await loadUnpaidInvoices(newInv.id);
-        toast.success(`Đã tạo đơn treo mới • ${saleCode}`);
+        toast.success(`Đã tạo hóa đơn tạm tính mới • ${saleCode}`);
       } catch (e) {
-        toast.error('Lỗi khi tạo hóa đơn treo: ' + (e.message || e));
+        toast.error('Lỗi khi tạo hóa đơn tạm tính: ' + (e.message || e));
       }
       return;
     }
@@ -473,7 +534,9 @@ export default function POS() {
         staff_name: '',
         balance: item.balance || item.face_value || 0,
         sessions: item.usage_count || item.sessions || 10,
-        color: item.color
+        color: item.color,
+        duration_minutes: item.duration_minutes || item.duration || 0,
+        image_url: item.image_url || item.image || ''
       }];
     
     const newCart = applyDiscountsToCart(newCartWithoutDiscounts, session.promo, session.voucher);
@@ -519,9 +582,9 @@ export default function POS() {
       const total = Math.max(0, subtotal - Math.round(discount)) + Math.round(tip);
       const invoiceData = {
         invoice_code: session.saleCode || ('SC' + String(Math.floor(100000 + Math.random() * 900000))),
-        customer_id: effectiveCustomer?.id || null,
+        customer_id: effectiveCustomer?.id || '',
         customer_name: (effectiveCustomer?.name && effectiveCustomer.name.trim()) ? effectiveCustomer.name.trim() : 'Khách vãng lai',
-        branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId,
+        branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
         items: cart.map((x) => {
           let dbType = x.type;
           if (dbType !== 'service' && dbType !== 'product') {
@@ -546,7 +609,17 @@ export default function POS() {
         tip_splits: (tipSplits || []).map(s => ({ staff_id: s.staffId, amount: Math.round(s.amount || 0) })),
         payment_methods: payments.map(p => ({ method: p.method, amount: Math.round(p.amount || 0) })), 
         status: 'paid', 
-        date: todayStr()
+        date: todayStr(),
+        logs: [
+          ...(session.logs || []),
+          {
+            id: 'log_pay_' + Date.now(),
+            action: 'Thanh toán hoá đơn',
+            details: `Thanh toán thành công ${formatVND(total)}`,
+            time: new Date().toISOString(),
+            user: 'Thu ngân'
+          }
+        ]
       };
 
       let createdInv = null;
@@ -642,9 +715,28 @@ export default function POS() {
                 campaign_name: session.promo.name,
                 discount_amount: discountAmt,
                 invoice_total: Math.round(total),
-                date: todayStr()
+                date: todayStr(),
+                branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId
               };
               usages.push(newUsage);
+
+              if (session.promo.isGiftable) {
+                try {
+                  const localGifts = localStorage.getItem('glopro_customer_gifts');
+                  if (localGifts) {
+                    const gifts = JSON.parse(localGifts);
+                    if (gifts[effectiveCustomer.id]) {
+                      const giftToMark = gifts[effectiveCustomer.id].find(g => g.promo_id === session.promo.id && !g.used);
+                      if (giftToMark) {
+                        giftToMark.used = true;
+                        localStorage.setItem('glopro_customer_gifts', JSON.stringify(gifts));
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error marking gift as used:', e);
+                }
+              }
             }
 
             if (session.voucher) {
@@ -658,7 +750,8 @@ export default function POS() {
                 campaign_name: session.voucher.name || session.voucher.code,
                 discount_amount: session.promo ? 0 : discountAmt,
                 invoice_total: Math.round(total),
-                date: todayStr()
+                date: todayStr(),
+                branch_id: (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId
               };
               usages.push(newUsage);
             }
@@ -679,7 +772,7 @@ export default function POS() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-150px)] md:h-[calc(100vh-130px)] overflow-hidden space-y-3">
+    <div className="flex flex-col h-[calc(100vh-90px)] md:h-[calc(100vh-75px)] overflow-hidden space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 shrink-0">
         <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thu ngân</h1>
@@ -687,7 +780,7 @@ export default function POS() {
           <button onClick={() => router.push('/invoices')} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
             <BarChart3 className="w-4 h-4" /> Danh sách hoá đơn
           </button>
-          <button onClick={createSale} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white font-semibold text-sm shadow-sm">
+          <button onClick={createSale} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm shadow-sm transition-colors">
             <Plus className="w-4 h-4" /> Tạo đơn
           </button>
         </div>
@@ -698,7 +791,7 @@ export default function POS() {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0">
           {sessions.map((s) =>
         <button key={s.id} onClick={() => setActiveId(s.id)}
-        className={`flex items-center gap-2 pl-3 pr-1.5 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-colors ${s.id === activeId ? 'bg-white border-primary font-semibold text-slate-800' : 'bg-slate-100/70 border-transparent text-slate-500'}`}>
+        className={`flex items-center gap-2 pl-3 pr-1.5 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-colors ${s.id === activeId ? 'bg-white border-emerald-500 font-semibold text-slate-800' : 'bg-slate-100/70 border-transparent text-slate-500'}`}>
               {s.customer ?
           <Avatar src={s.customer.avatar_url} name={s.customer.name} size={20} color="#E879A9" /> :
 
@@ -724,15 +817,19 @@ export default function POS() {
         onUpdate={patchSession}
         onPickCustomer={(c) => patchSession({ customer: c })}
         onClearCustomer={() => patchSession({ customer: null })}
-        onNewCustomer={() => setCustModal(true)}
+        onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
         onCheckout={() => setCheckoutOpen(true)}
         onCancel={async () => {
           const session = activeSession;
           if (!session) return;
-          if (!confirm('Bạn có chắc chắn muốn huỷ hoá đơn treo này? Hoá đơn sẽ được đưa vào danh sách đã huỷ.')) return;
+          if (!confirm('Bạn có chắc chắn muốn huỷ hoá đơn tạm tính này? Hoá đơn sẽ được đưa vào danh sách đã huỷ.')) return;
           try {
-            await base44.entities.Invoice.update(session.id, { status: 'cancelled', previous_status: 'unpaid' });
-            toast.success('Đã huỷ hoá đơn treo');
+            const updatedLogs = [
+              ...getNormalizedLogs(session),
+              createLogEntry('Huỷ hoá đơn', 'Huỷ hoá đơn khỏi hệ thống', getCurrentUser())
+            ];
+            await base44.entities.Invoice.update(session.id, { status: 'cancelled', previous_status: 'unpaid', logs: JSON.stringify(updatedLogs) });
+            toast.success('Đã huỷ hoá đơn tạm tính');
             closeSession(session.id);
           } catch (e) {
             toast.error('Lỗi: ' + (e.message || e));
@@ -749,7 +846,7 @@ export default function POS() {
 
       <CheckoutModal open={checkoutOpen} session={activeSession} staff={staff} onClose={() => setCheckoutOpen(false)}
       onConfirm={checkout} paying={paying} />
-      {custModal && <NewCustomerModal onClose={() => setCustModal(false)} onCreate={createCustomer} />}
+      {custModal && <NewCustomerModal initialQuery={custQuery} onClose={() => setCustModal(false)} onCreate={createCustomer} />}
       {reviewModalOpen && activeSession && (
         <ReviewQRModal 
           open={reviewModalOpen} 
@@ -858,7 +955,7 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
                 href={reviewUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs font-bold hover:bg-primary/10 transition-colors inline-flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-100 transition-colors inline-flex items-center gap-1.5"
               >
                 Giả lập quét QR (Mở Tab mới)
               </a>
@@ -866,7 +963,7 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
 
             {/* Loading processing indicator */}
             <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 pt-2 border-t border-slate-100">
-              <div className="w-4 h-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
               <span>Đang chờ khách hàng phản hồi...</span>
             </div>
           </div>
@@ -896,7 +993,7 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
                   );
                 })}
                 {reviewData.tip > 0 && (
-                  <div className="flex justify-between pt-1 border-t border-slate-200 text-primary font-bold">
+                  <div className="flex justify-between pt-1 border-t border-slate-200 text-emerald-600 font-bold">
                     <span>Thưởng thêm Tip:</span>
                     <span>{formatVND(reviewData.tip)}</span>
                   </div>
@@ -906,7 +1003,7 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
 
             <button 
               onClick={onClose} 
-              className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors shadow-sm"
+              className="w-full py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors shadow-sm"
             >
               Đóng và tiếp tục
             </button>

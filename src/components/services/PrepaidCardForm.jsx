@@ -60,7 +60,7 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
           <div>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên thẻ *</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="VD: Thẻ VIP 500K" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+              placeholder="VD: Thẻ VIP 500K" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
           </div>
           <div>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mã thẻ</label>
@@ -75,13 +75,13 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
             <div>
               <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mệnh giá (₫)</label>
               <input type="number" value={form.face_value || ''} onChange={(e) => setForm({ ...form, face_value: Number(e.target.value) || 0 })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
               <div className="text-xs text-slate-400 mt-1">{formatVND(form.face_value)}</div>
             </div>
             <div>
               <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giá bán (₫)</label>
               <input type="number" value={form.selling_price || ''} onChange={(e) => setForm({ ...form, selling_price: Number(e.target.value) || 0 })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" />
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
               <div className="text-xs text-slate-400 mt-1">{formatVND(form.selling_price)}</div>
             </div>
           </div>
@@ -98,18 +98,18 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
           <div>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">Hạn sử dụng (tháng)</label>
             <input type="number" value={form.expiry_months || ''} onChange={(e) => setForm({ ...form, expiry_months: Number(e.target.value) || 0 })}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white" placeholder="0 = không giới hạn" />
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" placeholder="0 = không giới hạn" />
           </div>
           <div>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">Mô tả</label>
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary text-slate-700 bg-white resize-none" />
+              rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white resize-none" />
           </div>
           <ImageUpload label="Ảnh (tuỳ chọn)" value={form.image_url} onChange={(v) => setForm({ ...form, image_url: v })} />
         </div>
 
         <button onClick={submit} disabled={!form.name.trim()}
-          className="w-full mt-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans disabled:opacity-50">
+          className="w-full mt-4 py-2.5 rounded-xl bg-purple-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans disabled:opacity-50">
           {item?.id ? 'Lưu thay đổi' : 'Tạo thẻ'}
         </button>
       </div>

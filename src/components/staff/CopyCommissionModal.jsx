@@ -1,36 +1,98 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Copy, ChevronDown, Search, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronDown, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
   const [sourceStaffId, setSourceStaffId] = useState('');
   const [targetStaffIds, setTargetStaffIds] = useState([]);
-  
-  // UI states
-  const [sourceOpen, setSourceOpen] = useState(false);
-  const [targetOpen, setTargetOpen] = useState(false);
+  const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
+  const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
   const [searchSource, setSearchSource] = useState('');
   const [searchTarget, setSearchTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const dropdownRef = useRef(null);
-
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setSourceOpen(false);
-        setTargetOpen(false);
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.source-dropdown-container')) {
+        setIsSourceDropdownOpen(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      if (!e.target.closest('.target-dropdown-container')) {
+        setIsTargetDropdownOpen(false);
+      }
     };
-  }, [dropdownRef]);
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
+
+  const translateRole = (role) => {
+    const rolesMap = {
+      manager: 'Quản lý',
+      receptionist: 'Lễ tân',
+      stylist: 'Thợ chính',
+      barber: 'Barber',
+      therapist: 'Chuyên viên Spa',
+      nail_tech: 'Nail tech',
+      technician: 'Kỹ thuật viên',
+      cashier: 'Thu ngân',
+    };
+    return rolesMap[role] || 'Nhóm khác';
+  };
+
+  const getGroupedStaff = (list) => {
+    return list.reduce((acc, curr) => {
+      const roleName = translateRole(curr.role || 'technician');
+      if (!acc[roleName]) acc[roleName] = [];
+      acc[roleName].push(curr);
+      return acc;
+    }, {});
+  };
+
+  const handleToggleTarget = (id) => {
+    if (targetStaffIds.includes(id)) {
+      setTargetStaffIds(targetStaffIds.filter(x => x !== id));
+    } else {
+      setTargetStaffIds([...targetStaffIds, id]);
+    }
+  };
+
+  const handleSelectAllTargets = (visibleTargets) => {
+    const visibleIds = visibleTargets.map(s => s.id);
+    const allSelected = visibleIds.every(id => targetStaffIds.includes(id));
+    if (allSelected) {
+      setTargetStaffIds(targetStaffIds.filter(id => !visibleIds.includes(id)));
+    } else {
+      const nextIds = [...targetStaffIds];
+      visibleIds.forEach(id => {
+        if (!nextIds.includes(id)) nextIds.push(id);
+      });
+      setTargetStaffIds(nextIds);
+    }
+  };
+
+  const handleToggleTargetGroup = (groupStaffList) => {
+    const groupIds = groupStaffList.map(s => s.id);
+    const allSelected = groupIds.every(id => targetStaffIds.includes(id));
+    if (allSelected) {
+      setTargetStaffIds(targetStaffIds.filter(id => !groupIds.includes(id)));
+    } else {
+      const nextIds = [...targetStaffIds];
+      groupIds.forEach(id => {
+        if (!nextIds.includes(id)) nextIds.push(id);
+      });
+      setTargetStaffIds(nextIds);
+    }
+  };
+
+  const handleSourceSelect = (id) => {
+    setSourceStaffId(id);
+    setTargetStaffIds([]); // Clear target selections when source changes
+    setIsSourceDropdownOpen(false);
+  };
 
   const handleCopy = async () => {
     if (!sourceStaffId) {
@@ -100,15 +162,24 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
     setSaving(false);
   };
 
+  const sourceStaffObj = staff.find(s => s.id === sourceStaffId);
+  const availableTargets = staff.filter(s => sourceStaffId ? s.id !== sourceStaffId : true);
+  const groupedSourceStaff = getGroupedStaff(staff);
+  const groupedTargetStaff = getGroupedStaff(availableTargets);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
-      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" onClick={onClose} />
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl text-left flex flex-col max-h-[90vh] overflow-visible">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng</h2>
+          <div>
+            <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng chung</h2>
+            <p className="text-[10px] text-slate-450 font-medium mt-0.5">Sao chép cấu hình hoa hồng TẤT CẢ các tab</p>
+          </div>
           <button 
+            type="button"
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
           >
@@ -116,134 +187,180 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
           </button>
         </div>
 
-        <div className="space-y-5 relative" ref={dropdownRef}>
+        {/* Content */}
+        <div className="flex-1 overflow-visible space-y-4">
           
-          {/* Source Employee Select */}
-          <div className="space-y-1.5 relative">
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nhân viên nguồn (đã có hoa hồng)</label>
+          {/* Source Staff Single-Select Dropdown */}
+          <div className="space-y-1.5 source-dropdown-container relative">
+            <label className="text-[11px] font-normal text-slate-500 block">1. Nhân viên nguồn (Sao chép từ)</label>
             <button
               type="button"
-              onClick={() => { setSourceOpen(!sourceOpen); setTargetOpen(false); }}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+              onClick={() => { setIsSourceDropdownOpen(!isSourceDropdownOpen); setIsTargetDropdownOpen(false); }}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-normal text-slate-700 focus:border-orange-500 shadow-sm"
             >
-              <span className="truncate">
-                {sourceStaffId 
-                  ? staff.find(s => s.id === sourceStaffId)?.full_name 
-                  : 'chọn nhân viên nguồn'
-                }
-              </span>
-              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+              <div className="flex items-center gap-2 truncate">
+                {sourceStaffObj ? (
+                  <>
+                    <Avatar src={sourceStaffObj.avatar_url} name={sourceStaffObj.full_name} size={20} color={sourceStaffObj.avatar_color} />
+                    <span className="font-normal text-slate-700 truncate">{sourceStaffObj.full_name}</span>
+                  </>
+                ) : (
+                  <span className="font-normal text-slate-400">Chọn nhân viên nguồn...</span>
+                )}
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
 
-            {sourceOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-30 max-h-56 overflow-y-auto space-y-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 focus-within:border-primary transition-all">
-                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <input 
+            {isSourceDropdownOpen && (
+              <div className="absolute left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-2xl z-30 flex flex-col max-h-60 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                {/* Search Input */}
+                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
+                  <input
                     type="text"
                     placeholder="tìm kiếm nhân viên nguồn..."
                     value={searchSource}
                     onChange={(e) => setSearchSource(e.target.value)}
-                    className="bg-transparent text-xs font-medium outline-none w-full text-slate-700 placeholder:text-slate-400"
+                    className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400/50 placeholder:font-normal placeholder:lowercase"
                   />
                 </div>
-                <div className="space-y-1">
-                  {staff
-                    .filter(s => s.full_name.toLowerCase().includes(searchSource.toLowerCase()))
-                    .map(s => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => { setSourceStaffId(s.id); setSourceOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 hover:bg-slate-50 rounded-xl text-left text-xs font-semibold text-slate-700 transition-colors"
-                      >
-                        <Avatar src={s.avatar_url} name={s.full_name} size={20} color={s.avatar_color} />
-                        <span>{s.full_name}</span>
-                      </button>
-                    ))}
+                {/* Scrollable list */}
+                <div className="overflow-y-auto p-2 space-y-2">
+                  {Object.entries(groupedSourceStaff).map(([roleName, members]) => {
+                    const visibleMembers = members.filter(m => m.full_name.toLowerCase().includes(searchSource.toLowerCase()));
+                    if (visibleMembers.length === 0) return null;
+
+                    return (
+                      <div key={roleName} className="space-y-0.5">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">{roleName}</div>
+                        <div className="space-y-0.5 pl-2">
+                          {visibleMembers.map(m => {
+                            const isSelected = m.id === sourceStaffId;
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleSourceSelect(m.id)}
+                                className={`w-full flex items-center gap-2.5 text-left py-1.5 px-2.5 rounded-lg hover:bg-slate-55 transition-colors ${isSelected ? 'bg-slate-100/60 font-medium' : ''}`}
+                              >
+                                <Avatar src={m.avatar_url} name={m.full_name} size={20} color={m.avatar_color} />
+                                <span className="text-xs font-normal text-slate-700">{m.full_name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Target Employees Select */}
-          <div className="space-y-1.5 relative">
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sao chép đến (chọn nhiều nhân viên)</label>
+          {/* Target Staff Multi-Select Dropdown */}
+          <div className="space-y-1.5 target-dropdown-container relative animate-in fade-in duration-200">
+            <label className="text-[11px] font-normal text-slate-500 block">2. Nhân viên nhận (Sao chép cho)</label>
             <button
-              type="button"
-              onClick={() => { setTargetOpen(!targetOpen); setSourceOpen(false); }}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-500 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+                type="button"
+              onClick={() => { setIsTargetDropdownOpen(!isTargetDropdownOpen); setIsSourceDropdownOpen(false); }}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-normal text-slate-700 focus:border-orange-500 shadow-sm"
             >
-              <span className="truncate">
-                {targetStaffIds.length === 0 
-                  ? 'chọn nhân viên nhận cấu hình' 
-                  : `Đã chọn ${targetStaffIds.length} nhân viên`
-                }
-              </span>
-              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
-            </button>
+              <span className="truncate font-normal text-slate-655">
+                  {targetStaffIds.length === 0 
+                    ? 'Chọn nhân viên nhận...' 
+                    : targetStaffIds.length === availableTargets.length 
+                      ? 'Tất cả nhân viên còn lại' 
+                      : `Đã chọn ${targetStaffIds.length} nhân viên`}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              </button>
 
-            {targetOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-30 max-h-56 overflow-y-auto space-y-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 focus-within:border-primary transition-all">
-                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <input 
-                    type="text"
-                    placeholder="tìm kiếm nhân viên nhận..."
-                    value={searchTarget}
-                    onChange={(e) => setSearchTarget(e.target.value)}
-                    className="bg-transparent text-xs font-medium outline-none w-full text-slate-700 placeholder:text-slate-400"
-                  />
-                </div>
-                <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                  {staff
-                    .filter(s => s.id !== sourceStaffId && s.full_name.toLowerCase().includes(searchTarget.toLowerCase()))
-                    .map(s => {
-                      const isChecked = targetStaffIds.includes(s.id);
+              {isTargetDropdownOpen && (
+                <div className="absolute left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-2xl z-30 flex flex-col max-h-60 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                  {/* Search Input */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
+                    <input
+                      type="text"
+                      placeholder="tìm kiếm nhân viên nhận..."
+                      value={searchTarget}
+                      onChange={(e) => setSearchTarget(e.target.value)}
+                      className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400/50 placeholder:font-normal placeholder:lowercase"
+                    />
+                  </div>
+                  {/* Scrollable list */}
+                  <div className="overflow-y-auto p-2 space-y-2">
+                    {/* Select All */}
+                    <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none">
+                      <Checkbox 
+                        checked={targetStaffIds.length === availableTargets.length && availableTargets.length > 0}
+                        onCheckedChange={() => handleSelectAllTargets(availableTargets)}
+                        className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-normal text-slate-755">Chọn tất cả</span>
+                    </label>
+
+                    {/* Groups and targets */}
+                    {Object.entries(groupedTargetStaff).map(([roleName, members]) => {
+                      const visibleMembers = members.filter(m => m.full_name.toLowerCase().includes(searchTarget.toLowerCase()));
+                      if (visibleMembers.length === 0) return null;
+
+                      const isGroupAllSelected = visibleMembers.every(m => targetStaffIds.includes(m.id));
+
                       return (
-                        <label key={s.id} className="flex items-center gap-2.5 px-2.5 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none">
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setTargetStaffIds([...targetStaffIds, s.id]);
-                              } else {
-                                setTargetStaffIds(targetStaffIds.filter(id => id !== s.id));
-                              }
-                            }}
-                            className="w-4 h-4 text-primary border-slate-250 rounded focus:ring-0 cursor-pointer"
-                          />
-                          <Avatar src={s.avatar_url} name={s.full_name} size={20} color={s.avatar_color} />
-                          <span className="text-xs font-semibold text-slate-700">{s.full_name}</span>
-                        </label>
+                        <div key={roleName} className="space-y-0.5">
+                          <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none">
+                            <Checkbox 
+                              checked={isGroupAllSelected}
+                              onCheckedChange={() => handleToggleTargetGroup(visibleMembers)}
+                              className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
+                            />
+                            <span className="text-[10px] font-normal text-slate-400 uppercase tracking-wider">{roleName}</span>
+                          </label>
+                          
+                          <div className="space-y-0.5 pl-4">
+                            {visibleMembers.map(m => {
+                              const isSelected = targetStaffIds.includes(m.id);
+                              return (
+                                <label
+                                  key={m.id}
+                                  className={`flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-xl cursor-pointer select-none ${isSelected ? 'bg-slate-100/60 font-medium' : ''}`}
+                                >
+                                  <Checkbox 
+                                    checked={isSelected}
+                                    onCheckedChange={() => handleToggleTarget(m.id)}
+                                    className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
+                                  />
+                                  <Avatar src={m.avatar_url} name={m.full_name} size={20} color={m.avatar_color} />
+                                  <span className="text-xs font-normal text-slate-700">{m.full_name}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+        </div>
 
-          {/* Bottom Actions */}
-          <div className="flex gap-2.5 pt-4">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-            >
-              Hủy
-            </button>
-            <button 
-              type="button" 
-              onClick={handleCopy}
-              disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
-            >
-              {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Sao chép
-            </button>
-          </div>
-
+        {/* Footer Actions */}
+        <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0 font-sans">
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-650 font-sans"
+          >
+            Hủy
+          </button>
+          <button 
+            type="button" 
+            onClick={handleCopy}
+            disabled={saving || !sourceStaffId || targetStaffIds.length === 0}
+            className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Xác nhận sao chép'}
+          </button>
         </div>
 
       </div>

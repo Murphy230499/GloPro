@@ -1,3 +1,6 @@
 export const dynamic = 'force-dynamic';
 import ClientPage from './_client';
-export default function Page({ params }) { return <ClientPage invoiceId={params.id} />; }
+export default async function Page({ params }) { 
+  const resolvedParams = await params; 
+  return <ClientPage invoiceId={resolvedParams.id} />; 
+}
