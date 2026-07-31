@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, CheckCircle2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import { supabase } from "@/lib/supabaseAuth";
+import { supabase } from "@/api/supabaseClient";
 
 export default function SetupPassword() {
   const [password, setPassword] = useState("");
