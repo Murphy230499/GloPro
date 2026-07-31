@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, PlusCircle, Trash2, ChevronDown, Clock, Maximize2, Minus, Tag, Wand2, Eye, Calendar, Check, Search, User, Users, Scissors, FileText, MoreHorizontal } from 'lucide-react';
+import { X, Plus, PlusCircle, Trash2, ChevronDown, Clock, Maximize2, Minus, Tag, Wand2, Eye, Calendar, Check, Search, User, Users, Scissors, FileText, MoreHorizontal, PiggyBank, Package, Star, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { formatVND } from '@/lib/format';
@@ -10,6 +10,7 @@ import Avatar from '@/components/Avatar';
 import { PROMOTIONS } from '@/utils/promos';
 import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
+import PackageUsageModal from '@/components/pos/PackageUsageModal';
 
 // Custom Staff Picker Dropdown Component floating on top layer using React Portal (Drops Downward on Click)
 function StaffPickerDropdown({ staffList = [], value, onChange }) {
@@ -465,6 +466,15 @@ function DateTimePickerPopover({ dateValue, timeValue, onSelect }) {
   );
 }
 
+function addMinutesToTime(timeStr, minutesToAdd) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m + (minutesToAdd || 0);
+  const newH = Math.floor(total / 60) % 24;
+  const newM = total % 60;
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+}
+
 export default function AppointmentModal({
   open,
   onClose,
@@ -478,7 +488,8 @@ export default function AppointmentModal({
   defaultFacilityName,
   editing,
   defaultCustomer,
-  onCheckout
+  onCheckout,
+  facilityList = DEFAULT_FACILITIES
 }) {
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
@@ -496,6 +507,7 @@ export default function AppointmentModal({
   // Status Menu & Tab States
   const [activeTab, setActiveTab] = useState('general');
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [showPackageUsageModal, setShowPackageUsageModal] = useState(false);
   const statusMenuRef = useRef(null);
 
   useEffect(() => {
@@ -515,7 +527,6 @@ export default function AppointmentModal({
       phone: form.customer_phone || ''
     };
 
-    const cart = [];
     if (guests && guests.length > 0) {
       guests.forEach((g) => {
         g.items?.forEach((s) => {
@@ -526,7 +537,10 @@ export default function AppointmentModal({
               qty: 1,
               type: 'service',
               staff_id: s.staff_id || '',
-              staff_name: s.staff_name || ''
+              staff_name: s.staff_name || '',
+              is_from_package: s.is_from_package || false,
+              customer_package_id: s.customer_package_id || null,
+              package_name: s.package_name || null
             });
           }
         });
@@ -551,7 +565,10 @@ export default function AppointmentModal({
             qty: 1,
             type: 'service',
             staff_id: s.staff_id || '',
-            staff_name: s.staff_name || ''
+            staff_name: s.staff_name || '',
+            is_from_package: s.is_from_package || false,
+            customer_package_id: s.customer_package_id || null,
+            package_name: s.package_name || null
           });
         });
       }
@@ -605,15 +622,59 @@ export default function AppointmentModal({
     }
   };
 
+  const recordActivityLog = (action, details = '') => {
+    const newLog = {
+      id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      action,
+      details,
+      time: new Date().toISOString(),
+      user: 'Lễ tân'
+    };
+
+    setForm(prev => {
+      let currentLogs = [];
+      if (typeof prev.logs === 'string') {
+        try { currentLogs = JSON.parse(prev.logs); } catch(e) {}
+      } else if (Array.isArray(prev.logs)) {
+        currentLogs = prev.logs;
+      }
+      return { ...prev, logs: [newLog, ...(currentLogs || [])] };
+    });
+
+    return newLog;
+  };
+
   const handleStatusChange = async (newStatus) => {
-    setForm(prev => ({ ...prev, status: newStatus }));
+    const log = {
+      id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      action: 'Thay đổi trạng thái',
+      details: `Chuyển sang: ${getStatusLabel(newStatus)}`,
+      time: new Date().toISOString(),
+      user: 'Lễ tân'
+    };
+
+    let updatedLogs = [];
+    setForm(prev => {
+      let currentLogs = [];
+      if (typeof prev.logs === 'string') {
+        try { currentLogs = JSON.parse(prev.logs); } catch(e) {}
+      } else if (Array.isArray(prev.logs)) {
+        currentLogs = prev.logs;
+      }
+      updatedLogs = [log, ...(currentLogs || [])];
+      return { ...prev, status: newStatus, logs: updatedLogs };
+    });
+
     setIsStatusMenuOpen(false);
     toast.success(`Đã cập nhật trạng thái: ${getStatusLabel(newStatus)}`);
+
     if (editing && editing.id) {
       try {
-        await base44.entities.Appointment.update(editing.id, { status: newStatus });
+        await base44.entities.Appointment.update(editing.id, { 
+          status: newStatus,
+          logs: updatedLogs
+        });
       } catch (e) {
-        // Fallback for mock demo data or custom ID format
         console.log('Demo/Local appointment status updated');
       }
       onSaved?.();
@@ -707,6 +768,18 @@ export default function AppointmentModal({
   ]);
 
   const [saving, setSaving] = useState(false);
+  const [deposit, setDeposit] = useState(null);
+
+  useEffect(() => {
+    if (!open || !editing?.id || String(editing.id).startsWith('demo_')) {
+      setDeposit(null);
+      return;
+    }
+    base44.entities.Deposit.filter({ appointment_id: editing.id }).then(res => {
+      if (res && res.length > 0) setDeposit(res[0]);
+      else setDeposit(null);
+    });
+  }, [open, editing]);
 
   useEffect(() => {
     if (!open) return;
@@ -730,35 +803,59 @@ export default function AppointmentModal({
     if (!open) return;
 
     if (editing) {
+      setIsNewCustomer(!editing.customer_id && !!editing.customer_name);
+      setVoucherInput(editing.promo_code || '');
+
+      let parsedGuestCount = 1;
+      let initialGuests = [];
+      if (editing.services && editing.services.length) {
+        const guestGroups = {};
+        editing.services.forEach(s => {
+          const guestMatch = (s.service_name || s.name || '').match(/\(Khách (\d+)\)/i);
+          const guestNumber = guestMatch ? parseInt(guestMatch[1]) : 1;
+          
+          if (!guestGroups[guestNumber]) {
+            guestGroups[guestNumber] = [];
+            parsedGuestCount = Math.max(parsedGuestCount, guestNumber);
+          }
+          
+          let cleanName = (s.service_name || s.name || '').replace(/\s*\(Khách \d+\)\s*/i, '');
+          
+          guestGroups[guestNumber].push({
+            service_id: s.service_id || '',
+            service_name: cleanName,
+            price: s.price || 0,
+            duration_minutes: s.duration_minutes || s.duration || 0,
+            staff_id: s.staff_id || '',
+            staff_name: s.staff_name || '',
+            facility_id: s.facility_id || '',
+            facility_name: s.facility_name || '',
+            is_from_package: s.is_from_package || false,
+            customer_package_id: s.customer_package_id || null,
+            package_name: s.package_name || null
+          });
+        });
+
+        for (let i = 1; i <= parsedGuestCount; i++) {
+          initialGuests.push({
+            id: i,
+            name: `Khách #${i}`,
+            items: guestGroups[i] || []
+          });
+        }
+      } else {
+        initialGuests = [{ id: 1, name: 'Khách #1', items: [] }];
+      }
+      
+      setGuests(initialGuests);
       setForm({
         ...editing,
         date: editing.date || defaultDate || new Date().toISOString().slice(0, 10),
         start_time: editing.start_time || defaultStartTime || '11:00',
-        guest_count: editing.guest_count || 1,
+        guest_count: Math.max(editing.guest_count || 1, parsedGuestCount),
         promo_code: editing.promo_code || '',
         note: editing.note || ''
       });
-      setIsNewCustomer(!editing.customer_id && !!editing.customer_name);
-
-      setVoucherInput(editing.promo_code || '');
-      if (editing.services && editing.services.length) {
-        setGuests([
-          {
-            id: 1,
-            name: 'Khách #1',
-            items: editing.services.map(s => ({
-              service_id: s.service_id || '',
-              service_name: s.service_name || '',
-              price: s.price || 0,
-              duration_minutes: s.duration_minutes || s.duration || 0,
-              staff_id: s.staff_id || '',
-              staff_name: s.staff_name || '',
-              facility_id: s.facility_id || '',
-              facility_name: s.facility_name || ''
-            }))
-          }
-        ]);
-      }
     } else {
       setVoucherInput('');
       setForm({
@@ -902,11 +999,76 @@ export default function AppointmentModal({
 
   // Pick Facility for Guest Item
   const handlePickFacility = (guestIdx, itemIdx, facilityId) => {
-    const fac = DEFAULT_FACILITIES.find(f => f.id === facilityId);
+    const fac = facilityList.find(f => f.id === facilityId);
     const updated = [...guests];
     updated[guestIdx].items[itemIdx].facility_id = facilityId;
     updated[guestIdx].items[itemIdx].facility_name = fac?.name || '';
     setGuests(updated);
+  };
+
+  const handleApplyPackageItems = (selectedItems) => {
+    const newItems = selectedItems.map(item => {
+      const svc = services.find(s => s.name === item.name || s.id === item.id);
+      return {
+        service_id: svc?.id || item.id,
+        service_name: item.name,
+        price: 0,
+        originalPrice: item.originalPrice || svc?.price || 0,
+        duration_minutes: Number(svc?.duration_minutes || svc?.duration || 45),
+        staff_id: '',
+        staff_name: '',
+        facility_id: '',
+        facility_name: '',
+        is_from_package: true,
+        customer_package_id: item.customer_package_id,
+        customer_treatment_id: item.customer_treatment_id || null,
+        package_name: item.package_name
+      };
+    });
+
+    const updated = [...guests];
+    const existing = updated[0].items.filter(it => it.service_id || it.service_name);
+    updated[0].items = [...existing, ...newItems];
+    setGuests(updated);
+    
+    // Log activity
+    const pNames = selectedItems.map(it => it.package_name).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+    recordActivityLog('Áp dụng gói/liệu trình', `Đã áp dụng: ${pNames}`);
+
+    setShowPackageUsageModal(false);
+    toast.success('Đã áp dụng gói/liệu trình vào lịch hẹn (Giá 0đ)');
+  };
+
+  const handleRemovePackage = (packageId) => {
+    const targetItem = guests[0]?.items?.find(it => 
+      String(it.customer_package_id) === String(packageId) || 
+      String(it.customer_treatment_id) === String(packageId)
+    );
+    const pName = targetItem?.package_name || 'Gói/Liệu trình';
+
+    const updated = [...guests];
+    updated[0].items = updated[0].items.filter(it => 
+      String(it.customer_package_id) !== String(packageId) && 
+      String(it.customer_treatment_id) !== String(packageId)
+    );
+    if (updated[0].items.length === 0) {
+      updated[0].items.push({
+        service_id: '',
+        service_name: '',
+        price: 0,
+        duration_minutes: 0,
+        staff_id: '',
+        staff_name: '',
+        facility_id: '',
+        facility_name: ''
+      });
+    }
+    setGuests(updated);
+
+    // Log activity
+    recordActivityLog('Xóa gói/liệu trình', `Đã loại bỏ: ${pName}`);
+
+    toast.success('Đã loại bỏ gói/liệu trình khỏi lịch hẹn');
   };
 
   // Auto-Assign Staff Handler
@@ -927,12 +1089,28 @@ export default function AppointmentModal({
   };
 
   // Calculations
-  const allServiceItems = guests.flatMap(g => g.items);
+  const allServiceItems = guests.flatMap(g => 
+    g.items.map(it => {
+      const suffix = `(Khách ${g.id})`;
+      const hasSuffix = it.service_name?.includes(suffix);
+      return {
+        ...it,
+        guestId: g.id,
+        service_name: it.service_name + (guests.length > 1 && !hasSuffix ? ` ${suffix}` : '')
+      };
+    })
+  );
   const totalPrice = allServiceItems.reduce((sum, it) => sum + (it.price || 0), 0);
   const totalMinutes = guests.reduce((maxGuestDuration, g) => {
     const guestDuration = g.items.reduce((sum, it) => sum + (it.duration_minutes || 0), 0);
     return Math.max(maxGuestDuration, guestDuration);
   }, 0);
+
+  useEffect(() => {
+    if (form.start_time) {
+      setForm(prev => ({ ...prev, end_time: addMinutesToTime(prev.start_time, totalMinutes) }));
+    }
+  }, [form.start_time, totalMinutes]);
 
   const selectedCustomerObj = customers.find(c => c.id === form.customer_id);
 
@@ -1022,30 +1200,105 @@ export default function AppointmentModal({
     setSaving(true);
     try {
       const validItems = allServiceItems.filter(it => it.service_id || it.service_name);
-      const firstItem = validItems[0];
-      const selectedStaffObj = staff.find(s => s.id === firstItem?.staff_id);
-      const selectedFacObj = DEFAULT_FACILITIES.find(f => f.id === firstItem?.facility_id);
       
+      const guestTimes = {};
+      const cascadedServices = validItems.map(it => {
+        const guestMatch = it.service_name?.match(/\(Khách \d+\)/i);
+        const guestKey = guestMatch ? guestMatch[0] : 'Khách 1';
+        
+        const dur = it.duration_minutes || it.duration || 60;
+        const currentTime = guestTimes[guestKey] || form.start_time;
+        
+        // Helper inline
+        const [cH, cM] = currentTime.split(':').map(Number);
+        const endMins = (cH * 60) + cM + dur;
+        const eH = Math.floor(endMins / 60);
+        const eM = endMins % 60;
+        const endTime = `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}`;
+
+        guestTimes[guestKey] = endTime;
+
+        return {
+          ...it,
+          staff_id: it.staff_id || '',
+          staff_name: it.staff_id ? (it.staff_name || 'Nhân viên') : 'Chưa phân công',
+          start_time: currentTime,
+          end_time: endTime
+        };
+      });
+
+      // Update parent end_time to be the maximum of all guest end times
+      let maxEndTimeMins = 0;
+      let maxEndTimeStr = form.start_time;
+      cascadedServices.forEach(it => {
+        const [h, m] = it.end_time.split(':').map(Number);
+        const mins = h * 60 + m;
+        if (mins > maxEndTimeMins) {
+          maxEndTimeMins = mins;
+          maxEndTimeStr = it.end_time;
+        }
+      });
+      form.end_time = maxEndTimeStr;
+
+      const firstItem = cascadedServices[0];
+      const selectedStaffObj = staff.find(s => s.id === firstItem?.staff_id);
+      const selectedFacObj = facilityList.find(f => f.id === firstItem?.facility_id);
+      
+      let updatedLogs = [];
+      if (editing?.id) {
+        let currentLogs = [];
+        if (typeof form.logs === 'string') {
+          try { currentLogs = JSON.parse(form.logs); } catch(e) {}
+        } else if (Array.isArray(form.logs)) {
+          currentLogs = form.logs;
+        }
+        
+        const updateLog = {
+          id: 'log_update_' + Date.now(),
+          action: 'Cập nhật lịch hẹn',
+          details: 'Thay đổi thông tin chung hoặc danh sách dịch vụ',
+          time: new Date().toISOString(),
+          user: 'Lễ tân'
+        };
+        updatedLogs = [updateLog, ...(currentLogs || [])];
+      } else {
+        updatedLogs = [{
+          id: 'log_create_' + Date.now(),
+          action: 'Tạo lịch hẹn',
+          details: `Khởi tạo lịch hẹn cho khách hàng: ${form.customer_name || 'Khách vãng lai'}`,
+          time: new Date().toISOString(),
+          user: 'Lễ tân'
+        }];
+      }
+
       const payload = {
-        ...form,
-        branch_id: branchId || 'branch_default',
+        // Only fields that exist in the 'appointment' Supabase table
+        date: form.date,
+        start_time: form.start_time,
+        end_time: form.end_time || null,
+        customer_id: form.customer_id || null,
+        customer_name: form.customer_name || '',
+        customer_phone: form.customer_phone || null,
+        note: form.note || null,
+        source: form.source || 'reception',
+        branch_id: (branchId && branchId !== 'all') ? branchId : null,
         status: checkoutStatus,
-        services: validItems,
-        service_id: firstItem?.service_id || '',
-        service_name: validItems.map(i => i.service_name).filter(Boolean).join(' + ') || 'Dịch vụ Salon',
+        services: cascadedServices,
+        service_id: firstItem?.service_id || null,
+        service_name: cascadedServices.map(i => i.service_name).filter(Boolean).join(' + ') || 'Dịch vụ Salon',
         price: finalTotalPrice,
-        original_price: totalPrice,
-        discount: discountAmt,
-        duration_minutes: totalMinutes || 60,
-        staff_id: firstItem?.staff_id || '__unassigned',
+        staff_id: firstItem?.staff_id || null,
         staff_name: selectedStaffObj?.full_name || selectedStaffObj?.name || firstItem?.staff_name || 'Chưa phân công',
-        facility_id: firstItem?.facility_id || DEFAULT_FACILITIES[0]?.id || 'fac_nail_1',
-        facility_name: selectedFacObj?.name || DEFAULT_FACILITIES[0]?.name || 'Bàn Làm Nail 1'
+        logs: updatedLogs
       };
 
       if (editing?.id) {
-        await base44.entities.Appointment.update(editing.id, payload);
-        toast.success(checkoutStatus === 'checked_in' ? 'Đã cập nhật & Check-in' : 'Đã cập nhật lịch hẹn');
+        if (String(editing.id).startsWith('demo_')) {
+          toast.success('Đã cập nhật lịch hẹn (Bản xem trước)');
+        } else {
+          await base44.entities.Appointment.update(editing.id, payload);
+          toast.success(checkoutStatus === 'checked_in' ? 'Đã cập nhật & Check-in' : 'Đã cập nhật lịch hẹn');
+        }
       } else {
         await base44.entities.Appointment.create(payload);
         toast.success(checkoutStatus === 'checked_in' ? 'Đã tạo lịch & Check-in thành công!' : 'Đã tạo lịch hẹn thành công!');
@@ -1054,7 +1307,9 @@ export default function AppointmentModal({
       onSaved?.();
       onClose?.();
     } catch (e) {
-      toast.error('Lỗi khi lưu lịch hẹn: ' + (e.message || e));
+      console.error('Appointment save error:', e);
+      const detail = e?.message || e?.details || e?.hint || JSON.stringify(e);
+      toast.error('Lỗi khi lưu lịch hẹn: ' + detail);
     } finally {
       setSaving(false);
     }
@@ -1224,266 +1479,332 @@ export default function AppointmentModal({
                 </div>
               </div>
             </div>
-            {/* Client Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Khách hàng<span className="text-red-500 ml-0.5">*</span>
-                </label>
-              </div>
+            {activeTab === 'general' ? (
+              <>
+                {/* Client Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Khách hàng<span className="text-red-500 ml-0.5">*</span>
+                    </label>
+                  </div>
 
-              {form.customer_id || form.customer_name ? (
-                /* Selected Client Card */
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
-                  <div 
-                    onClick={() => {
-                      if (form.customer_id) {
-                        onClose?.();
-                        window.location.href = `/customers?id=${form.customer_id}`;
-                      } else if (form.customer_name) {
-                        onClose?.();
-                        window.location.href = `/customers?search=${encodeURIComponent(form.customer_name)}`;
-                      }
-                    }}
-                    className="flex items-center gap-3 truncate cursor-pointer group flex-1"
-                    title="Bấm để xem chi tiết khách hàng"
-                  >
-                    <Avatar 
-                      src={selectedCustomerObj?.avatar_url} 
-                      name={form.customer_name || selectedCustomerObj?.name} 
-                      size={40} 
-                      color="#2563EB" 
-                    />
-                    <div className="truncate text-left flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 group-hover:underline transition-colors truncate">
-                          {form.customer_name || selectedCustomerObj?.name || 'Khách hàng'}
-                        </span>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0">
-                          {selectedCustomerObj?.tier || selectedCustomerObj?.customer_tier || 'Khách mới'}
-                        </span>
+                  {form.customer_id || form.customer_name ? (
+                    <>
+                      {/* Selected Client Card */}
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
+                        <div 
+                          onClick={() => {
+                            if (form.customer_id) {
+                              onClose?.();
+                              window.location.href = `/customers?id=${form.customer_id}`;
+                            } else if (form.customer_name) {
+                              onClose?.();
+                              window.location.href = `/customers?search=${encodeURIComponent(form.customer_name)}`;
+                            }
+                          }}
+                          className="flex items-center gap-3 truncate cursor-pointer group flex-1"
+                          title="Bấm để xem chi tiết khách hàng"
+                        >
+                          <Avatar 
+                            src={selectedCustomerObj?.avatar_url} 
+                            name={form.customer_name || selectedCustomerObj?.name} 
+                            size={40} 
+                            color="#2563EB" 
+                          />
+                          <div className="truncate text-left flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 group-hover:underline transition-colors truncate">
+                                {form.customer_name || selectedCustomerObj?.name || 'Khách hàng'}
+                              </span>
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0">
+                                {selectedCustomerObj?.tier || selectedCustomerObj?.customer_tier || 'Khách mới'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 truncate mt-0.5 font-normal">
+                              {selectedCustomerObj?.email ? `${selectedCustomerObj.email} · ` : ''}{form.customer_phone || selectedCustomerObj?.phone || selectedCustomerObj?.mobile || 'Chưa có sđt'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (form.customer_id) {
+                                onClose?.();
+                                window.location.href = `/customers?id=${form.customer_id}`;
+                              } else {
+                                toast.info(`Khách hàng: ${form.customer_name}`);
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Chuyển đến trang chi tiết khách hàng"
+                          >
+                            <Eye className="w-4 h-4 stroke-[1.8]" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setField('customer_id', '');
+                              setField('customer_name', '');
+                              setField('customer_phone', '');
+                              setIsNewCustomer(false);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Bỏ chọn khách"
+                          >
+                            <X className="w-4 h-4 stroke-[1.8]" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500 truncate mt-0.5 font-normal">
-                        {selectedCustomerObj?.email ? `${selectedCustomerObj.email} · ` : ''}{form.customer_phone || selectedCustomerObj?.phone || selectedCustomerObj?.mobile || 'Chưa có sđt'}
+                      {form.customer_id && (
+                        <button
+                          type="button"
+                          onClick={() => setShowPackageUsageModal(true)}
+                          className="w-full mt-2 py-2.5 flex items-center justify-center gap-2 border border-emerald-600 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          <Package className="w-4 h-4 stroke-[1.8]" />
+                          <span>Gói & Liệu trình đã mua</span>
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <CustomerPicker
+                      customers={customers}
+                      value={form.customer_id || ''}
+                      onAddNew={(searchQuery) => {
+                        setIsNewCustomer(true);
+                        setField('customer_id', '');
+                        if (searchQuery && typeof searchQuery === 'string') {
+                          const qStr = searchQuery.trim();
+                          const isPhone = /^[\d\s+\-().]+$/.test(qStr);
+                          if (isPhone) {
+                            setField('customer_phone', qStr);
+                            setField('customer_name', '');
+                          } else {
+                            setField('customer_name', qStr);
+                            setField('customer_phone', '');
+                          }
+                        }
+                      }}
+                      onChange={(id, name, phone) => {
+                        if (id === 'new') {
+                          setIsNewCustomer(true);
+                          setField('customer_id', '');
+                        } else {
+                          setIsNewCustomer(false);
+                          setField('customer_id', id);
+                          setField('customer_name', name);
+                          setField('customer_phone', phone || '');
+                        }
+                      }}
+                    />
+                  )}
+
+                  {isNewCustomer && !form.customer_id && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <input
+                        type="text"
+                        placeholder="Tên khách hàng *"
+                        value={form.customer_name || ''}
+                        onChange={(e) => setField('customer_name', e.target.value)}
+                        className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Số điện thoại"
+                        value={form.customer_phone || ''}
+                        onChange={(e) => setField('customer_phone', e.target.value)}
+                        className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Number of Guest Stepper */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Số lượng khách<span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <div className="flex items-center justify-between border border-slate-200/90 rounded-xl bg-white overflow-hidden shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => handleGuestCountChange(-1)}
+                      className="w-10 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 font-bold text-base cursor-pointer border-r border-slate-200/80 transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="font-semibold text-slate-800 text-xs flex-1 text-center">{form.guest_count}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleGuestCountChange(1)}
+                      className="w-10 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 font-bold text-base cursor-pointer border-l border-slate-200/80 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Availability Date & Time */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Thời gian hẹn<span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <DateTimePickerPopover
+                    dateValue={form.date}
+                    timeValue={form.start_time}
+                    onSelect={(d, t) => {
+                      setField('date', d);
+                      setField('start_time', t);
+                    }}
+                  />
+                  <div className="text-xs text-slate-500 mt-1 pl-1 font-medium">
+                    Dự kiến kết thúc: <span className="font-semibold text-slate-700">{form.end_time || addMinutesToTime(form.start_time, totalMinutes)}</span> (Tổng: {totalMinutes} phút)
+                  </div>
+                </div>
+
+                {/* Khuyến mãi & Voucher Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Khuyến mãi & voucher
+                    </label>
+                    {form.promo_code && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setField('promo_code', '');
+                          setVoucherInput('');
+                        }}
+                        className="text-xs font-medium text-red-500 hover:text-red-700 hover:underline cursor-pointer"
+                      >
+                        Bỏ chọn
+                      </button>
+                    )}
+                  </div>
+
+                  {!form.customer_id && !form.customer_name ? (
+                    <div className="w-full p-3.5 rounded-xl border border-slate-200/80 bg-white text-center text-slate-400 text-xs font-normal">
+                      Chưa áp dụng mã khuyến mãi nào
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* CTKM Dropdown Selector */}
+                      <div className="relative">
+                        <select
+                          value={customerPromos.some(p => p.code === form.promo_code) ? form.promo_code : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setField('promo_code', val);
+                            if (val) setVoucherInput('');
+                          }}
+                          className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 text-xs font-normal text-slate-800 outline-none focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                        >
+                          <option value="">
+                            {customerPromos.length > 0 
+                              ? '— Chọn CTKM từ thông tin khách hàng —' 
+                              : '— Khách hàng chưa có CTKM khả dụng —'
+                            }
+                          </option>
+                          {customerPromos.map((p) => (
+                            <option key={p.code} value={p.code}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                      </div>
+
+                      {/* Dedicated Embedded Voucher Input Box */}
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          placeholder="Hoặc nhập mã voucher..."
+                          value={voucherInput}
+                          onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleApplyVoucherInput();
+                            }
+                          }}
+                          className="w-full pl-3.5 pr-20 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-normal text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400 placeholder:font-normal uppercase tracking-wide transition-all shadow-2xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyVoucherInput}
+                          className="absolute right-1 top-1 bottom-1 px-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-all cursor-pointer shadow-2xs flex items-center justify-center"
+                        >
+                          Áp dụng
+                        </button>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (form.customer_id) {
-                          onClose?.();
-                          window.location.href = `/customers?id=${form.customer_id}`;
-                        } else {
-                          toast.info(`Khách hàng: ${form.customer_name}`);
-                        }
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                      title="Chuyển đến trang chi tiết khách hàng"
-                    >
-                      <Eye className="w-4 h-4 stroke-[1.8]" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setField('customer_id', '');
-                        setField('customer_name', '');
-                        setField('customer_phone', '');
-                        setIsNewCustomer(false);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Bỏ chọn khách"
-                    >
-                      <X className="w-4 h-4 stroke-[1.8]" />
-                    </button>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <CustomerPicker
-                  customers={customers}
-                  value={form.customer_id || ''}
-                  onAddNew={(searchQuery) => {
-                    setIsNewCustomer(true);
-                    setField('customer_id', '');
-                    if (searchQuery && typeof searchQuery === 'string') {
-                      const qStr = searchQuery.trim();
-                      const isPhone = /^[\d\s+\-().]+$/.test(qStr);
-                      if (isPhone) {
-                        setField('customer_phone', qStr);
-                        setField('customer_name', '');
-                      } else {
-                        setField('customer_name', qStr);
-                        setField('customer_phone', '');
-                      }
-                    }
-                  }}
-                  onChange={(id, name, phone) => {
-                    if (id === 'new') {
-                      setIsNewCustomer(true);
-                      setField('customer_id', '');
-                    } else {
-                      setIsNewCustomer(false);
-                      setField('customer_id', id);
-                      setField('customer_name', name);
-                      setField('customer_phone', phone || '');
-                    }
-                  }}
-                />
-              )}
 
-              {isNewCustomer && !form.customer_id && (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Tên khách hàng *"
-                    value={form.customer_name || ''}
-                    onChange={(e) => setField('customer_name', e.target.value)}
-                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Số điện thoại"
-                    value={form.customer_phone || ''}
-                    onChange={(e) => setField('customer_phone', e.target.value)}
-                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Number of Guest Stepper */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700">
-                Số lượng khách<span className="text-red-500 ml-0.5">*</span>
-              </label>
-              <div className="flex items-center justify-between border border-slate-200/90 rounded-xl bg-white overflow-hidden shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => handleGuestCountChange(-1)}
-                  className="w-10 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 font-bold text-base cursor-pointer border-r border-slate-200/80 transition-colors"
-                >
-                  −
-                </button>
-                <span className="font-semibold text-slate-800 text-xs flex-1 text-center">{form.guest_count}</span>
-                <button
-                  type="button"
-                  onClick={() => handleGuestCountChange(1)}
-                  className="w-10 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 font-bold text-base cursor-pointer border-l border-slate-200/80 transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Availability Date & Time */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700">
-                Thời gian hẹn<span className="text-red-500 ml-0.5">*</span>
-              </label>
-              <DateTimePickerPopover
-                dateValue={form.date}
-                timeValue={form.start_time}
-                onSelect={(d, t) => {
-                  setField('date', d);
-                  setField('start_time', t);
-                }}
-              />
-            </div>
-
-            {/* Khuyến mãi & Voucher Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Khuyến mãi & voucher
-                </label>
-                {form.promo_code && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setField('promo_code', '');
-                      setVoucherInput('');
-                    }}
-                    className="text-xs font-medium text-red-500 hover:text-red-700 hover:underline cursor-pointer"
-                  >
-                    Bỏ chọn
-                  </button>
-                )}
-              </div>
-
-              {!form.customer_id && !form.customer_name ? (
-                <div className="w-full p-3.5 rounded-xl border border-slate-200/80 bg-white text-center text-slate-400 text-xs font-normal">
-                  Chưa áp dụng mã khuyến mãi nào
-                </div>
-              ) : (
+                {/* Appointment Notes */}
                 <div className="space-y-2">
-                  {/* CTKM Dropdown Selector */}
-                  <div className="relative">
-                    <select
-                      value={customerPromos.some(p => p.code === form.promo_code) ? form.promo_code : ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setField('promo_code', val);
-                        if (val) setVoucherInput('');
-                      }}
-                      className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 text-xs font-normal text-slate-800 outline-none focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
-                    >
-                      <option value="">
-                        {customerPromos.length > 0 
-                          ? '— Chọn CTKM từ thông tin khách hàng —' 
-                          : '— Khách hàng chưa có CTKM khả dụng —'
-                        }
-                      </option>
-                      {customerPromos.map((p) => (
-                        <option key={p.code} value={p.code}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
-                  </div>
-
-                  {/* Dedicated Embedded Voucher Input Box */}
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="Hoặc nhập mã voucher..."
-                      value={voucherInput}
-                      onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleApplyVoucherInput();
-                        }
-                      }}
-                      className="w-full pl-3.5 pr-20 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-normal text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400 placeholder:font-normal uppercase tracking-wide transition-all shadow-2xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyVoucherInput}
-                      className="absolute right-1 top-1 bottom-1 px-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-all cursor-pointer shadow-2xs flex items-center justify-center"
-                    >
-                      Áp dụng
-                    </button>
-                  </div>
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Ghi chú lịch hẹn
+                  </label>
+                  <textarea
+                    value={form.note || ''}
+                    onChange={(e) => setField('note', e.target.value)}
+                    placeholder="Nhập ghi chú..."
+                    rows={3}
+                    className="w-full p-3.5 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400 placeholder:font-normal resize-none h-24 bg-white shadow-2xs transition-all"
+                  />
                 </div>
-              )}
-            </div>
-
-            {/* Appointment Notes */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700">
-                Ghi chú lịch hẹn
-              </label>
-              <textarea
-                value={form.note || ''}
-                onChange={(e) => setField('note', e.target.value)}
-                placeholder="Nhập ghi chú..."
-                rows={3}
-                className="w-full p-3.5 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400 placeholder:font-normal resize-none h-24 bg-white shadow-2xs transition-all"
-              />
-            </div>
+              </>
+            ) : (
+              /* Activity Log Timeline Section */
+              <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[50vh]">
+                {(() => {
+                  let logs = [];
+                  if (typeof form.logs === 'string') {
+                    try { logs = JSON.parse(form.logs); } catch(e) {}
+                  } else if (Array.isArray(form.logs)) {
+                    logs = form.logs;
+                  }
+                  
+                  if (!logs || logs.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                        Chưa có nhật ký hoạt động nào cho lịch hẹn này
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="relative pl-4 border-l border-slate-100 space-y-4 text-left">
+                      {logs.map((log, idx) => {
+                        const logTime = new Date(log.time);
+                        const timeStr = isNaN(logTime.getTime()) 
+                          ? (log.time || '') 
+                          : `${logTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${logTime.toLocaleDateString('vi-VN')}`;
+                        
+                        return (
+                          <div key={log.id || idx} className="relative space-y-1">
+                            {/* Dot indicator */}
+                            <span className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white shadow-xs" />
+                            
+                            <div className="text-xs font-bold text-slate-800 flex items-center justify-between gap-2">
+                              <span>{log.action}</span>
+                              <span className="text-[10px] font-normal text-slate-400 shrink-0">{timeStr}</span>
+                            </div>
+                            {log.details && (
+                              <p className="text-[11px] text-slate-500 font-medium whitespace-pre-wrap">{log.details}</p>
+                            )}
+                            <div className="text-[10px] text-slate-400">Thực hiện bởi: <span className="font-semibold text-slate-600">{log.user || 'Lễ tân'}</span></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Service & Guest Breakdown (7 Cols) */}
@@ -1529,60 +1850,191 @@ export default function AppointmentModal({
 
                       {/* Service Items Rows (1 Single Horizontal Line - Comfortable Gaps) */}
                       <div className="space-y-3.5">
-                        {g.items.map((it, itemIdx) => {
-                          return (
-                            <div key={itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
-                              {/* Service Select (Flex-1) */}
-                              <div className="relative flex-1 min-w-[140px]">
-                                <select
-                                  value={it.service_id || ''}
-                                  onChange={(e) => handlePickService(gIdx, itemIdx, e.target.value)}
-                                  className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
-                                >
-                                  <option value="">— Chọn dịch vụ —</option>
-                                  {services.map(s => (
-                                    <option key={s.id} value={s.id}>
-                                      {s.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                        {(() => {
+                          if (gIdx === 0) {
+                            const packageGroups = {};
+                            const normalItems = [];
+                            g.items.forEach((it, itemIdx) => {
+                              const groupKey = it.customer_package_id || it.customer_treatment_id;
+                              if (it.is_from_package && groupKey) {
+                                if (!packageGroups[groupKey]) {
+                                  packageGroups[groupKey] = { name: it.package_name, items: [] };
+                                }
+                                packageGroups[groupKey].items.push({ ...it, itemIdx });
+                              } else {
+                                normalItems.push({ ...it, itemIdx });
+                              }
+                            });
+
+                            return (
+                              <div className="space-y-4">
+                                {/* Render Packages & Treatments */}
+                                {Object.keys(packageGroups).map((packageId) => {
+                                  const grp = packageGroups[packageId];
+                                  const isTreatment = grp.items.some(it => it.customer_treatment_id);
+                                  
+                                  return (
+                                    <div key={packageId} className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4 hover:border-slate-300 transition-all text-left">
+                                      {/* Package Header */}
+                                      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                                        <div className="flex items-center gap-2">
+                                          {isTreatment ? (
+                                            <div className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+                                              <Sparkles className="w-3.5 h-3.5 text-white fill-white" />
+                                            </div>
+                                          ) : (
+                                            <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                                              <Star className="w-3.5 h-3.5 text-white fill-white" />
+                                            </div>
+                                          )}
+                                          <span className="font-bold text-xs text-slate-800">{grp.name}</span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemovePackage(packageId)}
+                                          className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors cursor-pointer"
+                                          title={isTreatment ? "Xóa liệu trình" : "Xóa gói"}
+                                        >
+                                          <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                        </button>
+                                      </div>
+                                    {/* Package Services */}
+                                    <div className="space-y-3.5">
+                                      {packageGroups[packageId].items.map((it) => (
+                                        <div key={it.itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
+                                          {/* Service Name */}
+                                          <div className="relative flex-1 min-w-[140px]">
+                                            <select
+                                              value={it.service_id || ''}
+                                              disabled
+                                              className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-slate-50 appearance-none truncate cursor-not-allowed transition-all shadow-2xs"
+                                            >
+                                              <option value={it.service_id}>{it.service_name}</option>
+                                            </select>
+                                          </div>
+                                          {/* Staff Picker */}
+                                          <StaffPickerDropdown
+                                            staffList={staff}
+                                            value={it.staff_id || ''}
+                                            onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
+                                          />
+                                          {/* Facility Select */}
+                                          <div className="relative w-[130px] shrink-0">
+                                            <select
+                                              value={it.facility_id || ''}
+                                              onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
+                                              className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                            >
+                                              <option value="">— Vị trí —</option>
+                                              {facilityList.map(fac => (
+                                                <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                              ))}
+                                            </select>
+                                            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )})}
+
+                                {/* Render Normal Services */}
+                                {normalItems.map((it) => (
+                                  <div key={it.itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
+                                    <div className="relative flex-1 min-w-[140px]">
+                                      <select
+                                        value={it.service_id || ''}
+                                        onChange={(e) => handlePickService(0, it.itemIdx, e.target.value)}
+                                        className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                      >
+                                        <option value="">— Chọn dịch vụ —</option>
+                                        {services.map(s => (
+                                          <option key={s.id} value={s.id}>
+                                            {s.name} ({s.duration_minutes || s.duration || 30} phút)
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                    </div>
+                                    <StaffPickerDropdown
+                                      staffList={staff}
+                                      value={it.staff_id || ''}
+                                      onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
+                                    />
+                                    <div className="relative w-[130px] shrink-0">
+                                      <select
+                                        value={it.facility_id || ''}
+                                        onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
+                                        className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                      >
+                                        <option value="">— Vị trí —</option>
+                                        {facilityList.map(fac => (
+                                          <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                        ))}
+                                      </select>
+                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveServiceFromGuest(0, it.itemIdx)}
+                                      className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                                      title="Xóa dịch vụ"
+                                    >
+                                      <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                    </button>
+                                  </div>
+                                ))}
                               </div>
-
-                              {/* Custom Staff Picker Dropdown matching CopyCommissionModal */}
-                              <StaffPickerDropdown
-                                staffList={staff}
-                                value={it.staff_id || ''}
-                                onChange={(staffId) => handlePickStaff(gIdx, itemIdx, staffId)}
-                              />
-
-                              {/* Facility Select (Width ~ 130px) */}
-                              <div className="relative w-[130px] shrink-0">
-                                <select
-                                  value={it.facility_id || ''}
-                                  onChange={(e) => handlePickFacility(gIdx, itemIdx, e.target.value)}
-                                  className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                            );
+                          } else {
+                            // Non Guest #1 - regular flat list
+                            return g.items.map((it, itemIdx) => (
+                              <div key={itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
+                                <div className="relative flex-1 min-w-[140px]">
+                                  <select
+                                    value={it.service_id || ''}
+                                    onChange={(e) => handlePickService(gIdx, itemIdx, e.target.value)}
+                                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                  >
+                                    <option value="">— Chọn dịch vụ —</option>
+                                    {services.map(s => (
+                                      <option key={s.id} value={s.id}>
+                                        {s.name} ({s.duration_minutes || s.duration || 30} phút)
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                </div>
+                                <StaffPickerDropdown
+                                  staffList={staff}
+                                  value={it.staff_id || ''}
+                                  onChange={(staffId) => handlePickStaff(gIdx, itemIdx, staffId)}
+                                />
+                                <div className="relative w-[130px] shrink-0">
+                                  <select
+                                    value={it.facility_id || ''}
+                                    onChange={(e) => handlePickFacility(gIdx, itemIdx, e.target.value)}
+                                    className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                  >
+                                    <option value="">— Vị trí —</option>
+                                    {facilityList.map(fac => (
+                                      <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveServiceFromGuest(gIdx, itemIdx)}
+                                  className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                                  title="Xóa dịch vụ"
                                 >
-                                  <option value="">— Vị trí —</option>
-                                  {DEFAULT_FACILITIES.map(fac => (
-                                    <option key={fac.id} value={fac.id}>{fac.name}</option>
-                                  ))}
-                                </select>
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                  <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                </button>
                               </div>
-
-                              {/* Delete Trash Icon */}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveServiceFromGuest(gIdx, itemIdx)}
-                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-                                title="Xóa dịch vụ"
-                              >
-                                <Trash2 className="w-4 h-4 stroke-[1.8]" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                            ));
+                          }
+                        })()}
                       </div>
 
                       {/* Guest Card Footer Summary */}
@@ -1608,6 +2060,12 @@ export default function AppointmentModal({
             {discountAmt > 0 && (
               <span className="text-xs font-normal text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
                 -{formatVND(discountAmt)}
+              </span>
+            )}
+            {deposit && deposit.paid_amount > 0 && (
+              <span className="text-xs font-normal text-pink-600 bg-pink-50 border border-pink-200/60 px-2 py-0.5 rounded-md flex items-center gap-1 ml-2">
+                <PiggyBank className="w-3 h-3" />
+                Đã cọc: {formatVND(deposit.paid_amount)}
               </span>
             )}
             <span className="text-xs font-normal text-slate-500 ml-1">{totalMinutes} phút</span>
@@ -1649,6 +2107,15 @@ export default function AppointmentModal({
             onSaved?.();
             onClose?.();
           }}
+        />
+      )}
+
+      {/* Package Usage Modal */}
+      {showPackageUsageModal && (
+        <PackageUsageModal
+          customerId={form.customer_id}
+          onClose={() => setShowPackageUsageModal(false)}
+          onSelect={handleApplyPackageItems}
         />
       )}
     </div>

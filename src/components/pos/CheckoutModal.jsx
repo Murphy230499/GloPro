@@ -35,7 +35,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   const subtotal = cart.reduce((s, x) => s + (x.price || 0) * (x.qty || 1), 0);
   const discount = discountType === 'percent' ? Math.round(subtotal * (discountValue / 100)) : discountValue;
   const netTotal = Math.max(0, subtotal - discount);
-  const total = netTotal + tip;
+  const depositPaid = session?.deposit?.paid_amount || 0;
+  const total = Math.max(0, netTotal + tip - depositPaid);
   const paidSum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const remaining = total - paidSum;
 
@@ -70,6 +71,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
       setDiscountType(session.discountType || 'vnd');
       
       const initialNetTotal = Math.max(0, subtotal - (session.discountType === 'percent' ? Math.round(subtotal * ((session.discountValue || 0) / 100)) : (session.discountValue || 0)));
+      const initialDepositPaid = session?.deposit?.paid_amount || 0;
       const initialTip = session.tip || 0;
       setTip(initialTip);
       setTipSplits(session.tipSplits || []);
@@ -78,7 +80,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
       setSelectedPercentage(initialTip === 0 ? 0 : null);
       
       // Default first payment input to full amount
-      setPayments([{ method: 'cash', amount: initialNetTotal + initialTip }]);
+      setPayments([{ method: 'cash', amount: Math.max(0, initialNetTotal + initialTip - initialDepositPaid) }]);
       setIsEditingTip(false);
       setStep('payment');
       setProgress(0);
@@ -378,7 +380,12 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                 <div className="flex justify-between"><span>Tạm tính</span><span className="font-semibold text-slate-800">{formatVND(subtotal)}</span></div>
                 <div className="flex justify-between"><span>Giảm giá</span><span className="font-semibold text-slate-800">-{formatVND(discount)}</span></div>
                 <div className="flex justify-between"><span>Thuế (Tax)</span><span className="font-semibold text-slate-800">{formatVND(tax)}</span></div>
-                <div className="flex justify-between"><span>Tiền tip (Tip)</span><span className="font-semibold text-slate-800">{formatVND(tip)}</span></div>
+                {depositPaid > 0 && (
+                  <div className="flex justify-between mt-1 text-pink-600"><span>Đã cọc</span><span>-{formatVND(depositPaid)}</span></div>
+                )}
+                {tip > 0 && (
+                  <div className="flex justify-between mt-1 text-emerald-600"><span>Tiền tip</span><span>+{formatVND(tip)}</span></div>
+                )}
               </div>
               
               <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
@@ -532,6 +539,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               <div className="flex justify-between"><span>Tạm tính:</span><span>{formatVND(subtotal)}</span></div>
               <div className="flex justify-between"><span>Giảm giá:</span><span>-{formatVND(discount)}</span></div>
               <div className="flex justify-between"><span>Thuế (Tax):</span><span>0 đ</span></div>
+              {depositPaid > 0 && <div className="flex justify-between font-medium text-pink-600"><span>Đã cọc:</span><span>-{formatVND(depositPaid)}</span></div>}
               <div className="flex justify-between"><span>Tiền tip:</span><span>{formatVND(tip)}</span></div>
             </div>
 

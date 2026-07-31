@@ -32,7 +32,7 @@ const ADD_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'g
 const GROUP_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình' };
 
 export default function Services() {
-  const { currentBranchId } = useBranch();
+  const { currentBranchId, branches } = useBranch();
   const [tab, setTab] = useState('service');
   const [services, setServices] = useState([]);
   const [products, setProducts] = useState([]);
@@ -50,7 +50,7 @@ export default function Services() {
 
   const load = () => {
     setLoading(true);
-    const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+    const filter = currentBranchId === 'all' ? {} : { branch_ids: currentBranchId };
     Promise.all([
       base44.entities.Service.filter(filter),
       base44.entities.Product.filter(filter),
@@ -111,21 +111,111 @@ export default function Services() {
     }
   };
 
-  const save = async (data) => {
-    const type = editing.type;
-    const entityName = ENTITY_MAP[type];
-    const payload = { ...data, branch_id: data.branch_id || (currentBranchId === 'all' ? '' : currentBranchId) };
+  const ensureValidGroupId = async (groupIdOrName, groupType) => {
+    if (!groupIdOrName) return null;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const bId = currentBranchId === 'all' ? '' : currentBranchId;
+
     try {
-      if (editing.id) {
+      // 1. If it's already a valid UUID in state
+      const existingInState = groups.find(g => g.id === groupIdOrName);
+      if (existingInState && uuidRegex.test(existingInState.id)) {
+        return existingInState.id;
+      }
+
+      // If it is a UUID, search DB by ID
+      if (uuidRegex.test(groupIdOrName)) {
+        const dbMatches = await base44.entities.ServiceGroup.filter({ id: groupIdOrName });
+        if (dbMatches && dbMatches.length > 0) return dbMatches[0].id;
+        // If not found in DB, DO NOT create a group named with this UUID!
+        return null;
+      }
+
+      // 2. Search by name in loaded state
+      const nameMatchInState = groups.find(g => g.name === groupIdOrName);
+      if (nameMatchInState && uuidRegex.test(nameMatchInState.id)) {
+        return nameMatchInState.id;
+      }
+
+      // 3. Search database by name
+      const filter = { name: groupIdOrName };
+      if (bId) filter.branch_id = bId;
+      const dbMatches = await base44.entities.ServiceGroup.filter(filter);
+      if (dbMatches && dbMatches.length > 0) {
+        return dbMatches[0].id;
+      }
+
+      // 4. Create new group in Supabase database!
+      const groupName = nameMatchInState?.name || groupIdOrName;
+      const newGroup = await base44.entities.ServiceGroup.create({
+        name: groupName,
+        type: groupType || 'service',
+        color: nameMatchInState?.color || '#A78BFA',
+        branch_id: bId || '00000000-0000-0000-0000-000000000000'
+      });
+      return newGroup.id;
+    } catch (e) {
+      console.warn('Could not resolve or create group_id in database:', e);
+      return null;
+    }
+  };
+
+  const save = async (data) => {
+    const type = editing?.type || tab;
+    const entityName = ENTITY_MAP[type];
+    const { id, type: _t, group: _g, created_at, updated_at, created_date, updated_date, ...cleanData } = data;
+    
+    let groupNameStr = '';
+    // Auto-resolve or create group in Supabase Database before saving!
+    if (cleanData.group_id) {
+      const allG = groups.length > 0 ? groups : DEFAULT_FALLBACK_GROUPS;
+      const groupMatch = allG.find(g => g.id === cleanData.group_id || g.name === cleanData.group_id);
+      
+      if (groupMatch) {
+        groupNameStr = groupMatch.name;
+      } else {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(cleanData.group_id)) {
+           // If it's a UUID not in local state, fetch from DB
+           const fromDb = await base44.entities.ServiceGroup.filter({ id: cleanData.group_id });
+           if (fromDb && fromDb.length > 0) {
+             groupNameStr = fromDb[0].name;
+           } else {
+             // If DB also doesn't have it, don't use UUID as name
+             groupNameStr = cleanData.category || cleanData.group || '';
+           }
+        } else {
+           groupNameStr = cleanData.group_id;
+        }
+      }
+      cleanData.group_id = await ensureValidGroupId(cleanData.group_id, type);
+    }
+
+    const finalBranchIds = 'branch_ids' in cleanData ? cleanData.branch_ids : (currentBranchId === 'all' ? [] : [currentBranchId]);
+    
+    // Remove old branch_id if somehow present
+    if ('branch_id' in cleanData) delete cleanData.branch_id;
+
+    const payload = {
+      ...cleanData,
+      category: groupNameStr || cleanData.category || '',
+      branch_ids: finalBranchIds && finalBranchIds.length > 0 ? finalBranchIds : null
+    };
+
+    try {
+      if (editing?.id) {
         await base44.entities[entityName].update(editing.id, payload);
-        toast.success('Đã cập nhật');
+        toast.success('Đã cập nhật thành công');
       } else {
         await base44.entities[entityName].create(payload);
-        toast.success('Đã thêm');
+        toast.success('Đã thêm mới thành công');
       }
       setEditing(null);
       load();
-    } catch (e) {toast.error('Lỗi: ' + (e.message || e));}
+    } catch (e) {
+      console.error('Save error:', e);
+      toast.error('Lỗi: ' + (e.message || e));
+    }
   };
 
   const remove = async (type, id) => {
@@ -153,8 +243,41 @@ export default function Services() {
     load();
   };
 
-  const getGroups = (type) => groups.filter((g) => g.type === type);
-  const getGroup = (type, gid) => getGroups(type).find((g) => g.id === gid);
+  const DEFAULT_FALLBACK_GROUPS = [
+    { id: 'g_hair', name: 'Chăm sóc tóc', color: '#A78BFA', type: 'service' },
+    { id: 'g_nail', name: 'Nail & Móng', color: '#F472B6', type: 'service' },
+    { id: 'g_spa', name: 'Spa & Massage', color: '#34D399', type: 'service' },
+    { id: 'g_prod', name: 'Bán lẻ sản phẩm', color: '#60A5FA', type: 'product' },
+    { id: 'g_pkg', name: 'Gói tổng hợp', color: '#FBBF24', type: 'package' },
+    { id: 'g_trt', name: 'Liệu trình chuyên sâu', color: '#F97316', type: 'treatment' }
+  ];
+
+  const getGroups = (type) => {
+    const all = groups.length > 0 ? groups : DEFAULT_FALLBACK_GROUPS;
+    const filtered = all.filter((g) => !g.type || g.type === type);
+    return filtered.length > 0 ? filtered : all;
+  };
+
+  const getGroup = (type, item) => {
+    if (!item) return null;
+    const all = groups.length > 0 ? groups : DEFAULT_FALLBACK_GROUPS;
+    
+    const gid = typeof item === 'object' ? item.group_id : item;
+    if (gid) {
+      const matched = all.find((g) => g.id === gid);
+      if (matched) return matched;
+    }
+    
+    const gname = typeof item === 'object' ? (item.category || item.group || item.group_id) : item;
+    if (gname) {
+      const matched = all.find((g) => g.name === gname);
+      if (matched) return matched;
+      if (typeof gname === 'string' && gname.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(gname)) {
+        return { name: gname, color: '#8B5CF6' };
+      }
+    }
+    return null;
+  };
 
   const [draggedGroupId, setDraggedGroupId] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -257,7 +380,7 @@ export default function Services() {
 
   const renderItemCard = (item, groupId) => {
     if (tab === 'service') {
-      const grp = getGroup('service', item.group_id);
+      const grp = getGroup('service', item);
       return (
         <div
           key={item.id}
@@ -288,7 +411,7 @@ export default function Services() {
       );
     }
     if (tab === 'product') {
-      const grp = getGroup('product', item.group_id);
+      const grp = getGroup('product', item);
       return (
         <div
           key={item.id}
@@ -312,7 +435,7 @@ export default function Services() {
       );
     }
     if (tab === 'package') {
-      const grp = getGroup('package', item.group_id);
+      const grp = getGroup('package', item);
       return (
         <div
           key={item.id}
@@ -345,7 +468,7 @@ export default function Services() {
       );
     }
     if (tab === 'treatment') {
-      const grp = getGroup('treatment', item.group_id);
+      const grp = getGroup('treatment', item);
       return (
         <div
           key={item.id}
@@ -377,7 +500,10 @@ export default function Services() {
     return null;
   };
 
-  const tabGroups = groups.filter((g) => g.type === tab).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const tabGroups = groups.filter((g) => g.type === tab).sort((a, b) => {
+    if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  });
 
   const currentTab = TABS.find((t) => t.v === tab);
 
@@ -390,16 +516,6 @@ export default function Services() {
           <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo, thẻ tiền mặt và kho</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSeedServices}
-            disabled={seeding}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-            title="Khôi phục lại toàn bộ dữ liệu mẫu danh mục"
-          >
-            <RotateCcw className={`w-4 h-4 text-purple-600 ${seeding ? 'animate-spin' : ''}`} />
-            <span>{seeding ? (seedProgress || 'Đang khôi phục...') : 'Khôi phục dữ liệu mẫu'}</span>
-          </button>
-
           {currentTab.grp && (
             <button 
               onClick={() => setGroupModal(currentTab.grp)} 
@@ -461,7 +577,10 @@ export default function Services() {
           {tab === 'service' && (
             services.length === 0 ? <EmptyState text="Chưa có dịch vụ nào" /> : (
               services
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((item) => renderItemCard(item, ''))
             )
           )}
@@ -469,7 +588,10 @@ export default function Services() {
           {tab === 'product' && (
             products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : (
               products
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((item) => renderItemCard(item, ''))
             )
           )}
@@ -477,7 +599,10 @@ export default function Services() {
           {tab === 'package' && (
             packages.length === 0 ? <EmptyState text="Chưa có gói dịch vụ nào" /> : (
               packages
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((item) => renderItemCard(item, ''))
             )
           )}
@@ -485,7 +610,10 @@ export default function Services() {
           {tab === 'treatment' && (
             treatments.length === 0 ? <EmptyState text="Chưa có liệu trình nào" /> : (
               treatments
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((item) => renderItemCard(item, ''))
             )
           )}
@@ -493,7 +621,10 @@ export default function Services() {
           {tab === 'service_combo' && (
             serviceCombos.length === 0 ? <EmptyState text="Chưa có combo dịch vụ nào" /> : (
               serviceCombos
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((c) => {
                   const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0), 0);
                   const discount = original - (c.combo_price || 0);
@@ -529,7 +660,10 @@ export default function Services() {
           {tab === 'product_combo' && (
             productCombos.length === 0 ? <EmptyState text="Chưa có combo sản phẩm nào" /> : (
               productCombos
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((c) => {
                   const original = (c.items || []).reduce((sum, x) => sum + (x.price || 0) * (x.qty || 1), 0);
                   const discount = original - (c.combo_price || 0);
@@ -565,7 +699,10 @@ export default function Services() {
           {tab === 'prepaid_card' && (
             prepaidCards.length === 0 ? <EmptyState text="Chưa có thẻ tiền mặt nào" /> : (
               prepaidCards
-                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .sort((a, b) => {
+                  if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
+                  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                })
                 .map((c) => (
                   <div
                     key={c.id}
@@ -589,13 +726,13 @@ export default function Services() {
       )}
 
       {/* Modals */}
-      {editing?.type === 'service' && <ServiceForm item={editing} groups={getGroups('service')} products={products} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'product' && <ProductForm item={editing} groups={getGroups('product')} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'package' && <PackageForm item={editing} groups={getGroups('package')} services={services} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'treatment' && <TreatmentForm item={editing} groups={getGroups('treatment')} services={services} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'service_combo' && <ComboForm item={editing} services={services} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'product_combo' && <ProductComboForm item={editing} products={products} onClose={() => setEditing(null)} onSave={save} />}
-      {editing?.type === 'prepaid_card' && <PrepaidCardForm item={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'service' && <ServiceForm item={editing} groups={getGroups('service')} products={products} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'product' && <ProductForm item={editing} groups={getGroups('product')} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'package' && <PackageForm item={editing} groups={getGroups('package')} services={services} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'treatment' && <TreatmentForm item={editing} groups={getGroups('treatment')} services={services} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'service_combo' && <ComboForm item={editing} services={services} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'product_combo' && <ProductComboForm item={editing} products={products} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
+      {editing?.type === 'prepaid_card' && <PrepaidCardForm item={editing} branches={branches} onClose={() => setEditing(null)} onSave={save} />}
       {groupModal && <GroupManager type={groupModal} branchId={currentBranchId} onClose={() => setGroupModal(null)} onChanged={load} />}
     </div>);
 

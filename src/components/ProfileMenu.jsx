@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LogOut, UserCog, X, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { base44 } from '@/api/base44Client';
+import { updateMe } from '@/lib/supabaseAuth';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
 import ImageUpload from '@/components/ImageUpload';
@@ -16,7 +16,7 @@ export default function ProfileMenu() {
   const ref = useRef(null);
 
   useEffect(() => {
-    const h = (e) => {if (ref.current && !ref.current.contains(e.target)) setOpen(false);};
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
@@ -33,7 +33,7 @@ export default function ProfileMenu() {
       </button>
 
       {open &&
-      <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 overflow-hidden">
+      <div className="absolute right-0 top-full mt-4 w-64 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 overflow-hidden">
           <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-pink-50 to-purple-50">
             <Avatar src={user?.avatar_url} name={user?.full_name || 'U'} size={48} color="#FF6B9D" />
             <div className="min-w-0">
@@ -47,7 +47,7 @@ export default function ProfileMenu() {
             </div>
           </div>
           <div className="p-2">
-            <button onClick={() => {setEditing(true);setOpen(false);}} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">
+            <button onClick={() => { setEditing(true); setOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">
               <UserCog className="w-4 h-4 text-slate-500" /> Cập nhật hồ sơ
             </button>
             <button onClick={() => logout(true)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-red-50 text-sm font-medium text-red-600">
@@ -59,7 +59,6 @@ export default function ProfileMenu() {
 
       {editing && <ProfileForm user={user} onClose={() => setEditing(false)} onSaved={() => checkUserAuth()} />}
     </div>);
-
 }
 
 function ProfileForm({ user, onClose, onSaved }) {
@@ -73,7 +72,7 @@ function ProfileForm({ user, onClose, onSaved }) {
   const save = async () => {
     setSaving(true);
     try {
-      await base44.auth.updateMe(f);
+      await updateMe(f);
       toast.success('Đã cập nhật hồ sơ');
       onSaved();
       onClose();
@@ -111,5 +110,4 @@ function ProfileForm({ user, onClose, onSaved }) {
         </div>
       </div>
     </div>);
-
 }

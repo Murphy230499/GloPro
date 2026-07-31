@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from 'next/link';
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
-import { loginWithGoogleSupabase, loginWithFacebookSupabase } from "@/lib/supabaseAuth";
+import {
+  registerWithEmail,
+  verifyOtp,
+  resendOtp,
+  loginWithGoogleSupabase,
+  loginWithFacebookSupabase,
+} from "@/lib/supabaseAuth";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -31,7 +36,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      await registerWithEmail(email, password);
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
@@ -44,10 +49,7 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-      }
+      await verifyOtp(email, otpCode);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Mã xác thực không hợp lệ.");
@@ -59,7 +61,7 @@ export default function Register() {
   const handleResend = async () => {
     setError("");
     try {
-      await base44.auth.resendOtp(email);
+      await resendOtp(email);
       toast({
         title: "Đã gửi lại mã",
         description: "Vui lòng kiểm tra hộp thư email của bạn.",
@@ -75,11 +77,7 @@ export default function Register() {
     try {
       await loginWithGoogleSupabase();
     } catch (err) {
-      try {
-        base44.auth.loginWithProvider("google", "/");
-      } catch (e) {
-        setError(err.message || "Đăng nhập Google thất bại.");
-      }
+      setError(err.message || "Đăng nhập Google thất bại.");
     } finally {
       setLoading(false);
     }
@@ -91,11 +89,7 @@ export default function Register() {
     try {
       await loginWithFacebookSupabase();
     } catch (err) {
-      try {
-        base44.auth.loginWithProvider("facebook", "/");
-      } catch (e) {
-        setError(err.message || "Đăng nhập Facebook thất bại.");
-      }
+      setError(err.message || "Đăng nhập Facebook thất bại.");
     } finally {
       setLoading(false);
     }

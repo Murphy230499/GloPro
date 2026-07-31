@@ -777,6 +777,17 @@ export default function Invoices() {
     }
   };
 
+  const permanentlyDeleteInvoice = async (inv) => {
+    if (!confirm(`Bạn có chắc muốn xoá vĩnh viễn hoá đơn ${inv.invoice_code}? Hành động này không thể hoàn tác.`)) return;
+    try {
+      await base44.entities.Invoice.delete(inv.id);
+      toast.success('Đã xoá vĩnh viễn hoá đơn');
+      load();
+    } catch (e) {
+      toast.error('Lỗi: ' + (e.message || e));
+    }
+  };
+
   // 2. Actions for Unpaid Invoices - Open POS Invoice Modal ("Tạo Hóa Đơn Trực Tiếp")
   const payInvoice = (inv) => {
     setPosModalInvoice(inv);
@@ -1059,9 +1070,14 @@ export default function Invoices() {
                           )}
 
                           {inv.status === 'cancelled' && (
-                            <button onClick={() => restoreInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-100 transition-colors" title="Khôi phục hoá đơn">
-                              <Undo2 className="w-3.5 h-3.5" />
-                            </button>
+                            <>
+                              <button onClick={() => restoreInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-100 transition-colors" title="Khôi phục hoá đơn">
+                                <Undo2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => permanentlyDeleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors" title="Xoá vĩnh viễn hoá đơn">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>

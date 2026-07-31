@@ -185,13 +185,13 @@ export default function ShiftTemplateManager({ onChanged }) {
           Chưa có ca làm việc nào. Chọn "Thêm ca làm việc" để bắt đầu.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {templates.map((t) => {
             const branch = branches.find(b => b.id === t.branch_id);
             return (
               <div 
                 key={t.id} 
-                className="border-l-4 rounded-3xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow relative"
+                className="border-l-4 rounded-3xl p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow relative"
                 style={{
                   backgroundColor: (t.color || '#B088F9') + '0F',
                   borderColor: (t.color || '#B088F9') + '25',

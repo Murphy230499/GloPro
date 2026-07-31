@@ -1,163 +1,198 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, ShoppingBag, UserSquare, Calendar } from 'lucide-react';
-import {
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid,
-} from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
-import { formatVND } from '@/lib/format';
 
-const PIE_COLORS = ['#FF6B9D', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F97316', '#94A3B8', '#C084FC'];
+import ReportLayout from '@/components/reports/ReportLayout';
+
+// Import 18 Tab Components
+import OverviewTab from '@/components/reports/tabs/OverviewTab';
+import RevenueTab from '@/components/reports/tabs/RevenueTab';
+import AppointmentsTab from '@/components/reports/tabs/AppointmentsTab';
+import CustomersTab from '@/components/reports/tabs/CustomersTab';
+import StaffTab from '@/components/reports/tabs/StaffTab';
+import PosCashierTab from '@/components/reports/tabs/PosCashierTab';
+import ServicesTab from '@/components/reports/tabs/ServicesTab';
+import ProductsTab from '@/components/reports/tabs/ProductsTab';
+import InventoryTab from '@/components/reports/tabs/InventoryTab';
+import PackagesTab from '@/components/reports/tabs/PackagesTab';
+import TreatmentsTab from '@/components/reports/tabs/TreatmentsTab';
+import ServiceCombosTab from '@/components/reports/tabs/ServiceCombosTab';
+import ProductCombosTab from '@/components/reports/tabs/ProductCombosTab';
+import PrepaidCardsTab from '@/components/reports/tabs/PrepaidCardsTab';
+import TipReportTab from '@/components/reports/tabs/TipReportTab';
+import MarketingTab from '@/components/reports/tabs/MarketingTab';
+import DepositReportTab from '@/components/reports/tabs/DepositReportTab';
+import KPIDashboardTab from '@/components/reports/tabs/KPIDashboardTab';
+import FinanceTab from '@/components/reports/tabs/FinanceTab';
+import MultiBranchTab from '@/components/reports/tabs/MultiBranchTab';
+import AiReportTab from '@/components/reports/tabs/AiReportTab';
+import CashFlowReportTab from '@/components/reports/tabs/CashFlowReportTab';
 
 export default function Reports() {
-  const { currentBranchId, branches, currentBranch } = useBranch();
-  const [invoices, setInvoices] = useState([]);
-  const [staff, setStaff] = useState([]);
+  const { currentBranchId, branches } = useBranch();
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+
+  // Entities state
+  const [invoices, setInvoices] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [services, setServices] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [treatments, setTreatments] = useState([]);
+  const [serviceCombos, setServiceCombos] = useState([]);
+  const [productCombos, setProductCombos] = useState([]);
+  const [prepaidCards, setPrepaidCards] = useState([]);
+  const [deposits, setDeposits] = useState([]);
+  const [cashVouchers, setCashVouchers] = useState([]);
 
   useEffect(() => {
-    const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+    let isMounted = true;
+    setLoading(true);
+    const filter = (currentBranchId === 'all' || !currentBranchId) ? {} : { branch_id: currentBranchId };
+
+    const safeFilter = (entity, filterObj) => {
+      if (!entity || typeof entity.filter !== 'function') return Promise.resolve([]);
+      return entity.filter(filterObj).catch(() => []);
+    };
+
+    const safeList = (entity) => {
+      if (!entity || typeof entity.list !== 'function') return Promise.resolve([]);
+      return entity.list().catch(() => []);
+    };
+
     Promise.all([
-      base44.entities.Invoice.filter(filter),
-      base44.entities.Staff.filter(filter),
-    ]).then(([inv, st]) => {
-      setInvoices(inv);
-      setStaff(st.filter((x) => x.is_active !== false));
+      safeFilter(base44.entities?.Invoice, filter),
+      safeFilter(base44.entities?.Appointment, filter),
+      safeList(base44.entities?.Customer),
+      safeFilter(base44.entities?.Staff, filter),
+      safeFilter(base44.entities?.Product, filter),
+      safeFilter(base44.entities?.Service, filter),
+      safeFilter(base44.entities?.ServicePackage, filter),
+      safeFilter(base44.entities?.Treatment, filter),
+      safeFilter(base44.entities?.ServiceCombo, filter),
+      safeFilter(base44.entities?.ProductCombo, filter),
+      safeFilter(base44.entities?.PrepaidCard, filter),
+      safeFilter(base44.entities?.Deposit, filter)
+    ]).then(([inv, appt, cust, st, prod, serv, pkg, trt, sc, pc, card, dep]) => {
+      if (!isMounted) return;
+      setInvoices(inv || []);
+      setAppointments(appt || []);
+      setCustomers(cust || []);
+      setStaff((st || []).filter(x => x && x.is_active !== false));
+      setProducts((prod || []).filter(x => x && x.is_active !== false));
+      setServices((serv || []).filter(x => x && x.is_active !== false));
+      setPackages((pkg || []).filter(x => x && x.is_active !== false));
+      setTreatments((trt || []).filter(x => x && x.is_active !== false));
+      setServiceCombos((sc || []).filter(x => x && x.is_active !== false));
+      setProductCombos((pc || []).filter(x => x && x.is_active !== false));
+      setPrepaidCards(card || []);
+      setDeposits(dep || []);
+      // Load cashVouchers separately (non-blocking)
+      safeList(base44.entities?.CashVoucher).then(cv => { if (isMounted) setCashVouchers(cv || []); });
       setLoading(false);
+    }).catch(err => {
+      console.error('Error loading reports data:', err);
+      if (isMounted) setLoading(false);
     });
+
+    return () => { isMounted = false; };
   }, [currentBranchId]);
 
-  const monthInvoices = invoices.filter((i) => (i.date || '').startsWith(month));
-  const totalRevenue = monthInvoices.reduce((s, i) => s + (i.total || 0), 0);
-  const totalTip = monthInvoices.reduce((s, i) => s + (i.tip || 0), 0);
-  const totalInvoices = monthInvoices.length;
-
-  // By branch (only meaningful when all branches)
-  const byBranch = currentBranchId === 'all'
-    ? branches.map((b) => ({
-        name: b.name.replace('GlowPro ', ''),
-        revenue: invoices.filter((i) => i.branch_id === b.id && (i.date || '').startsWith(month)).reduce((s, i) => s + (i.total || 0), 0),
-      }))
-    : [];
-
-  // By category
-  const byCategory = {};
-  monthInvoices.forEach((inv) => {
-    (inv.items || []).forEach((it) => {
-      byCategory[it.name] = (byCategory[it.name] || 0) + (it.price || 0) * (it.qty || 1);
-    });
-  });
-  const categoryData = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value }));
-
-  // By staff
-  const byStaff = staff.map((s) => ({
-    name: s.full_name,
-    revenue: monthInvoices.reduce((sum, inv) => sum + (inv.items || []).filter((it) => it.staff_id === s.id).reduce((a, it) => a + (it.price || 0) * (it.qty || 1), 0), 0),
-  })).sort((a, b) => b.revenue - a.revenue);
-
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" /></div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-3">
+        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        <span className="text-xs font-semibold text-slate-500">Đang tổng hợp dữ liệu báo cáo...</span>
+      </div>
+    );
   }
 
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <OverviewTab invoices={invoices} appointments={appointments} customers={customers} staff={staff} products={products} services={services} packages={packages} treatments={treatments} serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards} />;
+      case 'revenue':
+        return <RevenueTab invoices={invoices} />;
+      case 'appointments':
+        return <AppointmentsTab appointments={appointments} />;
+      case 'customers':
+        return <CustomersTab customers={customers} invoices={invoices} />;
+      case 'staff':
+        return <StaffTab staff={staff} invoices={invoices} />;
+      case 'pos_cashier':
+        return <PosCashierTab invoices={invoices} />;
+      case 'services':
+        return <ServicesTab services={services} invoices={invoices} />;
+      case 'products':
+        return <ProductsTab products={products} invoices={invoices} />;
+      case 'inventory':
+        return <InventoryTab products={products} />;
+      case 'packages':
+        return <PackagesTab packages={packages} invoices={invoices} />;
+      case 'treatments':
+        return <TreatmentsTab treatments={treatments} invoices={invoices} />;
+      case 'service_combos':
+        return <ServiceCombosTab serviceCombos={serviceCombos} invoices={invoices} />;
+      case 'product_combos':
+        return <ProductCombosTab productCombos={productCombos} invoices={invoices} />;
+      case 'prepaid_cards':
+        return <PrepaidCardsTab prepaidCards={prepaidCards} />;
+      case 'tips':
+        return <TipReportTab invoices={invoices} staff={staff} />;
+      case 'marketing':
+        return <MarketingTab customers={customers} />;
+      case 'deposits':
+        return <DepositReportTab deposits={deposits} searchQuery={''} />;
+      case 'kpi':
+        return <KPIDashboardTab invoices={invoices} appointments={appointments} />;
+      case 'finance':
+        return <FinanceTab invoices={invoices} />;
+      case 'multi_branch':
+        return <MultiBranchTab branches={branches} invoices={invoices} />;
+      case 'ai_report':
+        return <AiReportTab />;
+      case 'cash_flow':
+        return <CashFlowReportTab />;
+      default:
+        return <OverviewTab invoices={invoices} appointments={appointments} customers={customers} staff={staff} products={products} />;
+    }
+  };
+
+  const dataForExport = {
+    overview: invoices,
+    revenue: invoices,
+    appointments: appointments,
+    customers: customers,
+    staff: staff,
+    pos_cashier: invoices,
+    services: services,
+    products: products,
+    inventory: products,
+    packages: packages,
+    treatments: treatments,
+    service_combos: serviceCombos,
+    product_combos: productCombos,
+    prepaid_cards: prepaidCards,
+    tips: invoices,
+    marketing: customers,
+    deposits: deposits,
+    kpi: invoices,
+    finance: invoices,
+    cash_flow: cashVouchers,
+    multi_branch: branches
+  };
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Báo cáo</h1>
-          <p className="text-slate-400 text-sm mt-1">{currentBranchId === 'all' ? 'Toàn hệ thống' : currentBranch?.name}</p>
-        </div>
-        <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2">
-          <Calendar className="w-4 h-4 text-purple-500" />
-          <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="text-sm outline-none bg-transparent" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-5 text-white">
-          <TrendingUp className="w-6 h-6 opacity-80" />
-          <div className="text-2xl font-bold mt-2">{formatVND(totalRevenue)}</div>
-          <div className="text-sm opacity-80">Doanh thu tháng</div>
-        </div>
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <ShoppingBag className="w-6 h-6 text-blue-500" />
-          <div className="text-2xl font-bold mt-2">{totalInvoices}</div>
-          <div className="text-sm text-slate-400">Hóa đơn</div>
-        </div>
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <UserSquare className="w-6 h-6 text-orange-500" />
-          <div className="text-2xl font-bold mt-2">{formatVND(totalTip)}</div>
-          <div className="text-sm text-slate-400">Tip</div>
-        </div>
-      </div>
-
-      {currentBranchId === 'all' && byBranch.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3">Doanh thu theo cơ sở</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={byBranch} layout="vertical" barSize={24}>
-              <CartesianGrid horizontal={false} stroke="#f1f5f9" />
-              <XAxis type="number" tickFormatter={(v) => v >= 1000000 ? (v / 1000000) + 'tr' : Math.round(v / 1000) + 'k'} tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} width={80} />
-              <Tooltip formatter={(v) => formatVND(v)} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }} />
-              <Bar dataKey="revenue" radius={[0, 8, 8, 0]} fill="#A78BFA" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3">Cơ cấu doanh thu</h3>
-          {categoryData.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-10">Chưa có dữ liệu</p>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50}>
-                    {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={(v) => formatVND(v)} contentStyle={{ borderRadius: 12, border: 'none' }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-1.5 mt-2">
-                {categoryData.map((c, i) => (
-                  <div key={c.name} className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{c.name}</span>
-                    <span className="font-semibold">{formatVND(c.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3">Hiệu suất nhân viên</h3>
-          {byStaff.every((s) => s.revenue === 0) ? (
-            <p className="text-slate-400 text-sm text-center py-10">Chưa có dữ liệu doanh thu</p>
-          ) : (
-            <div className="space-y-3">
-              {byStaff.filter((s) => s.revenue > 0).map((s, i) => {
-                const max = byStaff[0].revenue || 1;
-                return (
-                  <div key={s.name}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{i + 1}. {s.name}</span>
-                      <span className="font-semibold text-pink-600">{formatVND(s.revenue)}</span>
-                    </div>
-                    <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-pink-500" style={{ width: `${(s.revenue / max) * 100}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <ReportLayout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      dataForExport={dataForExport}
+    >
+      {renderActiveTab()}
+    </ReportLayout>
   );
 }

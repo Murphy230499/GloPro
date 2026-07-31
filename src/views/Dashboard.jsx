@@ -99,6 +99,7 @@ export default function Dashboard() {
     periodInvoices.forEach((inv) => {
       (inv.items || []).forEach((it) => {
         if (!it.name) return;
+        if (it.is_from_package) return;
         const amount = (it.price || 0) * (it.qty || 1);
         if (it.type === 'product') {
           productRev[it.name] = (productRev[it.name] || 0) + amount;
@@ -156,10 +157,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={TrendingUp} label="Doanh thu hôm nay" value={formatVND(todayRevenue)} color="#34D399" sub={`${invoices.filter((i) => i.date === today).length} hóa đơn`} />
-        <StatCard icon={CalendarDays} label="Lịch hẹn hôm nay" value={todayAppts.length} color="#60A5FA" sub={`${completedToday} hoàn thành`} />
-        <StatCard icon={Users} label="Khách hàng" value={customers.length} color="#FBBF24" sub="toàn chuỗi" />
-        <StatCard icon={UserSquare} label="Nhân viên" value={staff.length} color="#F97316" sub="đang làm việc" />
+        <StatCard icon={TrendingUp} label="Doanh thu hôm nay" value={formatVND(todayRevenue)} color="#34D399" sub={`${invoices.filter((i) => i.date === today).length} Hóa đơn`} />
+        <StatCard icon={CalendarDays} label="Lịch hẹn hôm nay" value={todayAppts.length} color="#60A5FA" sub={`${completedToday} Hoàn thành`} />
+        <StatCard icon={Users} label="Khách hàng" value={customers.length} color="#FBBF24" sub="Toàn chuỗi" />
+        <StatCard icon={UserSquare} label="Nhân viên" value={staff.length} color="#F97316" sub="Đang làm việc" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

@@ -30,6 +30,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
     group_id: staff.group_id || '',
     service_ids: staff.service_ids || [],
     can_be_booked: staff.can_be_booked !== false,
+    is_active: staff.is_active !== false,
     max_concurrent_bookings: staff.max_concurrent_bookings || 1,
     branch_id: staff.branch_id || (branchId === 'all' ? '' : branchId),
   });
@@ -83,7 +84,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
+      <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-xs" />
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
@@ -334,6 +335,23 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                 <p className="text-[10px] text-slate-400">Thường đặt là 1. Nếu cho phép đặt trùng ca để phục vụ nhiều khách cùng lúc (ví dụ: làm móng hoặc ủ tóc), hãy tăng chỉ số này.</p>
               </div>
             )}
+          </div>
+
+          {/* Section 3: System Status */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Trạng thái hoạt động</div>
+                <div className="text-[10px] text-slate-400">Nếu tắt, nhân viên sẽ tạm thời bị vô hiệu hoá trên hệ thống</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setF({ ...f, is_active: !f.is_active })}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${f.is_active ? 'bg-orange-500' : 'bg-slate-200'}`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${f.is_active ? 'translate-x-2.5' : '-translate-x-2.5'}`} />
+              </button>
+            </div>
           </div>
 
         </div>

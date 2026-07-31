@@ -524,6 +524,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
   const [tierHistory, setTierHistory] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [deposits, setDeposits] = useState([]);
   const [loadingAppts, setLoadingAppts] = useState(true);
   const [activeTab, setActiveTab] = useState('appointments');
   const [searchAppt, setSearchAppt] = useState('');
@@ -595,6 +596,11 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
       setCustomerGifts(localGifts[customer.id] || []);
       const localPromos = JSON.parse(localStorage.getItem('glopro_promotions') || '[]');
       setAllPromotions(localPromos);
+    }
+    if (activeTab === 'deposits' && customer?.id) {
+      base44.entities.Deposit.filter({ customer_id: customer.id })
+        .then(data => setDeposits(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))))
+        .catch(console.error);
     }
   }, [activeTab, customer?.id]);
 
@@ -1337,6 +1343,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
   const tabsList = [
     { id: 'activity', label: 'Hoạt động' },
     { id: 'appointments', label: 'Lịch hẹn' },
+    { id: 'deposits', label: 'Đặt cọc' },
     { id: 'sales', label: 'Hóa đơn' },
     { id: 'purchased_services', label: 'Dịch vụ' },
     { id: 'purchased_products', label: 'Sản phẩm' },
@@ -1968,6 +1975,55 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             {activeTab === 'purchased_products' && renderPurchasedTable(getFilteredItems('product'), 'Sản phẩm đã mua', 'Chưa mua sản phẩm nào')}
             {activeTab === 'purchased_service_combos' && renderPurchasedTable(getFilteredItems('package', false), 'Combo dịch vụ đã mua', 'Chưa mua combo dịch vụ nào')}
             {activeTab === 'purchased_product_combos' && renderPurchasedTable(getFilteredItems('package', true), 'Combo sản phẩm đã mua', 'Chưa mua combo sản phẩm nào')}
+
+            {activeTab === 'deposits' && (
+              <div className="space-y-4 text-left">
+                <h4 className="font-semibold text-sm text-slate-800">Lịch sử đặt cọc</h4>
+                {deposits.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    Chưa có lịch sử đặt cọc nào.
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">Mã ĐC</th>
+                          <th className="px-4 py-3 font-semibold">Ngày tạo</th>
+                          <th className="px-4 py-3 font-semibold text-right">Cần cọc</th>
+                          <th className="px-4 py-3 font-semibold text-right">Đã cọc</th>
+                          <th className="px-4 py-3 font-semibold text-center">Trạng thái</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {deposits.map(d => (
+                          <tr key={d.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3 font-medium text-slate-800">{d.deposit_number}</td>
+                            <td className="px-4 py-3 text-slate-500">{new Date(d.created_at).toLocaleDateString('vi-VN')}</td>
+                            <td className="px-4 py-3 text-right text-slate-800">{Number(d.required_amount).toLocaleString('vi-VN')} đ</td>
+                            <td className="px-4 py-3 text-right text-green-600 font-bold">{Number(d.paid_amount).toLocaleString('vi-VN')} đ</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                d.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                d.status === 'partially_paid' ? 'bg-amber-100 text-amber-700' :
+                                d.status === 'applied' ? 'bg-blue-100 text-blue-700' :
+                                d.status === 'refunded' ? 'bg-slate-100 text-slate-700' :
+                                'bg-slate-100 text-slate-600'
+                              }`}>
+                                {d.status === 'paid' ? 'Đã thu' : 
+                                 d.status === 'partially_paid' ? 'Thu một phần' : 
+                                 d.status === 'applied' ? 'Đã áp dụng' : 
+                                 d.status === 'refunded' ? 'Đã hoàn' : d.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
             {activeTab === 'activity' && (
               <div className="space-y-4">

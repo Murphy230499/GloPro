@@ -9,8 +9,11 @@ import {
   Plus,
   ChevronDown,
   Calendar as CalendarIcon,
+  CalendarDays,
   Search,
-  Check
+  Check,
+  Settings,
+  Armchair
 } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 
@@ -35,7 +38,7 @@ const DEFAULT_DEMO_STAFF = [
   { id: 'st_7', full_name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' }
 ];
 
-function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose }) {
+export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose }) {
   const todayISO = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
@@ -148,9 +151,9 @@ function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose }) {
           let classNames = "h-9 rounded-2xl flex items-center justify-center cursor-pointer transition-all font-semibold ";
 
           if (isSelected) {
-            classNames += "bg-emerald-600 text-white font-bold shadow-sm scale-105 rounded-full";
+            classNames += "bg-blue-500 text-white font-bold shadow-sm scale-105 rounded-full";
           } else if (isHighlight) {
-            classNames += "bg-emerald-50 text-emerald-900 font-bold hover:bg-emerald-100 rounded-full";
+            classNames += "bg-blue-50 text-blue-900 font-bold hover:bg-blue-100 rounded-full";
           } else if (item.isCurrentMonth) {
             classNames += "text-slate-800 hover:bg-slate-100 font-medium rounded-full";
           } else {
@@ -190,11 +193,15 @@ export default function AppointmentHeader({
   servicesList = [],
   staffList = [],
   facilityList = [],
-  onAddClick
+  onAddClick,
+  onAddTimeBlockClick,
+  onSettingsClick,
+  onFacilityManagementClick
 }) {
   const [isServiceOpen, setIsServiceOpen] = useState(false);
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [searchService, setSearchService] = useState('');
   const [searchStaff, setSearchStaff] = useState('');
 
@@ -208,6 +215,9 @@ export default function AppointmentHeader({
       }
       if (!e.target.closest('.datepicker-dropdown-container')) {
         setIsDatePickerOpen(false);
+      }
+      if (!e.target.closest('.add-menu-container')) {
+        setIsAddMenuOpen(false);
       }
     };
     document.addEventListener('click', handleOutsideClick);
@@ -245,7 +255,7 @@ export default function AppointmentHeader({
   // Selected Service Display Text
   const currentServiceObj = effectiveServices.find(s => (s.name || s.service_name || s) === selectedService);
   const serviceLabel = selectedService === 'all'
-    ? 'chọn dịch vụ áp dụng'
+    ? 'Chọn dịch vụ áp dụng'
     : (currentServiceObj?.name || currentServiceObj?.service_name || selectedService);
 
   // Selected Staff/Facility Display Object
@@ -254,7 +264,7 @@ export default function AppointmentHeader({
     : effectiveStaffList.find(f => f.id === selectedStaff);
 
   const staffLabel = selectedStaff === 'all'
-    ? (targetEntity === 'staff' ? 'chọn nhân viên áp dụng' : 'chọn vị trí áp dụng')
+    ? (targetEntity === 'staff' ? 'Chọn nhân viên áp dụng' : 'Chọn vị trí áp dụng')
     : (currentStaffObj?.full_name || currentStaffObj?.name || currentStaffObj?.staff_name || selectedStaff);
 
   // Filtered Services List
@@ -300,7 +310,7 @@ export default function AppointmentHeader({
               }}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 targetEntity === 'staff'
-                  ? 'bg-white text-blue-600 shadow-2xs border border-slate-200/40'
+                  ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -313,7 +323,7 @@ export default function AppointmentHeader({
               }}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 targetEntity === 'facility'
-                  ? 'bg-white text-blue-600 shadow-2xs border border-slate-200/40'
+                  ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -328,7 +338,7 @@ export default function AppointmentHeader({
               title="Dòng thời gian (Timeline)"
               className={`p-1.5 rounded-lg transition-all ${
                 viewMode === 'timeline'
-                  ? 'bg-blue-600 text-white shadow-2xs'
+                  ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -340,7 +350,7 @@ export default function AppointmentHeader({
               title="Lịch dạng lưới (Calendar Grid)"
               className={`p-1.5 rounded-lg transition-all ${
                 viewMode === 'calendar'
-                  ? 'bg-blue-600 text-white shadow-2xs'
+                  ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -352,7 +362,7 @@ export default function AppointmentHeader({
               title="Danh sách (List)"
               className={`p-1.5 rounded-lg transition-all ${
                 viewMode === 'list'
-                  ? 'bg-blue-600 text-white shadow-2xs'
+                  ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -582,9 +592,9 @@ export default function AppointmentHeader({
               type="button"
               onClick={() => handleDateShift(-1)}
               title="Ngày trước"
-              className="px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
+              <ChevronLeft className="w-4 h-4 stroke-[1.5]" />
             </button>
 
             {/* Middle Button: Date Display & Custom Popover Trigger */}
@@ -595,7 +605,9 @@ export default function AppointmentHeader({
                 setIsServiceOpen(false);
                 setIsStaffOpen(false);
               }}
-              className="px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer min-w-[100px] select-none"
+              className={`px-4 py-2 text-xs transition-colors flex items-center justify-center cursor-pointer min-w-[100px] select-none ${
+                (!selectedDate || selectedDate === todayISO) ? 'font-normal text-slate-500 hover:bg-slate-50' : 'font-semibold text-slate-800 hover:bg-slate-50'
+              }`}
             >
               <span>{formatDateDisplay(selectedDate)}</span>
             </button>
@@ -605,12 +617,11 @@ export default function AppointmentHeader({
               type="button"
               onClick={() => handleDateShift(1)}
               title="Ngày sau"
-              className="px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4 stroke-[2.2]" />
+              <ChevronRight className="w-4 h-4 stroke-[1.5]" />
             </button>
-
-            {/* Custom DatePicker Popover Popup matching design */}
+                  {/* Custom DatePicker Popover Popup matching design */}
             {isDatePickerOpen && (
               <CustomDatePickerPopover
                 selectedDate={selectedDate}
@@ -624,12 +635,62 @@ export default function AppointmentHeader({
         {/* Right Side: Quick Add Appointment Button */}
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={onAddClick}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95"
+            type="button"
+            onClick={onFacilityManagementClick}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+            title="Quản lý vị trí (ghế/giường)"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Tạo lịch hẹn</span>
+            <Armchair className="w-5 h-5 stroke-[2]" />
           </button>
+          
+          <button
+            type="button"
+            onClick={onSettingsClick}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+            title="Cài đặt lịch hẹn"
+          >
+            <Settings className="w-5 h-5 stroke-[2]" />
+          </button>
+          
+          <div className="relative add-menu-container">
+            <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-2xs transition-all active:scale-95 group">
+              <button
+                onClick={onAddClick}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
+              >
+                <CalendarDays className="w-4 h-4" /> Tạo Lịch Hẹn
+              </button>
+              <button
+                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+                className="px-2 py-2 flex items-center justify-center rounded-r-xl"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+
+            {isAddMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-[100] overflow-hidden py-1">
+                <button
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    onAddClick?.();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-500 transition-colors"
+                >
+                  Tạo Lịch Hẹn
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    onAddTimeBlockClick?.();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-500 transition-colors"
+                >
+                  Tạo Giờ Nghỉ
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -2,14 +2,17 @@
 
 import React, { useState } from "react";
 import Link from 'next/link';
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, Facebook } from "lucide-react";
+import { Mail, Lock, Loader2, Facebook } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import { loginWithGoogleSupabase, loginWithFacebookSupabase } from "@/lib/supabaseAuth";
+import {
+  loginViaEmailPassword,
+  loginWithGoogleSupabase,
+  loginWithFacebookSupabase,
+} from "@/lib/supabaseAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,7 +25,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      await loginViaEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Email hoặc mật khẩu không chính xác.");
@@ -37,11 +40,7 @@ export default function Login() {
     try {
       await loginWithGoogleSupabase();
     } catch (err) {
-      try {
-        base44.auth.loginWithProvider("google", "/");
-      } catch (e) {
-        setError(err.message || "Đăng nhập Google thất bại.");
-      }
+      setError(err.message || "Đăng nhập Google thất bại.");
     } finally {
       setLoading(false);
     }
@@ -53,11 +52,7 @@ export default function Login() {
     try {
       await loginWithFacebookSupabase();
     } catch (err) {
-      try {
-        base44.auth.loginWithProvider("facebook", "/");
-      } catch (e) {
-        setError(err.message || "Đăng nhập Facebook thất bại.");
-      }
+      setError(err.message || "Đăng nhập Facebook thất bại.");
     } finally {
       setLoading(false);
     }

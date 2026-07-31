@@ -1,13 +1,26 @@
 'use client';
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { toast } from '@/components/Layout';
 import ImageUpload from '@/components/ImageUpload';
 
-export default function ProductForm({ item, groups, onClose, onSave }) {
+export default function ProductForm({ item,  groups, branches, onClose, onSave }) {
+  const matchedGroup = (groups || []).find(g => 
+    (item.group_id && g.id === item.group_id) || 
+    (item.category && g.name === item.category) || 
+    (item.group && g.name === item.group) ||
+    (item.group_id && g.name === item.group_id)
+  );
+
+  const initialGroupVal = matchedGroup ? matchedGroup.id : (item.group_id || item.category || item.group || '');
+  const initialCategoryVal = matchedGroup ? matchedGroup.name : (item.category || item.group || '');
+
   const [f, setF] = useState({
     name: item.name || '',
-    group_id: item.group_id || '',
+    branch_ids: item.branch_ids || [],
+    group_id: initialGroupVal,
+    category: initialCategoryVal,
+    group: initialCategoryVal,
     price: item.price || 0,
     cost_price: item.cost_price || 0,
     stock: item.stock || 0,
@@ -29,12 +42,46 @@ export default function ProductForm({ item, groups, onClose, onSave }) {
         <div className="space-y-3">
           <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên sản phẩm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
 
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <label className="block font-medium text-slate-700 mb-2 text-xs">Áp dụng tại chi nhánh:</label>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={!f.branch_ids || f.branch_ids.length === 0} onChange={() => setF({...f, branch_ids: []})} className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300" />
+                <span className="text-xs text-slate-600 font-medium">Tất cả</span>
+              </label>
+              {(branches || []).map(b => (
+                <label key={b.id} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={(f.branch_ids || []).includes(b.id)} onChange={(e) => {
+                    if (e.target.checked) {
+                      setF({...f, branch_ids: [...(f.branch_ids || []), b.id]});
+                    } else {
+                      setF({...f, branch_ids: (f.branch_ids || []).filter(id => id !== b.id)});
+                    }
+                  }} className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300" />
+                  <span className="text-xs text-slate-600">{b.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Nhóm sản phẩm</label>
-            <select value={f.group_id} onChange={(e) => setF({ ...f, group_id: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white">
-              <option value="">— Chọn nhóm —</option>
-              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+            <label className="block font-medium text-slate-500 mb-1 text-[11px]">Nhóm sản phẩm</label>
+            <div className="relative">
+              <select
+                value={f.group_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const matchG = (groups || []).find(g => g.id === val || g.name === val);
+                  const nameStr = matchG ? matchG.name : val;
+                  setF({ ...f, group_id: val, category: nameStr, group: nameStr });
+                }}
+                className="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 outline-none focus:border-purple-500 bg-white appearance-none cursor-pointer"
+              >
+                <option value="">— Chọn nhóm sản phẩm —</option>
+                {(groups || []).map((g) => <option key={g.id || g.name} value={g.id || g.name}>{g.name}</option>)}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">

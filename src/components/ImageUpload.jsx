@@ -13,12 +13,16 @@ export default function ImageUpload({ value, onChange, label, shape = 'square' }
     if (file.size > 5 * 1024 * 1024) return toast.error('Ảnh quá lớn (tối đa 5MB)');
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      onChange(file_url);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        onChange(e.target.result);
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (e) {
       toast.error('Tải ảnh thất bại');
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';

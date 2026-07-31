@@ -210,6 +210,17 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
     }
   };
 
+  const permanentlyDeleteInvoice = async () => {
+    if (!confirm('Bạn có chắc muốn xoá vĩnh viễn hoá đơn này? Hành động này không thể hoàn tác.')) return;
+    try {
+      await base44.entities.Invoice.delete(id);
+      toast.success('Đã xoá vĩnh viễn hoá đơn');
+      router.back(); // Quay lại trang trước đó sau khi xoá vĩnh viễn
+    } catch (e) {
+      toast.error('Lỗi: ' + (e.message || e));
+    }
+  };
+
   const restoreInvoice = async () => {
     const targetStatus = invoice.previous_status || 'unpaid';
     const statusLabel = targetStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán';
@@ -329,12 +340,20 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             <History className="w-4 h-4 text-slate-500" /> Lịch sử thao tác
           </button>
           {isCancelled && (
-            <button 
-              onClick={restoreInvoice} 
-              className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" /> Khôi phục hoá đơn
-            </button>
+            <>
+              <button 
+                onClick={restoreInvoice} 
+                className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" /> Khôi phục hoá đơn
+              </button>
+              <button 
+                onClick={permanentlyDeleteInvoice} 
+                className="px-3.5 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" /> Xoá vĩnh viễn
+              </button>
+            </>
           )}
           {!isCancelled && (
             <button 

@@ -1,5 +1,6 @@
 import './globals.css';
 import { CopilotProvider, CopilotDrawer } from '@/ai-copilot';
+import GlobalNotificationProvider from '@/components/GlobalNotificationProvider';
 
 export const metadata = {
   title: 'GloPro - Salon Management System',
@@ -11,8 +12,10 @@ export default function RootLayout({ children }) {
     <html lang="vi">
       <body>
         <CopilotProvider>
-          {children}
-          <CopilotDrawer />
+          <GlobalNotificationProvider>
+            {children}
+            <CopilotDrawer />
+          </GlobalNotificationProvider>
         </CopilotProvider>
       </body>
     </html>

@@ -10,8 +10,9 @@ import CheckoutModal from '@/components/pos/CheckoutModal';
 import NewCustomerModal from '@/components/pos/NewCustomerModal';
 import { useBranch } from '@/lib/BranchContext';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
+import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 
-export default function POSInvoiceModal({ open, customer, initialCart = [], existingInvoice = null, onClose, onSaved }) {
+export default function POSInvoiceModal({ open, customer, initialCart = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
   const { currentBranchId, branches } = useBranch();
   // POS tab and search states
   useEffect(() => {
@@ -44,16 +45,17 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
   const [session, setSession] = useState(null);
 
   const loadData = () => {
+    const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
     Promise.all([
-      base44.entities.Service.list(),
-      base44.entities.Product.list(),
-      base44.entities.ServicePackage.list(),
-      base44.entities.Treatment.list(),
-      base44.entities.ServiceCombo.list(),
-      base44.entities.ProductCombo.list(),
-      base44.entities.PrepaidCard.list(),
-      base44.entities.ServiceGroup.list(),
-      base44.entities.Staff.list(),
+      base44.entities.Service.filter(filter),
+      base44.entities.Product.filter(filter),
+      base44.entities.ServicePackage.filter(filter),
+      base44.entities.Treatment.filter(filter),
+      base44.entities.ServiceCombo.filter(filter),
+      base44.entities.ProductCombo.filter(filter),
+      base44.entities.PrepaidCard.filter(filter),
+      base44.entities.ServiceGroup.filter(filter),
+      base44.entities.Staff.filter(filter),
       base44.entities.Customer.list()
     ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
       setServices(s.filter(x => x.is_active));
@@ -140,6 +142,12 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
           createdAt: existingInvoice.date ? new Date(existingInvoice.date) : new Date(),
           logs: getNormalizedLogs(existingInvoice)
         });
+
+        if (existingInvoice.appointment_id) {
+          base44.entities.Deposit.filter({ appointment_id: existingInvoice.appointment_id }).then(deps => {
+            if (deps && deps.length > 0) setSession(prev => ({ ...prev, deposit: deps[0] }));
+          });
+        }
         return;
       }
       
@@ -484,6 +492,58 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
           last_visit: todayStr()
         });
       }
+
+      // ── Auto cash flow: Phiếu Thu ───────────────────────────────────────
+      try {
+        const invCode = invoiceData.invoice_code || session.saleCode;
+        const primaryMethod = (payments?.[0]?.method) || 'cash';
+        
+        let depositPaid = 0;
+        if (session.deposit && session.deposit.id) {
+          depositPaid = session.deposit.paid_amount || 0;
+          try {
+            await base44.entities.Deposit.update(session.deposit.id, { status: 'applied' });
+            await base44.entities.DepositTransaction.create({
+              deposit_id: session.deposit.id,
+              action: 'applied',
+              amount: depositPaid,
+              notes: `Áp dụng cho hoá đơn #${invCode}`
+            });
+          } catch (e) {
+            console.warn('[Deposit] Auto apply deposit failed:', e.message);
+          }
+        }
+
+        const saleAmount = Math.max(0, subtotal - Math.round(discount) - depositPaid);
+        const hasMembership = cart.some(x => x.type !== 'service' && x.type !== 'product');
+        if (saleAmount > 0) {
+          await createIncomeVoucher({
+            typeCode: hasMembership ? 'membership_sale' : 'sale',
+            typeName: hasMembership ? 'Bán gói / Thẻ' : 'Bán hàng / Dịch vụ',
+            amount: saleAmount,
+            description: `Thanh toán hoá đơn #${invCode}`,
+            paymentMethod: primaryMethod,
+            refId: createdInv?.id,
+            refCode: invCode,
+            branchId: resolvedBranchId,
+          });
+        }
+        if (Math.round(tip) > 0) {
+          await createIncomeVoucher({
+            typeCode: 'tip',
+            typeName: 'Tiền TIP',
+            amount: Math.round(tip),
+            description: `Tiền TIP hoá đơn #${invCode}`,
+            paymentMethod: primaryMethod,
+            refId: createdInv?.id,
+            refCode: invCode,
+            branchId: resolvedBranchId,
+          });
+        }
+      } catch (cfErr) {
+        console.warn('[CashFlow] Auto income voucher failed:', cfErr.message);
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       toast.success(`Thanh toán thành công • ${session.saleCode}`);
       setCheckoutOpen(false);

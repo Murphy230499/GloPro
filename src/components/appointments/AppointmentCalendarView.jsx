@@ -111,7 +111,9 @@ export default function AppointmentCalendarView({
 
   useEffect(() => {
     if (bodyScrollRef.current) {
-      const initialScrollMins = Math.max(0, Math.min(currentMinutes - 30, 480));
+      const now = new Date();
+      const actualMinutes = now.getHours() * 60 + now.getMinutes();
+      const initialScrollMins = Math.max(0, actualMinutes - 30);
       bodyScrollRef.current.scrollTop = initialScrollMins * MINUTE_HEIGHT_PX;
     }
   }, []);
@@ -242,7 +244,7 @@ export default function AppointmentCalendarView({
               {columns.map((col) => {
                 const colAppts = appointments.filter((a) => {
                   if (targetEntity === 'staff') {
-                    return a.staff_id === col.id || a.services?.some((s) => s.staff_id === col.id);
+                    return a.staff_id === col.id;
                   } else {
                     return a.facility_id === col.id || a.facility_name === col.name;
                   }
@@ -424,9 +426,13 @@ export default function AppointmentCalendarView({
                   </div>
 
                   <div className="text-xs text-slate-600 flex items-center gap-2 pt-1 font-medium">
-                    <span>⏱ 45 mins</span>
-                    <span>·</span>
-                    <span>📍 {hoveredAppt.facility_name || 'Nail Station 1'}</span>
+                    <span className="shrink-0">⏱ {hoveredAppt.duration_minutes || hoveredAppt.duration || 60} mins</span>
+                    {hoveredAppt.facility_name && (hoveredAppt.raw_appointment?.facility_id || hoveredAppt.raw_appointment?.services?.some(s => s.facility_id)) && (
+                      <>
+                        <span className="shrink-0">·</span>
+                        <span className="truncate">📍 {hoveredAppt.facility_name}</span>
+                      </>
+                    )}
                   </div>
 
                   {(hoveredAppt.notes || hoveredAppt.note) && (

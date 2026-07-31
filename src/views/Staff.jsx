@@ -1,11 +1,12 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import {
-  Plus, Users, CalendarCheck2, Award, Settings2, ChevronRight, UserRoundCog, Sparkles, Loader2,
+  Plus, Users, CalendarCheck2, Award, Settings2, ChevronRight, ChevronDown, UserRoundCog, Sparkles, Loader2,
   Copy, History, Settings, Receipt, CalendarDays, Clock
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { base44 } from '@/api/base44Client';
+import { base44, getCachedPermissions } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
@@ -63,6 +64,37 @@ export default function StaffPage() {
 
   const [mainTab, setMainTab] = useState(urlTab || 'staff');
   const [scheduleSubTab, setScheduleSubTab] = useState('grid');
+  const [allowedModules, setAllowedModules] = useState(null);
+
+  useEffect(() => {
+    async function checkPermissions() {
+      try {
+        const cached = await getCachedPermissions();
+        setAllowedModules(cached);
+      } catch (err) {
+        console.error('Error checking permissions:', err);
+        setAllowedModules('all');
+      }
+    }
+    checkPermissions();
+  }, []);
+
+  const visibleTabs = MAIN_TABS.filter(tab => {
+    if (!allowedModules || allowedModules === 'all') return true;
+    const isAllowed = (key) => !allowedModules.blocked.includes(key);
+    if (tab.id === 'staff') return isAllowed('staff_view');
+    if (tab.id === 'schedule') return isAllowed('staff_schedule_view');
+    if (tab.id === 'attendance') return isAllowed('staff_attendance_view');
+    if (tab.id === 'commission') return isAllowed('staff_commission_config');
+    if (tab.id === 'payroll') return isAllowed('staff_payroll_view');
+    return true;
+  });
+
+  useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.some(t => t.id === mainTab)) {
+      setMainTab(visibleTabs[0].id);
+    }
+  }, [allowedModules, visibleTabs, mainTab]);
 
   useEffect(() => {
     if (urlTab) {
@@ -159,7 +191,7 @@ export default function StaffPage() {
       gpList = localGps ? JSON.parse(localGps) : [];
     }
 
-    setStaff(stList.filter(x => x.is_active !== false));
+    setStaff(stList);
     setStaffGroups(gpList);
     setLoading(false);
   };
@@ -190,7 +222,7 @@ export default function StaffPage() {
   const handleDeleteStaff = async (s) => {
     if (!window.confirm(`Xoá nhân viên ${s.full_name}? Hành động này không thể hoàn tác.`)) return;
     try {
-      await base44.entities.Staff.update(s.id, { is_active: false });
+      await base44.entities.Staff.delete(s.id);
       toast.success('Đã xoá nhân viên');
       loadData();
     } catch (e) {
@@ -282,7 +314,7 @@ export default function StaffPage() {
 
       {/* Main Navigation Tabs */}
       <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
-        {MAIN_TABS.map(tab => {
+        {visibleTabs.map(tab => {
           const Icon = tab.icon;
           return (
             <button
@@ -312,19 +344,22 @@ export default function StaffPage() {
               onChange={(e) => setSearchQ(e.target.value)}
               className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-orange-500"
             />
-            <select
-              value={filterGroup}
-              onChange={(e) => setFilterGroup(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-orange-500"
-            >
-              <option value="all">Tất cả nhóm</option>
-              {staffGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+            <div className="relative">
+              <select
+                value={filterGroup}
+                onChange={(e) => setFilterGroup(e.target.value)}
+                className="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-orange-500 appearance-none bg-white min-w-[130px]"
+              >
+                <option value="all">Tất cả nhóm</option>
+                {staffGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
           </div>
 
           {/* Staff Cards Grid */}
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm animate-pulse h-32" />
               ))}
@@ -346,7 +381,7 @@ export default function StaffPage() {
               Không tìm thấy nhân viên phù hợp. Thử thay đổi bộ lọc.
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {filteredStaff.map((s) => {
                 const role = ROLES[s.role] || { label: s.role, color: '#94A3B8' };
                 const group = staffGroups.find(g => g.id === s.group_id);
@@ -354,46 +389,46 @@ export default function StaffPage() {
                 return (
                   <div
                     key={s.id}
-                    className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all group cursor-pointer"
+                    className={`bg-white rounded-2xl p-3 border shadow-sm hover:shadow-md hover:border-slate-200 transition-all group cursor-pointer ${s.is_active === false ? 'opacity-50 border-slate-100 grayscale-[0.2]' : 'border-slate-100'}`}
                     onClick={() => setDetailStaff(s)}
                   >
-                    <div className="flex items-start gap-3 mb-3">
-                      <Avatar src={s.avatar_url} name={s.full_name} size={48} color={s.avatar_color || '#A78BFA'} />
+                    <div className="flex items-start gap-2.5 mb-2.5">
+                      <Avatar src={s.avatar_url} name={s.full_name} size={40} color={s.avatar_color || '#A78BFA'} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-800 truncate text-sm">{s.full_name}</div>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: role.color + '20', color: role.color }}
-                          >
-                            {role.label}
-                          </span>
-                          {group && (
-                            <span
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: group.color + '20', color: group.color }}
-                            >
-                              {group.name}
-                            </span>
-                          )}
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
+                          {s.phone ? <span>📞 {s.phone}</span> : <span className="italic">Chưa có SĐT</span>}
                         </div>
                       </div>
 
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-500 transition-colors mt-1 shrink-0" />
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <div>
-                        {s.phone && <span>📞 {s.phone}</span>}
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: role.color + '20', color: role.color }}
+                        >
+                          {role.label}
+                        </span>
+                        {group && (
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: group.color + '20', color: group.color }}
+                          >
+                            {group.name}
+                          </span>
+                        )}
                       </div>
-                      <div className="font-semibold text-emerald-600">
+                      <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                         {formatVND(s.base_salary || 0)}/tháng
                       </div>
                     </div>
 
                     <div className="flex gap-2 mt-3 pt-3 border-t border-slate-50">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${s.can_be_booked !== false ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                        {s.can_be_booked !== false ? '✔ Nhận lịch hẹn' : '✗ Không nhận lịch'}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${s.is_active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                        {s.is_active !== false ? '✔ Đang hoạt động' : '✗ Ngừng hoạt động'}
                       </span>
                       {s.service_ids?.length > 0 && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-orange-50 text-orange-600 border border-orange-100">

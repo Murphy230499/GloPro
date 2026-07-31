@@ -41,8 +41,9 @@ export default function NotificationCenter() {
     ).then(([appts, invs, shifts]) => {
       const n = [];
       appts.filter(inBranch).forEach((a) => {
-        if (a.status === 'cancelled') n.push({ id: 'c' + a.id, type: 'cancel', title: 'Lịch hẹn đã hủy', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date });else
-        if (a.status === 'pending') n.push({ id: 'p' + a.id, type: 'new', title: 'Lịch hẹn mới', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date });
+        if (a.status === 'cancelled') n.push({ id: 'c' + a.id, type: 'cancel', title: 'Lịch hẹn đã hủy', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
+        if (a.status === 'pending') n.push({ id: 'p' + a.id, type: 'new', title: 'Lịch hẹn mới', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
+        if (a.status === 'no_show') n.push({ id: 'ns' + a.id, type: 'cancel', title: 'Khách không đến', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });
       });
       invs.filter(inBranch).forEach((i) => {
         if (i.status === 'paid') n.push({ id: 'ip' + i.id, type: 'paid', title: 'Thanh toán thành công', desc: `${i.customer_name} • ${formatVND(i.total)}`, to: '/pos', time: i.created_date });else
@@ -68,7 +69,17 @@ export default function NotificationCenter() {
     const ids = new Set([...readIds, it.id]);
     setReadIds(ids);
     localStorage.setItem('gp_notif_read', JSON.stringify([...ids]));
-    router.push(it.to);
+    
+    if (it.rawAppt) {
+      if (window.location.pathname !== '/appointments') {
+        router.push('/appointments');
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open-appointment-modal', { detail: it.rawAppt }));
+      }, 100);
+    } else {
+      router.push(it.to);
+    }
     setOpen(false);
   };
 
@@ -83,7 +94,7 @@ export default function NotificationCenter() {
         }
       </button>
       {open &&
-      <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 max-h-[70vh] overflow-hidden flex flex-col">
+      <div className="absolute right-0 top-full mt-4 w-80 sm:w-96 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 max-h-[70vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <span className="font-bold">Thông báo</span>
             {unread > 0 && <button onClick={markAllRead} className="text-xs font-semibold text-pink-600">Đánh dấu đã đọc</button>}

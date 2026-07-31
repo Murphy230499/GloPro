@@ -1,14 +1,14 @@
 'use client';
 import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import {  X, Plus, Trash2 , ChevronDown } from 'lucide-react';
 import { toast } from '@/components/Layout';
 import { formatVND } from '@/lib/format';
 import ImageUpload from '@/components/ImageUpload';
 
-export default function ComboForm({ item, services, onClose, onSave }) {
+export default function ComboForm({ item,  services, branches, onClose, onSave }) {
   const [f, setF] = useState({
     name: item.name || '',
-    description: item.description || '',
+    branch_ids: item.branch_ids || [],description: item.description || '',
     items: item.items || [],
     combo_price: item.combo_price || 0,
     is_active: item.is_active !== false,
@@ -41,6 +41,28 @@ export default function ComboForm({ item, services, onClose, onSave }) {
         </div>
         <div className="space-y-3">
           <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên gói dịch vụ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
+
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <label className="block font-medium text-slate-700 mb-2 text-xs">Áp dụng tại chi nhánh:</label>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={!f.branch_ids || f.branch_ids.length === 0} onChange={() => setF({...f, branch_ids: []})} className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300" />
+                <span className="text-xs text-slate-600 font-medium">Tất cả</span>
+              </label>
+              {(branches || []).map(b => (
+                <label key={b.id} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={(f.branch_ids || []).includes(b.id)} onChange={(e) => {
+                    if (e.target.checked) {
+                      setF({...f, branch_ids: [...(f.branch_ids || []), b.id]});
+                    } else {
+                      setF({...f, branch_ids: (f.branch_ids || []).filter(id => id !== b.id)});
+                    }
+                  }} className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300" />
+                  <span className="text-xs text-slate-600">{b.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
           <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
 
           <div>

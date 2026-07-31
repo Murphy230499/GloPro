@@ -15,12 +15,8 @@ const TABS = [
   { v: 'prepaid_card', l: 'Thẻ', i: CreditCard },
 ];
 
-const SERVICE_CATS = [
-  { key: 'hair', label: 'Hair' }, { key: 'barber', label: 'Barber' }, { key: 'nail', label: 'Nails' },
-  { key: 'skincare', label: 'Skincare' }, { key: 'spa', label: 'Spa' }, { key: 'makeup', label: 'Makeup' }, { key: 'other', label: 'Khác' },
-];
 
-export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards, groups, onAddItem, onReload, activeSession }) {
+export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards, groups, onAddItem, onReload, activeSession, isLoading }) {
   const [collapsed, setCollapsed] = useState({});
   const [isSorting, setIsSorting] = useState(false);
   const [draggedGroupId, setDraggedGroupId] = useState(null);
@@ -195,9 +191,15 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
       const g = groups?.find((g) => g.id === item.group_id);
       if (g) return g.name;
     }
-    if (tab === 'service' && item.category) {
-      const cat = SERVICE_CATS.find((c) => c.key === item.category);
-      if (cat) return cat.label;
+    if (item.group) {
+      const g = groups?.find((g) => g.name === item.group);
+      if (g) return g.name;
+      return item.group;
+    }
+    if (item.category) {
+      const g = groups?.find((g) => g.name === item.category);
+      if (g) return g.name;
+      return item.category;
     }
     return null;
   };
@@ -307,7 +309,29 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {catList.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3 py-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-4 h-4 bg-slate-200 rounded"></div>
+                  <div className="h-3 w-24 bg-slate-200 rounded"></div>
+                </div>
+                <div className="space-y-2">
+                  {[...Array(2)].map((_, j) => (
+                    <div key={j} className="flex gap-3 p-2 border border-slate-100 rounded-xl">
+                      <div className="w-8 h-8 bg-slate-200 rounded-lg"></div>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-3 w-1/2 bg-slate-200 rounded"></div>
+                        <div className="h-2 w-1/3 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : catList.length === 0 ? (
           <div className="text-center py-16 text-slate-300 text-sm">Không tìm thấy</div>
         ) : (
           catList.map((cat) => {

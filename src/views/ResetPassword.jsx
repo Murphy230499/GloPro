@@ -1,56 +1,46 @@
 'use client';
 import React, { useState } from "react";
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';;
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { resetPassword } from "@/lib/supabaseAuth";
 
 export default function ResetPassword() {
-  const searchParams = useSearchParams();
-  const resetToken = searchParams?.get("token");
-
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Supabase gửi token qua fragment (#access_token=...) trong URL,
+  // nên Supabase Auth SDK tự xử lý session — không cần lấy token từ URL thủ công.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Mật khẩu xác nhận không khớp.");
       return;
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ resetToken, newPassword });
-      window.location.href = "/login";
+      await resetPassword(newPassword);
+      setDone(true);
+      setTimeout(() => { window.location.href = "/login"; }, 2000);
     } catch (err) {
-      setError(err.message || "Failed to reset password");
+      setError(err.message || "Đặt lại mật khẩu thất bại. Link có thể đã hết hạn.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!resetToken) {
+  if (done) {
     return (
-      <AuthLayout
-        icon={AlertTriangle}
-        title="Invalid reset link"
-        subtitle="This password reset link is missing or invalid"
-        footer={
-          <Link href="/forgot-password" className="text-primary font-medium hover:underline">
-            Request a new link
-          </Link>
-        }
-      >
-        <p className="text-sm text-foreground text-center">
-          The link you used appears to be incomplete. Please request a new password reset email.
-        </p>
+      <AuthLayout icon={Lock} title="Thành công!" subtitle="Mật khẩu của bạn đã được cập nhật.">
+        <p className="text-sm text-center text-slate-600">Đang chuyển hướng về trang đăng nhập...</p>
       </AuthLayout>
     );
   }
@@ -58,8 +48,13 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       icon={Lock}
-      title="New password"
-      subtitle="Enter your new password below"
+      title="Đặt lại mật khẩu"
+      subtitle="Nhập mật khẩu mới của bạn bên dưới"
+      footer={
+        <Link href="/login" className="text-primary font-medium hover:underline">
+          Quay lại đăng nhập
+        </Link>
+      }
     >
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -68,7 +63,7 @@ export default function ResetPassword() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+          <Label htmlFor="password">Mật khẩu mới</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -81,11 +76,12 @@ export default function ResetPassword() {
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
               required
+              minLength={6}
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">Xác nhận mật khẩu</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -97,6 +93,7 @@ export default function ResetPassword() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
               required
+              minLength={6}
             />
           </div>
         </div>
@@ -104,10 +101,10 @@ export default function ResetPassword() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Resetting...
+              Đang cập nhật...
             </>
           ) : (
-            "Reset password"
+            "Cập nhật mật khẩu"
           )}
         </Button>
       </form>

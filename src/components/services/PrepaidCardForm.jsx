@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import {  X , ChevronDown } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import PrepaidCardView from '@/components/PrepaidCardView';
 import { formatVND } from '@/lib/format';
@@ -21,7 +21,7 @@ function genCardCode() {
   return blocks.join(' ');
 }
 
-export default function PrepaidCardForm({ item, onClose, onSave }) {
+export default function PrepaidCardForm({ item, branches, onClose, onSave }) {
   const [form, setForm] = useState({
     name: '', card_code: genCardCode(), face_value: 0, selling_price: 0,
     color: COLORS[0].v, expiry_months: 0, description: '', image_url: '', is_active: true,
@@ -30,7 +30,8 @@ export default function PrepaidCardForm({ item, onClose, onSave }) {
   useEffect(() => {
     if (item?.id) {
       setForm({
-        name: item.name || '', card_code: item.card_code || genCardCode(),
+        name: item.name || '',
+    branch_ids: item.branch_ids || [],card_code: item.card_code || genCardCode(),
         face_value: item.face_value || 0, selling_price: item.selling_price || 0,
         color: item.color || COLORS[0].v, expiry_months: item.expiry_months || 0,
         description: item.description || '', image_url: item.image_url || '', is_active: item.is_active !== false,

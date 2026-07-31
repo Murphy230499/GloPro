@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND, todayStr } from '@/lib/format';
 import AppointmentModal from '@/components/AppointmentModal';
@@ -12,6 +13,9 @@ import Avatar from '@/components/Avatar';
 import { Phone, CheckCircle2, UserCheck, XCircle, Edit3, Trash2, Clock } from 'lucide-react';
 
 import AppointmentHeader from '@/components/appointments/AppointmentHeader';
+import AppointmentSettingsModal from '@/components/AppointmentSettingsModal';
+import AddTimeBlockModal from '@/components/appointments/AddTimeBlockModal';
+import FacilityManagementModal from '@/components/appointments/FacilityManagementModal';
 import AppointmentTimelineView from '@/components/appointments/AppointmentTimelineView';
 import AppointmentCalendarView from '@/components/appointments/AppointmentCalendarView';
 import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
@@ -101,28 +105,39 @@ export default function Appointments() {
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
+  const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
   const [modalOpen, setModalOpen] = useState(false);
+  const [timeBlockModalOpen, setTimeBlockModalOpen] = useState(false);
+  const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [posModalOpen, setPosModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [checkoutCustomer, setCheckoutCustomer] = useState(null);
   const [checkoutInitialCart, setCheckoutInitialCart] = useState([]);
+  const [checkoutAppointmentId, setCheckoutAppointmentId] = useState(null);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
 
     Promise.all([
       base44.entities.Appointment.list(),
       base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
       base44.entities.Customer.list(),
-      base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([])
+      base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([]),
+      base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => [])
     ])
-      .then(([allAppts, st, cus, srv]) => {
+      .then(([allAppts, st, cus, srv, facData]) => {
         const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
         const stMap = Object.fromEntries(st.map((s) => [s.id, s]));
         const srvMap = Object.fromEntries(srv.map((s) => [s.id || s.name, s]));
+        const effectiveFacilities = facData?.length > 0 ? facData : DEFAULT_FACILITIES;
+
+        
+        // Filter out inactive staff for scheduling
+        const activeStaffList = st.filter(s => s.is_active !== false);
 
         // Filter real appointments by date & branch
         const realApptsForDate = (allAppts || []).filter((a) => {
@@ -133,27 +148,41 @@ export default function Appointments() {
 
         // Merge real created appointments with sample demo appointments (filtering duplicates)
         const realIds = new Set(realApptsForDate.map((a) => a.id));
-        const demoFiltered = demoAppts.filter((d) => !realIds.has(d.id));
+        const isToday = !date || date === todayStr();
+        const demoFiltered = isToday ? demoAppts.filter((d) => !realIds.has(d.id)) : [];
         const combinedList = [...realApptsForDate, ...demoFiltered];
 
         const enriched = [];
         combinedList.forEach((a, idx) => {
-          const defaultFac = DEFAULT_FACILITIES[idx % DEFAULT_FACILITIES.length];
+          const defaultFac = effectiveFacilities[idx % effectiveFacilities.length] || effectiveFacilities[0];
           const cusAvatar = a.customer_id ? cusMap[a.customer_id]?.avatar_url : a.customer_avatar_url;
+          a.customer_avatar_url = cusAvatar;
 
           if (a.services && Array.isArray(a.services) && a.services.length > 1) {
+            let currentCascadeTime = a.start_time || '09:00';
             a.services.forEach((sItem, sIdx) => {
-              const staffId = sItem.staff_id || a.staff_id || '__unassigned';
+              // For multi-service appointments, we never fall back to a.staff_id. If missing, it's unassigned.
+              const staffId = sItem.staff_id || '__unassigned';
               const stObj = stMap[staffId];
               const srvObj = srvMap[sItem.service_id] || srvMap[sItem.service_name] || srv.find((s) => s.name === sItem.service_name);
-              const facId = sItem.facility_id || a.facility_id || defaultFac.id;
-              const facObj = DEFAULT_FACILITIES.find(f => f.id === facId);
+              const facId = sItem.facility_id || a.facility_id || defaultFac?.id;
+              const facObj = effectiveFacilities.find(f => f.id === facId);
+
+              const sDur = sItem.duration_minutes || sItem.duration || srvObj?.duration_minutes || a.duration_minutes || 60;
+              const sStart = sItem.start_time || currentCascadeTime;
+              const sEnd = sItem.end_time || (() => {
+                 const [h, m] = sStart.split(':').map(Number);
+                 const t = h * 60 + m + sDur;
+                 return `${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+              })();
+              currentCascadeTime = sEnd;
 
               enriched.push({
                 ...a,
                 id: `${a.id}_service_${sIdx}`,
                 parent_appointment_id: a.id,
                 raw_appointment: a,
+                _serviceIndex: sIdx,
                 service_id: sItem.service_id || '',
                 service_name: sItem.service_name || sItem.name || a.service_name,
                 staff_id: staffId,
@@ -162,7 +191,9 @@ export default function Appointments() {
                 facility_id: facId,
                 facility_name: facObj?.name || sItem.facility_name || a.facility_name || defaultFac.name,
                 price: sItem.price || srvObj?.price || a.price,
-                duration_minutes: sItem.duration_minutes || sItem.duration || a.duration_minutes || 60,
+                duration_minutes: sDur,
+                start_time: sStart,
+                end_time: sEnd,
                 customer_avatar_url: cusAvatar
               });
             });
@@ -187,9 +218,10 @@ export default function Appointments() {
         });
 
         setAppointments(enriched.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')));
-        setStaff(st.filter((x) => x.is_active !== false));
+        setStaff(activeStaffList);
         setCustomers(cus);
         setServices(srv);
+        setFacilities(effectiveFacilities);
         setLoading(false);
       })
       .catch((err) => {
@@ -202,7 +234,23 @@ export default function Appointments() {
   useEffect(() => {
     load();
     window.addEventListener('reload-data', load);
-    return () => window.removeEventListener('reload-data', load);
+
+    // Supabase Realtime (requires table replication enabled in DB)
+    const channel = supabase
+      .channel('public:appointment')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointment' }, () => {
+        load();
+      })
+      .subscribe();
+
+    // Polling Fallback: Refresh data every 15 seconds in case Realtime is off
+    const intervalId = setInterval(load, 15000);
+
+    return () => {
+      window.removeEventListener('reload-data', load);
+      supabase.removeChannel(channel);
+      clearInterval(intervalId);
+    };
   }, [date, currentBranchId]);
 
   const createUnpaidInvoiceFromAppointment = async (appt) => {
@@ -334,18 +382,58 @@ export default function Appointments() {
         });
       }
       setCheckoutInitialCart(initialCart);
+      setCheckoutAppointmentId(targetId);
       setPosModalOpen(true);
     }
   };
 
-  const handleDeleteAppt = async (appt) => {
+  const handleDeleteAppt = async (appt, forceDelete = false) => {
     const targetAppt = appt.raw_appointment || appt;
     if (!targetAppt || !targetAppt.id) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa lịch hẹn của ${targetAppt.customer_name || 'khách hàng'}?`)) return;
+    
+    const targetId = targetAppt.parent_appointment_id || targetAppt.id;
+    const currentStaffId = appt.staff_id;
+    const services = targetAppt.services || [];
+    
+    // If clicking from a specific staff's column, we unassign them. 
+    // Full delete only happens from Unassigned column (currentStaffId is null) or List View (forceDelete is true)
+    if (currentStaffId && !forceDelete) {
+      if (!window.confirm(`Bạn có muốn gỡ nhân viên ${appt.staff_name || ''} khỏi lịch hẹn này (chuyển về Chưa phân công) không?`)) return;
+      
+      try {
+        const updatedServices = services.map((s, idx) => {
+          if (appt._serviceIndex !== undefined && idx === appt._serviceIndex) {
+            return { ...s, staff_id: '', staff_name: 'Chưa phân công' };
+          } else if (appt._serviceIndex === undefined) {
+            // fallback if it's a single service without index: just unassign it!
+            return { ...s, staff_id: '', staff_name: 'Chưa phân công' };
+          }
+          return s;
+        });
+        
+        const payload = { 
+          services: updatedServices,
+          staff_id: updatedServices[0]?.staff_id || null,
+          staff_name: updatedServices[0]?.staff_name || 'Chưa phân công'
+        };
+        if (!String(targetId).startsWith('demo_')) {
+          await base44.entities.Appointment.update(targetId, payload);
+        } else {
+          setDemoAppts(prev => prev.map(d => d.id === targetId ? { ...d, ...payload } : d));
+        }
+        
+        load(); // reload to reflect changes
+        toast.success('Đã gỡ nhân viên khỏi lịch hẹn');
+        return;
+      } catch (e) {
+        toast.error('Lỗi khi gỡ nhân viên: ' + (e.message || e));
+        return;
+      }
+    }
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa toàn bộ lịch hẹn của ${targetAppt.customer_name || 'khách hàng'}?`)) return;
 
     try {
-      const targetId = targetAppt.parent_appointment_id || targetAppt.id;
-
       if (!String(targetId).startsWith('demo_')) {
         await base44.entities.Appointment.delete(targetId);
       } else {
@@ -361,6 +449,8 @@ export default function Appointments() {
 
   // Filter appointments
   const filteredAppointments = appointments.filter((a) => {
+    if (a.date !== date) return false;
+    
     if (selectedService !== 'all') {
       const targetSrv = selectedService.toLowerCase().trim();
       const targetSrvClean = targetSrv.replace(/\s*\([^)]*\)/g, '').trim();
@@ -415,6 +505,9 @@ export default function Appointments() {
 
   const handleApptDrop = async (appt, targetRow, newStartTime) => {
     try {
+      const targetAppt = appt.raw_appointment || appt;
+      const targetId = targetAppt.parent_appointment_id || targetAppt.id;
+
       const startMins = timeStringToMinutes(newStartTime || '09:00');
       let duration = 60;
       if (appt.start_time && appt.end_time) {
@@ -425,7 +518,7 @@ export default function Appointments() {
       const newEndTime = formatMinutesToTime(startMins + duration);
 
       const payload = {
-        ...appt,
+        ...targetAppt,
         start_time: newStartTime,
         end_time: newEndTime
       };
@@ -441,13 +534,13 @@ export default function Appointments() {
       delete payload.customer_avatar_url;
       delete payload.staff_avatar_url;
 
-      if (appt.id && !String(appt.id).startsWith('demo_')) {
-        await base44.entities.Appointment.update(appt.id, payload);
+      if (targetId && !String(targetId).startsWith('demo_')) {
+        await base44.entities.Appointment.update(targetId, payload);
         toast.success(`Đã chuyển lịch hẹn sang ${newStartTime} - ${newEndTime}${targetRow ? ` (${targetRow.name})` : ''}`);
         load();
       } else {
         setAppointments((prev) =>
-          prev.map((a) => (a.id === appt.id ? { ...a, ...payload } : a))
+          prev.map((a) => (a.id === targetId ? { ...a, ...payload } : a))
         );
         toast.success(`Đã cập nhật vị trí lịch hẹn ${newStartTime} - ${newEndTime}`);
       }
@@ -456,7 +549,17 @@ export default function Appointments() {
     }
   };
 
-  const grouped = filteredAppointments.reduce((acc, a) => {
+  const uniqueRawAppointments = [];
+  const _rawMap = {};
+  filteredAppointments.forEach(a => {
+    const rawId = a.parent_appointment_id || a.id;
+    if (!_rawMap[rawId]) {
+      _rawMap[rawId] = a.raw_appointment || a;
+      uniqueRawAppointments.push(a.raw_appointment || a);
+    }
+  });
+
+  const grouped = uniqueRawAppointments.reduce((acc, a) => {
     (acc[a.status] = acc[a.status] || []).push(a);
     return acc;
   }, {});
@@ -481,12 +584,17 @@ export default function Appointments() {
           setBookedOnly={setBookedOnly}
           servicesList={services}
           staffList={staff}
-          facilityList={DEFAULT_FACILITIES}
+          facilityList={facilities}
           onAddClick={() => {
             setEditing(null);
             setPresetSlot(null);
             setModalOpen(true);
           }}
+          onAddTimeBlockClick={() => {
+            setTimeBlockModalOpen(true);
+          }}
+          onSettingsClick={() => setIsSettingsOpen(true)}
+          onFacilityManagementClick={() => setIsFacilityModalOpen(true)}
         />
       </div>
 
@@ -500,12 +608,12 @@ export default function Appointments() {
           targetEntity={targetEntity}
           appointments={filteredAppointments}
           staffList={staff}
-          facilityList={DEFAULT_FACILITIES}
+          facilityList={facilities}
           selectedStaff={selectedStaff}
           onUpdateStatus={updateStatus}
           onDeleteAppt={handleDeleteAppt}
           onApptClick={(a) => {
-            setEditing(a);
+            setEditing(a.raw_appointment || a);
             setModalOpen(true);
           }}
           onSlotClick={handleSlotClick}
@@ -516,12 +624,12 @@ export default function Appointments() {
           targetEntity={targetEntity}
           appointments={filteredAppointments}
           staffList={staff}
-          facilityList={DEFAULT_FACILITIES}
+          facilityList={facilities}
           selectedStaff={selectedStaff}
           onUpdateStatus={updateStatus}
           onDeleteAppt={handleDeleteAppt}
           onApptClick={(a) => {
-            setEditing(a);
+            setEditing(a.raw_appointment || a);
             setModalOpen(true);
           }}
           onSlotClick={handleSlotClick}
@@ -542,7 +650,7 @@ export default function Appointments() {
             >
               <span>Tất cả</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${listStatusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                {filteredAppointments.length}
+                {uniqueRawAppointments.length}
               </span>
             </button>
 
@@ -604,18 +712,28 @@ export default function Appointments() {
                             <div
                               key={a.id}
                               onClick={() => {
-                                setEditing(a);
+                                setEditing(a.raw_appointment || a);
                                 setModalOpen(true);
                               }}
                               className="rounded-xl border shadow-2xs p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between overflow-hidden relative cursor-pointer group"
                               style={{
                                 borderLeftWidth: '4px',
                                 borderLeftColor: statusColor,
-                                borderColor: statusColor + '4d',
-                                backgroundColor: statusColor + '18', // ~10% opacity richer tint
+                                borderColor: statusColor + '80',
+                                backgroundColor: statusColor + '40',
                                 backdropFilter: 'blur(8px)'
                               }}
                             >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAppt(a, true);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all absolute top-2 right-2 shrink-0 z-10 bg-white/80 shadow-xs border border-red-100 backdrop-blur-sm"
+                                title="Xóa toàn bộ lịch hẹn này"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                               <div>
                                 <div className="flex items-center justify-between gap-1 mb-2">
                                   <div className="flex items-center gap-1 font-bold text-xs text-slate-800 tracking-tight">
@@ -627,9 +745,9 @@ export default function Appointments() {
                                   <span
                                     className="text-[9px] font-bold rounded-full py-0.5 px-2 whitespace-nowrap shrink-0 border"
                                     style={{
-                                      backgroundColor: statusColor + '18',
+                                      backgroundColor: statusColor + '40',
                                       color: statusColor,
-                                      borderColor: statusColor + '30'
+                                      borderColor: statusColor + '60'
                                     }}
                                   >
                                     {STATUS_LABEL[status]}
@@ -645,7 +763,7 @@ export default function Appointments() {
                                     src={a.customer_avatar_url} 
                                     name={a.customer_name} 
                                     size={24} 
-                                    color="#FBBF24" 
+                                    color="#E879A9" 
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(a.customer_id ? `/customers?id=${a.customer_id}` : `/customers?name=${encodeURIComponent(a.customer_name)}`);
@@ -680,12 +798,49 @@ export default function Appointments() {
                                         📍 {a.facility_name}
                                       </span>
                                     )}
-                                    {a.staff_name && (
-                                      <span className="text-slate-600 font-medium truncate flex items-center gap-1">
-                                        <Avatar src={a.staff_avatar_url} name={a.staff_name} size={14} color="#10B981" />
-                                        <span className="truncate">{a.staff_name}</span>
-                                      </span>
-                                    )}
+                                    {(() => {
+                                      let uniqueStaff = [];
+                                      if (a.services && Array.isArray(a.services) && a.services.length > 0) {
+                                        const map = new Map();
+                                        a.services.forEach(s => {
+                                          const sId = s.staff_id || a.staff_id;
+                                          const stObj = staff.find(st => st.id === sId);
+                                          const name = stObj?.full_name || stObj?.name || s.staff_name || a.staff_name || 'Nhân viên';
+                                          const avatar = stObj?.avatar_url || s.staff_avatar_url || a.staff_avatar_url;
+                                          if (sId && !map.has(sId)) {
+                                            map.set(sId, { id: sId, name, avatar });
+                                          } else if (!sId && !map.has(name)) {
+                                            map.set(name, { id: name, name, avatar });
+                                          }
+                                        });
+                                        uniqueStaff = Array.from(map.values());
+                                      } else {
+                                        if (a.staff_name) {
+                                          uniqueStaff = [{ id: a.staff_id, name: a.staff_name, avatar: a.staff_avatar_url }];
+                                        }
+                                      }
+
+                                      if (uniqueStaff.length > 1) {
+                                        return (
+                                          <div className="flex -space-x-1 overflow-hidden" title={uniqueStaff.map(s => s.name).join(', ')}>
+                                            {uniqueStaff.map((st, i) => (
+                                              <div key={i} className="inline-block rounded-full ring-2 ring-white">
+                                                <Avatar src={st.avatar} name={st.name} size={16} color="#10B981" />
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      } else if (uniqueStaff.length === 1) {
+                                        const st = uniqueStaff[0];
+                                        return (
+                                          <span className="text-slate-600 font-medium truncate flex items-center gap-1">
+                                            <Avatar src={st.avatar} name={st.name} size={14} color="#10B981" />
+                                            <span className="truncate">{st.name}</span>
+                                          </span>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                   </div>
                                   {a.price > 0 && (
                                     <div className="font-bold text-pink-600 shrink-0 text-xs bg-pink-50/90 border border-pink-100 px-1.5 py-0.2 rounded-md">
@@ -725,7 +880,7 @@ export default function Appointments() {
                                   {(status === 'checked_in' || status === 'in_progress' || status === 'confirmed') && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); updateStatus(a, 'completed'); }}
-                                      className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition cursor-pointer"
+                                      className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold hover:emerald-100 transition cursor-pointer"
                                     >
                                       <UserCheck className="w-3 h-3" />
                                       Thanh toán
@@ -762,7 +917,7 @@ export default function Appointments() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setEditing(a);
+                                      setEditing(a.raw_appointment || a);
                                       setModalOpen(true);
                                     }}
                                     className="text-[10px] p-1.5 rounded-full bg-white text-slate-600 border border-slate-200 font-semibold hover:bg-slate-100 transition cursor-pointer"
@@ -806,6 +961,7 @@ export default function Appointments() {
         defaultStaffName={presetSlot?.staffName}
         defaultFacilityId={presetSlot?.facilityId}
         defaultFacilityName={presetSlot?.facilityName}
+        facilityList={facilities}
         editing={editing}
         onCheckout={({ customer, cart }) => {
           setModalOpen(false);
@@ -821,10 +977,46 @@ export default function Appointments() {
           open={posModalOpen}
           customer={checkoutCustomer}
           initialCart={checkoutInitialCart}
+          appointmentId={checkoutAppointmentId}
           onClose={() => setPosModalOpen(false)}
           onSaved={() => {
             setPosModalOpen(false);
             load();
+          }}
+        />
+      )}
+
+      {isSettingsOpen && (
+        <AppointmentSettingsModal 
+          open={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+        />
+      )}
+
+      {isFacilityModalOpen && (
+        <FacilityManagementModal
+          open={isFacilityModalOpen}
+          onClose={() => setIsFacilityModalOpen(false)}
+          services={services}
+          onFacilityChange={load}
+        />
+      )}
+
+      {timeBlockModalOpen && (
+        <AddTimeBlockModal
+          open={timeBlockModalOpen}
+          onClose={() => setTimeBlockModalOpen(false)}
+          staffList={staff}
+          onSwitchToAppointment={() => {
+            setTimeBlockModalOpen(false);
+            setEditing(null);
+            setPresetSlot(null);
+            setModalOpen(true);
+          }}
+          onSave={(data) => {
+            console.log('Saved Time Block:', data);
+            toast.success('Đã lưu Time Block');
+            setTimeBlockModalOpen(false);
           }}
         />
       )}

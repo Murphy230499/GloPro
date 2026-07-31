@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, Clock } from 'lucide-react';
 import PayrollRunTab from './PayrollRunTab';
 import PayrollHistoryTab from './PayrollHistoryTab';
+import { createExpenseVoucher } from '@/lib/cashFlowHelper';
 
 const INITIAL_HISTORY = [
   { id: 1, payDate: '1 Th07, 2024', payPeriod: '01/06/2023 - 30/06/2023', status: 'Đang xử lý', total: 432 },
@@ -20,6 +21,21 @@ export default function PayrollManager({ staff, onSelectStaffForDetail }) {
   const handleRunPayroll = (newRun) => {
     setHistory(prev => [{ ...newRun, id: Date.now() }, ...prev]);
     setActiveTab('history');
+
+    // ── Auto cash flow: Phiếu Chi lương ──────────────────────────────────
+    const totalSalary = Number(newRun.total || 0);
+    if (totalSalary > 0) {
+      const period = newRun.payPeriod || newRun.payDate || '';
+      createExpenseVoucher({
+        typeCode: 'salary',
+        typeName: 'Chi lương',
+        amount: totalSalary,
+        description: `Thanh toán lương kỳ ${period}`,
+        paymentMethod: 'transfer',
+        refCode: `PAYROLL-${Date.now()}`,
+      }).catch(e => console.warn('[CashFlow] Salary expense voucher failed:', e.message));
+    }
+    // ───────────────────────────────────────────────────────────────
   };
 
   return (

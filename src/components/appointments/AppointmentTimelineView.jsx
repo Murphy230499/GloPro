@@ -87,6 +87,17 @@ export default function AppointmentTimelineView({
     { id: 'st_7', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' },
   ];
 
+  const ROLE_MAP = {
+    manager: 'Quản lý',
+    receptionist: 'Lễ tân',
+    stylist: 'Kỹ thuật viên tóc',
+    barber: 'Barber',
+    therapist: 'Chuyên viên Spa',
+    nail_tech: 'Nail tech',
+    technician: 'Kỹ thuật viên',
+    cashier: 'Thu ngân'
+  };
+
   let rawRows = targetEntity === 'staff'
     ? (staffList.length ? [
         { id: '__unassigned', name: 'Chưa phân công', avatar_url: null, role: 'Lịch tự do' },
@@ -94,7 +105,7 @@ export default function AppointmentTimelineView({
           id: s.id,
           name: s.full_name || s.name,
           avatar_url: s.avatar_url,
-          role: s.role || 'KTV Salon',
+          role: ROLE_MAP[s.role] || s.role || 'KTV Salon',
           color: s.avatar_color || '#3B82F6'
         }))
       ] : sampleStaffRows)
@@ -120,12 +131,26 @@ export default function AppointmentTimelineView({
 
   useEffect(() => {
     if (bodyScrollRef.current) {
-      const initialScrollMins = Math.max(0, Math.min(currentMinutes - 30, 480));
+      const now = new Date();
+      const actualMinutes = now.getHours() * 60 + now.getMinutes();
+      const initialScrollMins = Math.max(0, actualMinutes - 30);
       bodyScrollRef.current.scrollLeft = (initialScrollMins / 30) * SLOT_WIDTH_PX;
     }
   }, []);
 
   const currentLineLeftPx = Math.max(0, ((currentMinutes - START_MINS) / 30) * SLOT_WIDTH_PX);
+
+  const getRoleBadgeStyle = (role) => {
+    if (!role) return 'bg-slate-50 text-slate-500';
+    const lowerRole = role.toLowerCase();
+    if (lowerRole.includes('quản lý')) return 'bg-pink-50 text-pink-500';
+    if (lowerRole.includes('kỹ thuật viên tóc') || lowerRole.includes('stylist') || lowerRole.includes('chuyên gia tóc') || lowerRole.includes('colorist')) return 'bg-purple-50 text-purple-500';
+    if (lowerRole.includes('spa')) return 'bg-amber-50 text-amber-500';
+    if (lowerRole.includes('barber')) return 'bg-emerald-50 text-emerald-500';
+    if (lowerRole.includes('nail')) return 'bg-pink-50 text-pink-500';
+    if (lowerRole.includes('lễ tân')) return 'bg-blue-50 text-blue-500';
+    return 'bg-blue-50 text-blue-500';
+  };
 
   const getCardStyleByStatus = (status, isBreak) => {
     if (isBreak || status === 'break' || status === 'maintenance') {
@@ -182,9 +207,9 @@ export default function AppointmentTimelineView({
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs font-body flex-1 min-h-0 flex flex-col overflow-hidden relative">
 
       {/* ── Fixed Time Header (Top Row, scroll-synced with body) ── */}
-      <div className="shrink-0 border-b border-slate-200 shadow-2xs bg-white rounded-t-2xl overflow-hidden z-20 flex">
+      <div className="shrink-0 border-b border-slate-200 shadow-sm bg-white rounded-t-2xl overflow-hidden z-40 sticky top-0 flex">
         {/* Top-Left Frozen Corner Cell ("Nhân viên" / "Vị trí") */}
-        <div className="w-52 shrink-0 p-3 border-r border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-500 uppercase flex items-center gap-2 z-30">
+        <div className="w-52 shrink-0 p-4 border-r border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-500 uppercase flex items-center justify-center gap-2 z-40">
           {targetEntity === 'staff' ? (
             <>
               <User className="w-4 h-4 text-blue-600" />
@@ -201,14 +226,14 @@ export default function AppointmentTimelineView({
         {/* Scrollable Time Slot Headers */}
         <div
           ref={headerScrollRef}
-          className="flex-1 overflow-x-hidden"
+          className="flex-1 overflow-x-hidden relative border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm z-10"
         >
-          <div className="flex" style={{ width: TOTAL_GRID_WIDTH_PX }}>
+          <div className="relative h-[45px]" style={{ width: TOTAL_GRID_WIDTH_PX }}>
             {TIMELINE_SLOTS.map((slot, idx) => (
               <div
                 key={idx}
-                style={{ width: SLOT_WIDTH_PX }}
-                className="shrink-0 border-r border-slate-100 py-3 text-center text-xs font-bold text-slate-600 bg-slate-50/60"
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 text-[11px] font-bold text-slate-500 ${idx === 0 ? 'ml-4' : ''}`}
+                style={{ left: idx * SLOT_WIDTH_PX }}
               >
                 {slot}
               </div>
@@ -241,10 +266,7 @@ export default function AppointmentTimelineView({
             {rows.map((row) => {
               const rowAppts = appointments.filter((a) => {
                 if (targetEntity === 'staff') {
-                  if (row.id === '__unassigned') {
-                    return !a.staff_id && !a.services?.some((s) => s.staff_id);
-                  }
-                  return a.staff_id === row.id || a.services?.some((s) => s.staff_id === row.id);
+                  return a.staff_id === row.id;
                 } else {
                   return a.facility_id === row.id || a.facility_name === row.name;
                 }
@@ -256,7 +278,7 @@ export default function AppointmentTimelineView({
                   className="flex border-b border-slate-100 min-h-[96px] relative group hover:bg-slate-50/30 transition-colors font-body"
                 >
                   {/* Left Column: Staff Avatar & Name */}
-                  <div className="w-52 shrink-0 p-3 border-r border-slate-200 bg-white flex items-center gap-3 sticky left-0 z-10 shadow-2xs font-body">
+                  <div className="w-52 shrink-0 px-3 py-4 border-r border-slate-200 bg-white flex items-center gap-3 sticky left-0 z-20 font-body">
                     {targetEntity === 'staff' ? (
                       <Avatar
                         src={row.avatar_url}
@@ -265,17 +287,23 @@ export default function AppointmentTimelineView({
                         color={row.color || '#3b82f6'}
                       />
                     ) : (
-                      <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 border border-purple-200">
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 border border-purple-200">
                         {row.icon || '📍'}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-xs text-slate-800 truncate">
+                      <h4 className="font-semibold text-[13px] text-slate-800 truncate mb-0.5">
                         {row.name}
                       </h4>
-                      <p className="text-[11px] text-slate-400 truncate">
-                        {targetEntity === 'staff' ? (row.role || 'KTV Salon') : (row.category || 'Vị trí')}
-                      </p>
+                      {targetEntity === 'staff' ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getRoleBadgeStyle(row.role || 'KTV Salon')}`}>
+                          {row.role || 'KTV Salon'}
+                        </span>
+                      ) : (
+                        <p className="text-xs text-slate-400 truncate">
+                          {row.category || 'Vị trí'}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -302,7 +330,7 @@ export default function AppointmentTimelineView({
                             console.error('Drop error:', err);
                           }
                         }}
-                        className="shrink-0 border-r border-slate-100 h-full hover:bg-blue-50/20 cursor-pointer transition-colors"
+                        className="shrink-0 border-l border-slate-100 h-full hover:bg-blue-50/20 cursor-pointer transition-colors"
                         title={`Click tạo lịch lúc ${slot} cho ${row.name}`}
                       />
                     ))}
@@ -343,7 +371,7 @@ export default function AppointmentTimelineView({
                               background: 'repeating-linear-gradient(135deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px)'
                             } : {})
                           }}
-                          className={`absolute z-10 p-2.5 rounded-xl shadow-2xs hover:shadow-lg hover:z-30 transition-all cursor-grab active:cursor-grabbing overflow-hidden flex flex-col justify-between font-body ${cardStyle.bg}`}
+                          className={`absolute z-[8] p-2.5 rounded-xl shadow-2xs hover:shadow-lg hover:z-[15] transition-all cursor-grab active:cursor-grabbing overflow-hidden flex flex-col justify-between font-body ${cardStyle.bg}`}
                         >
                           {isBreak ? (
                             <div className="h-full flex flex-col justify-center">
@@ -458,9 +486,13 @@ export default function AppointmentTimelineView({
 
                   {/* Duration & Station */}
                   <div className="text-xs text-slate-600 flex items-center gap-2 pt-1 font-medium">
-                    <span>⏱ 45 mins</span>
-                    <span>·</span>
-                    <span>📍 {hoveredAppt.facility_name || 'Nail Station 1'}</span>
+                    <span className="shrink-0">⏱ {hoveredAppt.duration_minutes || hoveredAppt.duration || 60} mins</span>
+                    {hoveredAppt.facility_name && (hoveredAppt.raw_appointment?.facility_id || hoveredAppt.raw_appointment?.services?.some(s => s.facility_id)) && (
+                      <>
+                        <span className="shrink-0">·</span>
+                        <span className="truncate">📍 {hoveredAppt.facility_name}</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Note ONLY rendered if actual note exists */}

@@ -1,14 +1,16 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, Minus, Trash2, Printer, UserX, CreditCard, X, Edit3, Gift, History, Users, Smile, ChevronDown, Scissors, ShoppingCart, Sparkles, Layers, Boxes, ExternalLink } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, Printer, UserX, CreditCard, X, Edit3, Gift, History, Users, Smile, ChevronDown, Scissors, ShoppingCart, Sparkles, Layers, Boxes, ExternalLink, Package, Star } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
 import EmptyCart from '@/components/pos/EmptyCart';
+import PackageUsageModal from '@/components/pos/PackageUsageModal';
 import { PROMOTIONS, VOUCHERS, applyDiscountsToCart } from '@/utils/promos';
 import { toast } from '@/components/Layout';
 
+import { base44 } from '@/api/base44Client';
 import { getNormalizedLogs } from '@/lib/logHelper';
 
 const TYPE_LABELS = {
@@ -61,7 +63,14 @@ const getItemSubtitle = (x) => {
 const groupCartItems = (cart) => {
   const groups = {};
   cart.forEach((item, index) => {
-    const type = item.type || 'service';
+    let type = item.type || 'service';
+    if (item.is_from_package && item.package_name) {
+      if (item.customer_treatment_id) {
+        type = `treatmentGroup_${item.package_name}`;
+      } else {
+        type = `packageGroup_${item.package_name}`;
+      }
+    }
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -76,11 +85,40 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
   const [voucherInput, setVoucherInput] = useState('');
   const [promoModalOpen, setPromoModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
   const [staffModalOpen, setStaffModalOpen] = useState(false);
+  const [editPackageType, setEditPackageType] = useState(null);
+  const [initialTreatmentId, setInitialTreatmentId] = useState(null);
   
   const [editingItemIdx, setEditingItemIdx] = useState(null);
+  const [hasPackages, setHasPackages] = useState(false);
 
-  const isAnyModalOpen = editingItemIdx !== null || promoModalOpen || historyOpen || staffModalOpen;
+  const sessionCustomer = session?.customer;
+  useEffect(() => {
+    if (!sessionCustomer || !sessionCustomer.id) {
+      setHasPackages(false);
+      return;
+    }
+    
+    let active = true;
+    const checkPackages = async () => {
+      try {
+        if (base44?.entities?.Membership) {
+          const mems = await base44.entities.Membership.list();
+          const custMems = mems.filter(m => String(m.customer_id) === String(sessionCustomer.id) && (m.type === 'package' || m.type === 'treatment_course' || m.type === 'treatment') && m.status !== 'deleted' && m.sessions_remaining > 0);
+          if (active) {
+            setHasPackages(custMems.length > 0);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    checkPackages();
+    return () => { active = false; };
+  }, [sessionCustomer]);
+
+  const isAnyModalOpen = editingItemIdx !== null || promoModalOpen || historyOpen || staffModalOpen || showPackageModal || editPackageType !== null;
   useEffect(() => {
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -554,13 +592,22 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       {/* Client */}
       <div className="px-3.5 py-2 border-b border-slate-100">
         {customer ? (
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100/50">
-            <Avatar src={customer.avatar_url} name={customer.name} size={36} color="#34D399" />
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate">{customer.name}</div>
-              <div className="text-xs text-slate-500">{customer.points || 0} điểm • {formatVND(customer.total_spent || 0)}</div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100/50">
+              <Link href={`/customers?id=${customer.id}`} className="flex-1 flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
+                <Avatar src={customer.avatar_url} name={customer.name} size={36} color="#34D399" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate text-emerald-800 hover:underline">{customer.name}</div>
+                  <div className="text-xs text-slate-500">{customer.points || 0} điểm • {formatVND(customer.total_spent || 0)}</div>
+                </div>
+              </Link>
+              <button onClick={onClearCustomer} className="text-slate-400 hover:text-red-500 shrink-0 ml-1"><UserX className="w-4 h-4" /></button>
             </div>
-            <button onClick={onClearCustomer} className="text-slate-400 hover:text-red-500"><UserX className="w-4 h-4" /></button>
+            {hasPackages && (
+              <button onClick={() => setShowPackageModal(true)} className="flex items-center justify-center gap-2 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 bg-white hover:bg-emerald-50 text-xs font-semibold shadow-sm transition-colors">
+                <Package className="w-3.5 h-3.5" /> Gói & Liệu trình đã mua
+              </button>
+            )}
           </div>
         ) : showClientSearch ? (
           <div className="relative">
@@ -606,8 +653,99 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
           <EmptyCart subtitle="Chọn dịch vụ, sản phẩm hoặc gói để thanh toán" />
         ) : (
           Object.entries(groupCartItems(cart)).map(([type, entries]) => {
-            const label = TYPE_LABELS[type] || 'Khác';
+            let label = TYPE_LABELS[type] || 'Khác';
+            if (type.startsWith('packageGroup_')) {
+              label = `Dùng gói: ${type.replace('packageGroup_', '')}`;
+            } else if (type.startsWith('treatmentGroup_')) {
+              label = `Dùng liệu trình: ${type.replace('treatmentGroup_', '')}`;
+            }
             const totalQty = entries.reduce((s, e) => s + (e.item.qty || 1), 0);
+            
+            if (type.startsWith('packageGroup_') || type.startsWith('treatmentGroup_')) {
+              const isTreatment = type.startsWith('treatmentGroup_');
+              const packageName = isTreatment ? type.replace('treatmentGroup_', '') : type.replace('packageGroup_', '');
+              const sectionHeader = isTreatment ? 'DÙNG LIỆU TRÌNH' : 'DÙNG GÓI';
+              return (
+                <div key={type} className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{sectionHeader}</span>
+                    <div className="h-px bg-slate-100 flex-1 ml-3" />
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+                    {/* Package/Treatment Header */}
+                    <div className="p-4 bg-white border-b border-slate-100 flex flex-col gap-3 rounded-t-xl">
+                      <div className="flex items-center gap-3">
+                        {isTreatment ? (
+                          <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+                            <Sparkles className="w-4 h-4 text-white fill-white" />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                            <Star className="w-4 h-4 text-white fill-white" />
+                          </div>
+                        )}
+                        <h3 className="font-bold text-slate-800 text-lg tracking-tight">{packageName}</h3>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pl-1">
+                        <div className="text-[14px] text-slate-500">
+                          11:00 AM &rarr; 11:30 AM ({totalQty * 30} phút)
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => {
+                            if (isTreatment) {
+                              const ctId = entries[0]?.item?.customer_treatment_id;
+                              if (ctId) {
+                                setInitialTreatmentId(ctId);
+                                setShowPackageModal(true);
+                              }
+                            } else {
+                              setEditPackageType(type);
+                            }
+                          }} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-50 transition-colors" title="Chỉnh sửa số lượng">
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => {
+                            const indicesToRemove = entries.map(e => e.index).sort((a,b) => b - a);
+                            let newCart = [...cart];
+                            indicesToRemove.forEach(idx => newCart.splice(idx, 1));
+                            onUpdate({ cart: newCart });
+                          }} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-slate-50 transition-colors" title={isTreatment ? "Xoá liệu trình này" : "Xoá gói này"}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  
+                  {/* Package Services */}
+                  <div className="p-2 space-y-0">
+                    {entries.map(({ item: x, index: i }, idx) => (
+                      <div key={i} className="flex items-start justify-between p-4 bg-white">
+                        <div className="flex-1 pr-4 flex flex-col gap-3">
+                          <div className="font-medium text-[16px] text-slate-800">{x.name}</div>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-slate-500 text-[14px] shrink-0">{x.qty * 30} phút &bull;</span>
+                            <div className="w-[190px] -mt-1.5">
+                              <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} color="slate-600" hideRequestedCheckbox={true} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {x.originalPrice > x.price && (
+                              <span className="text-[15px] text-slate-400 line-through">{formatVND(x.originalPrice * x.qty)}</span>
+                            )}
+                            <span className="font-medium text-[15px] text-slate-800">{formatVND((x.price || 0) * (x.qty || 1))}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              );
+            }
+
             return (
               <div key={type} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
@@ -790,9 +928,8 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         </button>
         <button 
           onClick={onCancel}
-          disabled={cart.length === 0}
-          className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shrink-0 disabled:opacity-40"
-          title="Hủy đơn"
+          className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+          title="Hủy / Xoá hoá đơn"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -1009,7 +1146,12 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                 <div className="text-center py-12 text-slate-400 text-sm">Giỏ hàng trống</div>
               ) : (
                 Object.entries(groupCartItems(cart)).map(([type, entries]) => {
-                  const label = TYPE_LABELS[type] || 'Khác';
+                  let label = TYPE_LABELS[type] || 'Khác';
+                  if (type.startsWith('packageGroup_')) {
+                    label = `Dùng gói: ${type.replace('packageGroup_', '')}`;
+                  } else if (type.startsWith('treatmentGroup_')) {
+                    label = `Dùng liệu trình: ${type.replace('treatmentGroup_', '')}`;
+                  }
                   const totalQty = entries.reduce((s, e) => s + (e.item.qty || 1), 0);
                   return (
                     <div key={type} className="space-y-2">
@@ -1037,6 +1179,79 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             <button onClick={() => setStaffModalOpen(false)} className="w-full py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors shrink-0">
               Hoàn tất
             </button>
+          </div>
+        </div>
+      )}
+      {/* History Modal is rendered above on line 1018 */}
+      
+      {/* Package Modal */}
+      {showPackageModal && customer && (
+        <PackageUsageModal 
+          customerId={customer.id} 
+          initialTreatmentId={initialTreatmentId}
+          initialServices={initialTreatmentId ? (session.cart || []).filter(x => x.customer_treatment_id === initialTreatmentId) : []}
+          onClose={() => {
+            setShowPackageModal(false);
+            setInitialTreatmentId(null);
+          }}
+          onSelect={(items) => {
+            const filteredCart = (session.cart || []).filter(x => x.customer_treatment_id !== initialTreatmentId);
+            onUpdate({ cart: [...filteredCart, ...items] });
+            setShowPackageModal(false);
+            setInitialTreatmentId(null);
+          }}
+        />
+      )}
+
+      {/* Edit Package Quantity Modal */}
+      {editPackageType && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-950/65 backdrop-blur-xs pointer-events-auto select-none" onClick={() => setEditPackageType(null)}>
+          <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 shadow-2xl transition-all select-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Chỉnh sửa chi tiết</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', '')}</p>
+              </div>
+              <button onClick={() => setEditPackageType(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Số lượng</label>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => {
+                    const pName = editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', '');
+                    const sampleItem = cart.find(x => x.is_from_package && x.package_name === pName);
+                    const currentQty = sampleItem?.qty || 1;
+                    if (currentQty > 1) {
+                      onUpdate({ cart: cart.map(x => (x.is_from_package && x.package_name === pName) ? { ...x, qty: currentQty - 1 } : x) });
+                    }
+                  }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors text-slate-650 text-sm font-semibold">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input type="number" readOnly value={cart.find(x => x.is_from_package && x.package_name === editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', ''))?.qty || 1} className="flex-1 text-center h-10 px-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" />
+                  <button type="button" onClick={() => {
+                    const pName = editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', '');
+                    const sampleItem = cart.find(x => x.is_from_package && x.package_name === pName);
+                    const currentQty = sampleItem?.qty || 1;
+                    onUpdate({ cart: cart.map(x => (x.is_from_package && x.package_name === pName) ? { ...x, qty: currentQty + 1 } : x) });
+                  }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors text-slate-650 text-sm font-semibold">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-5 mt-5 border-t border-slate-100">
+              <button onClick={() => setEditPackageType(null)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-colors">
+                Huỷ
+              </button>
+              <button onClick={() => setEditPackageType(null)} className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors">
+                Xác nhận
+              </button>
+            </div>
           </div>
         </div>
       )}

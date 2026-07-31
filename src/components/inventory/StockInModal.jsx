@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { X, Plus, Trash2, ArrowDownLeft, Calendar, FileText, UserCheck, DollarSign } from 'lucide-react';
 import { formatVND, todayStr } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import { createExpenseVoucher } from '@/lib/cashFlowHelper';
 
 export default function StockInModal({ suppliers, products, onClose, onSave }) {
   const [supplierId, setSupplierId] = useState(suppliers?.[0]?.id || '');
@@ -81,6 +82,20 @@ export default function StockInModal({ suppliers, products, onClose, onSave }) {
     };
 
     onSave(receiptData);
+
+    // ── Auto cash flow: Phiếu Chi Nhập hàng ────────────────────────────
+    if (paid > 0) {
+      createExpenseVoucher({
+        typeCode: 'stock_purchase',
+        typeName: 'Nhập hàng',
+        amount: paid,
+        description: `Nhập kho: ${receiptData.code} - ${selectedSupplier?.name || 'Nhà cung cấp'}`,
+        note: note || '',
+        paymentMethod: 'cash',
+        refCode: receiptData.code,
+      }).catch(e => console.warn('[CashFlow] Stock expense voucher failed:', e.message));
+    }
+    // ─────────────────────────────────────────────────────────
   };
 
   return (

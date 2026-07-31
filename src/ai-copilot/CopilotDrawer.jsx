@@ -53,22 +53,17 @@ export function CopilotDrawer() {
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 font-sans">
+    <div className="fixed bottom-6 right-6 z-50 font-sans">
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white px-5 py-3.5 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 border border-purple-400/30 group"
+          className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-full shadow-2xl hover:scale-110 hover:rotate-12 transition-all duration-300 border border-purple-400/30 group"
+          title="GloPro AI Copilot"
         >
-          <div className="relative">
-            <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
+          <div className="relative w-5 h-5 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse absolute inset-0 transition-opacity group-hover:opacity-0" />
             <Bot className="w-5 h-5 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="font-semibold text-sm tracking-wide">GloPro AI Copilot</span>
-          {copilotState.selectedCustomer && (
-            <span className="bg-purple-800/80 text-purple-200 text-xs px-2 py-0.5 rounded-full border border-purple-400/40">
-              {copilotState.selectedCustomer.name}
-            </span>
-          )}
         </button>
       )}
 

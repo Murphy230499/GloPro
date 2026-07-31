@@ -8,6 +8,7 @@ import { useBranch } from '@/lib/BranchContext';
 import { todayStr, formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import { loadCustomerTiers } from '@/utils/loyaltyFallbacks';
+import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 import CatalogColumn from '@/components/pos/CatalogColumn';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 
@@ -141,6 +142,10 @@ export default function POS() {
               staff_id: x.staff_id || '',
               staff_name: x.staff_name || '',
               is_customer_requested: !!x.is_customer_requested,
+              is_from_package: !!x.is_from_package,
+              package_name: x.package_name || '',
+              customer_package_id: x.customer_package_id || '',
+              customer_treatment_id: x.customer_treatment_id || '',
               balance: x.balance || 0,
               sessions: x.sessions || 10,
               image_url: x.image_url || x.image || (match ? (match.image_url || match.image || '') : ''),
@@ -187,34 +192,38 @@ export default function POS() {
   const [paying, setPaying] = useState(false);
   const [customerTiers, setCustomerTiers] = useState([]);
 
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+
   const loadData = () => {
-    const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+    setIsLoadingCatalog(true);
+    const catalogFilter = currentBranchId === 'all' ? {} : { branch_ids: currentBranchId };
+    const normalFilter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
     Promise.all([
-      base44.entities.Service.filter(filter),
-      base44.entities.Product.filter(filter),
-      base44.entities.ServicePackage.filter(filter),
-      base44.entities.Treatment.filter(filter),
-      base44.entities.ServiceCombo.filter(filter),
-      base44.entities.ProductCombo.filter(filter),
-      base44.entities.PrepaidCard.filter(filter),
-      base44.entities.ServiceGroup.filter(filter),
-      base44.entities.Staff.filter(filter),
+      base44.entities.Service.filter(catalogFilter),
+      base44.entities.Product.filter(catalogFilter),
+      base44.entities.ServicePackage.filter(catalogFilter),
+      base44.entities.Treatment.filter(catalogFilter),
+      base44.entities.ServiceCombo.filter(catalogFilter),
+      base44.entities.ProductCombo.filter(catalogFilter),
+      base44.entities.PrepaidCard.filter(catalogFilter),
+      base44.entities.ServiceGroup.filter(normalFilter),
+      base44.entities.Staff.filter(normalFilter),
       base44.entities.Customer.list(),
       loadCustomerTiers()
     ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c, ct]) => {
-      setServices(s.filter((x) => x.is_active));
-      setProducts(p.filter((x) => x.is_active));
-      setPackages(pk.filter((x) => x.is_active));
-      setTreatments(t.filter((x) => x.is_active));
-      setServiceCombos(sc.filter((x) => x.is_active));
-      setProductCombos(pc.filter((x) => x.is_active));
-      setPrepaidCards(gc.filter((x) => x.is_active));
-      setGroups(gr);
-      setStaff(st.filter((x) => x.is_active !== false));
-      setCustomers(c);
-      setCustomerTiers(ct);
+      setServices((s || []).filter((x) => x.is_active));
+      setProducts((p || []).filter((x) => x.is_active));
+      setPackages((pk || []).filter((x) => x.is_active));
+      setTreatments((t || []).filter((x) => x.is_active));
+      setServiceCombos((sc || []).filter((x) => x.is_active));
+      setProductCombos((pc || []).filter((x) => x.is_active));
+      setPrepaidCards((gc || []).filter((x) => x.is_active));
+      setGroups(gr || []);
+      setStaff((st || []).filter((x) => x.is_active !== false));
+      setCustomers(c || []);
+      setCustomerTiers(ct || []);
 
-      const allCat = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
+      const allCat = [...(s||[]), ...(p||[]), ...(pk||[]), ...(t||[]), ...(sc||[]), ...(pc||[]), ...(gc||[])];
       setSessions(prev => (prev || []).map(sess => ({
         ...sess,
         cart: (sess.cart || []).map(item => {
@@ -226,6 +235,10 @@ export default function POS() {
           };
         })
       })));
+      setIsLoadingCatalog(false);
+    }).catch(err => {
+      console.error('[loadData] error:', err);
+      setIsLoadingCatalog(false);
     });
   };
 
@@ -238,6 +251,10 @@ export default function POS() {
     const buyAgainPrice = parseFloat(searchParams.get('buy_again_price') || '0');
 
     if (buyAgainCustomerId && buyAgainName && buyAgainType) {
+      if (currentBranchId === 'all' || !currentBranchId) {
+        toast.error('Vui lòng chọn cơ sở cụ thể để mua lại dịch vụ/sản phẩm');
+        return;
+      }
       Promise.all([
         base44.entities.Customer.list(),
         base44.entities.Invoice.list()
@@ -328,6 +345,10 @@ export default function POS() {
             staff_id: x.staff_id || '', 
             staff_name: x.staff_name || '',
             is_customer_requested: !!x.is_customer_requested,
+            is_from_package: !!x.is_from_package,
+            package_name: x.package_name || '',
+            customer_package_id: x.customer_package_id || null,
+            customer_treatment_id: x.customer_treatment_id || null,
             balance: Math.round(x.balance || 0),
             sessions: Math.round(x.sessions || 10),
             image_url: x.image_url || x.image || '',
@@ -404,35 +425,74 @@ export default function POS() {
 
     // Detect item deletion or cart edits
     if ('cart' in patch) {
-      if (patch.cart.length > currentSession.cart.length) {
-        const added = patch.cart.find((x) => !currentSession.cart.some((y) => y.name === x.name && y.type === x.type));
-        if (added) {
-          logs = [...logs, createEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`)];
-        } else {
-          // Qty increased during add
-          patch.cart.forEach((y) => {
-            const x = currentSession.cart.find((item) => item.name === y.name && item.type === y.type);
-            if (x && y.qty > x.qty) {
-              logs = [...logs, createEntry(`Tăng số lượng ${y.name}`, `${x.qty} -> ${y.qty}`)];
+      const currentCart = currentSession.cart || [];
+      const patchCart = patch.cart || [];
+
+      if (patchCart.length > currentCart.length) {
+        const addedItems = patchCart.filter(x => !currentCart.some(y => y.id === x.id || (y.name === x.name && y.type === x.type)));
+        if (addedItems.length > 0) {
+          const processedPackages = new Set();
+          addedItems.forEach(added => {
+            if (added.is_from_package && added.package_name) {
+              if (!processedPackages.has(added.package_name)) {
+                const actionLabel = added.customer_treatment_id ? 'Sử dụng liệu trình' : 'Sử dụng gói';
+                logs = [...logs, createEntry(actionLabel, added.package_name)];
+                processedPackages.add(added.package_name);
+              }
+            } else {
+              logs = [...logs, createEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`)];
             }
           });
         }
-      } else if (patch.cart.length < currentSession.cart.length) {
+      } else if (patchCart.length < currentCart.length) {
         // Item removed
-        const removed = currentSession.cart.find((x) => !patch.cart.some((y) => y.name === x.name && y.type === x.type));
-        if (removed) {
-          logs = [...logs, createEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`)];
+        const removedItems = currentCart.filter(x => !patchCart.some(y => y.id === x.id || (y.name === x.name && y.type === x.type)));
+        if (removedItems.length > 0) {
+          const processedPackages = new Set();
+          removedItems.forEach(removed => {
+            if (removed.is_from_package && removed.package_name) {
+              if (!processedPackages.has(removed.package_name)) {
+                const actionLabel = removed.customer_treatment_id ? 'Xóa liệu trình' : 'Xóa gói';
+                logs = [...logs, createEntry(actionLabel, removed.package_name)];
+                processedPackages.add(removed.package_name);
+              }
+            } else {
+              logs = [...logs, createEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`)];
+            }
+          });
         }
-      } else if (patch.cart.length === currentSession.cart.length) {
-        // Item qty or price updated
-        currentSession.cart.forEach((x, idx) => {
-          const y = patch.cart[idx];
-          if (y && (y.qty !== x.qty || y.price !== x.price || y.staff_id !== x.staff_id)) {
-            const changes = [];
-            if (y.qty !== x.qty) changes.push(`Số lượng: ${x.qty} -> ${y.qty}`);
-            if (y.price !== x.price) changes.push(`Giá bán: ${formatVND(x.price)} -> ${formatVND(y.price)}`);
-            if (y.staff_id !== x.staff_id) changes.push(`Nhân viên: ${x.staff_name || 'Chưa chọn'} -> ${y.staff_name || 'Chưa chọn'}`);
-            logs = [...logs, createEntry(`Chỉnh sửa ${x.name}`, changes.join(', '))];
+      } else if (patchCart.length === currentCart.length) {
+        // Item qty, price, or staff updated
+        const processedPackageQtyChanges = new Set();
+        
+        currentCart.forEach((x, idx) => {
+          const y = patchCart[idx];
+          if (!y) return;
+          
+          if (y.qty !== x.qty || y.price !== x.price || y.staff_id !== x.staff_id) {
+            if (x.is_from_package && x.package_name) {
+              const packageTypeLabel = x.customer_treatment_id ? 'liệu trình' : 'gói';
+              const capitalizedPackageTypeLabel = x.customer_treatment_id ? 'Liệu trình' : 'Gói';
+              if (y.qty !== x.qty) {
+                if (!processedPackageQtyChanges.has(x.package_name)) {
+                  logs = [...logs, createEntry(`Thay đổi số lượng ${packageTypeLabel} ${x.package_name}`, `${x.qty} -> ${y.qty}`)];
+                  processedPackageQtyChanges.add(x.package_name);
+                }
+              } else {
+                const changes = [];
+                if (y.price !== x.price) changes.push(`Giá bán: ${formatVND(x.price)} -> ${formatVND(y.price)}`);
+                if (y.staff_id !== x.staff_id) changes.push(`Nhân viên: ${x.staff_name || 'Chưa chọn'} -> ${y.staff_name || 'Chưa chọn'}`);
+                if (changes.length > 0) {
+                  logs = [...logs, createEntry(`Chỉnh sửa ${x.name} (${capitalizedPackageTypeLabel} ${x.package_name})`, changes.join(', '))];
+                }
+              }
+            } else {
+              const changes = [];
+              if (y.qty !== x.qty) changes.push(`Số lượng: ${x.qty} -> ${y.qty}`);
+              if (y.price !== x.price) changes.push(`Giá bán: ${formatVND(x.price)} -> ${formatVND(y.price)}`);
+              if (y.staff_id !== x.staff_id) changes.push(`Nhân viên: ${x.staff_name || 'Chưa chọn'} -> ${y.staff_name || 'Chưa chọn'}`);
+              logs = [...logs, createEntry(`Chỉnh sửa ${x.name}`, changes.join(', '))];
+            }
           }
         });
       }
@@ -445,6 +505,10 @@ export default function POS() {
   };
 
   const createSale = async () => {
+    if (currentBranchId === 'all' || !currentBranchId) {
+      return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để tạo đơn hàng');
+    }
+
     try {
       const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
       const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, 'Khởi tạo hoá đơn cho Khách vãng lai', 'Lễ tân');
@@ -453,7 +517,7 @@ export default function POS() {
         invoice_code: saleCode,
         customer_name: 'Khách vãng lai',
         customer_id: '',
-        branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
+        branch_id: currentBranchId,
         items: [],
         subtotal: 0,
         discount: 0,
@@ -480,6 +544,10 @@ export default function POS() {
   const addToCart = async (item, type) => {
     let session = activeSession;
     if (!session) {
+      if (currentBranchId === 'all' || !currentBranchId) {
+        return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái trước khi chọn món');
+      }
+
       try {
         const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
         const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, `Khởi tạo hoá đơn & thêm ${item.name}`, 'Lễ tân');
@@ -488,7 +556,7 @@ export default function POS() {
           invoice_code: saleCode,
           customer_name: '',
           customer_id: '',
-          branch_id: (currentBranchId === 'all' || !currentBranchId) ? '' : currentBranchId,
+          branch_id: currentBranchId,
           items: [{ 
             name: item.name, 
             type, 
@@ -569,6 +637,10 @@ export default function POS() {
     if (!session) return;
     if (!session.cart?.length) return toast.error('Giỏ hàng trống');
     
+    if (currentBranchId === 'all' || !currentBranchId) {
+      return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để thanh toán hoá đơn');
+    }
+    
     const effectiveCustomer = sessionCustomer ?? session.customer;
     const hasMembershipItem = session.cart.some(item => item.type !== 'service' && item.type !== 'product');
     if (hasMembershipItem && (!effectiveCustomer || !effectiveCustomer.id)) {
@@ -598,6 +670,10 @@ export default function POS() {
             staff_id: x.staff_id || '', 
             staff_name: x.staff_name || '',
             is_customer_requested: !!x.is_customer_requested,
+            is_from_package: !!x.is_from_package,
+            package_name: x.package_name || '',
+            customer_package_id: x.customer_package_id || null,
+            customer_treatment_id: x.customer_treatment_id || null,
             balance: Math.round(x.balance || 0),
             sessions: Math.round(x.sessions || 10)
           };
@@ -619,8 +695,53 @@ export default function POS() {
             time: new Date().toISOString(),
             user: 'Thu ngân'
           }
-        ]
+        ],
+        deposit_id: session.deposit?.id || null,
+        deposit_amount: Math.round(session.deposit?.paid_amount || 0)
       };
+
+      // Ensure all used package/treatment IDs exist in the database tables to prevent trigger foreign key failures
+      for (const item of cart) {
+        if (item.is_from_package && effectiveCustomer?.id) {
+          if (item.customer_treatment_id) {
+            try {
+              const ctList = await base44.entities.CustomerTreatment.filter({ id: item.customer_treatment_id });
+              if (!ctList || ctList.length === 0) {
+                const trts = await base44.entities.Treatment.list();
+                const matchedTrt = trts.find(t => t.name.trim() === item.package_name?.trim());
+                await base44.entities.CustomerTreatment.create({
+                  id: item.customer_treatment_id,
+                  customer_id: effectiveCustomer.id,
+                  treatment_id: matchedTrt?.id || item.id,
+                  total_usage: Math.round(item.sessions || 10),
+                  remaining_usage: Math.round(item.sessions || 10),
+                  branch_id: currentBranchId || null
+                });
+              }
+            } catch (err) {
+              console.warn('Failed to ensure CustomerTreatment record exists:', err);
+            }
+          } else if (item.customer_package_id) {
+            try {
+              const cpList = await base44.entities.CustomerPackage.filter({ id: item.customer_package_id });
+              if (!cpList || cpList.length === 0) {
+                const pkgs = await base44.entities.ServicePackage.list();
+                const matchedPkg = pkgs.find(p => p.name.trim() === item.package_name?.trim());
+                await base44.entities.CustomerPackage.create({
+                  id: item.customer_package_id,
+                  customer_id: effectiveCustomer.id,
+                  package_id: matchedPkg?.id || item.id,
+                  total_usage: Math.round(item.sessions || 10),
+                  remaining_usage: Math.round(item.sessions || 10),
+                  branch_id: currentBranchId || null
+                });
+              }
+            } catch (err) {
+              console.warn('Failed to ensure CustomerPackage record exists:', err);
+            }
+          }
+        }
+      }
 
       let createdInv = null;
       if (session.isRestoredFromInvoice) {
@@ -628,6 +749,30 @@ export default function POS() {
       } else {
         createdInv = await base44.entities.Invoice.create(invoiceData);
       }
+
+      // Decrement sessions_remaining in membership table for used packages/treatments
+      for (const item of cart) {
+        if (item.is_from_package) {
+          const targetId = item.customer_package_id || item.customer_treatment_id;
+          if (targetId) {
+            try {
+              const mems = await base44.entities.Membership.list();
+              const matchedMem = mems.find(m => String(m.id) === String(targetId));
+              if (matchedMem) {
+                const currentRemaining = Number(matchedMem.sessions_remaining || 0);
+                const nextRemaining = Math.max(0, currentRemaining - (item.qty || 1));
+                await base44.entities.Membership.update(matchedMem.id, {
+                  sessions_remaining: nextRemaining,
+                  status: nextRemaining <= 0 ? 'exhausted' : 'active'
+                });
+              }
+            } catch (err) {
+              console.error('Failed to update membership session count:', err);
+            }
+          }
+        }
+      }
+
       if (effectiveCustomer && effectiveCustomer.id) {
         // Create purchased memberships
         for (const item of cart) {
@@ -762,6 +907,47 @@ export default function POS() {
           }
         }
       }
+      // ── Auto cash flow: Phiếu Thu ───────────────────────────────────────
+      try {
+        const invId = createdInv?.id || session.id;
+        const invCode = invoiceData.invoice_code || session.saleCode;
+        const branchId = (currentBranchId === 'all' || !currentBranchId) ? null : currentBranchId;
+        const primaryMethod = (payments?.[0]?.method) || 'cash';
+        const saleAmount = Math.max(0, subtotal - Math.round(discount));
+        const hasMembership = cart.some(x => x.type !== 'service' && x.type !== 'product');
+
+        // Phiếu thu bán hàng / gói
+        if (saleAmount > 0) {
+          await createIncomeVoucher({
+            typeCode: hasMembership ? 'membership_sale' : 'sale',
+            typeName: hasMembership ? 'Bán gói / Thẻ' : 'Bán hàng / Dịch vụ',
+            amount: saleAmount,
+            description: `Thanh toán hoá đơn #${invCode}`,
+            paymentMethod: primaryMethod,
+            refId: invId,
+            refCode: invCode,
+            branchId,
+          });
+        }
+
+        // Phiếu thu tiền TIP (riêng biệt)
+        if (Math.round(tip) > 0) {
+          await createIncomeVoucher({
+            typeCode: 'tip',
+            typeName: 'Tiền TIP',
+            amount: Math.round(tip),
+            description: `Tiền TIP hoá đơn #${invCode}`,
+            paymentMethod: primaryMethod,
+            refId: invId,
+            refCode: invCode,
+            branchId,
+          });
+        }
+      } catch (cfErr) {
+        console.warn('[CashFlow] Auto income voucher failed:', cfErr.message);
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       toast.success(`Thanh toán thành công • ${session.saleCode}`);
       closeSession(session.id);
       setCheckoutOpen(false);
@@ -811,7 +997,7 @@ export default function POS() {
         <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
         services={services} products={products} packages={packages} treatments={treatments}
         serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
-        groups={groups} onAddItem={addToCart} onReload={loadData} activeSession={activeSession} />
+        groups={groups} onAddItem={addToCart} onReload={loadData} activeSession={activeSession} isLoading={isLoadingCatalog} />
         {activeSession ?
         <TicketColumn session={activeSession} staff={staff} customers={customers}
         onUpdate={patchSession}
