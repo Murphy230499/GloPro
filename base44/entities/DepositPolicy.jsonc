@@ -1,0 +1,24 @@
+{
+  "name": "DepositPolicy",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "entity_type": { 
+      "type": "string",
+      "enum": ["service", "combo", "treatment", "product", "all"]
+    },
+    "entity_id": { "type": "string" },
+    "is_required": { "type": "boolean", "default": false },
+    "deposit_type": { 
+      "type": "string",
+      "enum": ["fixed", "percentage"]
+    },
+    "deposit_value": { "type": "number", "default": 0 },
+    "cancellation_rule": {
+      "type": "string",
+      "enum": ["non_refundable", "refundable_before_24h", "fully_refundable"],
+      "default": "non_refundable"
+    },
+    "active": { "type": "boolean", "default": true }
+  }
+}

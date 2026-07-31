@@ -1,0 +1,22 @@
+{
+  "name": "Deposit",
+  "type": "object",
+  "properties": {
+    "deposit_code": { "type": "string" },
+    "customer_id": { "type": "string" },
+    "appointment_id": { "type": "string" },
+    "branch_id": { "type": "string" },
+    "required_amount": { "type": "number", "default": 0 },
+    "paid_amount": { "type": "number", "default": 0 },
+    "remaining_amount": { "type": "number", "default": 0 },
+    "payment_method": { "type": "string", "default": "cash" },
+    "payment_date": { "type": "string", "format": "date-time" },
+    "expiration_date": { "type": "string", "format": "date-time" },
+    "notes": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "partially_paid", "paid", "applied", "refunded", "forfeited", "cancelled", "expired"],
+      "default": "pending"
+    }
+  }
+}

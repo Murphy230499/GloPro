@@ -8,6 +8,9 @@
     "group_id": {
       "type": "string"
     },
+    "category": {
+      "type": "string"
+    },
     "usage_count": {
       "type": "number",
       "default": 1

@@ -1,0 +1,15 @@
+{
+  "name": "CustomerPackage",
+  "type": "object",
+  "properties": {
+    "customer_id": { "type": "string" },
+    "package_id": { "type": "string" },
+    "invoice_id": { "type": "string" },
+    "total_usage": { "type": "number", "default": 1 },
+    "remaining_usage": { "type": "number", "default": 1 },
+    "expires_at": { "type": "string" },
+    "status": { "type": "string", "default": "active" },
+    "branch_id": { "type": "string" }
+  },
+  "required": ["customer_id", "package_id"]
+}

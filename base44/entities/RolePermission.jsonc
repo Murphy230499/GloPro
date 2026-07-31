@@ -1,0 +1,24 @@
+{
+  "name": "RolePermission",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string"
+    },
+    "module": {
+      "type": "string"
+    },
+    "can_view": {
+      "type": "boolean"
+    },
+    "can_edit": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "role",
+    "module",
+    "can_view",
+    "can_edit"
+  ]
+}

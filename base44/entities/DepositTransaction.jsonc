@@ -1,0 +1,14 @@
+{
+  "name": "DepositTransaction",
+  "type": "object",
+  "properties": {
+    "deposit_id": { "type": "string" },
+    "action": { 
+      "type": "string",
+      "enum": ["created", "payment", "applied", "refunded", "forfeited", "cancelled"]
+    },
+    "amount": { "type": "number", "default": 0 },
+    "payment_method": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

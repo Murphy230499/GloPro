@@ -1,0 +1,37 @@
+{
+  "name": "Integration",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": [
+        "facebook",
+        "zalo",
+        "whatsapp",
+        "email_smtp",
+        "sms_brandname"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "disconnected"
+      ],
+      "default": "disconnected"
+    },
+    "credentials": {
+      "type": "object"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "config_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider",
+    "status"
+  ]
+}

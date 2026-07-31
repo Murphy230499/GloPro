@@ -8,6 +8,9 @@
     "group_id": {
       "type": "string"
     },
+    "category": {
+      "type": "string"
+    },
     "expiry_months": {
       "type": "number",
       "default": 0

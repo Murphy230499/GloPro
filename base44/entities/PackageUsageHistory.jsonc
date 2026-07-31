@@ -1,0 +1,14 @@
+{
+  "name": "PackageUsageHistory",
+  "type": "object",
+  "properties": {
+    "customer_package_id": { "type": "string" },
+    "customer_treatment_id": { "type": "string" },
+    "customer_id": { "type": "string" },
+    "invoice_id": { "type": "string" },
+    "usage_count": { "type": "number", "default": 1 },
+    "notes": { "type": "string" },
+    "branch_id": { "type": "string" }
+  },
+  "required": ["customer_id", "usage_count"]
+}
