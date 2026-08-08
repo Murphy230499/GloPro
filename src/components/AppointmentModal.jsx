@@ -681,13 +681,18 @@ export default function AppointmentModal({
     toast.success(`Đã cập nhật trạng thái: ${getStatusLabel(newStatus)}`);
 
     if (editing && editing.id) {
-      try {
-        await base44.entities.Appointment.update(editing.id, { 
-          status: newStatus,
-          logs: updatedLogs
-        });
-      } catch (e) {
-        console.log('Demo/Local appointment status updated');
+      if (String(editing.id).startsWith('demo_')) {
+        toast.info("Lịch hẹn mẫu (Demo) chỉ có thể cập nhật trạng thái bằng cách kéo thả bên ngoài.");
+      } else {
+        try {
+          await base44.entities.Appointment.update(editing.id, { 
+            status: newStatus,
+            logs: updatedLogs
+          });
+        } catch (e) {
+          console.error('Lỗi cập nhật server:', e);
+          toast.error('Lỗi cập nhật server: ' + (e.message || e));
+        }
       }
       onSaved?.();
     }
