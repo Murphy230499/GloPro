@@ -321,6 +321,7 @@ export default function PublicBookingPage({ slug }) {
             name: name,
             phone: phone,
             branch_id: selectedBranch || setting?.branch_id || null,
+            tenant_id: setting?.tenant_id || null,
             group: 'Mới',
             total_spending: 0,
             reward_points: 0
@@ -346,6 +347,7 @@ export default function PublicBookingPage({ slug }) {
         status: setting?.auto_confirm ? 'confirmed' : 'pending',
         source: 'online',
         branch_id: selectedBranch || setting?.branch_id || null,
+        tenant_id: setting?.tenant_id || null,
         price: totalPrice,
         services: payloadServices
       });
