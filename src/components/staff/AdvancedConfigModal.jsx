@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, Settings, ShieldAlert, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -16,6 +17,7 @@ const ITEMS = [
 ];
 
 export default function AdvancedConfigModal({ onClose }) {
+  const { t } = useT();
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,7 +97,7 @@ export default function AdvancedConfigModal({ onClose }) {
       }
 
       localStorage.setItem('glopro_staff_commission_config', JSON.stringify(configs));
-      toast.success('Cập nhật cấu hình hoa hồng nâng cao thành công!');
+      toast.success(t('staff.commission.advanced_update_success', 'Cập nhật cấu hình hoa hồng nâng cao thành công!'));
       onClose();
     } catch (e) {
       console.error('Lỗi khi lưu cấu hình nâng cao:', e);
@@ -111,7 +113,7 @@ export default function AdvancedConfigModal({ onClose }) {
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Cài đặt nâng cao</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.commission.advanced_settings', 'Cài đặt nâng cao')}</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -127,7 +129,7 @@ export default function AdvancedConfigModal({ onClose }) {
             {/* Warning note */}
             <div className="flex gap-2 p-3.5 bg-amber-50/50 border border-amber-100 rounded-2xl text-[11px] text-amber-700 leading-normal font-medium shadow-xs">
               <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <span>Thiết lập này áp dụng toàn hệ thống khi tính toán hoa hồng nhân viên cho các đơn thanh toán tại POS.</span>
+              <span>{t('staff.commission.advanced_settings_warning', 'Thiết lập này áp dụng toàn hệ thống khi tính toán hoa hồng nhân viên cho các đơn thanh toán tại POS.')}</span>
             </div>
 
             {/* List of items configuration */}
@@ -138,7 +140,7 @@ export default function AdvancedConfigModal({ onClose }) {
 
                 return (
                   <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-2xl shadow-xs">
-                    <span className="text-xs font-bold text-slate-700">{item.label}</span>
+                    <span className="text-xs font-bold text-slate-700">{t('staff.commission.item_' + item.id, item.label)}</span>
                     
                     {/* Toggle Button Select before/after discount */}
                     <div className="flex rounded-lg bg-slate-150 p-0.5 border border-slate-200 shadow-xs">
@@ -147,14 +149,14 @@ export default function AdvancedConfigModal({ onClose }) {
                         onClick={() => handleToggle(item.id, 'before_discount')}
                         className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${!isAfter ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-650'}`}
                       >
-                        Trước giảm giá
+                        {t('staff.commission.before_discount', 'Trước giảm giá')}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleToggle(item.id, 'after_discount')}
                         className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${isAfter ? 'bg-white text-slate-850 shadow-xs' : 'text-slate-400 hover:text-slate-650'}`}
                       >
-                        Sau giảm giá
+                        {t('staff.commission.after_discount', 'Sau giảm giá')}
                       </button>
                     </div>
                   </div>
@@ -169,7 +171,7 @@ export default function AdvancedConfigModal({ onClose }) {
                 onClick={onClose}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
               >
-                Hủy
+                {t('staff.scheduler.cancel', 'Hủy')}
               </button>
               <button 
                 type="button" 
@@ -178,7 +180,7 @@ export default function AdvancedConfigModal({ onClose }) {
                 className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold hover:opacity-95 disabled:opacity-50 transition-all font-sans shadow-sm flex items-center justify-center gap-1.5"
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Lưu cài đặt
+                {t('staff.commission.save_settings', 'Lưu cài đặt')}
               </button>
             </div>
           </div>

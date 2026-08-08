@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Check } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { useBranch } from '@/lib/BranchContext';
 
 export default function FacilityManagementModal({ open, onClose, services = [], onFacilityChange }) {
+  const { t } = useT();
   const { currentBranchId } = useBranch();
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
         setDbError(true);
         setFacilities([]);
       } else {
-        toast.error('Không thể kết nối database. Vui lòng thử lại.');
+        toast.error(t('appointments.facility.db_setup_title', 'Cần thiết lập Database'));
       }
     } finally {
       setLoading(false);
@@ -42,7 +44,7 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!formData.name) return toast.error('Vui lòng nhập tên vị trí');
+    if (!formData.name) return toast.error(t('appointments.facility.err_name', 'Vui lòng nhập tên vị trí'));
     try {
       const payload = {
         name: formData.name,
@@ -53,10 +55,10 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
       
       if (editingId) {
         await base44.entities.Facility.update(editingId, payload);
-        toast.success('Cập nhật thành công');
+        toast.success(t('appointments.facility.edit_success', 'Cập nhật thành công'));
       } else {
         await base44.entities.Facility.create(payload);
-        toast.success('Thêm mới thành công');
+        toast.success(t('appointments.facility.add_success', 'Thêm mới thành công'));
       }
       
       setEditingId(null);
@@ -77,14 +79,14 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xoá vị trí này?')) return;
+    if (!window.confirm(t('appointments.facility.delete_confirm', 'Bạn có chắc chắn muốn xoá vị trí này?'))) return;
     try {
       await base44.entities.Facility.delete(id);
-      toast.success('Xoá thành công');
+      toast.success(t('appointments.facility.delete_success', 'Xoá thành công'));
       loadFacilities();
       onFacilityChange?.();
     } catch (e) {
-      toast.error('Lỗi khi xoá vị trí');
+      toast.error(t('appointments.facility.delete_error', 'Lỗi khi xoá vị trí'));
     }
   };
 
@@ -104,7 +106,7 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
       <div className="relative bg-white w-full max-w-3xl rounded-2xl shadow-xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Quản lý Vị trí (Ghế / Giường)</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t('appointments.facility.mgmt_title', 'Quản lý Vị trí (Ghế / Giường)')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100">
             <X className="w-5 h-5" />
           </button>
@@ -114,7 +116,7 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
           {/* Left: List */}
           <div className="w-full md:w-[45%] border-r border-slate-100 flex flex-col bg-slate-50/50">
             <div className="p-4 flex items-center justify-between border-b border-slate-100">
-              <h3 className="font-semibold text-slate-700 text-sm">Danh sách vị trí</h3>
+              <h3 className="font-semibold text-slate-700 text-sm">{t('appointments.facility.list_title', 'Danh sách vị trí')}</h3>
               <button 
                 onClick={() => {
                   setEditingId(null);
@@ -122,22 +124,22 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
                 }}
                 className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> Thêm mới
+                <Plus className="w-3.5 h-3.5" /> {t('common.add_new', 'Thêm mới')}
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
                   <div className="w-5 h-5 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
-                  <span className="text-xs">Đang tải...</span>
+                  <span className="text-xs">{t('common.loading', 'Đang tải...')}</span>
                 </div>
               ) : dbError ? (
                 <div className="p-4 flex flex-col gap-3">
                   <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                     <span className="text-amber-500 text-lg mt-0.5">⚠️</span>
                     <div>
-                      <p className="text-xs font-bold text-amber-800 mb-1">Cần thiết lập Database</p>
-                      <p className="text-[11px] text-amber-700 leading-relaxed">Bảng <code className="bg-amber-100 px-1 rounded">facility</code> chưa có trong Supabase. Vui lòng chạy SQL migration để khởi tạo.</p>
+                      <p className="text-xs font-bold text-amber-800 mb-1">{t('appointments.facility.db_setup_title', 'Cần thiết lập Database')}</p>
+                      <p className="text-[11px] text-amber-700 leading-relaxed">{t('appointments.facility.db_setup_desc', 'Bảng facility chưa có trong Supabase. Vui lòng chạy SQL migration để khởi tạo.')}</p>
                     </div>
                   </div>
                   <div className="bg-slate-900 rounded-xl p-3">
@@ -155,11 +157,11 @@ ALTER TABLE facility ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON facility FOR ALL USING (true) WITH CHECK (true);`}</pre>
                   </div>
                   <button onClick={loadFacilities} className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors">
-                    Thử tải lại
+                    {t('common.retry', 'Thử tải lại')}
                   </button>
                 </div>
               ) : facilities.length === 0 ? (
-                <div className="text-center text-slate-400 text-xs py-8">Chưa có vị trí nào. Thêm mới bên phải ↗</div>
+                <div className="text-center text-slate-400 text-xs py-8">{t('appointments.facility.empty_list', 'Chưa có vị trí nào. Thêm mới bên phải ↗')}</div>
               ) : (
                 facilities.map(fac => (
                   <div key={fac.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${editingId === fac.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-300'}`} onClick={() => {
@@ -169,7 +171,7 @@ CREATE POLICY "Allow all" ON facility FOR ALL USING (true) WITH CHECK (true);`}<
                     <div>
                       <div className="font-bold text-slate-700 text-sm">{fac.name}</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">
-                        {fac.applicable_services?.length ? `${fac.applicable_services.length} dịch vụ áp dụng` : 'Áp dụng mọi dịch vụ'}
+                        {fac.applicable_services?.length ? `${fac.applicable_services.length} ${t('appointments.facility.services_applied', 'dịch vụ áp dụng')}` : t('appointments.facility.apply_all_services', 'Áp dụng mọi dịch vụ')}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -186,24 +188,24 @@ CREATE POLICY "Allow all" ON facility FOR ALL USING (true) WITH CHECK (true);`}<
           {/* Right: Form */}
           <div className="w-full md:w-[55%] flex flex-col bg-white">
             <div className="p-4 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-700 text-sm">{editingId ? 'Chỉnh sửa vị trí' : 'Thêm vị trí mới'}</h3>
+              <h3 className="font-semibold text-slate-700 text-sm">{editingId ? t('appointments.facility.edit_title', 'Chỉnh sửa vị trí') : t('appointments.facility.add_title', 'Thêm vị trí mới')}</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tên vị trí (Ghế/Giường)</label>
+                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{t('appointments.facility.name_label', 'Tên vị trí (Ghế/Giường)')}</label>
                 <input 
                   type="text" 
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="VD: Ghế Nail VIP 1"
+                  placeholder={t('appointments.facility.name_placeholder', 'VD: Ghế Nail VIP 1')}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-colors text-slate-700"
                 />
               </div>
               
               <div className="flex-1 flex flex-col min-h-[200px]">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Dịch vụ áp dụng</label>
-                  <span className="text-[10px] text-slate-400">Nếu không chọn, áp dụng tất cả</span>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{t('appointments.facility.applicable_services', 'Dịch vụ áp dụng')}</label>
+                  <span className="text-[10px] text-slate-400">{t('appointments.facility.apply_all_tip', 'Nếu không chọn, áp dụng tất cả')}</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-y-auto pr-2 custom-scrollbar">
                   {services.map(srv => {
@@ -236,10 +238,10 @@ CREATE POLICY "Allow all" ON facility FOR ALL USING (true) WITH CHECK (true);`}<
             
             <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50">
               <button onClick={onClose} className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors">
-                Đóng
+                {t('common.close', 'Đóng')}
               </button>
               <button onClick={handleSave} className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm shadow-blue-200">
-                Lưu vị trí
+                {t('appointments.facility.save_btn', 'Lưu vị trí')}
               </button>
             </div>
           </div>

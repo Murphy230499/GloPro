@@ -13,7 +13,10 @@ const PAYMENT_METHODS = [
   { value: 'ewallet', label: 'Ví điện tử' },
 ];
 
+import { useT } from '@/lib/i18n';
+
 export default function ManualVoucherModal({ defaultFlow = 'income', onClose, onSaved, branchId }) {
+  const { t } = useT();
   const [flow, setFlow] = useState(defaultFlow);
   const [types, setTypes] = useState([]);
   const [form, setForm] = useState({
@@ -27,6 +30,13 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
     payment_method: 'cash',
   });
   const [saving, setSaving] = useState(false);
+
+  const PAYMENT_METHODS = [
+    { value: 'cash', label: t('cashflow.pm_cash', 'Tiền mặt') },
+    { value: 'transfer', label: t('cashflow.pm_transfer', 'Chuyển khoản') },
+    { value: 'card', label: t('cashflow.pm_card', 'Thẻ tín dụng') },
+    { value: 'ewallet', label: t('cashflow.pm_ewallet', 'Ví điện tử') },
+  ];
 
   useEffect(() => {
     base44.entities.CashVoucherType.list().then(all => {
@@ -108,9 +118,9 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                {isIncome ? 'Tạo Phiếu Thu' : 'Tạo Phiếu Chi'}
+                {isIncome ? t('cashflow.modal_create_income', 'Tạo Phiếu Thu') : t('cashflow.modal_create_expense', 'Tạo Phiếu Chi')}
               </h2>
-              <p className="text-xs text-slate-400">Nhập thủ công</p>
+              <p className="text-xs text-slate-400">{t('cashflow.manual_entry', 'Nhập thủ công')}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
@@ -120,7 +130,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
 
         {/* Flow Toggle */}
         <div className="flex rounded-xl border border-slate-200 p-1 mb-5 bg-slate-50">
-          {[{ value: 'income', label: '📥 Phiếu Thu' }, { value: 'expense', label: '📤 Phiếu Chi' }].map(opt => (
+          {[{ value: 'income', label: `📥 ${t('cashflow.tab_income', 'Phiếu Thu')}` }, { value: 'expense', label: `📤 ${t('cashflow.tab_expense', 'Phiếu Chi')}` }].map(opt => (
             <button
               key={opt.value}
               onClick={() => setFlow(opt.value)}
@@ -139,15 +149,15 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
         <div className="space-y-4">
           {/* Type */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Loại phiếu *</label>
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_voucher_type', 'Loại phiếu *')}</label>
             <select
               value={form.type_id}
               onChange={e => handleTypeChange(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-emerald-400 focus:outline-none"
             >
-              <option value="">-- Chọn loại phiếu --</option>
-              {filteredTypes.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+              <option value="">-- {t('cashflow.select_voucher_type_ph', 'Chọn loại phiếu')} --</option>
+              {filteredTypes.map(tItem => (
+                <option key={tItem.id} value={tItem.id}>{tItem.code ? t(`cashflow.type_${tItem.code}`, tItem.name) : tItem.name}</option>
               ))}
             </select>
           </div>
@@ -155,7 +165,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
           {/* Amount + Date */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Số tiền (VND) *</label>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_amount', 'Số tiền (VND) *')}</label>
               <input
                 type="number"
                 min="0"
@@ -166,7 +176,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Ngày *</label>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_date', 'Ngày *')}</label>
               <input
                 type="date"
                 value={form.date}
@@ -178,7 +188,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
 
           {/* Payment method */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Phương thức thanh toán</label>
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_payment_method', 'Phương thức thanh toán')}</label>
             <div className="grid grid-cols-4 gap-2">
               {PAYMENT_METHODS.map(m => (
                 <button
@@ -198,10 +208,10 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
 
           {/* Description */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Mô tả</label>
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_description', 'Mô tả')}</label>
             <input
               type="text"
-              placeholder="Mô tả ngắn gọn về khoản thu/chi..."
+              placeholder={t('cashflow.ph_description', 'Mô tả ngắn gọn về khoản thu/chi...')}
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-emerald-400 focus:outline-none"
@@ -210,10 +220,10 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
 
           {/* Note */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Ghi chú</label>
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('cashflow.lbl_note', 'Ghi chú')}</label>
             <textarea
               rows={2}
-              placeholder="Ghi chú thêm (nếu có)..."
+              placeholder={t('cashflow.ph_note', 'Ghi chú thêm (nếu có)...')}
               value={form.note}
               onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-emerald-400 focus:outline-none resize-none"
@@ -227,7 +237,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
             onClick={onClose}
             className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
-            Huỷ
+            {t('cashflow.btn_cancel', 'Huỷ')}
           </button>
           <button
             onClick={handleSave}
@@ -238,7 +248,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
                 : 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 shadow-red-200'
             }`}
           >
-            {saving ? <Loader2 className="w-4 h-4 mx-auto animate-spin" /> : `Lưu ${isIncome ? 'Phiếu Thu' : 'Phiếu Chi'}`}
+            {saving ? <Loader2 className="w-4 h-4 mx-auto animate-spin" /> : `${t('cashflow.btn_save', 'Lưu')} ${isIncome ? t('cashflow.tab_income', 'Phiếu Thu') : t('cashflow.tab_expense', 'Phiếu Chi')}`}
           </button>
         </div>
       </div>

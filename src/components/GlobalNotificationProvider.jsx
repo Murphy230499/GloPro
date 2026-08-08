@@ -102,11 +102,9 @@ export default function GlobalNotificationProvider({ children }) {
     };
 
     pollDatabase();
-    const intervalId = setInterval(pollDatabase, 15000); // 15 seconds polling
 
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(intervalId);
     };
   }, []);
 

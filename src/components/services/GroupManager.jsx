@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useT } from '@/lib/i18n';
 import { X, Plus, Edit3, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
@@ -7,6 +8,7 @@ import { toast } from '@/components/Layout';
 const COLORS = ['#FF6B9D', '#34D399', '#60A5FA', '#A78BFA', '#FBBF24', '#F97316', '#FB7185', '#06B6D4', '#94A3B8'];
 
 export default function GroupManager({ type, branchId, onClose, onChanged }) {
+  const { t } = useT();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -28,15 +30,15 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
   useEffect(() => { load(); }, []);
 
   const save = async () => {
-    if (!name.trim()) return toast.error('Nhập tên nhóm');
+    if (!name.trim()) return toast.error(t('catalog.err_enter_group_name', 'Nhập tên nhóm'));
     const payload = { name, color, type, branch_id: branchId === 'all' ? '' : branchId };
     try {
       if (editingId) {
         await base44.entities.ServiceGroup.update(editingId, payload);
-        toast.success('Đã cập nhật nhóm');
+        toast.success(t('catalog.msg_group_updated', 'Đã cập nhật nhóm'));
       } else {
         await base44.entities.ServiceGroup.create(payload);
-        toast.success('Đã thêm nhóm');
+        toast.success(t('catalog.msg_group_added', 'Đã thêm nhóm'));
       }
       setName('');
       setColor(COLORS[0]);
@@ -44,7 +46,7 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
       load();
       onChanged?.();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('catalog.err_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -55,14 +57,14 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
   };
 
   const remove = async (id) => {
-    if (!window.confirm('Xoá nhóm này? Các mục thuộc nhóm này sẽ không còn nhóm.')) return;
+    if (!window.confirm(t('catalog.confirm_delete_group', 'Xoá nhóm này? Các mục thuộc nhóm này sẽ không còn nhóm.'))) return;
     try {
       await base44.entities.ServiceGroup.delete(id);
       load();
       onChanged?.();
-      toast.success('Đã xoá nhóm');
+      toast.success(t('catalog.msg_group_deleted', 'Đã xoá nhóm'));
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('catalog.err_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -71,29 +73,29 @@ export default function GroupManager({ type, branchId, onClose, onChanged }) {
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Quản lý nhóm {type === 'service' ? 'dịch vụ' : type === 'product' ? 'sản phẩm' : type === 'package' ? 'gói dịch vụ' : 'liệu trình'}</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('catalog.manage_groups', 'Quản lý nhóm')} {type === 'service' ? t('catalog.add_label_service', 'dịch vụ') : type === 'product' ? t('catalog.add_label_product', 'sản phẩm') : type === 'package' ? t('catalog.add_label_package', 'gói dịch vụ') : t('catalog.add_label_treatment', 'liệu trình')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="space-y-2 mb-4">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên nhóm" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" onKeyDown={(e) => e.key === 'Enter' && save()} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('catalog.group_name_placeholder', 'Tên nhóm')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" onKeyDown={(e) => e.key === 'Enter' && save()} />
           <div className="flex items-center gap-1.5 flex-wrap">
             {COLORS.map((c) => (
               <button key={c} onClick={() => setColor(c)} className={`w-7 h-7 rounded-full transition-all ${color === c ? 'ring-2 ring-offset-2 ring-slate-400' : ''}`} style={{ background: c }} />
             ))}
           </div>
           <button onClick={save} className="w-full py-2.5 rounded-xl bg-purple-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">
-            {editingId ? 'Cập nhật nhóm' : 'Thêm nhóm'}
+            {editingId ? t('catalog.btn_update_group', 'Cập nhật nhóm') : t('catalog.btn_add_group', 'Thêm nhóm')}
           </button>
           {editingId && (
-            <button onClick={() => { setEditingId(null); setName(''); setColor(COLORS[0]); }} className="w-full py-2 text-xs text-slate-400">Huỷ chỉnh sửa</button>
+            <button onClick={() => { setEditingId(null); setName(''); setColor(COLORS[0]); }} className="w-full py-2 text-xs text-slate-400">{t('catalog.btn_cancel_edit', 'Huỷ chỉnh sửa')}</button>
           )}
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-sm text-slate-400">Đang tải...</div>
+          <div className="py-8 text-center text-sm text-slate-400">{t('catalog.loading', 'Đang tải...')}</div>
         ) : groups.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">Chưa có nhóm nào</div>
+          <div className="py-8 text-center text-sm text-slate-400">{t('catalog.empty_groups', 'Chưa có nhóm nào')}</div>
         ) : (
           <div className="space-y-1">
             {groups.map((g) => (

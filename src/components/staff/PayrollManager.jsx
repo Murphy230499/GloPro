@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { Table, Clock } from 'lucide-react';
 import PayrollRunTab from './PayrollRunTab';
@@ -15,6 +16,7 @@ const INITIAL_HISTORY = [
 ];
 
 export default function PayrollManager({ staff, onSelectStaffForDetail }) {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState('run'); // 'run' or 'history'
   const [history, setHistory] = useState(INITIAL_HISTORY);
 
@@ -51,7 +53,7 @@ export default function PayrollManager({ staff, onSelectStaffForDetail }) {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          Bảng lương nhân viên
+          {t('staff.payroll.tab_run', 'Bảng lương nhân viên')}
         </button>
         <button
           type="button"
@@ -62,7 +64,7 @@ export default function PayrollManager({ staff, onSelectStaffForDetail }) {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          Lịch sử thanh toán
+          {t('staff.payroll.tab_history', 'Lịch sử thanh toán')}
         </button>
       </div>
 

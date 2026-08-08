@@ -3,22 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Plus, Tag } from 'lucide-react';
 import { useBranch } from '@/lib/BranchContext';
 import { seedDefaultVoucherTypes } from '@/lib/cashFlowHelper';
+import { useT } from '@/lib/i18n';
 import IncomeTab from '@/components/cashflow/IncomeTab';
 import ExpenseTab from '@/components/cashflow/ExpenseTab';
 import VoucherTypeManager from '@/components/cashflow/VoucherTypeManager';
 import ManualVoucherModal from '@/components/cashflow/ManualVoucherModal';
 
-const TABS = [
-  { id: 'income', label: 'Phiếu Thu', icon: TrendingUp, color: 'emerald' },
-  { id: 'expense', label: 'Phiếu Chi', icon: TrendingDown, color: 'red' },
-  { id: 'types', label: 'Loại phiếu', icon: Tag, color: 'slate' },
-];
-
 export default function CashFlow() {
+  const { t } = useT();
   const { currentBranchId } = useBranch();
   const [activeTab, setActiveTab] = useState('income');
   const [modal, setModal] = useState(null); // null | 'income' | 'expense'
   const [reloadKey, setReloadKey] = useState(0);
+
+  const TABS = [
+    { id: 'income', label: t('cashflow.tab_income', 'Phiếu Thu'), icon: TrendingUp, color: 'emerald' },
+    { id: 'expense', label: t('cashflow.tab_expense', 'Phiếu Chi'), icon: TrendingDown, color: 'red' },
+    { id: 'types', label: t('cashflow.tab_types', 'Loại phiếu'), icon: Tag, color: 'slate' },
+  ];
 
   // Seed default types once on mount
   useEffect(() => {
@@ -36,8 +38,8 @@ export default function CashFlow() {
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Thu Chi</h1>
-            <p className="text-xs text-slate-400">Quản lý dòng tiền ra vào của cửa hàng</p>
+            <h1 className="text-xl font-bold text-slate-900">{t('cashflow.page_title', 'Thu Chi')}</h1>
+            <p className="text-xs text-slate-400">{t('cashflow.page_subtitle', 'Quản lý dòng tiền ra vào của cửa hàng')}</p>
           </div>
         </div>
 
@@ -47,14 +49,14 @@ export default function CashFlow() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors border border-red-100"
           >
             <TrendingDown className="w-4 h-4" />
-            Phiếu Chi
+            {t('cashflow.btn_expense_voucher', 'Phiếu Chi')}
           </button>
           <button
             onClick={() => setModal('income')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-200 transition-all"
           >
             <Plus className="w-4 h-4" />
-            Phiếu Thu
+            {t('cashflow.btn_income_voucher', 'Phiếu Thu')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, X, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -10,6 +11,7 @@ const COLORS = [
 ];
 
 export default function ShiftTemplateManager({ onChanged }) {
+  const { t } = useT();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState([]);
@@ -53,9 +55,9 @@ export default function ShiftTemplateManager({ onChanged }) {
   }, []);
 
   const save = async () => {
-    if (!name.trim()) return toast.error('Nhập tên ca làm việc');
-    if (!branchIdField) return toast.error('Chọn chi nhánh áp dụng');
-    if (!startTime || !endTime) return toast.error('Nhập giờ check in và check out');
+    if (!name.trim()) return toast.error(t('staff.scheduler.err_name', 'Nhập tên ca làm việc'));
+    if (!branchIdField) return toast.error(t('staff.scheduler.err_branch', 'Chọn chi nhánh áp dụng'));
+    if (!startTime || !endTime) return toast.error(t('staff.scheduler.err_time', 'Nhập giờ check in và check out'));
 
     const payload = {
       name,
@@ -73,10 +75,10 @@ export default function ShiftTemplateManager({ onChanged }) {
     try {
       if (editingId && !editingId.toString().startsWith('local_')) {
         await base44.entities.ShiftTemplate.update(editingId, payload);
-        toast.success('Đã cập nhật ca làm việc');
+        toast.success(t('staff.scheduler.update_shift_success', 'Đã cập nhật ca làm việc'));
       } else if (!editingId) {
         await base44.entities.ShiftTemplate.create(payload);
-        toast.success('Đã thêm ca làm việc mới');
+        toast.success(t('staff.scheduler.create_shift_success', 'Đã thêm ca làm việc mới'));
       } else {
         throw new Error('Local item update');
       }
@@ -137,7 +139,7 @@ export default function ShiftTemplateManager({ onChanged }) {
   };
 
   const remove = async (id) => {
-    if (!window.confirm('Xoá ca làm việc này? Lịch xếp ca hiện tại có thể bị ảnh hưởng.')) return;
+    if (!window.confirm(t('staff.scheduler.delete_shift_confirm', 'Xoá ca làm việc này? Lịch xếp ca hiện tại có thể bị ảnh hưởng.'))) return;
     try {
       if (id.toString().startsWith('local_')) {
         throw new Error('Local template deletion');
@@ -145,7 +147,7 @@ export default function ShiftTemplateManager({ onChanged }) {
       await base44.entities.ShiftTemplate.delete(id);
       load();
       onChanged?.();
-      toast.success('Đã xoá ca làm việc');
+      toast.success(t('staff.scheduler.delete_shift_success', 'Đã xoá ca làm việc'));
     } catch (e) {
       const local = localStorage.getItem('glopro_shift_templates');
       if (local) {
@@ -154,7 +156,7 @@ export default function ShiftTemplateManager({ onChanged }) {
       }
       load();
       onChanged?.();
-      toast.success('Đã xoá ca làm việc');
+      toast.success(t('staff.scheduler.delete_shift_success', 'Đã xoá ca làm việc'));
     }
   };
 
@@ -163,8 +165,8 @@ export default function ShiftTemplateManager({ onChanged }) {
       {/* Header Toolbar */}
       <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
-          <h3 className="font-bold text-slate-800 text-sm">Danh sách ca làm việc ({templates.length})</h3>
-          <p className="text-slate-400 text-xs mt-0.5 font-medium">Quản lý định nghĩa ca trực và thời gian check in/out của nhân sự</p>
+          <h3 className="font-bold text-slate-800 text-sm">{t('staff.scheduler.shift_list_title', 'Danh sách ca làm việc')} ({templates.length})</h3>
+          <p className="text-slate-400 text-xs mt-0.5 font-medium">{t('staff.scheduler.shift_list_desc', 'Quản lý định nghĩa ca trực và thời gian check in/out của nhân sự')}</p>
         </div>
         <button
           onClick={() => {
@@ -173,44 +175,44 @@ export default function ShiftTemplateManager({ onChanged }) {
           }}
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans"
         >
-          <Plus className="w-4 h-4" /> Thêm ca làm việc
+          <Plus className="w-4 h-4" /> {t('staff.scheduler.add_shift_btn', 'Thêm ca làm việc')}
         </button>
       </div>
 
       {/* Grid List */}
       {loading ? (
-        <div className="text-center py-12 text-xs text-slate-400">Đang tải danh sách ca...</div>
+        <div className="text-center py-12 text-xs text-slate-400">{t('staff.scheduler.loading_shifts', 'Đang tải danh sách ca...')}</div>
       ) : templates.length === 0 ? (
         <div className="text-center py-12 text-xs text-slate-400 bg-white border border-slate-150 rounded-2xl font-medium">
-          Chưa có ca làm việc nào. Chọn "Thêm ca làm việc" để bắt đầu.
+          {t("staff.scheduler.empty_shifts", 'Chưa có ca làm việc nào. Chọn "Thêm ca làm việc" để bắt đầu.')}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {templates.map((t) => {
-            const branch = branches.find(b => b.id === t.branch_id);
+          {templates.map((tpl) => {
+            const branch = branches.find(b => b.id === tpl.branch_id);
             return (
               <div 
-                key={t.id} 
+                key={tpl.id} 
                 className="border-l-4 rounded-3xl p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow relative"
                 style={{
-                  backgroundColor: (t.color || '#B088F9') + '0F',
-                  borderColor: (t.color || '#B088F9') + '25',
-                  borderLeftColor: t.color || '#B088F9'
+                  backgroundColor: (tpl.color || '#B088F9') + '0F',
+                  borderColor: (tpl.color || '#B088F9') + '25',
+                  borderLeftColor: tpl.color || '#B088F9'
                 }}
               >
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold text-sm text-slate-800">{t.name}</h4>
+                    <h4 className="font-bold text-sm text-slate-800">{tpl.name}</h4>
                     <span 
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                       style={{
-                        background: t.is_active !== false ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)',
-                        color: t.is_active !== false ? '#10B981' : '#64748B'
+                        background: tpl.is_active !== false ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)',
+                        color: tpl.is_active !== false ? '#10B981' : '#64748B'
                       }}
                     >
-                      {t.is_active !== false ? 'Hoạt động' : 'Tạm dừng'}
+                      {tpl.is_active !== false ? t('staff.scheduler.status_active', 'Hoạt động') : t('staff.scheduler.status_inactive', 'Tạm dừng')}
                     </span>
-                    {t.name === 'Ca hành chính' && (
+                    {tpl.name === 'Ca hành chính' && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50">
                         Ca mặc định tự gán
                       </span>
@@ -218,29 +220,29 @@ export default function ShiftTemplateManager({ onChanged }) {
                   </div>
 
                   <div className="text-xs text-slate-500 font-semibold">
-                    Thời gian: <span className="font-bold" style={{ color: t.color || '#B088F9' }}>{t.start_time} - {t.end_time}</span>
+                    {t('staff.scheduler.time_label', 'Thời gian:')} <span className="font-bold" style={{ color: tpl.color || '#B088F9' }}>{tpl.start_time} - {tpl.end_time}</span>
                   </div>
 
                   {branch && (
                     <div className="text-[10px] text-slate-400 font-medium">
-                      🏢 Chi nhánh: <span className="text-slate-600 font-semibold">{branch.name}</span>
+                      🏢 {t('staff.scheduler.branch_label', 'Chi nhánh:')} <span className="text-slate-600 font-semibold">{branch.name === 'Tất cả chi nhánh' ? t('common.all_branches', 'Tất cả chi nhánh') : branch.name}</span>
                     </div>
                   )}
 
-                  {t.note && (
-                    <p className="text-[11px] text-slate-400 italic mt-1 line-clamp-2">"{t.note}"</p>
+                  {tpl.note && (
+                    <p className="text-[11px] text-slate-400 italic mt-1 line-clamp-2">"{tpl.note}"</p>
                   )}
                 </div>
 
                 <div className="flex gap-2 mt-4 pt-3 border-t border-slate-50">
                   <button
-                    onClick={() => edit(t)}
+                    onClick={() => edit(tpl)}
                     className="flex-1 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                   >
-                    Chỉnh sửa
+                    {t('staff.scheduler.edit_btn', 'Chỉnh sửa')}
                   </button>
                   <button
-                    onClick={() => remove(t.id)}
+                    onClick={() => remove(tpl.id)}
                     className="px-3 py-2 text-xs font-semibold rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -266,7 +268,7 @@ export default function ShiftTemplateManager({ onChanged }) {
             {/* Header */}
             <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 shrink-0">
               <h2 className="text-base font-bold text-slate-800 font-sans">
-                {editingId ? 'Sửa ca làm việc' : 'Thêm mới ca làm việc'}
+                {editingId ? t('staff.scheduler.edit_shift', 'Sửa ca làm việc') : t('staff.scheduler.add_shift', 'Thêm mới ca làm việc')}
               </h2>
               <button 
                 onClick={() => setShowModal(false)} 
@@ -280,12 +282,12 @@ export default function ShiftTemplateManager({ onChanged }) {
             <div className="space-y-4 pb-4">
               {/* Tên ca */}
               <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên ca *</label>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.shift_name', 'Tên ca *')}</label>
                 <input 
                   type="text" 
                   value={name} 
                   onChange={(e) => setName(e.target.value)} 
-                  placeholder="Nhập tên ca làm việc" 
+                  placeholder={t("staff.scheduler.shift_name_placeholder", "Nhập tên ca làm việc")} 
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
               </div>
@@ -293,15 +295,15 @@ export default function ShiftTemplateManager({ onChanged }) {
               {/* Chi nhánh áp dụng */}
               {branches.length > 0 && (
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Chi nhánh áp dụng *</label>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.apply_branch', 'Chi nhánh áp dụng *')}</label>
                   <div className="relative">
                     <select 
                       value={branchIdField} 
                       onChange={(e) => setBranchIdField(e.target.value)} 
                       className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
                     >
-                      <option value="">— Chọn chi nhánh —</option>
-                      {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      <option value="">{t('staff.scheduler.select_branch', '— Chọn chi nhánh —')}</option>
+                      {branches.map((b) => <option key={b.id} value={b.id}>{b.name === 'Tất cả chi nhánh' ? t('common.all_branches', 'Tất cả chi nhánh') : b.name}</option>)}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
@@ -311,7 +313,7 @@ export default function ShiftTemplateManager({ onChanged }) {
               {/* Giờ check in / out */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giờ check in</label>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.checkin_time', 'Giờ check in')}</label>
                   <input 
                     type="time" 
                     value={startTime} 
@@ -320,7 +322,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giờ check out</label>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.checkout_time', 'Giờ check out')}</label>
                   <input 
                     type="time" 
                     value={endTime} 
@@ -333,7 +335,7 @@ export default function ShiftTemplateManager({ onChanged }) {
               {/* Grace periods */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Được phép đi muộn</label>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.allow_late', 'Được phép đi muộn')}</label>
                   <div className="relative">
                     <input 
                       type="number" 
@@ -342,11 +344,11 @@ export default function ShiftTemplateManager({ onChanged }) {
                       onChange={(e) => setLateGrace(Number(e.target.value) || 0)} 
                       className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{t('staff.scheduler.minutes', 'Phút')}</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">Được phép về sớm</label>
+                  <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.allow_early', 'Được phép về sớm')}</label>
                   <div className="relative">
                     <input 
                       type="number" 
@@ -355,14 +357,14 @@ export default function ShiftTemplateManager({ onChanged }) {
                       onChange={(e) => setEarlyGrace(Number(e.target.value) || 0)} 
                       className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{t('staff.scheduler.minutes', 'Phút')}</span>
                   </div>
                 </div>
               </div>
 
               {/* Overtime */}
               <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tính giờ làm thêm sau giờ check out.</label>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.calc_overtime', 'Tính giờ làm thêm sau giờ check out.')}</label>
                 <div className="relative">
                   <input 
                     type="number" 
@@ -371,13 +373,13 @@ export default function ShiftTemplateManager({ onChanged }) {
                     onChange={(e) => setOvertimeAfter(Number(e.target.value) || 0)} 
                     className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Phút</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{t('staff.scheduler.minutes', 'Phút')}</span>
                 </div>
               </div>
 
               {/* Color Settings */}
               <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Cài đặt màu ca làm</label>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.shift_color', 'Cài đặt màu ca làm')}</label>
                 <div className="flex items-center gap-1.5 h-[38px] overflow-x-auto">
                   {COLORS.map((c) => (
                     <button 
@@ -421,11 +423,11 @@ export default function ShiftTemplateManager({ onChanged }) {
 
               {/* Ghi chú */}
               <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ghi chú</label>
+                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.scheduler.note', 'Ghi chú')}</label>
                 <textarea 
                   value={note} 
                   onChange={(e) => setNote(e.target.value)} 
-                  placeholder="Nhập ghi chú ca làm việc" 
+                  placeholder={t("staff.scheduler.note_placeholder", "Nhập ghi chú ca làm việc")} 
                   rows={2}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white" 
                 />
@@ -439,7 +441,7 @@ export default function ShiftTemplateManager({ onChanged }) {
                   onChange={(e) => setIsActive(e.target.checked)} 
                   className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" 
                 />
-                <span>Đang hoạt động</span>
+                <span>{t('staff.scheduler.active', 'Đang hoạt động')}</span>
               </label>
             </div>
 
@@ -449,13 +451,13 @@ export default function ShiftTemplateManager({ onChanged }) {
                 onClick={() => setShowModal(false)} 
                 className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-650 font-sans"
               >
-                Huỷ bỏ
+                {t('staff.scheduler.cancel', 'Huỷ bỏ')}
               </button>
               <button 
                 onClick={save} 
                 className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans"
               >
-                {editingId ? 'Lưu' : 'Tạo'}
+                {editingId ? t('staff.scheduler.save', 'Lưu') : t('staff.scheduler.create', 'Tạo')}
               </button>
             </div>
 

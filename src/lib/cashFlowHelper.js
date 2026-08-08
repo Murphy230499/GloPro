@@ -4,35 +4,55 @@ import { todayStr } from '@/lib/format';
 // ─── Default Voucher Types ───────────────────────────────────────────────────
 
 export const DEFAULT_INCOME_TYPES = [
-  { code: 'sale',            name: 'Bán hàng / Dịch vụ',   color: '#10B981', flow: 'income', is_system: true },
-  { code: 'membership_sale', name: 'Bán gói / Thẻ',         color: '#3B82F6', flow: 'income', is_system: true },
-  { code: 'tip',             name: 'Tiền TIP',               color: '#F59E0B', flow: 'income', is_system: true },
-  { code: 'deposit',         name: 'Đặt cọc',                color: '#8B5CF6', flow: 'income', is_system: true },
-  { code: 'other_income',    name: 'Thu khác',               color: '#94A3B8', flow: 'income', is_system: true },
+  { code: 'sale',            name: 'Sales / Service',      color: '#10B981', flow: 'income', is_system: true },
+  { code: 'membership_sale', name: 'Package / Card',        color: '#3B82F6', flow: 'income', is_system: true },
+  { code: 'tip',             name: 'Tip',                   color: '#F59E0B', flow: 'income', is_system: true },
+  { code: 'deposit',         name: 'Deposit',               color: '#8B5CF6', flow: 'income', is_system: true },
+  { code: 'other_income',    name: 'Other Income',          color: '#94A3B8', flow: 'income', is_system: true },
 ];
 
 export const DEFAULT_EXPENSE_TYPES = [
-  { code: 'stock_purchase',  name: 'Nhập hàng',              color: '#EF4444', flow: 'expense', is_system: true },
-  { code: 'salary',          name: 'Chi lương',               color: '#F97316', flow: 'expense', is_system: true },
-  { code: 'overhead',        name: 'Chi phí vận hành',       color: '#EC4899', flow: 'expense', is_system: true },
-  { code: 'use_deposit',     name: 'Sử dụng tiền cọc',        color: '#8B5CF6', flow: 'expense', is_system: true },
-  { code: 'other_expense',   name: 'Chi khác',               color: '#94A3B8', flow: 'expense', is_system: true },
+  { code: 'stock_purchase',  name: 'Stock Purchase',        color: '#EF4444', flow: 'expense', is_system: true },
+  { code: 'salary',          name: 'Salary',                color: '#F97316', flow: 'expense', is_system: true },
+  { code: 'overhead',        name: 'Operating Expense',     color: '#EC4899', flow: 'expense', is_system: true },
+  { code: 'use_deposit',     name: 'Use Deposit',           color: '#8B5CF6', flow: 'expense', is_system: true },
+  { code: 'other_expense',   name: 'Other Expense',         color: '#94A3B8', flow: 'expense', is_system: true },
 ];
+
+const LEGACY_VI_DEFAULT_NAMES = new Set([
+  'Bán hàng / Dịch vụ',
+  'Bán gói / Thẻ',
+  'Tiền TIP',
+  'Đặt cọc',
+  'Thu khác',
+  'Nhập hàng',
+  'Chi lương',
+  'Chi phí vận hành',
+  'Sử dụng tiền cọc',
+  'Chi khác',
+]);
 
 /**
  * Seed default voucher types if they don't exist yet.
- * Safe to call multiple times — skips existing codes.
+ * Safely migrates old Vietnamese defaults to English without overwriting custom user edits.
  */
 export async function seedDefaultVoucherTypes() {
   try {
     const existing = await base44.entities.CashVoucherType.list();
-    const existingCodes = new Set((existing || []).map(t => t.code));
+    const existingMap = new Map((existing || []).map(t => [t.code, t]));
 
     const allDefaults = [...DEFAULT_INCOME_TYPES, ...DEFAULT_EXPENSE_TYPES];
     await Promise.all(
-      allDefaults
-        .filter(t => !existingCodes.has(t.code))
-        .map(t => base44.entities.CashVoucherType.create(t))
+      allDefaults.map(def => {
+        const found = existingMap.get(def.code);
+        if (!found) {
+          return base44.entities.CashVoucherType.create(def);
+        } else if (found.is_system && LEGACY_VI_DEFAULT_NAMES.has(found.name)) {
+          // Migrate old default Vietnamese string to English default
+          return base44.entities.CashVoucherType.update(found.id, { name: def.name });
+        }
+        return Promise.resolve();
+      })
     );
   } catch (e) {
     console.warn('[cashFlowHelper] seedDefaultVoucherTypes failed:', e.message);

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { TrendingUp, CalendarDays, Users, UserSquare, Sparkles } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
@@ -12,18 +13,6 @@ const STATUS_COLORS = {
   pending: '#94A3B8', confirmed: '#60A5FA', checked_in: '#FBBF24',
   in_progress: '#A78BFA', completed: '#34D399', cancelled: '#F87171', no_show: '#F97316'
 };
-const STATUS_LABEL = {
-  pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', checked_in: 'Đã check-in',
-  in_progress: 'Đang làm', completed: 'Hoàn thành', cancelled: 'Đã hủy', no_show: 'Không đến'
-};
-
-const PERIODS = [
-  { value: 'day', label: 'Hôm nay' },
-  { value: 'week', label: 'Tuần' },
-  { value: 'month', label: 'Tháng' },
-  { value: 'quarter', label: 'Quý' },
-  { value: 'year', label: 'Năm' },
-];
 
 const getPeriodRange = (period) => {
   const now = new Date();
@@ -48,6 +37,7 @@ const getPeriodRange = (period) => {
 };
 
 export default function Dashboard() {
+  const { t } = useT();
   const { currentBranchId } = useBranch();
   const [invoices, setInvoices] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -55,6 +45,24 @@ export default function Dashboard() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day');
+
+  const STATUS_LABEL = useMemo(() => ({
+    pending: t('dashboard.status.pending', 'Chờ xác nhận'),
+    confirmed: t('dashboard.status.confirmed', 'Đã xác nhận'),
+    checked_in: t('dashboard.status.checked_in', 'Đã check-in'),
+    in_progress: t('dashboard.status.in_progress', 'Đang làm'),
+    completed: t('dashboard.status.completed', 'Hoàn thành'),
+    cancelled: t('dashboard.status.cancelled', 'Đã hủy'),
+    no_show: t('dashboard.status.no_show', 'Không đến')
+  }), [t]);
+
+  const PERIODS = useMemo(() => [
+    { value: 'day', label: t('dashboard.period.day', 'Hôm nay') },
+    { value: 'week', label: t('dashboard.period.week', 'Tuần') },
+    { value: 'month', label: t('dashboard.period.month', 'Tháng') },
+    { value: 'quarter', label: t('dashboard.period.quarter', 'Quý') },
+    { value: 'year', label: t('dashboard.period.year', 'Năm') },
+  ], [t]);
 
   useEffect(() => {
     const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
@@ -140,8 +148,8 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tổng quan</h1>
-          <p className="text-slate-400 text-sm mt-1">Xin chào 👋 Đây là tình hình hôm nay</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('dashboard.tong_quan', 'Tổng quan')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('dashboard.welcome_msg', 'Xin chào 👋 Đây là tình hình hôm nay')}</p>
         </div>
         <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1">
           {PERIODS.map((p) => (
@@ -157,21 +165,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={TrendingUp} label="Doanh thu hôm nay" value={formatVND(todayRevenue)} color="#34D399" sub={`${invoices.filter((i) => i.date === today).length} Hóa đơn`} />
-        <StatCard icon={CalendarDays} label="Lịch hẹn hôm nay" value={todayAppts.length} color="#60A5FA" sub={`${completedToday} Hoàn thành`} />
-        <StatCard icon={Users} label="Khách hàng" value={customers.length} color="#FBBF24" sub="Toàn chuỗi" />
-        <StatCard icon={UserSquare} label="Nhân viên" value={staff.length} color="#F97316" sub="Đang làm việc" />
+        <StatCard icon={TrendingUp} label={t('dashboard.doanh_thu_hom_nay', 'Doanh thu hôm nay')} value={formatVND(todayRevenue)} color="#34D399" sub={`${invoices.filter((i) => i.date === today).length} ${t('dashboard.hoa_don', 'Hóa đơn')}`} />
+        <StatCard icon={CalendarDays} label={t('dashboard.lich_hen_hom_nay', 'Lịch hẹn hôm nay')} value={todayAppts.length} color="#60A5FA" sub={`${completedToday} ${t('dashboard.hoan_thanh', 'Hoàn thành')}`} />
+        <StatCard icon={Users} label={t('dashboard.khach_hang', 'Khách hàng')} value={customers.length} color="#FBBF24" sub={t('dashboard.toan_chuoi', 'Toàn chuỗi')} />
+        <StatCard icon={UserSquare} label={t('dashboard.nhan_vien', 'Nhân viên')} value={staff.length} color="#F97316" sub={t('dashboard.dang_lam_viec', 'Đang làm việc')} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-1 text-xl">Doanh thu 7 ngày qua</h3>
-          <p className="text-xs text-slate-400 mb-3">Theo ngày</p>
+          <h3 className="font-bold mb-1 text-xl">{t('dashboard.doanh_thu_7_ngay', 'Doanh thu 7 ngày qua')}</h3>
+          <p className="text-xs text-slate-400 mb-3">{t('dashboard.theo_ngay', 'Theo ngày')}</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} barSize={26}>
               <CartesianGrid vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} />
-              <YAxis tickFormatter={(v) => v >= 1000000 ? v / 1000000 + 'tr' : v >= 1000 ? Math.round(v / 1000) + 'k' : v} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#94A3B8' }} width={40} />
+              <YAxis tickFormatter={(v) => v >= 1000000 ? v / 1000000 + t('dashboard.trieu_short', 'tr') : v >= 1000 ? Math.round(v / 1000) + 'k' : v} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#94A3B8' }} width={40} />
               <Tooltip formatter={(v) => formatVND(v)} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }} />
               <Bar dataKey="revenue" radius={[8, 8, 0, 0]} fill="#FF6B9D" />
             </BarChart>
@@ -179,11 +187,11 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 flex items-center gap-2 text-xl">Lịch hẹn sắp tới</h3>
+          <h3 className="font-bold mb-3 flex items-center gap-2 text-xl">{t('dashboard.lich_hen_sap_toi', 'Lịch hẹn sắp tới')}</h3>
           {upcoming.length === 0 ? (
             <div className="text-center py-10 text-slate-400 text-sm">
               <Sparkles className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-              Không có lịch hẹn nào sắp tới
+              {t('dashboard.khong_co_lich_hen_sap_toi', 'Không có lịch hẹn nào sắp tới')}
             </div>
           ) : (
             <div className="space-y-2">
@@ -194,7 +202,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{a.customer_name}</div>
-                    <div className="text-xs text-slate-400 truncate">{a.service_name || 'Chưa chọn dịch vụ'}</div>
+                    <div className="text-xs text-slate-400 truncate">{a.service_name || t('dashboard.chua_chon_dich_vu', 'Chưa chọn dịch vụ')}</div>
                   </div>
                   <span className="text-[11px] font-semibold px-2 py-1 rounded-full" style={{ background: STATUS_COLORS[a.status] + '1a', color: STATUS_COLORS[a.status] }}>
                     {STATUS_LABEL[a.status]}
@@ -208,20 +216,20 @@ export default function Dashboard() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">Top dịch vụ theo doanh thu</h3>
-          <TopRevenueList items={tops.services} colorFrom="from-pink-400" colorTo="to-purple-500" />
+          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_service_rev', 'Top dịch vụ theo doanh thu')}</h3>
+          <TopRevenueList items={tops.services} colorFrom="from-pink-400" colorTo="to-purple-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">Top sản phẩm theo doanh thu</h3>
-          <TopRevenueList items={tops.products} colorFrom="from-emerald-400" colorTo="to-teal-500" />
+          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_product_rev', 'Top sản phẩm theo doanh thu')}</h3>
+          <TopRevenueList items={tops.products} colorFrom="from-emerald-400" colorTo="to-teal-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">Top nhân viên theo doanh thu</h3>
-          <TopRevenueList items={tops.staff} colorFrom="from-amber-400" colorTo="to-orange-500" />
+          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_staff_rev', 'Top nhân viên theo doanh thu')}</h3>
+          <TopRevenueList items={tops.staff} colorFrom="from-amber-400" colorTo="to-orange-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">Top khách hàng theo doanh thu</h3>
-          <TopRevenueList items={tops.customers} colorFrom="from-blue-400" colorTo="to-indigo-500" />
+          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_customer_rev', 'Top khách hàng theo doanh thu')}</h3>
+          <TopRevenueList items={tops.customers} colorFrom="from-blue-400" colorTo="to-indigo-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Minus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 function ServiceCheckbox({ checked, onChange }) {
   return (
@@ -41,6 +42,7 @@ function GroupCheckbox({ allChecked, someChecked, onChange }) {
 }
 
 export default function ServicesTab({ setting, onChange, branchId }) {
+  const t = useT();
   const [services, setServices] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,8 +120,8 @@ export default function ServicesTab({ setting, onChange, branchId }) {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-semibold text-slate-800">Tuỳ chỉnh dịch vụ</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Chọn những dịch vụ sẽ được hiển thị trên trang đặt lịch</p>
+          <h2 className="text-sm font-semibold text-slate-800">{t('booking.services_custom_title', 'Customize Services')}</h2>
+          <p className="text-xs text-slate-400 mt-0.5">{t('booking.services_custom_desc', 'Select services to display on public booking page')}</p>
         </div>
 
         {/* Search */}
@@ -129,7 +131,7 @@ export default function ServicesTab({ setting, onChange, branchId }) {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm dịch vụ"
+              placeholder={t('booking.search_service_placeholder', 'Search services...')}
               className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
             />
           </div>
@@ -138,7 +140,7 @@ export default function ServicesTab({ setting, onChange, branchId }) {
         {/* Service list */}
         {services.length === 0 ? (
           <div className="py-16 text-center text-slate-400 text-sm">
-            Chưa có dịch vụ. Thêm trong module <strong>Danh mục</strong>.
+            {t('booking.no_services', 'No services found. Add services in Catalog module.')}
           </div>
         ) : (
           <div>
@@ -175,7 +177,7 @@ export default function ServicesTab({ setting, onChange, branchId }) {
                       />
                       <span className="flex-1 text-sm text-slate-700">{svc.name}</span>
                       <span className="text-xs text-slate-400 w-16 text-right">
-                        {svc.duration_minutes ? `${svc.duration_minutes} phút` : '—'}
+                        {svc.duration_minutes ? t('booking.unit_mins', '{count} mins', { count: svc.duration_minutes }) : '—'}
                       </span>
                       <span className="text-xs text-slate-600 font-medium w-20 text-right">
                         {svc.price ? formatVND(svc.price) : '—'}

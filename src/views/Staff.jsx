@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { base44, getCachedPermissions } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
 import { useBranch } from '@/lib/BranchContext';
+import { useT } from '@/lib/i18n';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
@@ -28,32 +29,33 @@ import AuditLogModal from '@/components/staff/AuditLogModal';
 import PayrollManager from '@/components/staff/PayrollManager';
 import StaffPayrollDetailView from '@/components/staff/StaffPayrollDetailView';
 
-const ROLES = {
-  manager: { label: 'Quản lý', color: '#FF6B9D' },
-  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
-  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
-  barber: { label: 'Barber', color: '#34D399' },
-  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
-  nail_tech: { label: 'Nail tech', color: '#F472B6' },
-  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
-  cashier: { label: 'Thu ngân', color: '#94A3B8' },
-};
-
-const MAIN_TABS = [
-  { id: 'staff', label: 'Quản lý Nhân viên', icon: Users },
-  { id: 'schedule', label: 'Lịch làm việc', icon: CalendarCheck2 },
-  { id: 'attendance', label: 'Chấm công', icon: UserRoundCog },
-  { id: 'commission', label: 'Hoa hồng Nhân viên', icon: Award },
-  { id: 'payroll', label: 'Bảng tính lương', icon: Receipt },
-];
-
-const SCHEDULE_SUB_TABS = [
-  { id: 'grid', label: 'Bảng xếp ca tuần', icon: CalendarDays },
-  { id: 'templates', label: 'Quản lý ca làm việc', icon: Clock },
-];
-
-
 export default function StaffPage() {
+  const { t } = useT();
+
+  const ROLES = {
+    manager: { label: t('staff.roles.manager', 'Quản lý'), color: '#FF6B9D' },
+    receptionist: { label: t('staff.roles.receptionist', 'Lễ tân'), color: '#60A5FA' },
+    stylist: { label: t('staff.roles.stylist', 'Kỹ thuật viên tóc'), color: '#A78BFA' },
+    barber: { label: t('staff.roles.barber', 'Barber'), color: '#34D399' },
+    therapist: { label: t('staff.roles.therapist', 'Chuyên viên Spa'), color: '#FBBF24' },
+    nail_tech: { label: t('staff.roles.nail_tech', 'Nail tech'), color: '#F472B6' },
+    technician: { label: t('staff.roles.technician', 'Kỹ thuật viên'), color: '#F97316' },
+    cashier: { label: t('staff.roles.cashier', 'Thu ngân'), color: '#94A3B8' },
+  };
+
+  const MAIN_TABS = [
+    { id: 'staff', label: t('staff.tabs.manage', 'Quản lý Nhân viên'), icon: Users },
+    { id: 'schedule', label: t('staff.tabs.schedule', 'Lịch làm việc'), icon: CalendarCheck2 },
+    { id: 'attendance', label: t('staff.tabs.attendance', 'Chấm công'), icon: UserRoundCog },
+    { id: 'commission', label: t('staff.tabs.commission', 'Hoa hồng Nhân viên'), icon: Award },
+    { id: 'payroll', label: t('staff.tabs.payroll', 'Bảng tính lương'), icon: Receipt },
+  ];
+
+  const SCHEDULE_SUB_TABS = [
+    { id: 'grid', label: t('staff.tabs.schedule.grid', 'Bảng xếp ca tuần'), icon: CalendarDays },
+    { id: 'templates', label: t('staff.tabs.schedule.templates', 'Quản lý ca làm việc'), icon: Clock },
+  ];
+
   const { currentBranchId } = useBranch();
   const searchParams = useSearchParams();
   const urlTab = searchParams?.get('tab');
@@ -63,7 +65,8 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
 
   const [mainTab, setMainTab] = useState(urlTab || 'staff');
-  const [scheduleSubTab, setScheduleSubTab] = useState('grid');
+  const urlSubTab = searchParams?.get('sub');
+  const [scheduleSubTab, setScheduleSubTab] = useState(urlSubTab || 'grid');
   const [allowedModules, setAllowedModules] = useState(null);
 
   useEffect(() => {
@@ -269,8 +272,8 @@ export default function StaffPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Nhân sự</h1>
-          <p className="text-slate-400 text-sm mt-1">{staff.length} nhân viên đang hoạt động</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('staff.title', 'Nhân sự')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{staff.length} {t('staff.active_staff_count', 'nhân viên đang hoạt động')}</p>
         </div>
         {mainTab === 'staff' && (
           <div className="flex items-center gap-2">
@@ -278,13 +281,13 @@ export default function StaffPage() {
               onClick={() => setShowGroupManager(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
             >
-              <Settings2 className="w-4 h-4" /> Nhóm nhân viên
+              <Settings2 className="w-4 h-4" /> {t('staff.group_btn', 'Nhóm nhân viên')}
             </button>
             <button
               onClick={() => setEditingStaff({})}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm shadow-sm"
             >
-              <Plus className="w-4 h-4" /> Thêm nhân viên
+              <Plus className="w-4 h-4" /> {t('staff.add_btn', 'Thêm nhân viên')}
             </button>
           </div>
         )}
@@ -294,19 +297,19 @@ export default function StaffPage() {
               onClick={() => setShowAdvancedConfig(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
             >
-              <Settings className="w-4 h-4 text-orange-500" /> Cài đặt nâng cao
+              <Settings className="w-4 h-4 text-orange-500" /> {t('staff.commission.advanced_config', 'Cài đặt nâng cao')}
             </button>
             <button
               onClick={() => setShowCopyCommission(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
             >
-              <Copy className="w-4 h-4 text-blue-500" /> Sao chép hoa hồng
+              <Copy className="w-4 h-4 text-blue-500" /> {t('staff.commission.copy', 'Sao chép hoa hồng')}
             </button>
             <button
               onClick={() => setShowAuditLog(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
             >
-              <History className="w-4 h-4 text-emerald-500" /> Lịch sử thao tác
+              <History className="w-4 h-4 text-emerald-500" /> {t('staff.commission.history', 'Lịch sử thao tác')}
             </button>
           </div>
         )}
@@ -319,7 +322,7 @@ export default function StaffPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setMainTab(tab.id)}
+              onClick={() => { setMainTab(tab.id); window.history.replaceState(null, '', '?tab=' + tab.id); }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
                 mainTab === tab.id
                   ? 'bg-orange-500 text-white shadow-sm font-bold'
@@ -339,7 +342,8 @@ export default function StaffPage() {
           {/* Search & Filter Bar */}
           <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
             <input
-              placeholder="Tìm theo tên hoặc SĐT..."
+              type="text"
+              placeholder={t('staff.search_placeholder', 'Tìm theo tên hoặc SĐT...')}
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
               className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-orange-500"
@@ -350,7 +354,7 @@ export default function StaffPage() {
                 onChange={(e) => setFilterGroup(e.target.value)}
                 className="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-orange-500 appearance-none bg-white min-w-[130px]"
               >
-                <option value="all">Tất cả nhóm</option>
+                <option value="all">{t('staff.all_groups', 'Tất cả nhóm')}</option>
                 {staffGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -367,18 +371,18 @@ export default function StaffPage() {
           ) : filteredStaff.length === 0 && !searchQ && filterGroup === 'all' ? (
             <EmptyStateSeeder
               icon={<Users className="w-8 h-8 text-orange-500" />}
-              title="Chưa có nhân viên nào"
-              description="Thêm nhân viên đầu tiên của bạn hoặc tạo nhanh 10 nhân viên mẫu để thiết lập ca làm việc và xếp lịch."
+              title={t('staff.empty.title', 'Chưa có nhân viên nào')}
+              description={t('staff.empty.desc', 'Thêm nhân viên đầu tiên của bạn hoặc tạo nhanh 10 nhân viên mẫu để thiết lập ca làm việc và xếp lịch.')}
               onSeed={handleSeedData}
               seeding={seeding}
               seedProgress={seedProgress}
               onAdd={() => setEditingStaff({})}
-              addLabel="Thêm nhân viên"
-              seedLabel="Tạo 10 nhân viên mẫu"
+              addLabel={t('staff.add_btn', 'Thêm nhân viên')}
+              seedLabel={t('staff.empty.seed_btn', 'Tạo 10 nhân viên mẫu')}
             />
           ) : filteredStaff.length === 0 ? (
             <div className="text-center py-20 text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
-              Không tìm thấy nhân viên phù hợp. Thử thay đổi bộ lọc.
+              {t('staff.not_found', 'Không tìm thấy nhân viên phù hợp. Thử thay đổi bộ lọc.')}
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -397,7 +401,7 @@ export default function StaffPage() {
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-800 truncate text-sm">{s.full_name}</div>
                         <div className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
-                          {s.phone ? <span>📞 {s.phone}</span> : <span className="italic">Chưa có SĐT</span>}
+                          {s.phone ? <span>📞 {s.phone}</span> : <span className="italic">{t('staff.no_phone', 'Chưa có SĐT')}</span>}
                         </div>
                       </div>
 
@@ -422,17 +426,17 @@ export default function StaffPage() {
                         )}
                       </div>
                       <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                        {formatVND(s.base_salary || 0)}/tháng
+                        {formatVND(s.base_salary || 0)}/{t('staff.per_month', 'tháng')}
                       </div>
                     </div>
 
                     <div className="flex gap-2 mt-3 pt-3 border-t border-slate-50">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${s.is_active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                        {s.is_active !== false ? '✔ Đang hoạt động' : '✗ Ngừng hoạt động'}
+                        {s.is_active !== false ? `✔ ${t('staff.status_active', 'Đang hoạt động')}` : `✗ ${t('staff.status_inactive', 'Ngừng hoạt động')}`}
                       </span>
                       {s.service_ids?.length > 0 && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-orange-50 text-orange-600 border border-orange-100">
-                          {s.service_ids.length} dịch vụ
+                          {s.service_ids.length} {t('staff.services_count', 'dịch vụ')}
                         </span>
                       )}
                     </div>
@@ -442,13 +446,13 @@ export default function StaffPage() {
                         onClick={() => setEditingStaff(s)}
                         className="flex-1 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                       >
-                        Chỉnh sửa
+                        {t('common.edit', 'Chỉnh sửa')}
                       </button>
                       <button
                         onClick={() => handleDeleteStaff(s)}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                        className="py-1.5 px-3 text-xs font-semibold rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
                       >
-                        Xoá
+                        {t('common.delete', 'Xoá')}
                       </button>
                     </div>
                   </div>
@@ -468,7 +472,7 @@ export default function StaffPage() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setScheduleSubTab(t.id)}
+                onClick={() => { setScheduleSubTab(t.id); window.history.replaceState(null, '', '?tab=' + mainTab + '&sub=' + t.id); }}
                 className={`py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                   scheduleSubTab === t.id
                     ? 'border-orange-500 text-orange-500'

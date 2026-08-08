@@ -9,7 +9,10 @@ import { getPaymentMethodLabel } from '@/lib/cashFlowHelper';
 const SOURCE_LABELS = { auto: '⚡ Tự động', manual: '✏️ Thủ công' };
 const SOURCE_COLORS = { auto: 'bg-blue-50 text-blue-600', manual: 'bg-slate-100 text-slate-500' };
 
+import { useT } from '@/lib/i18n';
+
 export default function IncomeTab({ branchId, onReload }) {
+  const { t } = useT();
   const [vouchers, setVouchers] = useState([]);
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,15 +22,18 @@ export default function IncomeTab({ branchId, onReload }) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  const SOURCE_LABELS = { auto: `⚡ ${t('cashflow.source_auto', 'Tự động')}`, manual: `✏️ ${t('cashflow.source_manual', 'Thủ công')}` };
+  const SOURCE_COLORS = { auto: 'bg-blue-50 text-blue-600', manual: 'bg-slate-100 text-slate-500' };
+
   const load = async () => {
     setLoading(true);
     try {
-      const [v, t] = await Promise.all([
+      const [v, tData] = await Promise.all([
         base44.entities.CashVoucher.list(),
         base44.entities.CashVoucherType.list(),
       ]);
       setVouchers((v || []).filter(x => x.flow === 'income'));
-      setTypes((t || []).filter(x => x.flow === 'income'));
+      setTypes((tData || []).filter(x => x.flow === 'income'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -62,14 +68,31 @@ export default function IncomeTab({ branchId, onReload }) {
     </div>
   );
 
+  const translateVoucherDescription = (desc) => {
+    if (!desc) return '—';
+    if (desc.startsWith('Thanh toán hoá đơn #')) {
+      return desc.replace('Thanh toán hoá đơn #', `${t('cashflow.desc_invoice_payment', 'Payment for invoice')} #`);
+    }
+    if (desc.startsWith('Tiền TIP hoá đơn #')) {
+      return desc.replace('Tiền TIP hoá đơn #', `${t('cashflow.desc_tip_payment', 'Tip for invoice')} #`);
+    }
+    if (desc.startsWith('Thu tiền cọc phiếu ')) {
+      return desc.replace('Thu tiền cọc phiếu ', `${t('cashflow.desc_deposit_payment', 'Deposit payment for')} `);
+    }
+    if (desc.startsWith('Thanh toán đơn hàng #')) {
+      return desc.replace('Thanh toán đơn hàng #', `${t('cashflow.desc_order_payment', 'Payment for order')} #`);
+    }
+    return desc;
+  };
+
   return (
     <div className="space-y-4">
       {/* Summary card */}
       <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white flex items-center justify-between shadow-lg shadow-emerald-100">
         <div>
-          <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-1">Tổng phiếu thu</p>
+          <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-1">{t('cashflow.total_income_title', 'Tổng phiếu thu')}</p>
           <p className="text-2xl font-bold">{formatVND(totalAmount)}</p>
-          <p className="text-emerald-200 text-xs mt-0.5">{filtered.length} phiếu</p>
+          <p className="text-emerald-200 text-xs mt-0.5">{filtered.length} {t('cashflow.voucher_unit', 'phiếu')}</p>
         </div>
         <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
           <TrendingUp className="w-6 h-6" />
@@ -84,7 +107,7 @@ export default function IncomeTab({ branchId, onReload }) {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm mã phiếu, mô tả..."
+              placeholder={t('cashflow.search_voucher_ph', 'Tìm mã phiếu, mô tả...')}
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-400"
             />
           </div>
@@ -93,17 +116,21 @@ export default function IncomeTab({ branchId, onReload }) {
             onChange={e => setFilterType(e.target.value)}
             className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
           >
-            <option value="all">Tất cả loại</option>
-            {types.map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
+            <option value="all">{t('cashflow.filter_all_types', 'Tất cả loại')}</option>
+            {types.map(typeItem => (
+              <option key={typeItem.code} value={typeItem.code}>
+                {typeItem.name}
+              </option>
+            ))}
           </select>
           <select
             value={filterSource}
             onChange={e => setFilterSource(e.target.value)}
             className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
           >
-            <option value="all">Tất cả nguồn</option>
-            <option value="auto">⚡ Tự động</option>
-            <option value="manual">✏️ Thủ công</option>
+            <option value="all">{t('cashflow.filter_all_sources', 'Tất cả nguồn')}</option>
+            <option value="auto">⚡ {t('cashflow.source_auto', 'Tự động')}</option>
+            <option value="manual">✏️ {t('cashflow.source_manual', 'Thủ công')}</option>
           </select>
         </div>
         <div className="flex gap-2 items-center">
@@ -116,7 +143,7 @@ export default function IncomeTab({ branchId, onReload }) {
           />
           {(dateFrom || dateTo || filterType !== 'all' || filterSource !== 'all' || search) && (
             <button onClick={() => { setDateFrom(''); setDateTo(''); setFilterType('all'); setFilterSource('all'); setSearch(''); }} className="text-xs text-red-500 hover:text-red-600 font-medium px-2">
-              Xoá lọc
+              {t('cashflow.clear_filter', 'Xoá lọc')}
             </button>
           )}
         </div>
@@ -127,20 +154,20 @@ export default function IncomeTab({ branchId, onReload }) {
         {filtered.length === 0 ? (
           <div className="py-16 text-center">
             <TrendingUp className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">Chưa có phiếu thu nào</p>
+            <p className="text-slate-400 text-sm">{t('cashflow.no_income_vouchers', 'Chưa có phiếu thu nào')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Mã phiếu</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Ngày</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Loại</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Mô tả</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">P.thức</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Nguồn</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500">Số tiền</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_voucher_code', 'Mã phiếu')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_date', 'Ngày')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_type', 'Loại')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_description', 'Mô tả')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_method', 'P.thức')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_source', 'Nguồn')}</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_amount', 'Số tiền')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -162,11 +189,15 @@ export default function IncomeTab({ branchId, onReload }) {
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
                           style={{ background: typeObj?.color || '#94A3B8' }}
                         >
-                          {v.type_name || 'Khác'}
+                          {typeObj?.name || v.type_name || 'Khác'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[200px] truncate">{v.description || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-slate-500">{getPaymentMethodLabel(v.payment_method)}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[200px] truncate">
+                        {translateVoucherDescription(v.description)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-500">
+                        {t(`cashflow.pm_${v.payment_method}`, getPaymentMethodLabel(v.payment_method))}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${SOURCE_COLORS[v.source] || SOURCE_COLORS.manual}`}>
                           {SOURCE_LABELS[v.source] || v.source}
@@ -179,7 +210,7 @@ export default function IncomeTab({ branchId, onReload }) {
               </tbody>
               <tfoot>
                 <tr className="bg-emerald-50 border-t-2 border-emerald-100">
-                  <td colSpan={6} className="px-4 py-3 text-xs font-bold text-emerald-700">Tổng cộng ({filtered.length} phiếu)</td>
+                  <td colSpan={6} className="px-4 py-3 text-xs font-bold text-emerald-700">{t('cashflow.total_summary_prefix', 'Tổng cộng')} ({filtered.length} {t('cashflow.voucher_unit', 'phiếu')})</td>
                   <td className="px-4 py-3 text-right font-bold text-emerald-700 text-sm">{formatVND(totalAmount)}</td>
                 </tr>
               </tfoot>

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { X, Plus, Trash2, ArrowRightLeft, Building2 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 import { todayStr } from '@/lib/format';
 import { toast } from '@/components/Layout';
 
@@ -13,6 +14,7 @@ const DEFAULT_BRANCHES = [
 ];
 
 export default function StockTransferModal({ products, onClose, onSave }) {
+  const { t } = useT();
   const { branches: contextBranches } = useBranch();
   const branchList = (contextBranches && contextBranches.length > 0) ? contextBranches : DEFAULT_BRANCHES;
 
@@ -32,7 +34,7 @@ export default function StockTransferModal({ products, onClose, onSave }) {
   };
 
   const handleRemoveItem = (index) => {
-    if (items.length <= 1) return toast.error('Phiếu chuyển kho phải có ít nhất 1 sản phẩm');
+    if (items.length <= 1) return toast.error(t('inventory.err_at_least_one_transfer', 'Phiếu chuyển kho phải có ít nhất 1 sản phẩm'));
     setItems(items.filter((_, i) => i !== index));
   };
 
@@ -45,10 +47,10 @@ export default function StockTransferModal({ products, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (fromBranchId === toBranchId) {
-      return toast.error('Kho xuất và Kho nhận không thể là cùng 1 chi nhánh');
+      return toast.error(t('inventory.err_same_branch_transfer', 'Kho xuất và Kho nhận không thể là cùng 1 chi nhánh'));
     }
 
-    if (items.length === 0) return toast.error('Vui lòng chọn sản phẩm cần điều chuyển');
+    if (items.length === 0) return toast.error(t('inventory.err_select_transfer_products', 'Vui lòng chọn sản phẩm cần điều chuyển'));
 
     const fromBranch = branchList.find(b => b.id === fromBranchId);
     const toBranch = branchList.find(b => b.id === toBranchId);
@@ -92,8 +94,8 @@ export default function StockTransferModal({ products, onClose, onSave }) {
               <ArrowRightLeft className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-800">Tạo Phiếu Điều Chuyển Kho</h3>
-              <p className="text-xs text-slate-400 font-medium">Chuyển sản phẩm / vật tư giữa các chi nhánh salon</p>
+              <h3 className="font-bold text-base text-slate-800">{t('inventory.title_create_transfer', 'Tạo Phiếu Điều Chuyển Kho')}</h3>
+              <p className="text-xs text-slate-400 font-medium">{t('inventory.transfer_subtitle', 'Chuyển sản phẩm / vật tư giữa các chi nhánh salon')}</p>
             </div>
           </div>
           <button 
@@ -107,7 +109,7 @@ export default function StockTransferModal({ products, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Kho xuất (Chi nhánh đi) <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t('inventory.from_branch_label', 'Kho xuất (Chi nhánh đi)')} <span className="text-red-500">*</span></label>
               <select 
                 value={fromBranchId}
                 onChange={(e) => setFromBranchId(e.target.value)}
@@ -120,7 +122,7 @@ export default function StockTransferModal({ products, onClose, onSave }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Kho nhận (Chi nhánh đến) <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t('inventory.to_branch_label', 'Kho nhận (Chi nhánh đến)')} <span className="text-red-500">*</span></label>
               <select 
                 value={toBranchId}
                 onChange={(e) => setToBranchId(e.target.value)}
@@ -136,13 +138,13 @@ export default function StockTransferModal({ products, onClose, onSave }) {
           {/* Product Items Table */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-800">Danh sách sản phẩm điều chuyển</label>
+              <label className="block text-xs font-bold text-slate-800">{t('inventory.list_transfer_products', 'Danh sách sản phẩm điều chuyển')}</label>
               <button
                 type="button"
                 onClick={handleAddItem}
                 className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 font-bold text-[11px] flex items-center gap-1 transition-colors"
               >
-                <Plus className="w-3 h-3" /> Thêm sản phẩm
+                <Plus className="w-3 h-3" /> {t('inventory.btn_add_product', 'Thêm sản phẩm')}
               </button>
             </div>
 
@@ -150,8 +152,8 @@ export default function StockTransferModal({ products, onClose, onSave }) {
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600">
                   <tr>
-                    <th className="py-2.5 px-3">Sản phẩm</th>
-                    <th className="py-2.5 px-3 w-32 text-center">Số lượng chuyển</th>
+                    <th className="py-2.5 px-3">{t('inventory.col_product', 'Sản phẩm')}</th>
+                    <th className="py-2.5 px-3 w-32 text-center">{t('inventory.col_transfer_qty', 'Số lượng điều chuyển')}</th>
                     <th className="py-2.5 px-2 w-10 text-center">#</th>
                   </tr>
                 </thead>
@@ -195,11 +197,11 @@ export default function StockTransferModal({ products, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Ghi chú điều chuyển</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('inventory.transfer_note_label', 'Ghi chú điều chuyển')}</label>
             <textarea 
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Nhập ghi chú lý do điều chuyển hàng..."
+              placeholder={t('inventory.ph_transfer_note', 'Nhập ghi chú lý do điều chuyển hàng...')}
               rows={2}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-800 resize-none"
             />
@@ -212,13 +214,13 @@ export default function StockTransferModal({ products, onClose, onSave }) {
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
             >
-              Hủy
+              {t('inventory.btn_cancel', 'Hủy')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all"
             >
-              Tạo Phiếu Chuyển Kho
+              {t('inventory.btn_confirm_transfer', 'Tạo Phiếu Chuyển Kho')}
             </button>
           </div>
         </form>

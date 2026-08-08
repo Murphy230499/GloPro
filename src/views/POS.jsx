@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Plus, X, BarChart3, QrCode, CheckCircle2 } from 'lucide-react';
 import { applyDiscountsToCart } from '@/utils/promos';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,6 +11,7 @@ import { loadCustomerTiers } from '@/utils/loyaltyFallbacks';
 import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 import CatalogColumn from '@/components/pos/CatalogColumn';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
+import { useT } from '@/lib/i18n';
 
 const getCurrentUser = () => {
   try {
@@ -64,10 +65,20 @@ const tabName = (s) => {
   return `Walk-In-${String(s.seqNum).padStart(3, '0')}`;
 };
 
+// Cache catalog data in-memory to avoid repeated fetches (2-minute TTL) across unmounts
+let globalCatalogCache = null;
+let globalCatalogCacheTime = 0;
+const CATALOG_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+let globalCustomerCache = null;
+let globalCustomerCacheTime = 0;
+const CUSTOMER_TTL_MS = 30 * 1000; // 30 seconds
+
 export default function POS() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentBranchId } = useBranch();
+  const { t } = useT();
 
   const clearSearchParams = (keys) => {
     if (typeof window === 'undefined') return;
@@ -82,23 +93,31 @@ export default function POS() {
 
   const loadUnpaidInvoices = async (selectId = null) => {
     try {
-      const [invs, cusList, s, p, pk, t, sc, pc, gc] = await Promise.all([
-        base44.entities.Invoice.list(),
-        base44.entities.Customer.list(),
-        base44.entities.Service.list(),
-        base44.entities.Product.list(),
-        base44.entities.ServicePackage.list(),
-        base44.entities.Treatment.list(),
-        base44.entities.ServiceCombo.list(),
-        base44.entities.ProductCombo.list(),
-        base44.entities.PrepaidCard.list()
+      // Reuse in-memory catalog if available, otherwise fetch only unpaid invoices + customers
+      let catData = globalCatalogCache;
+      
+      const now = Date.now();
+      const customerPromise = (globalCustomerCache && (now - globalCustomerCacheTime) < CUSTOMER_TTL_MS)
+        ? Promise.resolve(globalCustomerCache)
+        : base44.entities.Customer.list().then(c => {
+            globalCustomerCache = c;
+            globalCustomerCacheTime = Date.now();
+            return c;
+          });
+
+      const [invs, cusList] = await Promise.all([
+        base44.entities.Invoice.filter({ status: 'unpaid' }),
+        customerPromise
       ]);
 
-      const allCat = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
+      // Build allCat from cache or current state refs
+      const allCat = catData
+        ? [...(catData.s||[]), ...(catData.p||[]), ...(catData.pk||[]), ...(catData.t||[]), ...(catData.sc||[]), ...(catData.pc||[]), ...(catData.gc||[])]
+        : [];
       const branchInvs = (currentBranchId === 'all' || !currentBranchId)
         ? invs
         : invs.filter(x => String(x.branch_id) === String(currentBranchId));
-      const unpaidInvs = branchInvs.filter(x => x.status === 'unpaid');
+      const unpaidInvs = branchInvs;
       const cusMap = Object.fromEntries(cusList.map(c => [c.id, c]));
       const sorted = unpaidInvs.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
       const mapped = sorted.map((inv, idx) => {
@@ -194,23 +213,48 @@ export default function POS() {
 
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
 
-  const loadData = () => {
+  const loadData = (forceRefresh = false) => {
+    const now = Date.now();
+    const cacheValid = globalCatalogCache && (now - globalCatalogCacheTime) < CATALOG_TTL_MS;
+
     setIsLoadingCatalog(true);
     const catalogFilter = currentBranchId === 'all' ? {} : { branch_ids: currentBranchId };
     const normalFilter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+
+    // If catalog cache is valid and not forced, skip heavy catalog fetches
+    const catalogPromise = (!forceRefresh && cacheValid)
+      ? Promise.resolve(globalCatalogCache)
+      : Promise.all([
+          base44.entities.Service.filter(catalogFilter),
+          base44.entities.Product.filter(catalogFilter),
+          base44.entities.ServicePackage.filter(catalogFilter),
+          base44.entities.Treatment.filter(catalogFilter),
+          base44.entities.ServiceCombo.filter(catalogFilter),
+          base44.entities.ProductCombo.filter(catalogFilter),
+          base44.entities.PrepaidCard.filter(catalogFilter),
+        ]).then(([s, p, pk, t, sc, pc, gc]) => {
+          const data = { s, p, pk, t, sc, pc, gc };
+          globalCatalogCache = data;
+          globalCatalogCacheTime = Date.now();
+          return data;
+        });
+
+    const customerPromise = (globalCustomerCache && (now - globalCustomerCacheTime) < CUSTOMER_TTL_MS)
+      ? Promise.resolve(globalCustomerCache)
+      : base44.entities.Customer.list().then(c => {
+          globalCustomerCache = c;
+          globalCustomerCacheTime = Date.now();
+          return c;
+        });
+
     Promise.all([
-      base44.entities.Service.filter(catalogFilter),
-      base44.entities.Product.filter(catalogFilter),
-      base44.entities.ServicePackage.filter(catalogFilter),
-      base44.entities.Treatment.filter(catalogFilter),
-      base44.entities.ServiceCombo.filter(catalogFilter),
-      base44.entities.ProductCombo.filter(catalogFilter),
-      base44.entities.PrepaidCard.filter(catalogFilter),
+      catalogPromise,
       base44.entities.ServiceGroup.filter(normalFilter),
       base44.entities.Staff.filter(normalFilter),
-      base44.entities.Customer.list(),
+      customerPromise,
       loadCustomerTiers()
-    ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c, ct]) => {
+    ]).then(([catData, gr, st, c, ct]) => {
+      const { s, p, pk, t, sc, pc, gc } = catData;
       setServices((s || []).filter((x) => x.is_active));
       setProducts((p || []).filter((x) => x.is_active));
       setPackages((pk || []).filter((x) => x.is_active));
@@ -249,10 +293,20 @@ export default function POS() {
     const buyAgainName = searchParams.get('buy_again_name');
     const buyAgainType = searchParams.get('buy_again_type');
     const buyAgainPrice = parseFloat(searchParams.get('buy_again_price') || '0');
+    const prefillCustomerId = searchParams.get('customer_id');
+
+    if (prefillCustomerId) {
+      base44.entities.Customer.list().then(cusList => {
+        const custObj = cusList.find(c => c && String(c.id) === String(prefillCustomerId));
+        if (custObj) {
+          handleUpdateSession({ customer: custObj });
+        }
+      });
+    }
 
     if (buyAgainCustomerId && buyAgainName && buyAgainType) {
       if (currentBranchId === 'all' || !currentBranchId) {
-        toast.error('Vui lòng chọn cơ sở cụ thể để mua lại dịch vụ/sản phẩm');
+        toast.error(t('pos.err_select_branch_buy_again', 'Vui lòng chọn cơ sở cụ thể để mua lại dịch vụ/sản phẩm'));
         return;
       }
       Promise.all([
@@ -291,9 +345,9 @@ export default function POS() {
           });
 
           await loadUnpaidInvoices(newInv.id);
-          toast.success(`Đã tạo đơn mua lại cho khách ${custObj?.name || ''}`);
+          toast.success(`${t('pos.toast_buy_again_created', 'Đã tạo đơn mua lại cho khách')} ${custObj?.name || ''}`);
         } catch (e) {
-          toast.error('Lỗi khi tạo hóa đơn mua lại: ' + (e.message || e));
+          toast.error(t('pos.err_create_buyagain_invoice', 'Lỗi khi tạo hóa đơn mua lại: ') + (e.message || e));
           loadUnpaidInvoices();
         }
 
@@ -311,7 +365,7 @@ export default function POS() {
 
   useEffect(() => {
     const handleReload = () => {
-      loadData();
+      loadData(true);
       loadUnpaidInvoices(activeId);
     };
     window.addEventListener('reload-data', handleReload);
@@ -506,7 +560,7 @@ export default function POS() {
 
   const createSale = async () => {
     if (currentBranchId === 'all' || !currentBranchId) {
-      return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để tạo đơn hàng');
+      return toast.error(t('pos.err_select_branch_create', 'Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để tạo đơn hàng'));
     }
 
     try {
@@ -529,9 +583,9 @@ export default function POS() {
       });
 
       await loadUnpaidInvoices(newInv.id);
-      toast.success(`Đã tạo hóa đơn tạm tính mới • ${saleCode}`);
+      toast.success(`${t('pos.toast_invoice_created', 'Đã tạo hóa đơn tạm tính mới')} • ${saleCode}`);
     } catch (e) {
-      toast.error('Lỗi khi tạo hóa đơn tạm tính: ' + (e.message || e));
+      toast.error(t('pos.err_create_invoice', 'Lỗi khi tạo hóa đơn tạm tính: ') + (e.message || e));
     }
   };
 
@@ -545,7 +599,7 @@ export default function POS() {
     let session = activeSession;
     if (!session) {
       if (currentBranchId === 'all' || !currentBranchId) {
-        return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái trước khi chọn món');
+        return toast.error(t('pos.err_select_branch_add_item', 'Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái trước khi chọn món'));
       }
 
       try {
@@ -581,9 +635,9 @@ export default function POS() {
         });
 
         await loadUnpaidInvoices(newInv.id);
-        toast.success(`Đã tạo hóa đơn tạm tính mới • ${saleCode}`);
+        toast.success(`${t('pos.toast_invoice_created', 'Đã tạo hóa đơn tạm tính mới')} • ${saleCode}`);
       } catch (e) {
-        toast.error('Lỗi khi tạo hóa đơn tạm tính: ' + (e.message || e));
+        toast.error(t('pos.err_create_invoice', 'Lỗi khi tạo hóa đơn tạm tính: ') + (e.message || e));
       }
       return;
     }
@@ -629,22 +683,22 @@ export default function POS() {
     setCustomers((arr) => [c, ...arr]);
     patchSession({ customer: c });
     setCustModal(false);
-    toast.success('Đã thêm khách hàng');
+    toast.success(t('pos.toast_customer_added', 'Đã thêm khách hàng'));
   };
 
   const checkout = async ({ tip, discount, payments, tipSplits, sessionCustomer }) => {
     const session = activeSession;
     if (!session) return;
-    if (!session.cart?.length) return toast.error('Giỏ hàng trống');
+    if (!session.cart?.length) return toast.error(t('pos.err_empty_cart', 'Giỏ hàng trống'));
     
     if (currentBranchId === 'all' || !currentBranchId) {
-      return toast.error('Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để thanh toán hoá đơn');
+      return toast.error(t('pos.err_select_branch_checkout', 'Vui lòng chọn một cơ sở cụ thể ở góc trên bên trái để thanh toán hoá đơn'));
     }
     
     const effectiveCustomer = sessionCustomer ?? session.customer;
     const hasMembershipItem = session.cart.some(item => item.type !== 'service' && item.type !== 'product');
     if (hasMembershipItem && (!effectiveCustomer || !effectiveCustomer.id)) {
-      return toast.error('Vui lòng chọn khách hàng khi thanh toán gói dịch vụ, liệu trình hoặc thẻ tiền mặt');
+      return toast.error(t('pos.err_membership_need_customer', 'Vui lòng chọn khách hàng khi thanh toán gói dịch vụ, liệu trình hoặc thẻ tiền mặt'));
     }
     
     setPaying(true);
@@ -948,11 +1002,11 @@ export default function POS() {
       }
       // ────────────────────────────────────────────────────────────────────
 
-      toast.success(`Thanh toán thành công • ${session.saleCode}`);
+      toast.success(`${t('pos.toast_payment_success', 'Thanh toán thành công')} • ${session.saleCode}`);
       closeSession(session.id);
       setCheckoutOpen(false);
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('pos.err_generic', 'Lỗi: ') + (e.message || e));
     }
     setPaying(false);
   };
@@ -961,13 +1015,13 @@ export default function POS() {
     <div className="flex flex-col h-[calc(100vh-90px)] md:h-[calc(100vh-75px)] overflow-hidden space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 shrink-0">
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thu ngân</h1>
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight">{t('pos.title', 'Thu ngân')}</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/invoices')} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50">
-            <BarChart3 className="w-4 h-4" /> Danh sách hoá đơn
+            <BarChart3 className="w-4 h-4" /> {t('pos.invoice_list', 'Danh sách hoá đơn')}
           </button>
           <button onClick={createSale} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm shadow-sm transition-colors">
-            <Plus className="w-4 h-4" /> Tạo đơn
+            <Plus className="w-4 h-4" /> {t('pos.btn_create_order', 'Tạo đơn')}
           </button>
         </div>
       </div>
@@ -997,7 +1051,7 @@ export default function POS() {
         <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
         services={services} products={products} packages={packages} treatments={treatments}
         serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
-        groups={groups} onAddItem={addToCart} onReload={loadData} activeSession={activeSession} isLoading={isLoadingCatalog} />
+        groups={groups} onAddItem={addToCart} onReload={() => loadData(true)} activeSession={activeSession} isLoading={isLoadingCatalog} />
         {activeSession ?
         <TicketColumn session={activeSession} staff={staff} customers={customers}
         onUpdate={patchSession}
@@ -1008,17 +1062,17 @@ export default function POS() {
         onCancel={async () => {
           const session = activeSession;
           if (!session) return;
-          if (!confirm('Bạn có chắc chắn muốn huỷ hoá đơn tạm tính này? Hoá đơn sẽ được đưa vào danh sách đã huỷ.')) return;
+          if (!confirm(t('pos.confirm_cancel_invoice', 'Bạn có chắc chắn muốn huỷ hoá đơn tạm tính này? Hoá đơn sẽ được đưa vào danh sách đã huỷ.'))) return;
           try {
             const updatedLogs = [
               ...getNormalizedLogs(session),
-              createLogEntry('Huỷ hoá đơn', 'Huỷ hoá đơn khỏi hệ thống', getCurrentUser())
+              createLogEntry(t('pos.log_cancel_invoice', 'Huỷ hoá đơn'), t('pos.log_cancel_invoice_detail', 'Huỷ hoá đơn khỏi hệ thống'), getCurrentUser())
             ];
             await base44.entities.Invoice.update(session.id, { status: 'cancelled', previous_status: 'unpaid', logs: JSON.stringify(updatedLogs) });
-            toast.success('Đã huỷ hoá đơn tạm tính');
+            toast.success(t('pos.toast_invoice_cancelled', 'Đã huỷ hoá đơn tạm tính'));
             closeSession(session.id);
           } catch (e) {
-            toast.error('Lỗi: ' + (e.message || e));
+            toast.error(t('pos.err_generic', 'Lỗi: ') + (e.message || e));
           }
         }}
         onReview={() => setReviewModalOpen(true)}

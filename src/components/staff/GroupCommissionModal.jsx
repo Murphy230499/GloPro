@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, CheckSquare } from 'lucide-react';
 import Avatar from '@/components/Avatar';
@@ -14,6 +15,7 @@ export default function GroupCommissionModal({
   groups,
   onSave
 }) {
+  const { t } = useT();
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
   const [value, setValue] = useState(0);
@@ -200,7 +202,7 @@ export default function GroupCommissionModal({
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl text-left flex flex-col max-h-[90vh] overflow-visible">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Cài đặt hoa hồng nhóm</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.commission.group_settings_title', 'Cài đặt hoa hồng nhóm')}</h2>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -210,7 +212,7 @@ export default function GroupCommissionModal({
         <form onSubmit={handleSubmit} className="flex-1 overflow-visible space-y-4">
           {/* Step 1: Select Staff Dropdown */}
           <div className="space-y-1.5 staff-dropdown-container relative">
-            <label className="text-[11px] font-normal text-slate-500 block">1. Chọn nhân viên áp dụng</label>
+            <label className="text-[11px] font-normal text-slate-500 block">{t('staff.commission.step_1_staff', '1. Chọn nhân viên áp dụng')}</label>
             <button
               type="button"
               onClick={() => { setIsStaffDropdownOpen(!isStaffDropdownOpen); setIsItemDropdownOpen(false); }}
@@ -218,7 +220,7 @@ export default function GroupCommissionModal({
             >
               <span className="truncate font-normal text-slate-650">
                 {selectedStaffIds.length === 0 
-                  ? 'Chọn nhân viên áp dụng' 
+                  ? t('staff.commission.select_staff', 'Chọn nhân viên áp dụng') 
                   : selectedStaffIds.length === staff.length 
                     ? 'Tất cả nhân viên' 
                     : `Đã chọn ${selectedStaffIds.length} nhân viên`}
@@ -399,7 +401,7 @@ export default function GroupCommissionModal({
 
           {/* Step 3: Commission Value */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-500 block">3. Thiết lập mức hoa hồng</label>
+            <label className="text-[11px] font-bold text-slate-500 block">{t('staff.commission.step_3_amount', '3. Thiết lập mức hoa hồng')}</label>
             <div className="flex items-center border border-slate-200 rounded-xl bg-white px-4 py-2.5 w-full shadow-sm focus-within:border-orange-500 transition-all">
               <input 
                 type="text"
@@ -441,7 +443,7 @@ export default function GroupCommissionModal({
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-650 font-sans"
           >
-            Hủy
+            {t('staff.scheduler.cancel', 'Hủy')}
           </button>
           <button
             type="button"

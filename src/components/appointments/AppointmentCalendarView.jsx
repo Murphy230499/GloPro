@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n';
 import { TIMELINE_SLOTS, timeStringToMinutes, getAppointmentTimes, DEFAULT_FACILITIES } from './constants';
 import { formatVND } from '@/lib/format';
 import { Clock, Edit3, Trash2, X } from 'lucide-react';
@@ -18,6 +19,8 @@ export default function AppointmentCalendarView({
   onSlotClick,
   onApptDrop
 }) {
+  const { t } = useT();
+
   const [currentTime, setCurrentTime] = useState('09:48');
   const [currentMinutes, setCurrentMinutes] = useState(588);
   const [hoveredAppt, setHoveredAppt] = useState(null);
@@ -89,7 +92,7 @@ export default function AppointmentCalendarView({
 
   let rawColumns = targetEntity === 'staff'
     ? [
-        { id: '__unassigned', name: 'Chưa phân công', avatar_url: null },
+        { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null },
         ...(staffList.length ? staffList.map(s => ({ id: s.id, name: s.full_name || s.name, avatar_url: s.avatar_url })) : sampleStaffColumns.filter(c => c.id !== '__unassigned'))
       ]
     : facilityList.map(f => ({ id: f.id, name: f.name, icon: f.icon || '📍' }));

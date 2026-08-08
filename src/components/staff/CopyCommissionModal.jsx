@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -8,6 +9,7 @@ import Avatar from '@/components/Avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
+  const { t } = useT();
   const [sourceStaffId, setSourceStaffId] = useState('');
   const [targetStaffIds, setTargetStaffIds] = useState([]);
   const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
@@ -175,8 +177,8 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng chung</h2>
-            <p className="text-[10px] text-slate-450 font-medium mt-0.5">Sao chép cấu hình hoa hồng TẤT CẢ các tab</p>
+            <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.commission.copy_title', 'Sao chép hoa hồng chung')}</h2>
+            <p className="text-[10px] text-slate-450 font-medium mt-0.5">{t('staff.commission.copy_subtitle', 'Sao chép cấu hình hoa hồng TẤT CẢ các tab')}</p>
           </div>
           <button 
             type="button"
@@ -192,7 +194,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
           
           {/* Source Staff Single-Select Dropdown */}
           <div className="space-y-1.5 source-dropdown-container relative">
-            <label className="text-[11px] font-normal text-slate-500 block">1. Nhân viên nguồn (Sao chép từ)</label>
+            <label className="text-[11px] font-normal text-slate-500 block">{t('staff.commission.step_1_source', '1. Nhân viên nguồn (Sao chép từ)')}</label>
             <button
               type="button"
               onClick={() => { setIsSourceDropdownOpen(!isSourceDropdownOpen); setIsTargetDropdownOpen(false); }}
@@ -258,7 +260,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
 
           {/* Target Staff Multi-Select Dropdown */}
           <div className="space-y-1.5 target-dropdown-container relative animate-in fade-in duration-200">
-            <label className="text-[11px] font-normal text-slate-500 block">2. Nhân viên nhận (Sao chép cho)</label>
+            <label className="text-[11px] font-normal text-slate-500 block">{t('staff.commission.step_2_target', '2. Nhân viên nhận (Sao chép cho)')}</label>
             <button
                 type="button"
               onClick={() => { setIsTargetDropdownOpen(!isTargetDropdownOpen); setIsSourceDropdownOpen(false); }}
@@ -266,7 +268,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
             >
               <span className="truncate font-normal text-slate-655">
                   {targetStaffIds.length === 0 
-                    ? 'Chọn nhân viên nhận...' 
+                    ? t('staff.commission.select_target', 'Chọn nhân viên nhận...') 
                     : targetStaffIds.length === availableTargets.length 
                       ? 'Tất cả nhân viên còn lại' 
                       : `Đã chọn ${targetStaffIds.length} nhân viên`}
@@ -351,7 +353,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-650 font-sans"
           >
-            Hủy
+            {t('staff.scheduler.cancel', 'Hủy')}
           </button>
           <button 
             type="button" 

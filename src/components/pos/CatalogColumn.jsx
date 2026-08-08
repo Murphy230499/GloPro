@@ -4,23 +4,25 @@ import { Search, Scissors, ShoppingCart, ChevronDown, Gift, Sparkles, Layers, Bo
 import { formatVND } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
-
-const TABS = [
-  { v: 'service', l: 'Dịch vụ', i: Scissors },
-  { v: 'product', l: 'Sản phẩm', i: ShoppingCart },
-  { v: 'package', l: 'Gói DV', i: Gift },
-  { v: 'treatment', l: 'Liệu trình', i: Sparkles },
-  { v: 'service_combo', l: 'Combo DV', i: Layers },
-  { v: 'product_combo', l: 'Combo SP', i: Boxes },
-  { v: 'prepaid_card', l: 'Thẻ', i: CreditCard },
-];
+import { useT } from '@/lib/i18n';
 
 
 export default function CatalogColumn({ tab, setTab, search, setSearch, services, products, packages, treatments, serviceCombos, productCombos, prepaidCards, groups, onAddItem, onReload, activeSession, isLoading }) {
+  const { t } = useT();
   const [collapsed, setCollapsed] = useState({});
   const [isSorting, setIsSorting] = useState(false);
   const [draggedGroupId, setDraggedGroupId] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
+
+  const TABS = [
+    { v: 'service', l: t('pos.tab.service', 'DV'), i: Scissors },
+    { v: 'product', l: t('pos.tab.product', 'SP'), i: ShoppingCart },
+    { v: 'package', l: t('pos.tab.package', 'Gói DV'), i: Gift },
+    { v: 'treatment', l: t('pos.tab.treatment', 'Liệu trình'), i: Sparkles },
+    { v: 'service_combo', l: t('pos.tab.service_combo', 'Combo DV'), i: Layers },
+    { v: 'product_combo', l: t('pos.tab.product_combo', 'Combo SP'), i: Boxes },
+    { v: 'prepaid_card', l: t('pos.tab.prepaid_card', 'Thẻ'), i: CreditCard },
+  ];
 
   const ENTITY_MAP = {
     service: 'Service',
@@ -74,10 +76,10 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
 
     try {
       await Promise.all(updates);
-      toast.success('Đã thay đổi thứ tự nhóm');
+      toast.success(t('pos.catalog.group_order_changed', 'Đã thay đổi thứ tự nhóm'));
       if (onReload) onReload();
     } catch (err) {
-      toast.error('Không thể lưu thứ tự nhóm');
+      toast.error(t('pos.catalog.err_save_group_order', 'Không thể lưu thứ tự nhóm'));
     }
     setDraggedGroupId(null);
   };
@@ -94,7 +96,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
 
     const targetGroupId = getItemGroupIdOrCategory(targetItem);
     if (draggedItem.groupId !== targetGroupId) {
-      toast.error('Chỉ có thể đổi thứ tự trong cùng nhóm');
+      toast.error(t('pos.catalog.err_sort_same_group', 'Chỉ có thể đổi thứ tự trong cùng nhóm'));
       return;
     }
 
@@ -132,10 +134,10 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
 
     try {
       await Promise.all(updates);
-      toast.success('Đã thay đổi thứ tự');
+      toast.success(t('pos.catalog.item_order_changed', 'Đã thay đổi thứ tự'));
       if (onReload) onReload();
     } catch (err) {
-      toast.error('Không thể lưu thứ tự');
+      toast.error(t('pos.catalog.err_save_item_order', 'Không thể lưu thứ tự'));
     }
     setDraggedItem(null);
   };
@@ -206,7 +208,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
 
   const grouped = {};
   filtered.forEach((item) => {
-    const cat = resolveGroupName(item) || 'Khác';
+    const cat = resolveGroupName(item) || t('common.other', 'Khác');
     (grouped[cat] = grouped[cat] || []).push(item);
   });
 
@@ -237,15 +239,14 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
   const handleAdd = (item) => {
     if (isSorting) return;
     
-    // Early warning: special items require a customer
     const SPECIAL_TABS = ['prepaid_card', 'package', 'treatment'];
     if (SPECIAL_TABS.includes(tab) && !activeSession?.customer) {
       const labels = {
-        prepaid_card: 'thẻ tiền mặt cho khách vãng lai',
-        package: 'gói dịch vụ cho khách vãng lai',
-        treatment: 'liệu trình cho khách vãng lai'
+        prepaid_card: t('pos.catalog.cash_card_walkin', 'thẻ tiền mặt cho khách vãng lai'),
+        package: t('pos.catalog.service_package_walkin', 'gói dịch vụ cho khách vãng lai'),
+        treatment: t('pos.catalog.treatment_walkin', 'liệu trình cho khách vãng lai')
       };
-      toast.error(`⚠️ Không thể bán ${labels[tab]}! Vui lòng chọn khách hàng trước.`);
+      toast.error(t('pos.catalog.err_cannot_sell_walkin', '⚠️ Không thể bán {item}! Vui lòng chọn khách hàng trước.').replace('{item}', labels[tab]));
       return;
     }
     
@@ -261,30 +262,30 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
   };
 
   const getItemSub = (item) => {
-    if (tab === 'service') return item.duration_minutes ? `${item.duration_minutes} phút` : '';
-    if (tab === 'product') return item.stock != null ? `Tồn: ${item.stock}` : '';
-    if (tab === 'package') return `${item.usage_count || 1} lần dùng`;
+    if (tab === 'service') return item.duration_minutes ? `${item.duration_minutes} ${t('appointments.settings.minutes', 'phút')}` : '';
+    if (tab === 'product') return item.stock != null ? `${t('pos.catalog.stock_prefix', 'Tồn:')} ${item.stock}` : '';
+    if (tab === 'package') return `${item.usage_count || 1} ${t('pos.catalog.usage_count_postfix', 'lần dùng')}`;
     if (tab === 'treatment') {
       const parts = [];
-      if (item.services?.length) parts.push(`${item.services.length} DV`);
-      if (item.expiry_months || item.expiry_days) parts.push(`Hạn: ${item.expiry_months || 0}T ${item.expiry_days || 0}N`);
+      if (item.services?.length) parts.push(`${item.services.length} ${t('pos.tab.service', 'DV')}`);
+      if (item.expiry_months || item.expiry_days) parts.push(`${t('pos.catalog.expiry_prefix', 'Hạn:')} ${item.expiry_months || 0}${t('pos.catalog.months_short', 'T')} ${item.expiry_days || 0}${t('pos.catalog.days_short', 'N')}`);
       return parts.join(' • ');
     }
-    if (tab === 'service_combo') return `${item.items?.length || 0} dịch vụ`;
-    if (tab === 'product_combo') return `${item.items?.length || 0} sản phẩm`;
-    if (tab === 'prepaid_card') return `Mệnh giá: ${formatVND(item.face_value)}`;
+    if (tab === 'service_combo') return `${item.items?.length || 0} ${t('appointments.service_label', 'dịch vụ')}`;
+    if (tab === 'product_combo') return `${item.items?.length || 0} ${t('pos.catalog.products_count', 'sản phẩm')}`;
+    if (tab === 'prepaid_card') return `${t('pos.catalog.face_value_prefix', 'Mệnh giá:')} ${formatVND(item.face_value)}`;
     return '';
   };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full overflow-hidden">
       <div className="flex items-center gap-1 px-2 pt-2 border-b border-slate-100 overflow-x-auto">
-        {TABS.map((t) => {
-          const Icon = t.i;
+        {TABS.map((tabItem) => {
+          const Icon = tabItem.i;
           return (
-            <button key={t.v} onClick={() => setTab(t.v)}
-              className={`flex items-center gap-1 pb-2 px-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t.v ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-              <Icon className="w-3.5 h-3.5" /> {t.l}
+            <button key={tabItem.v} onClick={() => setTab(tabItem.v)}
+              className={`flex items-center gap-1 pb-2 px-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === tabItem.v ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+              <Icon className="w-3.5 h-3.5" /> {tabItem.l}
             </button>
           );
         })}
@@ -294,16 +295,16 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
         <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-1.5 flex-1">
           <Search className="w-3.5 h-3.5 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm..." className="bg-transparent outline-none text-xs flex-1" />
+            placeholder={t('common.search', 'Tìm...')} className="bg-transparent outline-none text-xs flex-1" />
         </div>
         <button
           onClick={() => setIsSorting(!isSorting)}
-          title="Sắp xếp bảng giá"
+          title={t('pos.catalog.sort_catalog', 'Sắp xếp bảng giá')}
           className={`flex items-center justify-center w-8.5 h-8.5 rounded-xl border transition-all shrink-0 relative group/btn ${isSorting ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-xs' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
         >
           <Move className="w-3.5 h-3.5" />
           <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/btn:block bg-slate-800 text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50 transition-all pointer-events-none">
-            Sắp xếp bảng giá
+            {t('pos.catalog.sort_catalog', 'Sắp xếp bảng giá')}
           </span>
         </button>
       </div>
@@ -332,7 +333,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
             ))}
           </div>
         ) : catList.length === 0 ? (
-          <div className="text-center py-16 text-slate-300 text-sm">Không tìm thấy</div>
+          <div className="text-center py-16 text-slate-300 text-sm">{t('common.no_results', 'Không tìm thấy')}</div>
         ) : (
           catList.map((cat) => {
             const list = cat.list;
@@ -351,7 +352,7 @@ export default function CatalogColumn({ tab, setTab, search, setSearch, services
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                   <h4 className="text-xs font-bold text-slate-700">{cat.label}</h4>
                   <span className="text-[11px] text-slate-400">({list.length})</span>
-                  {isSorting && cat.groupId && <span className="text-[10px] text-emerald-600 ml-auto font-bold animate-pulse">Kéo để xếp nhóm</span>}
+                  {isSorting && cat.groupId && <span className="text-[10px] text-emerald-600 ml-auto font-bold animate-pulse">{t('pos.catalog.drag_to_sort_group', 'Kéo để xếp nhóm')}</span>}
                 </button>
                 {!isCollapsed && (
                   <div className="space-y-0.5">

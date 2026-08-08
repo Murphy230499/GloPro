@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar } from 'lucide-react';
 import DatePickerPopover from './DatePickerPopover';
 
+import { useT } from '@/lib/i18n';
+
 const FILTER_COLOR_MAP = {
   emerald: {
     border: 'border-emerald-500', ring: 'ring-emerald-500/10', icon: 'text-emerald-600'
@@ -18,6 +20,7 @@ const FILTER_COLOR_MAP = {
 };
 
 export default function DateRangeFilter({ startDate, endDate, onStartDateChange, onEndDateChange, color = 'emerald' }) {
+  const { t } = useT();
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
   const startRef = useRef(null);
@@ -58,7 +61,7 @@ export default function DateRangeFilter({ startDate, endDate, onStartDateChange,
   };
 
   const formatDateLabel = (iso) => {
-    if (!iso) return 'Chọn ngày';
+    if (!iso) return t('common.select_date', 'Chọn ngày');
     const parts = iso.split('-');
     if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
     return iso;
@@ -78,7 +81,7 @@ export default function DateRangeFilter({ startDate, endDate, onStartDateChange,
           >
             <div className="flex items-center gap-2 truncate min-w-0">
               <Calendar className={`w-3.5 h-3.5 ${theme.icon} shrink-0`} />
-              <span className="text-[11px] text-slate-400 font-medium shrink-0">Từ:</span>
+              <span className="text-[11px] text-slate-400 font-medium shrink-0">{t('common.date_from_prefix', 'Từ:')}</span>
               <span className="font-semibold text-slate-800 truncate">
                 {formatDateLabel(startDate)}
               </span>
@@ -119,7 +122,7 @@ export default function DateRangeFilter({ startDate, endDate, onStartDateChange,
           >
             <div className="flex items-center gap-2 truncate min-w-0">
               <Calendar className={`w-3.5 h-3.5 ${theme.icon} shrink-0`} />
-              <span className="text-[11px] text-slate-400 font-medium shrink-0">Đến:</span>
+              <span className="text-[11px] text-slate-400 font-medium shrink-0">{t('common.date_to_prefix', 'Đến:')}</span>
               <span className="font-semibold text-slate-800 truncate">
                 {formatDateLabel(endDate)}
               </span>

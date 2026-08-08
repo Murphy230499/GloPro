@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, CalendarPlus, CalendarX, CheckCircle2, XCircle, UserX } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
@@ -24,6 +25,7 @@ export default function NotificationCenter() {
   const ref = useRef(null);
   const router = useRouter();
   const { currentBranchId } = useBranch();
+  const { t } = useT();
 
   useEffect(() => {
     const h = (e) => {if (ref.current && !ref.current.contains(e.target)) setOpen(false);};
@@ -41,16 +43,16 @@ export default function NotificationCenter() {
     ).then(([appts, invs, shifts]) => {
       const n = [];
       appts.filter(inBranch).forEach((a) => {
-        if (a.status === 'cancelled') n.push({ id: 'c' + a.id, type: 'cancel', title: 'Lịch hẹn đã hủy', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
-        if (a.status === 'pending') n.push({ id: 'p' + a.id, type: 'new', title: 'Lịch hẹn mới', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
-        if (a.status === 'no_show') n.push({ id: 'ns' + a.id, type: 'cancel', title: 'Khách không đến', desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });
+        if (a.status === 'cancelled') n.push({ id: 'c' + a.id, type: 'cancel', title: t('notif.appt_cancelled', 'Lịch hẹn đã hủy'), desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
+        if (a.status === 'pending') n.push({ id: 'p' + a.id, type: 'new', title: t('notif.appt_new', 'Lịch hẹn mới'), desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });else
+        if (a.status === 'no_show') n.push({ id: 'ns' + a.id, type: 'cancel', title: t('notif.cust_no_show', 'Khách không đến'), desc: `${a.customer_name} • ${a.date} ${a.start_time || ''}`, to: '/appointments', time: a.created_date, rawAppt: a });
       });
       invs.filter(inBranch).forEach((i) => {
-        if (i.status === 'paid') n.push({ id: 'ip' + i.id, type: 'paid', title: 'Thanh toán thành công', desc: `${i.customer_name} • ${formatVND(i.total)}`, to: '/pos', time: i.created_date });else
-        if (i.status === 'refunded') n.push({ id: 'ir' + i.id, type: 'refund', title: 'Hoá đơn đã hoàn', desc: `${i.customer_name} • ${formatVND(i.total)}`, to: '/reports', time: i.created_date });
+        if (i.status === 'paid') n.push({ id: 'ip' + i.id, type: 'paid', title: t('notif.payment_success', 'Thanh toán thành công'), desc: `${i.customer_name} • ${formatVND(i.total)}`, to: '/pos', time: i.created_date });else
+        if (i.status === 'refunded') n.push({ id: 'ir' + i.id, type: 'refund', title: t('notif.invoice_refunded', 'Hoá đơn đã hoàn'), desc: `${i.customer_name} • ${formatVND(i.total)}`, to: '/reports', time: i.created_date });
       });
       shifts.filter(inBranch).forEach((s) => {
-        if (s.status === 'scheduled') n.push({ id: 's' + s.id, type: 'noshift', title: 'Nhân viên chưa check-in', desc: `${s.staff_name} • ca ${s.start_time}`, to: '/staff', time: s.created_date });
+        if (s.status === 'scheduled') n.push({ id: 's' + s.id, type: 'noshift', title: t('notif.staff_no_checkin', 'Nhân viên chưa check-in'), desc: `${s.staff_name} • ${t('notif.shift_low', 'ca')} ${s.start_time}`, to: '/staff', time: s.created_date });
       });
       n.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
       setItems(n.slice(0, 20));
@@ -96,12 +98,12 @@ export default function NotificationCenter() {
       {open &&
       <div className="absolute right-0 top-full mt-4 w-80 sm:w-96 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 max-h-[70vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <span className="font-bold">Thông báo</span>
-            {unread > 0 && <button onClick={markAllRead} className="text-xs font-semibold text-pink-600">Đánh dấu đã đọc</button>}
+            <span className="font-bold">{t('notif.notifications', 'Thông báo')}</span>
+            {unread > 0 && <button onClick={markAllRead} className="text-xs font-semibold text-pink-600">{t('notif.mark_all_read', 'Đánh dấu đã đọc')}</button>}
           </div>
           <div className="overflow-y-auto">
             {items.length === 0 ?
-          <div className="p-8 text-center text-sm text-slate-400">Không có thông báo mới</div> :
+          <div className="p-8 text-center text-sm text-slate-400">{t('notif.no_new_notif', 'Không có thông báo mới')}</div> :
           items.map((it) => {
             const T = TYPE[it.type];
             const Icon = T.icon;

@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, User, CalendarDays, Scissors, Package, UserSquare, LayoutDashboard, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
@@ -8,18 +9,19 @@ import { formatVND } from '@/lib/format';
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-const PAGES = [
-{ label: 'Tổng quan', to: '/', icon: LayoutDashboard },
-{ label: 'Lịch hẹn', to: '/appointments', icon: CalendarDays },
-{ label: 'Thu ngân', to: '/pos', icon: Package },
-{ label: 'Khách hàng', to: '/customers', icon: User },
-{ label: 'Nhân viên', to: '/staff', icon: UserSquare },
-{ label: 'Dịch vụ & Sản phẩm', to: '/services', icon: Scissors },
-{ label: 'Báo cáo', to: '/reports', icon: BarChart3 },
-{ label: 'Cài đặt', to: '/settings', icon: SettingsIcon }];
-
-
 export default function GlobalSearch() {
+  const { t } = useT();
+
+  const PAGES = useMemo(() => [
+    { label: t('nav.dashboard', 'Tổng quan'), to: '/', icon: LayoutDashboard },
+    { label: t('nav.appointments', 'Lịch hẹn'), to: '/appointments', icon: CalendarDays },
+    { label: t('nav.pos', 'Thu ngân'), to: '/pos', icon: Package },
+    { label: t('nav.customers', 'Khách hàng'), to: '/customers', icon: User },
+    { label: t('nav.staff', 'Nhân viên'), to: '/staff', icon: UserSquare },
+    { label: t('nav.catalog', 'Dịch vụ & Sản phẩm'), to: '/services', icon: Scissors },
+    { label: t('nav.reports', 'Báo cáo'), to: '/reports', icon: BarChart3 },
+    { label: t('nav.settings', 'Cài đặt'), to: '/settings', icon: SettingsIcon }
+  ], [t]);
   const [q, setQ] = useState('');
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,22 +55,22 @@ export default function GlobalSearch() {
         if (!active) return;
         const g = [];
         const pages = PAGES.filter((p) => norm(p.label).includes(n));
-        if (pages.length) g.push({ label: 'Trang & Cài đặt', items: pages.map((p) => ({ title: p.label, to: p.to, icon: p.icon })) });
+        if (pages.length) g.push({ label: t('globalsearch.trang_ci_t', 'Trang & Cài đặt'), items: pages.map((p) => ({ title: p.label, to: p.to, icon: p.icon })) });
 
         const cM = cust.filter((c) => inBranch(c) && (norm(c.name).includes(n) || norm(c.phone || '').includes(n))).slice(0, 5);
-        if (cM.length) g.push({ label: 'Khách hàng', items: cM.map((c) => ({ title: c.name, sub: c.phone, to: '/customers', icon: User })) });
+        if (cM.length) g.push({ label: t('nav.customers', 'Khách hàng'), items: cM.map((c) => ({ title: c.name, sub: c.phone, to: '/customers', icon: User })) });
 
         const aM = appt.filter((a) => inBranch(a) && norm(a.customer_name || '').includes(n)).slice(0, 5);
-        if (aM.length) g.push({ label: 'Lịch hẹn', items: aM.map((a) => ({ title: a.customer_name, sub: `${a.date} ${a.start_time || ''}`, to: '/appointments', icon: CalendarDays })) });
+        if (aM.length) g.push({ label: t('nav.appointments', 'Lịch hẹn'), items: aM.map((a) => ({ title: a.customer_name, sub: `${a.date} ${a.start_time || ''}`, to: '/appointments', icon: CalendarDays })) });
 
         const sM = svc.filter((s) => inBranch(s) && norm(s.name).includes(n)).slice(0, 5);
-        if (sM.length) g.push({ label: 'Dịch vụ', items: sM.map((s) => ({ title: s.name, sub: formatVND(s.price), to: '/services', icon: Scissors })) });
+        if (sM.length) g.push({ label: t('globalsearch.dch_v', 'Dịch vụ'), items: sM.map((s) => ({ title: s.name, sub: formatVND(s.price), to: '/services', icon: Scissors })) });
 
         const pM = prod.filter((p) => inBranch(p) && norm(p.name).includes(n)).slice(0, 5);
-        if (pM.length) g.push({ label: 'Sản phẩm', items: pM.map((p) => ({ title: p.name, sub: formatVND(p.price), to: '/services', icon: Package })) });
+        if (pM.length) g.push({ label: t('globalsearch.sn_phm', 'Sản phẩm'), items: pM.map((p) => ({ title: p.name, sub: formatVND(p.price), to: '/services', icon: Package })) });
 
         const stM = stf.filter((s) => inBranch(s) && norm(s.full_name || '').includes(n)).slice(0, 5);
-        if (stM.length) g.push({ label: 'Nhân viên', items: stM.map((s) => ({ title: s.full_name, sub: s.role, to: '/staff', icon: UserSquare })) });
+        if (stM.length) g.push({ label: t('nav.staff', 'Nhân viên'), items: stM.map((s) => ({ title: s.full_name, sub: s.role, to: '/staff', icon: UserSquare })) });
 
         setGroups(g);
       } finally {if (active) setLoading(false);}
@@ -86,7 +88,7 @@ export default function GlobalSearch() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
-          placeholder="Tìm khách, lịch hẹn, dịch vụ, nhân viên..."
+          placeholder={t('globalsearch.placeholder', 'Tìm khách, lịch hẹn, dịch vụ, nhân viên...')}
           className="bg-transparent outline-none text-sm w-full" />
         
         {loading && <div className="w-4 h-4 border-2 border-pink-200 border-t-pink-500 rounded-full animate-spin shrink-0" />}
@@ -94,7 +96,7 @@ export default function GlobalSearch() {
       {open && q.trim().length >= 2 &&
       <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 max-h-[70vh] overflow-y-auto">
           {!loading && groups.length === 0 &&
-        <div className="p-6 text-center text-sm text-slate-400">Không tìm thấy kết quả cho "{q}"</div>
+        <div className="p-6 text-center text-sm text-slate-400">{t('globalsearch.khong_tim_thay', 'Không tìm thấy kết quả cho')} "{q}"</div>
         }
           {groups.map((g, gi) =>
         <div key={gi} className={gi > 0 ? 'border-t border-slate-50' : ''}>

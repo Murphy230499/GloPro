@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { useT } from '@/lib/i18n';
 import { createPortal } from 'react-dom';
 import { X, Plus, PlusCircle, Trash2, ChevronDown, Clock, Maximize2, Minus, Tag, Wand2, Eye, Calendar, Check, Search, User, Users, Scissors, FileText, MoreHorizontal, PiggyBank, Package, Star, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -13,7 +14,7 @@ import POSInvoiceModal from '@/components/POSInvoiceModal';
 import PackageUsageModal from '@/components/pos/PackageUsageModal';
 
 // Custom Staff Picker Dropdown Component floating on top layer using React Portal (Drops Downward on Click)
-function StaffPickerDropdown({ staffList = [], value, onChange }) {
+function StaffPickerDropdown({ staffList = [], value, onChange, t }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 240 });
@@ -67,7 +68,7 @@ function StaffPickerDropdown({ staffList = [], value, onChange }) {
   const groupedStaff = React.useMemo(() => {
     const groups = {};
     staffList.forEach(st => {
-      const role = st.role_name || st.position || st.role || 'Nhân viên';
+      const role = st.role_name || st.position || st.role || t('nav.staff', 'Nhân viên');
       if (!groups[role]) groups[role] = [];
       groups[role].push(st);
     });
@@ -97,7 +98,7 @@ function StaffPickerDropdown({ staffList = [], value, onChange }) {
               <span className="truncate text-slate-800 font-medium">{selectedStaffObj.full_name || selectedStaffObj.name}</span>
             </>
           ) : (
-            <span className="text-slate-400 truncate font-normal">— Chọn nhân viên —</span>
+            <span className="text-slate-400 truncate font-normal">— {t('appt.modal.select_staff', 'Chọn nhân viên...')} —</span>
           )}
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[1.8]" />
@@ -121,7 +122,7 @@ function StaffPickerDropdown({ staffList = [], value, onChange }) {
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder="tìm kiếm nhân viên..."
+              placeholder={t('appointments.search_staff_placeholder', 'tìm kiếm nhân viên...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400 placeholder:font-normal"
@@ -140,11 +141,11 @@ function StaffPickerDropdown({ staffList = [], value, onChange }) {
               }}
               className={`w-full flex items-center gap-2 text-left py-1.5 px-2.5 rounded-lg hover:bg-slate-100 text-slate-400 text-xs transition-colors ${!value ? 'bg-blue-50 text-blue-600 font-semibold' : ''}`}
             >
-              <span>— Chưa chọn nhân viên —</span>
+              <span>— {t('appointments.unassigned', 'Chưa phân công')} —</span>
             </button>
 
             {Object.keys(groupedStaff).length === 0 ? (
-              <div className="p-3 text-center text-xs text-slate-400">Không có nhân viên nào</div>
+              <div className="p-3 text-center text-xs text-slate-400">{t('appointments.search_no_results', 'Không có nhân viên nào')}</div>
             ) : (
               Object.entries(groupedStaff).map(([roleName, members]) => {
                 const visibleMembers = members.filter(m => 
@@ -192,7 +193,7 @@ function StaffPickerDropdown({ staffList = [], value, onChange }) {
 }
 
 // Custom Date & Time Picker Popover Component (Drops Downward on Click)
-function DateTimePickerPopover({ dateValue, timeValue, onSelect }) {
+function DateTimePickerPopover({ dateValue, timeValue, onSelect, t }) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const containerRef = useRef(null);
@@ -254,10 +255,11 @@ function DateTimePickerPopover({ dateValue, timeValue, onSelect }) {
     };
   }, [isOpen]);
 
-  const monthNames = [
-    'tháng 1', 'tháng 2', 'tháng 3', 'tháng 4', 'tháng 5', 'tháng 6',
-    'tháng 7', 'tháng 8', 'tháng 9', 'tháng 10', 'tháng 11', 'tháng 12'
-  ];
+  const lang = typeof window !== 'undefined' ? localStorage.getItem('glowpro_branch_language') || 'vi' : 'vi';
+  const langCode = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : lang === 'ja' ? 'ja-JP' : lang === 'en' ? 'en-US' : 'vi-VN';
+  const monthLabel = React.useMemo(() => {
+    return new Date(viewYear, viewMonth).toLocaleDateString(langCode, { month: 'long', year: 'numeric' });
+  }, [viewYear, viewMonth, langCode]);
 
   const handlePrevMonth = () => {
     if (viewMonth === 0) {
@@ -378,7 +380,7 @@ function DateTimePickerPopover({ dateValue, timeValue, onSelect }) {
                 ‹
               </button>
               <span className="font-bold text-sm text-slate-900 font-sans">
-                {monthNames[viewMonth]} {viewYear}
+                {monthLabel}
               </span>
               <button
                 type="button"
@@ -391,7 +393,16 @@ function DateTimePickerPopover({ dateValue, timeValue, onSelect }) {
 
             {/* Days of Week Header */}
             <div className="grid grid-cols-7 gap-1 text-center">
-              {['t2', 't3', 't4', 't5', 't6', 't7', 'cn'].map(d => (
+              {(() => {
+                const baseDate = new Date(2023, 0, 2); // Monday
+                const list = [];
+                for (let i = 0; i < 7; i++) {
+                  const d = new Date(baseDate);
+                  d.setDate(baseDate.getDate() + i);
+                  list.push(d.toLocaleDateString(langCode, { weekday: 'short' }));
+                }
+                return list;
+              })().map(d => (
                 <span key={d} className="text-xs font-semibold text-slate-500 py-1">{d}</span>
               ))}
             </div>
@@ -491,6 +502,7 @@ export default function AppointmentModal({
   onCheckout,
   facilityList = DEFAULT_FACILITIES
 }) {
+  const { t } = useT();
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -611,14 +623,14 @@ export default function AppointmentModal({
 
   const getStatusLabel = (st) => {
     switch (st) {
-      case 'pending': return 'Chờ xác nhận';
-      case 'confirmed': return 'Đã xác nhận';
-      case 'checked_in': return 'Đã check-in';
-      case 'in_progress': return 'Đang làm';
-      case 'completed': return 'Hoàn thành';
-      case 'no_show': return 'Không đến';
-      case 'cancelled': return 'Đã hủy';
-      default: return 'Khởi tạo';
+      case 'pending': return t('dashboard.status.pending', 'Chờ xác nhận');
+      case 'confirmed': return t('dashboard.status.confirmed', 'Đã xác nhận');
+      case 'checked_in': return t('dashboard.status.checked_in', 'Đã check-in');
+      case 'in_progress': return t('dashboard.status.in_progress', 'Đang làm');
+      case 'completed': return t('dashboard.status.completed', 'Hoàn thành');
+      case 'no_show': return t('dashboard.status.no_show', 'Không đến');
+      case 'cancelled': return t('dashboard.status.cancelled', 'Đã hủy');
+      default: return t('appointments.status.initialized', 'Khởi tạo');
     }
   };
 
@@ -689,43 +701,43 @@ export default function AppointmentModal({
     switch (st) {
       case 'pending':
         return [
-          { key: 'confirmed', label: 'Xác nhận', dot: '#60A5FA' },
-          { key: 'no_show', label: 'Không đến', dot: '#F97316' },
-          { key: 'cancelled', label: 'Hủy lịch', dot: '#F87171' }
+          { key: 'confirmed', label: t('appointments.btn_confirm', 'Xác nhận'), dot: '#60A5FA' },
+          { key: 'no_show', label: t('dashboard.status.no_show', 'Không đến'), dot: '#F97316' },
+          { key: 'cancelled', label: t('appointments.btn_cancel', 'Hủy lịch'), dot: '#F87171' }
         ];
       case 'confirmed':
         return [
-          { key: 'pending', label: 'Chờ xác nhận', dot: '#94A3B8' },
+          { key: 'pending', label: t('dashboard.status.pending', 'Chờ xác nhận'), dot: '#94A3B8' },
           { key: 'checked_in', label: 'Check-in', dot: '#FBBF24' },
-          { key: 'no_show', label: 'Không đến', dot: '#F97316' },
-          { key: 'cancelled', label: 'Hủy lịch', dot: '#F87171' }
+          { key: 'no_show', label: t('dashboard.status.no_show', 'Không đến'), dot: '#F97316' },
+          { key: 'cancelled', label: t('appointments.btn_cancel', 'Hủy lịch'), dot: '#F87171' }
         ];
       case 'checked_in':
         return [
-          { key: 'pending', label: 'Chờ xác nhận', dot: '#94A3B8' },
-          { key: 'confirmed', label: 'Đã xác nhận', dot: '#60A5FA' },
-          { key: 'in_progress', label: 'Đang làm', dot: '#A78BFA' },
-          { key: 'no_show', label: 'Không đến', dot: '#F97316' },
-          { key: 'cancelled', label: 'Hủy lịch', dot: '#F87171' }
+          { key: 'pending', label: t('dashboard.status.pending', 'Chờ xác nhận'), dot: '#94A3B8' },
+          { key: 'confirmed', label: t('dashboard.status.confirmed', 'Đã xác nhận'), dot: '#60A5FA' },
+          { key: 'in_progress', label: t('dashboard.status.in_progress', 'Đang làm'), dot: '#A78BFA' },
+          { key: 'no_show', label: t('dashboard.status.no_show', 'Không đến'), dot: '#F97316' },
+          { key: 'cancelled', label: t('appointments.btn_cancel', 'Hủy lịch'), dot: '#F87171' }
         ];
       case 'in_progress':
         return [
-          { key: 'pending', label: 'Chờ xác nhận', dot: '#94A3B8' },
-          { key: 'confirmed', label: 'Đã xác nhận', dot: '#60A5FA' },
-          { key: 'checked_in', label: 'Đã check-in', dot: '#FBBF24' },
-          { key: 'no_show', label: 'Không đến', dot: '#F97316' },
-          { key: 'cancelled', label: 'Hủy lịch', dot: '#F87171' }
+          { key: 'pending', label: t('dashboard.status.pending', 'Chờ xác nhận'), dot: '#94A3B8' },
+          { key: 'confirmed', label: t('dashboard.status.confirmed', 'Đã xác nhận'), dot: '#60A5FA' },
+          { key: 'checked_in', label: t('dashboard.status.checked_in', 'Đã check-in'), dot: '#FBBF24' },
+          { key: 'no_show', label: t('dashboard.status.no_show', 'Không đến'), dot: '#F97316' },
+          { key: 'cancelled', label: t('appointments.btn_cancel', 'Hủy lịch'), dot: '#F87171' }
         ];
       case 'completed':
         return [];
       case 'no_show':
         return [
-          { key: 'pending', label: 'Đặt lại', dot: '#94A3B8' },
-          { key: 'cancelled', label: 'Hủy lịch', dot: '#F87171' }
+          { key: 'pending', label: t('appointments.btn_reset', 'Đặt lại'), dot: '#94A3B8' },
+          { key: 'cancelled', label: t('appointments.btn_cancel', 'Hủy lịch'), dot: '#F87171' }
         ];
       case 'cancelled':
         return [
-          { key: 'pending', label: 'Đặt lại (Chờ xác nhận)', dot: '#94A3B8' }
+          { key: 'pending', label: t('appointments.reset_pending', 'Đặt lại (Chờ xác nhận)'), dot: '#94A3B8' }
         ];
       default:
         return [];
@@ -1033,7 +1045,7 @@ export default function AppointmentModal({
     
     // Log activity
     const pNames = selectedItems.map(it => it.package_name).filter((v, i, a) => a.indexOf(v) === i).join(', ');
-    recordActivityLog('Áp dụng gói/liệu trình', `Đã áp dụng: ${pNames}`);
+    recordActivityLog(t('common.apply', 'Áp dụng') + ' gói/liệu trình', `Đã áp dụng: ${pNames}`);
 
     setShowPackageUsageModal(false);
     toast.success('Đã áp dụng gói/liệu trình vào lịch hẹn (Giá 0đ)');
@@ -1294,14 +1306,14 @@ export default function AppointmentModal({
 
       if (editing?.id) {
         if (String(editing.id).startsWith('demo_')) {
-          toast.success('Đã cập nhật lịch hẹn (Bản xem trước)');
+          toast.success(t('appointments.toast_updated_preview', 'Đã cập nhật lịch hẹn (Bản xem trước)'));
         } else {
           await base44.entities.Appointment.update(editing.id, payload);
-          toast.success(checkoutStatus === 'checked_in' ? 'Đã cập nhật & Check-in' : 'Đã cập nhật lịch hẹn');
+          toast.success(checkoutStatus === 'checked_in' ? t('appointments.toast_updated_checkin', 'Đã cập nhật & Check-in') : t('appointments.toast_updated_success', 'Đã cập nhật lịch hẹn'));
         }
       } else {
         await base44.entities.Appointment.create(payload);
-        toast.success(checkoutStatus === 'checked_in' ? 'Đã tạo lịch & Check-in thành công!' : 'Đã tạo lịch hẹn thành công!');
+        toast.success(checkoutStatus === 'checked_in' ? t('appointments.toast_created_checkin', 'Đã tạo lịch & Check-in thành công!') : t('appointments.toast_created_success', 'Đã tạo lịch hẹn thành công!'));
       }
 
       onSaved?.();
@@ -1309,7 +1321,7 @@ export default function AppointmentModal({
     } catch (e) {
       console.error('Appointment save error:', e);
       const detail = e?.message || e?.details || e?.hint || JSON.stringify(e);
-      toast.error('Lỗi khi lưu lịch hẹn: ' + detail);
+      toast.error(t('appointments.toast_err_save_appt', 'Lỗi khi lưu lịch hẹn:') + ' ' + detail);
     } finally {
       setSaving(false);
     }
@@ -1327,7 +1339,7 @@ export default function AppointmentModal({
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-              {editing ? 'Sửa lịch hẹn' : 'Tạo lịch hẹn'}
+              {editing ? t('appt.modal.title_update', 'Cập nhật lịch hẹn') : t('appt.modal.title_create', 'Tạo lịch hẹn')}
             </h2>
           </div>
 
@@ -1348,7 +1360,7 @@ export default function AppointmentModal({
           <div className="lg:col-span-5 p-6 space-y-5 bg-white">
             {/* Tab Switcher & Status Bar Container */}
             <div className="space-y-3">
-              {/* Tab Switcher: Thông tin chung | Nhật ký hoạt động */}
+              {/* Tab Switcher: {t('appt.modal.tab_general', 'Thông tin chung')} | {t('appt.modal.tab_activity', 'Nhật ký hoạt động')} */}
               <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200/60">
                 <button
                   type="button"
@@ -1357,7 +1369,7 @@ export default function AppointmentModal({
                     activeTab === 'general' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Thông tin chung
+                  {t('appt.modal.tab_general', 'Thông tin chung')}
                 </button>
                 <button
                   type="button"
@@ -1366,7 +1378,7 @@ export default function AppointmentModal({
                     activeTab === 'activity' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Nhật ký hoạt động
+                  {t('appt.modal.tab_activity', 'Nhật ký hoạt động')}
                 </button>
               </div>
 
@@ -1454,7 +1466,7 @@ export default function AppointmentModal({
                       type="button"
                       onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
                       className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                      title="Tùy chọn trạng thái"
+                      title={t('appointments.status_options', 'Tùy chọn trạng thái')}
                     >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
@@ -1485,7 +1497,7 @@ export default function AppointmentModal({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-semibold text-slate-700">
-                      Khách hàng<span className="text-red-500 ml-0.5">*</span>
+                      {t('appt.modal.customer_label', 'Khách hàng')}<span className="text-red-500 ml-0.5">*</span>
                     </label>
                   </div>
 
@@ -1504,7 +1516,7 @@ export default function AppointmentModal({
                             }
                           }}
                           className="flex items-center gap-3 truncate cursor-pointer group flex-1"
-                          title="Bấm để xem chi tiết khách hàng"
+                          title={t('appointments.view_cust_details', 'Click để xem chi tiết khách hàng')}
                         >
                           <Avatar 
                             src={selectedCustomerObj?.avatar_url} 
@@ -1539,7 +1551,7 @@ export default function AppointmentModal({
                               }
                             }}
                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Chuyển đến trang chi tiết khách hàng"
+                            title={t('appointments.view_cust_details', 'Click để xem chi tiết khách hàng')}
                           >
                             <Eye className="w-4 h-4 stroke-[1.8]" />
                           </button>
@@ -1552,7 +1564,7 @@ export default function AppointmentModal({
                               setIsNewCustomer(false);
                             }}
                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Bỏ chọn khách"
+                            title={t('common.unselect', 'Bỏ chọn')}
                           >
                             <X className="w-4 h-4 stroke-[1.8]" />
                           </button>
@@ -1565,7 +1577,7 @@ export default function AppointmentModal({
                           className="w-full mt-2 py-2.5 flex items-center justify-center gap-2 border border-emerald-600 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                         >
                           <Package className="w-4 h-4 stroke-[1.8]" />
-                          <span>Gói & Liệu trình đã mua</span>
+                          <span>{t('appt.modal.packages_owned', 'Gói & Liệu trình đã mua')}</span>
                         </button>
                       )}
                     </>
@@ -1606,14 +1618,14 @@ export default function AppointmentModal({
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <input
                         type="text"
-                        placeholder="Tên khách hàng *"
+                        placeholder={t('profile.fullname_label', 'Họ và tên') + ' *'}
                         value={form.customer_name || ''}
                         onChange={(e) => setField('customer_name', e.target.value)}
                         className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
                       />
                       <input
                         type="text"
-                        placeholder="Số điện thoại"
+                        placeholder={t('profile.phone_label', 'Số điện thoại')}
                         value={form.customer_phone || ''}
                         onChange={(e) => setField('customer_phone', e.target.value)}
                         className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-white outline-none focus:border-blue-500 transition-all"
@@ -1625,7 +1637,7 @@ export default function AppointmentModal({
                 {/* Number of Guest Stepper */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Số lượng khách<span className="text-red-500 ml-0.5">*</span>
+                    {t('appt.modal.guests_count', 'Số lượng khách')}<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <div className="flex items-center justify-between border border-slate-200/90 rounded-xl bg-white overflow-hidden shadow-2xs">
                     <button
@@ -1649,7 +1661,7 @@ export default function AppointmentModal({
                 {/* Availability Date & Time */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Thời gian hẹn<span className="text-red-500 ml-0.5">*</span>
+                    {t('appt.modal.time_label', 'Thời gian hẹn')}<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <DateTimePickerPopover
                     dateValue={form.date}
@@ -1658,9 +1670,10 @@ export default function AppointmentModal({
                       setField('date', d);
                       setField('start_time', t);
                     }}
+                    t={t}
                   />
                   <div className="text-xs text-slate-500 mt-1 pl-1 font-medium">
-                    Dự kiến kết thúc: <span className="font-semibold text-slate-700">{form.end_time || addMinutesToTime(form.start_time, totalMinutes)}</span> (Tổng: {totalMinutes} phút)
+                    {t('appt.modal.expected_end', 'Dự kiến kết thúc')}: <span className="font-semibold text-slate-700">{form.end_time || addMinutesToTime(form.start_time, totalMinutes)}</span> ({t('appointments.total', 'Tổng')}: {totalMinutes} {t('appointments.settings.minutes', 'phút')})
                   </div>
                 </div>
 
@@ -1668,7 +1681,7 @@ export default function AppointmentModal({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-semibold text-slate-700">
-                      Khuyến mãi & voucher
+                      {t('appt.modal.promo_label', 'Khuyến mãi & voucher')}
                     </label>
                     {form.promo_code && (
                       <button
@@ -1686,7 +1699,7 @@ export default function AppointmentModal({
 
                   {!form.customer_id && !form.customer_name ? (
                     <div className="w-full p-3.5 rounded-xl border border-slate-200/80 bg-white text-center text-slate-400 text-xs font-normal">
-                      Chưa áp dụng mã khuyến mãi nào
+                      {t('appt.modal.no_promo', 'Chưa áp dụng mã khuyến mãi nào')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1720,7 +1733,7 @@ export default function AppointmentModal({
                       <div className="relative flex items-center">
                         <input
                           type="text"
-                          placeholder="Hoặc nhập mã voucher..."
+                          placeholder={t('appt.modal.voucher_placeholder', 'Hoặc nhập mã voucher...')}
                           value={voucherInput}
                           onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
                           onKeyDown={(e) => {
@@ -1746,12 +1759,12 @@ export default function AppointmentModal({
                 {/* Appointment Notes */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Ghi chú lịch hẹn
+                    {t('appt.modal.notes_label', 'Ghi chú lịch hẹn')}
                   </label>
                   <textarea
                     value={form.note || ''}
                     onChange={(e) => setField('note', e.target.value)}
-                    placeholder="Nhập ghi chú..."
+                    placeholder={t('appt.modal.notes_placeholder', 'Nhập ghi chú...')}
                     rows={3}
                     className="w-full p-3.5 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400 placeholder:font-normal resize-none h-24 bg-white shadow-2xs transition-all"
                   />
@@ -1771,7 +1784,7 @@ export default function AppointmentModal({
                   if (!logs || logs.length === 0) {
                     return (
                       <div className="text-center py-12 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                        Chưa có nhật ký hoạt động nào cho lịch hẹn này
+                        {t('appt.modal.no_activity_log', 'Chưa có nhật ký hoạt động nào cho lịch hẹn này')}
                       </div>
                     );
                   }
@@ -1784,19 +1797,51 @@ export default function AppointmentModal({
                           ? (log.time || '') 
                           : `${logTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${logTime.toLocaleDateString('vi-VN')}`;
                         
+                        let displayAction = log.action;
+                        let displayDetails = log.details;
+                        if (displayAction === 'Thay đổi trạng thái') {
+                          displayAction = t('appointments.activity.status_changed', 'Thay đổi trạng thái');
+                        } else if (displayAction === 'Áp dụng gói/liệu trình' || displayAction?.includes('Áp dụng gói/liệu trình')) {
+                          displayAction = t('appointments.activity.apply_package', 'Áp dụng gói/liệu trình');
+                        } else if (displayAction === 'Xóa gói/liệu trình') {
+                          displayAction = t('appointments.activity.remove_package', 'Xóa gói/liệu trình');
+                        } else if (displayAction === 'Tạo lịch hẹn' || displayAction === 'Khởi tạo') {
+                          displayAction = t('appt.modal.title_create', 'Tạo lịch hẹn');
+                        }
+
+                        if (displayDetails) {
+                          if (displayDetails.startsWith('Chuyển sang: ')) {
+                            const dest = displayDetails.replace('Chuyển sang: ', '').trim();
+                            let translatedDest = dest;
+                            if (dest === 'Chờ xác nhận') translatedDest = t('dashboard.status.pending', 'Chờ xác nhận');
+                            else if (dest === 'Đã xác nhận') translatedDest = t('dashboard.status.confirmed', 'Đã xác nhận');
+                            else if (dest === 'Đã check-in') translatedDest = t('dashboard.status.checked_in', 'Đã check-in');
+                            else if (dest === 'Đang làm') translatedDest = t('dashboard.status.in_progress', 'Đang làm');
+                            else if (dest === 'Hoàn thành') translatedDest = t('dashboard.status.completed', 'Hoàn thành');
+                            else if (dest === 'Không đến') translatedDest = t('dashboard.status.no_show', 'Không đến');
+                            else if (dest === 'Đã hủy') translatedDest = t('dashboard.status.cancelled', 'Đã hủy');
+                            
+                            displayDetails = t('appointments.activity.details_changed_to', 'Chuyển sang:') + ' ' + translatedDest;
+                          } else if (displayDetails.startsWith('Đã áp dụng: ')) {
+                            displayDetails = t('appointments.activity.details_applied', 'Đã áp dụng:') + ' ' + displayDetails.replace('Đã áp dụng: ', '');
+                          } else if (displayDetails.startsWith('Đã loại bỏ: ')) {
+                            displayDetails = t('appointments.activity.details_removed', 'Đã loại bỏ:') + ' ' + displayDetails.replace('Đã loại bỏ: ', '');
+                          }
+                        }
+
                         return (
                           <div key={log.id || idx} className="relative space-y-1">
                             {/* Dot indicator */}
                             <span className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white shadow-xs" />
                             
                             <div className="text-xs font-bold text-slate-800 flex items-center justify-between gap-2">
-                              <span>{log.action}</span>
+                              <span>{displayAction}</span>
                               <span className="text-[10px] font-normal text-slate-400 shrink-0">{timeStr}</span>
                             </div>
-                            {log.details && (
-                              <p className="text-[11px] text-slate-500 font-medium whitespace-pre-wrap">{log.details}</p>
+                            {displayDetails && (
+                              <p className="text-[11px] text-slate-500 font-medium whitespace-pre-wrap">{displayDetails}</p>
                             )}
-                            <div className="text-[10px] text-slate-400">Thực hiện bởi: <span className="font-semibold text-slate-600">{log.user || 'Lễ tân'}</span></div>
+                            <div className="text-[10px] text-slate-400">{t('appointments.activity.performed_by', 'Thực hiện bởi')}: <span className="font-semibold text-slate-600">{log.user || t('nav.receptionist', 'Lễ tân')}</span></div>
                           </div>
                         );
                       })}
@@ -1813,7 +1858,7 @@ export default function AppointmentModal({
               {/* Service Header Controls */}
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-xs text-slate-700">
-                  Dịch vụ<span className="text-red-500 ml-0.5">*</span>
+                  {t('appt.modal.service_label', 'Dịch vụ')}<span className="text-red-500 ml-0.5">*</span>
                 </h3>
 
                 <button
@@ -1821,7 +1866,7 @@ export default function AppointmentModal({
                   onClick={handleAutoAssignStaff}
                   className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
                 >
-                  <Wand2 className="w-3.5 h-3.5 stroke-[2]" /> Xếp nhân viên tự động
+                  <Wand2 className="w-3.5 h-3.5 stroke-[2]" /> {t('appt.modal.auto_assign_staff', 'Xếp nhân viên tự động')}
                 </button>
               </div>
 
@@ -1844,7 +1889,7 @@ export default function AppointmentModal({
                           onClick={() => handleAddServiceToGuest(gIdx)}
                           className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                         >
-                          <PlusCircle className="w-4 h-4 stroke-[2]" /> Thêm dịch vụ
+                          <PlusCircle className="w-4 h-4 stroke-[2]" /> {t('appt.modal.add_service', 'Thêm dịch vụ')}
                         </button>
                       </div>
 
@@ -1925,7 +1970,7 @@ export default function AppointmentModal({
                                               onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
                                               className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                             >
-                                              <option value="">— Vị trí —</option>
+                                              <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
                                               {facilityList.map(fac => (
                                                 <option key={fac.id} value={fac.id}>{fac.name}</option>
                                               ))}
@@ -1947,10 +1992,10 @@ export default function AppointmentModal({
                                         onChange={(e) => handlePickService(0, it.itemIdx, e.target.value)}
                                         className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                       >
-                                        <option value="">— Chọn dịch vụ —</option>
+                                        <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
                                         {services.map(s => (
                                           <option key={s.id} value={s.id}>
-                                            {s.name} ({s.duration_minutes || s.duration || 30} phút)
+                                            {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
                                           </option>
                                         ))}
                                       </select>
@@ -1960,6 +2005,7 @@ export default function AppointmentModal({
                                       staffList={staff}
                                       value={it.staff_id || ''}
                                       onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
+                                      t={t}
                                     />
                                     <div className="relative w-[130px] shrink-0">
                                       <select
@@ -1967,7 +2013,7 @@ export default function AppointmentModal({
                                         onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
                                         className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                       >
-                                        <option value="">— Vị trí —</option>
+                                        <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
                                         {facilityList.map(fac => (
                                           <option key={fac.id} value={fac.id}>{fac.name}</option>
                                         ))}
@@ -1996,10 +2042,10 @@ export default function AppointmentModal({
                                     onChange={(e) => handlePickService(gIdx, itemIdx, e.target.value)}
                                     className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                   >
-                                    <option value="">— Chọn dịch vụ —</option>
+                                    <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
                                     {services.map(s => (
                                       <option key={s.id} value={s.id}>
-                                        {s.name} ({s.duration_minutes || s.duration || 30} phút)
+                                        {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
                                       </option>
                                     ))}
                                   </select>
@@ -2009,6 +2055,7 @@ export default function AppointmentModal({
                                   staffList={staff}
                                   value={it.staff_id || ''}
                                   onChange={(staffId) => handlePickStaff(gIdx, itemIdx, staffId)}
+                                  t={t}
                                 />
                                 <div className="relative w-[130px] shrink-0">
                                   <select
@@ -2016,7 +2063,7 @@ export default function AppointmentModal({
                                     onChange={(e) => handlePickFacility(gIdx, itemIdx, e.target.value)}
                                     className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                   >
-                                    <option value="">— Vị trí —</option>
+                                    <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
                                     {facilityList.map(fac => (
                                       <option key={fac.id} value={fac.id}>{fac.name}</option>
                                     ))}
@@ -2039,9 +2086,9 @@ export default function AppointmentModal({
 
                       {/* Guest Card Footer Summary */}
                       <div className="flex items-center justify-between text-xs font-normal text-slate-500 pt-3 border-t border-slate-200/60">
-                        <span>{g.items.length} dịch vụ được chọn</span>
+                        <span>{g.items.length} {t('appt.modal.services_selected', 'dịch vụ được chọn')}</span>
                         <span className="font-normal text-slate-700">
-                          {guestTotalMins} phút · <span className="font-bold text-slate-900">{formatVND(guestTotalPrice)}</span>
+                          {guestTotalMins} {t('appointments.settings.minutes', 'phút')} · <span className="font-bold text-slate-900">{formatVND(guestTotalPrice)}</span>
                         </span>
                       </div>
                     </div>
@@ -2055,7 +2102,7 @@ export default function AppointmentModal({
         {/* Footer Summary & Action Bar */}
         <div className="flex items-center justify-between px-8 py-4 border-t border-slate-200/80 bg-white shrink-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-slate-900">Tổng cộng</span>
+            <span className="text-sm font-semibold text-slate-900">{t('appt.modal.total', 'Tổng cộng')}</span>
             <span className="text-xl font-bold text-slate-900">{formatVND(finalTotalPrice)}</span>
             {discountAmt > 0 && (
               <span className="text-xs font-normal text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
@@ -2065,10 +2112,10 @@ export default function AppointmentModal({
             {deposit && deposit.paid_amount > 0 && (
               <span className="text-xs font-normal text-pink-600 bg-pink-50 border border-pink-200/60 px-2 py-0.5 rounded-md flex items-center gap-1 ml-2">
                 <PiggyBank className="w-3 h-3" />
-                Đã cọc: {formatVND(deposit.paid_amount)}
+                {t('appointments.deposit', 'Đã cọc')}: {formatVND(deposit.paid_amount)}
               </span>
             )}
-            <span className="text-xs font-normal text-slate-500 ml-1">{totalMinutes} phút</span>
+            <span className="text-xs font-normal text-slate-500 ml-1">{totalMinutes} {t('appointments.settings.minutes', 'phút')}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -2078,7 +2125,7 @@ export default function AppointmentModal({
               disabled={saving}
               className="px-7 py-3 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-600 font-medium text-xs transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50"
             >
-              {editing ? 'Cập nhật & check-in' : 'Tạo & check-in'}
+              {editing ? t('appointments.update_checkin', 'Cập nhật & check-in') : t('appointments.create_checkin', 'Tạo & check-in')}
             </button>
             <button
               type="button"
@@ -2087,8 +2134,8 @@ export default function AppointmentModal({
               className="px-9 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50"
             >
               {saving 
-                ? (editing ? 'Đang lưu...' : 'Đang tạo...') 
-                : (editing ? 'Lưu thay đổi' : 'Tạo lịch hẹn')
+                ? (editing ? t('common.saving', 'Đang lưu...') : t('common.creating', 'Đang tạo...')) 
+                : (editing ? t('appointments.save_changes', 'Lưu thay đổi') : t('appointments.create_appt', 'Tạo Lịch Hẹn'))
               }
             </button>
           </div>

@@ -1,7 +1,9 @@
+import { useT } from '@/lib/i18n';
 import React, { useState } from 'react';
 import PayrollHistoryDetailModal from './PayrollHistoryDetailModal';
 
 export default function PayrollHistoryTab({ history = [], staff = [] }) {
+  const { t } = useT();
   const [selectedRun, setSelectedRun] = useState(null);
   const [payrollDataMap, setPayrollDataMap] = React.useState({});
 
@@ -64,11 +66,11 @@ export default function PayrollHistoryTab({ history = [], staff = [] }) {
             <table className="w-full text-left border-collapse font-sans whitespace-nowrap min-w-max">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">Ngày trả</th>
-                  <th className="py-4 px-6 border-r border-slate-100 w-[30%]">Kỳ lương</th>
-                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">Trạng thái</th>
-                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">Tổng quỹ lương</th>
-                  <th className="py-4 px-6 w-[10%] text-center">Chi tiết</th>
+                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">{t('staff.payroll.pay_date', 'Ngày trả')}</th>
+                  <th className="py-4 px-6 border-r border-slate-100 w-[30%]">{t('staff.payroll.pay_period', 'Kỳ lương')}</th>
+                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">{t('staff.payroll.status', 'Trạng thái')}</th>
+                  <th className="py-4 px-6 border-r border-slate-100 w-[20%]">{t('staff.payroll.total_fund', 'Tổng quỹ lương')}</th>
+                  <th className="py-4 px-6 w-[10%] text-center">{t('staff.payroll.details', 'Chi tiết')}</th>
                 </tr>
               </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -86,7 +88,7 @@ export default function PayrollHistoryTab({ history = [], staff = [] }) {
                           ? 'bg-blue-50 text-blue-600 border border-blue-100'
                           : 'bg-orange-50 text-orange-600 border border-orange-100'
                       }`}>
-                        {row.status}
+                        {row.status === 'Hoàn thành' ? t('staff.payroll.completed', 'Hoàn thành') : row.status === 'Đang xử lý' ? t('staff.payroll.processing', 'Đang xử lý') : row.status}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-[13px] font-medium text-slate-700 border-r border-slate-100">{formatMoney(actualTotal)}</td>
@@ -95,7 +97,7 @@ export default function PayrollHistoryTab({ history = [], staff = [] }) {
                         onClick={() => setSelectedRun(row)}
                         className="text-[13px] font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors mx-auto"
                       >
-                        Chi tiết
+                        {t('staff.payroll.details', 'Chi tiết')}
                       </button>
                     </td>
                   </tr>

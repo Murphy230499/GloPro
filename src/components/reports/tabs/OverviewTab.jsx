@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { formatVND } from '@/lib/format';
 import { generateAIInsights, generateOperationalAlerts } from '@/lib/reportsEngine';
+import { useT } from '@/lib/i18n';
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -22,16 +23,14 @@ const C = {
   purple:  '#A855F7', slate:  '#64748B',
 };
 const PIE_COLORS = [C.blue, C.emerald, C.amber, C.purple, C.rose, C.teal];
-const VI_DAYS = ['CN','T2','T3','T4','T5','T6','T7'];
-const VI_HOURS = ['6h','7h','8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h'];
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 const pad = n => String(n).padStart(2,'0');
 const todayISO = () => new Date().toISOString().slice(0,10);
 const shortVND = v => {
   if (!v) return '0₫';
-  if (v >= 1e9) return (v/1e9).toFixed(1)+'tỷ';
-  if (v >= 1e6) return (v/1e6).toFixed(1)+'tr';
+  if (v >= 1e9) return (v/1e9).toFixed(1)+'B';
+  if (v >= 1e6) return (v/1e6).toFixed(1)+'M';
   if (v >= 1e3) return (v/1e3).toFixed(0)+'k';
   return v+'₫';
 };
@@ -119,7 +118,6 @@ function ExecKPICard({ title, value, growth, sub, icon: Icon, color, sparkData =
 // Heatmap cell
 function HeatCell({ value, max }) {
   const pct = max > 0 ? value/max : 0;
-  const alpha = Math.round(pct * 220);
   const bg = `rgba(59,130,246,${(pct*0.85).toFixed(2)})`;
   const text = pct > 0.55 ? 'text-white' : 'text-slate-700';
   return (
@@ -154,7 +152,11 @@ export default function OverviewTab({
   serviceCombos = [], productCombos = [], prepaidCards = [],
   onDrillDown,
 }) {
-  const [trendPeriod, setTrendPeriod] = useState('14d'); // '7d','14d','30d','90d'
+  const t = useT();
+  const [trendPeriod, setTrendPeriod] = useState('14d');
+
+  const VI_DAYS = [t('reports.day_sun', 'Sun'), t('reports.day_mon', 'Mon'), t('reports.day_tue', 'Tue'), t('reports.day_wed', 'Wed'), t('reports.day_thu', 'Thu'), t('reports.day_fri', 'Fri'), t('reports.day_sat', 'Sat')];
+  const VI_HOURS = ['6h','7h','8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h'];
 
   const today = todayISO();
   const todayInvoices = invoices.filter(i => (i.created_date||'').slice(0,10) === today);
@@ -165,15 +167,15 @@ export default function OverviewTab({
   const totalTip         = invoices.reduce((s,i)=>s+(i.tip||0),0);
   const totalDiscount    = invoices.reduce((s,i)=>s+(i.discount||0),0);
   const grossRevenue     = totalRevenue + totalDiscount;
-  const cogs             = grossRevenue * 0.30; // estimated COGS 30%
-  const payroll          = grossRevenue * 0.30; // estimated payroll 30%
-  const opex             = grossRevenue * 0.15; // estimated opex 15%
+  const cogs             = grossRevenue * 0.30;
+  const payroll          = grossRevenue * 0.30;
+  const opex             = grossRevenue * 0.15;
   const netProfit        = totalRevenue - cogs - payroll - opex;
   const totalInvoices    = invoices.length;
   const avgOrderValue    = totalInvoices > 0 ? Math.round(totalRevenue/totalInvoices) : 0;
   const todayRevenue     = todayInvoices.reduce((s,i)=>s+(i.total||0),0);
 
-  // ── §2 APPOINTMENT KPIs — 7 trạng thái đầy đủ ────────────────────────────
+  // ── §2 APPOINTMENT KPIs ───────────────────────────────────────────────────
   const apptTotal      = appointments.length;
   const apptPending    = appointments.filter(a=>a.status==='pending').length;
   const apptConfirmed  = appointments.filter(a=>a.status==='confirmed').length;
@@ -182,14 +184,12 @@ export default function OverviewTab({
   const apptCompleted  = appointments.filter(a=>a.status==='completed').length;
   const apptCancelled  = appointments.filter(a=>a.status==='cancelled').length;
   const apptNoShow     = appointments.filter(a=>a.status==='no_show').length;
-  const apptWaiting    = apptPending + apptConfirmed; // chưa đến
   const fillRate       = apptTotal > 0 ? Math.round(apptCompleted/apptTotal*100) : 0;
   const cancelRate     = apptTotal > 0 ? Math.round(apptCancelled/apptTotal*100) : 0;
   const noShowRate     = apptTotal > 0 ? Math.round(apptNoShow/apptTotal*100) : 0;
 
   // ── §3 CUSTOMER KPIs ──────────────────────────────────────────────────────
   const totalCustomers  = customers.length;
-  // Lọc khách hàng vãng lai
   const walkInCustomers = customers.filter(c => 
     !c.full_name || 
     c.full_name.toLowerCase().includes('vãng lai') || 
@@ -236,24 +236,30 @@ export default function OverviewTab({
   },[invoices,periodDays,totalRevenue]);
 
   // ── §6 REVENUE BREAKDOWN (Stacked Bar) ───────────────────────────────────
+  const catServices = t('reports.cat_services', 'Services');
+  const catProducts = t('reports.cat_products', 'Products');
+  const catPackages = t('reports.cat_packages', 'Packages');
+  const catCombos   = t('reports.cat_combos', 'Combos');
+  const catCards    = t('reports.cat_prepaid_cards', 'Prepaid Cards');
+
   const revenueByCategory = useMemo(()=>{
     const map={service:0,product:0,package:0,combo:0,card:0};
     invoices.forEach(inv=>{
       (inv.items||[]).forEach(it=>{
-        const t=it.type||'service';
+        const type=it.type||'service';
         const v=(it.price||0)*(it.qty||1);
-        if(t==='service') map.service+=v;
-        else if(t==='product') map.product+=v;
-        else if(t==='package') map.package+=v;
-        else if(t==='combo'||t==='service_combo'||t==='product_combo') map.combo+=v;
-        else if(t==='prepaid_card') map.card+=v;
+        if(type==='service') map.service+=v;
+        else if(type==='product') map.product+=v;
+        else if(type==='package') map.package+=v;
+        else if(type==='combo'||type==='service_combo'||type==='product_combo') map.combo+=v;
+        else if(type==='prepaid_card') map.card+=v;
         else map.service+=v;
       });
     });
-    return [{ name:'Tổng',
-      'Dịch vụ':map.service,'Sản phẩm':map.product,'Gói DV':map.package,'Combo':map.combo,'Thẻ':map.card
+    return [{ name: t('reports.label_total', 'Total'),
+      [catServices]:map.service,[catProducts]:map.product,[catPackages]:map.package,[catCombos]:map.combo,[catCards]:map.card
     }];
-  },[invoices]);
+  },[invoices, catServices, catProducts, catPackages, catCombos, catCards, t]);
 
   // ── §7 BOOKING ANALYSIS ───────────────────────────────────────────────────
   const bookingTrend = useMemo(()=>{
@@ -272,7 +278,6 @@ export default function OverviewTab({
 
   // ── §8 PEAK HOURS HEATMAP ─────────────────────────────────────────────────
   const heatmapData = useMemo(()=>{
-    // [dayIndex 0=Sun..6=Sat][hourIndex 0=6h..14=20h]
     const grid = Array.from({length:7},()=>Array(15).fill(0));
     appointments.forEach(a=>{
       if(!a.time && !a.start_time) return;
@@ -281,7 +286,7 @@ export default function OverviewTab({
       const h = parseInt(parts[0]||'0');
       const dateStr = a.date||a.appointment_date||'';
       if(!dateStr) return;
-      const dow = new Date(dateStr).getDay(); // 0=Sun
+      const dow = new Date(dateStr).getDay();
       const hIdx = h - 6;
       if(hIdx>=0&&hIdx<15) grid[dow][hIdx]++;
     });
@@ -309,21 +314,21 @@ export default function OverviewTab({
       (inv.items||[]).forEach(it=>{
         if(it.is_from_package) return;
         if(it.type&&it.type!=='service'&&it.type!==undefined) return;
-        const n=it.name||'Dịch vụ';
+        const n=it.name||t('reports.default_service_name', 'Service');
         if(!map[n]) map[n]={name:n,revenue:0,count:0};
         map[n].revenue+=(it.price||0)*(it.qty||1);
         map[n].count+=(it.qty||1);
       });
     });
     return Object.values(map).sort((a,b)=>b.revenue-a.revenue).slice(0,8);
-  },[invoices]);
+  },[invoices, t]);
 
   // ── §11 CUSTOMER ANALYSIS ─────────────────────────────────────────────────
   const custPieData = [
-    {name:'Khách vãng lai', value:walkInCount,     color:C.slate},
-    {name:'Khách mới',      value:newCustomers,    color:C.blue},
-    {name:'Quay lại',       value:returnCustomers, color:C.emerald},
-    {name:'VIP (5tr+)',     value:vipCustomers,    color:C.amber},
+    {name: t('reports.walk_in_customer', 'Walk-in Customer'), value:walkInCount,     color:C.slate},
+    {name: t('reports.new_customer', 'New Customer'),          value:newCustomers,    color:C.blue},
+    {name: t('reports.returning_customer', 'Returning Customer'), value:returnCustomers, color:C.emerald},
+    {name: t('reports.vip_customer', 'VIP Customer (5M+)'),   value:vipCustomers,    color:C.amber},
   ].filter(x=>x.value>0);
   const topCustomers = [...registeredCustomers].sort((a,b)=>(b.total_spent||0)-(a.total_spent||0)).slice(0,5);
 
@@ -331,20 +336,20 @@ export default function OverviewTab({
   const paymentData = useMemo(()=>{
     const map={};
     invoices.forEach(inv=>{
-      const m=inv.payment_method||'Tiền mặt';
+      const m=inv.payment_method||t('reports.pm_cash', 'Cash');
       map[m]=(map[m]||0)+(inv.total||0);
     });
     return Object.entries(map).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
-  },[invoices]);
+  },[invoices, t]);
 
   // ── §13 CASH FLOW WATERFALL ───────────────────────────────────────────────
   const waterfallData = [
-    { name:'Doanh thu\nGộp',   value: grossRevenue,   type:'positive' },
-    { name:'Giảm giá',         value: -totalDiscount, type:'negative' },
-    { name:'COGS\n(30%)',      value: -cogs,          type:'negative' },
-    { name:'Nhân sự\n(30%)',   value: -payroll,       type:'negative' },
-    { name:'Vận hành\n(15%)',  value: -opex,          type:'negative' },
-    { name:'Lợi nhuận\nRòng',  value: netProfit,      type: netProfit>=0?'positive':'negative' },
+    { name: t('reports.wf_gross_rev', 'Gross Revenue'),     value: grossRevenue,   type:'positive' },
+    { name: t('reports.wf_discounts', 'Discounts'),         value: -totalDiscount, type:'negative' },
+    { name: t('reports.wf_cogs', 'COGS (30%)'),             value: -cogs,          type:'negative' },
+    { name: t('reports.wf_payroll', 'Payroll (30%)'),       value: -payroll,       type:'negative' },
+    { name: t('reports.wf_opex', 'OPEX (15%)'),             value: -opex,          type:'negative' },
+    { name: t('reports.wf_net_profit', 'Net Profit'),       value: netProfit,      type: netProfit>=0?'positive':'negative' },
   ];
 
   // ── §14 UPCOMING APPOINTMENTS ─────────────────────────────────────────────
@@ -367,33 +372,33 @@ export default function OverviewTab({
 
   // ── §15 AI INSIGHTS ───────────────────────────────────────────────────────
   const aiInsights = [
-    totalRevenue>0 && `📈 Tổng doanh thu kỳ này: ${shortVND(totalRevenue)}`,
-    netProfit>0 ? `💰 Lợi nhuận ước tính: ${shortVND(netProfit)} (${Math.round(netProfit/Math.max(totalRevenue,1)*100)}% margin)` : `⚠️ Lợi nhuận âm — cần kiểm tra chi phí`,
-    fillRate > 0 && `📅 Tỷ lệ hoàn thành lịch hẹn: ${fillRate}%`,
-    cancelRate > 20 && `⚠️ Tỷ lệ huỷ lịch cao: ${cancelRate}% — cần tìm nguyên nhân`,
-    noShowRate > 10 && `⚠️ No-show ${noShowRate}% — cân nhắc gửi nhắc nhở tự động`,
-    repeatRate > 0 && `🔄 Tỷ lệ khách quay lại: ${repeatRate}%`,
-    vipCustomers > 0 && `⭐ ${vipCustomers} khách VIP (chi tiêu 5tr+) cần chăm sóc đặc biệt`,
-    newCustomers > 0 && `🆕 ${newCustomers} khách mới trong kỳ`,
-    lowStockProducts.length > 0 && `📦 ${lowStockProducts.length} sản phẩm sắp hết hàng`,
-    staffPerf[0] && `🏆 Nhân viên dẫn đầu: ${staffPerf[0].fullName} — ${shortVND(staffPerf[0].revenue)}`,
+    totalRevenue>0 && t('reports.ai_total_rev', '📈 Total revenue this period: {rev}', { rev: shortVND(totalRevenue) }),
+    netProfit>0 
+      ? t('reports.ai_net_profit_pos', '💰 Estimated profit: {profit} ({margin}% margin)', { profit: shortVND(netProfit), margin: Math.round(netProfit/Math.max(totalRevenue,1)*100) }) 
+      : t('reports.ai_net_profit_neg', '⚠️ Negative profit — review expenses'),
+    fillRate > 0 && t('reports.ai_fill_rate', '📅 Appointment completion rate: {rate}%', { rate: fillRate }),
+    cancelRate > 20 && t('reports.ai_cancel_rate', '⚠️ High cancellation rate: {rate}% — investigate cause', { rate: cancelRate }),
+    noShowRate > 10 && t('reports.ai_noshow_rate', '⚠️ No-show {rate}% — consider automated reminders', { rate: noShowRate }),
+    repeatRate > 0 && t('reports.ai_repeat_rate', '🔄 Customer return rate: {rate}%', { rate: repeatRate }),
+    vipCustomers > 0 && t('reports.ai_vip_cust', '⭐ {count} VIP customers (5M+) need special care', { count: vipCustomers }),
+    newCustomers > 0 && t('reports.ai_new_cust', '🆕 {count} new customers in period', { count: newCustomers }),
+    lowStockProducts.length > 0 && t('reports.ai_low_stock', '📦 {count} products running low on stock', { count: lowStockProducts.length }),
+    staffPerf[0] && t('reports.ai_top_staff', '🏆 Top staff: {name} — {rev}', { name: staffPerf[0].fullName, rev: shortVND(staffPerf[0].revenue) }),
   ].filter(Boolean);
 
   // ── §16 ALERTS ────────────────────────────────────────────────────────────
   const alerts = [
-    ...outOfStockProducts.slice(0,3).map(p=>({ type:'error', text:`🔴 Hết hàng: ${p.name}` })),
-    ...lowStockProducts.slice(0,3).map(p=>({ type:'warning', text:`🟡 Sắp hết: ${p.name} (còn ${p.stock_quantity} ${p.unit||'cái'})` })),
-    cancelRate>25 && { type:'error',   text:`Tỷ lệ huỷ lịch ${cancelRate}% — vượt ngưỡng 25%` },
-    noShowRate>15 && { type:'warning', text:`No-show ${noShowRate}% — cần thiết lập nhắc nhở tự động` },
-    netProfit<0  && { type:'error',   text:`Lợi nhuận âm kỳ này — kiểm tra cấu trúc chi phí ngay` },
-    todayAppts.length>0 && { type:'info', text:`📅 Hôm nay có ${todayAppts.length} lịch hẹn` },
+    ...outOfStockProducts.slice(0,3).map(p=>({ type:'error', text: t('reports.alert_out_of_stock', '🔴 Out of stock: {name}', { name: p.name }) })),
+    ...lowStockProducts.slice(0,3).map(p=>({ type:'warning', text: t('reports.alert_low_stock', '🟡 Low stock: {name} ({count} left)', { name: p.name, count: p.stock_quantity }) })),
+    cancelRate>25 && { type:'error',   text: t('reports.alert_cancel_high', 'Cancellation rate {rate}% — exceeds 25% threshold', { rate: cancelRate }) },
+    noShowRate>15 && { type:'warning', text: t('reports.alert_noshow_high', 'No-show {rate}% — set up automated reminders', { rate: noShowRate }) },
+    netProfit<0  && { type:'error',   text: t('reports.alert_profit_neg', 'Negative profit this period — check cost structure immediately') },
+    todayAppts.length>0 && { type:'info', text: t('reports.alert_today_appts', '📅 Today has {count} appointments', { count: todayAppts.length }) },
   ].filter(Boolean);
 
-  // ── Sparkline data builder ─────────────────────────────────────────────────
   const revenueSparkline = trendData.slice(-7).map(d=>({v:d.revenue}));
   const bookingSparkline = bookingTrend.slice(-7).map(d=>({v:d.completed}));
 
-  // ── Custom Tooltip ─────────────────────────────────────────────────────────
   const VNDTooltip = ({ active, payload, label }) => {
     if(!active||!payload?.length) return null;
     return (
@@ -411,29 +416,27 @@ export default function OverviewTab({
   return (
     <div className="space-y-8">
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 1: Executive KPI Cards
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Chỉ số kinh doanh chính" sub="Real-time executive overview" icon={BarChart2} iconColor="text-blue-600">
+      {/* SECTION 1: Executive KPI Cards */}
+      <Section title={t('reports.sec_exec_kpis', 'Key Business KPIs')} sub="Real-time executive overview" icon={BarChart2} iconColor="text-blue-600">
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
-          <ExecKPICard title="Tổng doanh thu" value={shortVND(totalRevenue)} growth={18} sub="kỳ này" icon={TrendingUp} color="emerald" sparkData={revenueSparkline} onClick={()=>onDrillDown&&onDrillDown('Hóa đơn',invoices)} />
-          <ExecKPICard title="Doanh thu hôm nay" value={shortVND(todayRevenue)} growth={8} sub="so với hôm qua" icon={Zap} color="blue" sparkData={[]} onClick={()=>onDrillDown&&onDrillDown('Hóa đơn hôm nay',todayInvoices)} />
-          <ExecKPICard title="Lợi nhuận ước tính" value={shortVND(netProfit)} growth={netProfit>0?12:-8} sub="sau CP ~75%" icon={Wallet} color={netProfit>=0?'emerald':'rose'} sparkData={[]} />
-          <ExecKPICard title="AOV (Giá trị TB/đơn)" value={shortVND(avgOrderValue)} growth={5} sub="trên/hóa đơn" icon={ShoppingBag} color="purple" sparkData={revenueSparkline} />
-          <ExecKPICard title="Tổng lịch hẹn" value={apptTotal} growth={bookingTrend.length>1?8:0} sub="kỳ này" icon={Calendar} color="amber" sparkData={bookingSparkline} onClick={()=>onDrillDown&&onDrillDown('Lịch hẹn',appointments)} />
-          <ExecKPICard title="Tỷ lệ lấp đầy" value={`${fillRate}%`} growth={fillRate>70?5:-3} sub="hoàn thành/tổng" icon={Target} color="teal" sparkData={[]} />
-          <ExecKPICard title="Tỷ lệ huỷ lịch" value={`${cancelRate}%`} growth={-cancelRate} sub="cần giảm xuống <10%" icon={XCircle} color={cancelRate>20?'rose':'emerald'} sparkData={[]} />
-          <ExecKPICard title="No-show" value={`${noShowRate}%`} growth={-noShowRate} sub="không đến" icon={AlertTriangle} color={noShowRate>15?'rose':'amber'} sparkData={[]} />
-          <ExecKPICard title="Khách hàng" value={totalCustomers} growth={6} sub={`${newCustomers} mới`} icon={Users} color="blue" sparkData={[]} onClick={()=>onDrillDown&&onDrillDown('Khách hàng',customers)} />
-          <ExecKPICard title="Khách quay lại" value={`${repeatRate}%`} growth={repeatRate>50?4:-2} sub={`${returnCustomers} khách`} icon={CheckCircle} color="emerald" sparkData={[]} />
-          <ExecKPICard title="Tiền TIP nhận" value={shortVND(totalTip)} growth={4} sub="từ khách hàng" icon={Gift} color="amber" sparkData={[]} />
-          <ExecKPICard title="Giá trị tồn kho" value={shortVND(totalInventoryValue)} growth={0} sub={`${outOfStockProducts.length} hết hàng`} icon={Layers} color={outOfStockProducts.length>0?'rose':'teal'} sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_total_revenue', 'Total Revenue')} value={shortVND(totalRevenue)} growth={18} sub={t('reports.sub_this_period', 'this period')} icon={TrendingUp} color="emerald" sparkData={revenueSparkline} onClick={()=>onDrillDown&&onDrillDown(t('reports.drill_invoices', 'Invoices'),invoices)} />
+          <ExecKPICard title={t('reports.kpi_today_revenue', 'Today Revenue')} value={shortVND(todayRevenue)} growth={8} sub={t('reports.sub_vs_yesterday', 'vs yesterday')} icon={Zap} color="blue" sparkData={[]} onClick={()=>onDrillDown&&onDrillDown(t('reports.drill_today_invoices', 'Today Invoices'),todayInvoices)} />
+          <ExecKPICard title={t('reports.kpi_est_profit', 'Estimated Profit')} value={shortVND(netProfit)} growth={netProfit>0?12:-8} sub={t('reports.sub_after_cost', 'after ~75% cost')} icon={Wallet} color={netProfit>=0?'emerald':'rose'} sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_aov', 'AOV (Avg Order Value)')} value={shortVND(avgOrderValue)} growth={5} sub={t('reports.sub_per_invoice', 'per invoice')} icon={ShoppingBag} color="purple" sparkData={revenueSparkline} />
+          <ExecKPICard title={t('reports.kpi_total_appointments', 'Total Appointments')} value={apptTotal} growth={bookingTrend.length>1?8:0} sub={t('reports.sub_this_period', 'this period')} icon={Calendar} color="amber" sparkData={bookingSparkline} onClick={()=>onDrillDown&&onDrillDown(t('reports.drill_appts', 'Appointments'),appointments)} />
+          <ExecKPICard title={t('reports.kpi_fill_rate', 'Fill / Completion Rate')} value={`${fillRate}%`} growth={fillRate>70?5:-3} sub={t('reports.sub_completed_total', 'completed / total')} icon={Target} color="teal" sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_cancellation_rate', 'Cancellation Rate')} value={`${cancelRate}%`} growth={-cancelRate} sub={t('reports.sub_target_under_10', 'target < 10%')} icon={XCircle} color={cancelRate>20?'rose':'emerald'} sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_noshow_rate', 'No-Show Rate')} value={`${noShowRate}%`} growth={-noShowRate} sub={t('reports.sub_noshow', 'no show')} icon={AlertTriangle} color={noShowRate>15?'rose':'amber'} sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_total_customers', 'Total Customers')} value={totalCustomers} growth={6} sub={`${newCustomers} ${t('reports.new', 'new')}`} icon={Users} color="blue" sparkData={[]} onClick={()=>onDrillDown&&onDrillDown(t('reports.drill_customers', 'Customers'),customers)} />
+          <ExecKPICard title={t('reports.kpi_returning_customers', 'Returning Customers')} value={`${repeatRate}%`} growth={repeatRate>50?4:-2} sub={`${returnCustomers} ${t('reports.customers_unit', 'customers')}`} icon={CheckCircle} color="emerald" sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_tips_received', 'Tips Received')} value={shortVND(totalTip)} growth={4} sub={t('reports.sub_from_customers', 'from customers')} icon={Gift} color="amber" sparkData={[]} />
+          <ExecKPICard title={t('reports.kpi_inventory_value', 'Inventory Value')} value={shortVND(totalInventoryValue)} growth={0} sub={`${outOfStockProducts.length} ${t('reports.out_of_stock', 'out of stock')}`} icon={Layers} color={outOfStockProducts.length>0?'rose':'teal'} sparkData={[]} />
         </div>
       </Section>
 
-      {/* Alerts & AI Insight — above fold */}
+      {/* Alerts */}
       {alerts.length > 0 && (
-        <Section title="Cảnh báo cần xử lý" sub={`${alerts.length} cảnh báo đang hoạt động`} icon={AlertTriangle} iconColor="text-rose-500">
+        <Section title={t('reports.sec_alerts', 'Alerts & Actions Needed')} sub={t('reports.sub_active_alerts', '{count} active alerts', { count: alerts.length })} icon={AlertTriangle} iconColor="text-rose-500">
           <div className="grid sm:grid-cols-2 gap-2">
             {alerts.slice(0,6).map((a,i)=><AlertBadge key={i} type={a.type} text={a.text}/>)}
           </div>
@@ -442,7 +445,7 @@ export default function OverviewTab({
 
       {/* AI Insights */}
       {aiInsights.length > 0 && (
-        <Section title="AI Business Insights" sub="Phân tích thông minh từ dữ liệu" icon={Star} iconColor="text-amber-500">
+        <Section title={t('reports.sec_ai_insights', 'AI Business Insights')} sub={t('reports.sub_ai_insights', 'Smart insights from business data')} icon={Star} iconColor="text-amber-500">
           <Card className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/30">
             <div className="grid sm:grid-cols-2 gap-y-2 gap-x-6">
               {aiInsights.slice(0,8).map((ins,i)=>(
@@ -453,18 +456,21 @@ export default function OverviewTab({
         </Section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 2: Revenue Trend
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Xu hướng doanh thu" sub="So sánh với mục tiêu" icon={TrendingUp} iconColor="text-emerald-600">
+      {/* SECTION 2: Revenue Trend */}
+      <Section title={t('reports.sec_revenue_trend', 'Revenue Trend')} sub={t('reports.sub_vs_target', 'Comparison with target')} icon={TrendingUp} iconColor="text-emerald-600">
         <Card className="p-5 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <span className="text-xs text-slate-500">Tổng kỳ: </span>
+              <span className="text-xs text-slate-500">{t('reports.total_period', 'Total Period')}: </span>
               <span className="text-sm font-bold text-emerald-600">{formatVND(totalRevenue)}</span>
             </div>
             <div className="inline-flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
-              {[['7d','7 ngày'],['14d','14 ngày'],['30d','30 ngày'],['90d','3 tháng']].map(([k,l])=>(
+              {[
+                ['7d', t('reports.preset_7d', '7 days')],
+                ['14d', t('reports.preset_14d', '14 days')],
+                ['30d', t('reports.preset_30d', '30 days')],
+                ['90d', t('reports.preset_90d', '3 months')]
+              ].map(([k,l])=>(
                 <button key={k} onClick={()=>setTrendPeriod(k)}
                   className={`px-3 py-1 text-xs font-semibold rounded-lg transition cursor-pointer
                     ${trendPeriod===k?'bg-white text-blue-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>
@@ -486,18 +492,16 @@ export default function OverviewTab({
               <YAxis tickFormatter={v=>shortVND(v)} tick={{fontSize:10,fill:'#94A3B8'}} axisLine={false} tickLine={false} width={55}/>
               <Tooltip content={<VNDTooltip/>}/>
               <Legend wrapperStyle={{fontSize:11}} iconType="circle"/>
-              <Area type="monotone" dataKey="revenue" name="Doanh thu" stroke={C.emerald} strokeWidth={2.5} fillOpacity={1} fill="url(#gRev2)"/>
-              <Line type="monotone" dataKey="target" name="Mục tiêu" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false}/>
+              <Area type="monotone" dataKey="revenue" name={t('reports.revenue_label', 'Revenue')} stroke={C.emerald} strokeWidth={2.5} fillOpacity={1} fill="url(#gRev2)"/>
+              <Line type="monotone" dataKey="target" name={t('reports.target_label', 'Target')} stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false}/>
             </ComposedChart>
           </ResponsiveContainer>
         </Card>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 3 + 4: Revenue Breakdown & Booking Analysis
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION 3 + 4: Revenue Breakdown & Booking Analysis */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Section title="Cơ cấu nguồn doanh thu" sub="Stacked Bar theo danh mục" icon={DollarSign} iconColor="text-blue-600">
+        <Section title={t('reports.sec_revenue_structure', 'Revenue Structure Breakdown')} sub={t('reports.sub_stacked_category', 'Stacked Bar by Category')} icon={DollarSign} iconColor="text-blue-600">
           <Card className="p-5">
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={revenueByCategory}>
@@ -506,29 +510,28 @@ export default function OverviewTab({
                 <YAxis tickFormatter={v=>shortVND(v)} tick={{fontSize:10,fill:'#94A3B8'}} axisLine={false} tickLine={false} width={55}/>
                 <Tooltip content={<VNDTooltip/>}/>
                 <Legend wrapperStyle={{fontSize:10}} iconType="circle"/>
-                <Bar dataKey="Dịch vụ"  stackId="a" fill={C.blue}    radius={[0,0,0,0]}/>
-                <Bar dataKey="Sản phẩm" stackId="a" fill={C.emerald} radius={[0,0,0,0]}/>
-                <Bar dataKey="Gói DV"   stackId="a" fill={C.purple}  radius={[0,0,0,0]}/>
-                <Bar dataKey="Combo"    stackId="a" fill={C.amber}   radius={[0,0,0,0]}/>
-                <Bar dataKey="Thẻ"      stackId="a" fill={C.teal}    radius={[6,6,0,0]}/>
+                <Bar dataKey={catServices} stackId="a" fill={C.blue}    radius={[0,0,0,0]}/>
+                <Bar dataKey={catProducts} stackId="a" fill={C.emerald} radius={[0,0,0,0]}/>
+                <Bar dataKey={catPackages} stackId="a" fill={C.purple}  radius={[0,0,0,0]}/>
+                <Bar dataKey={catCombos}   stackId="a" fill={C.amber}   radius={[0,0,0,0]}/>
+                <Bar dataKey={catCards}    stackId="a" fill={C.teal}    radius={[6,6,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </Card>
         </Section>
 
-        <Section title="Phân tích lịch hẹn" sub="Theo trạng thái qua thời gian" icon={Calendar} iconColor="text-amber-500">
+        <Section title={t('reports.sec_booking_analysis', 'Appointment Analysis')} sub={t('reports.sub_status_over_time', 'By status over time')} icon={Calendar} iconColor="text-amber-500">
           <Card className="p-5">
-            {/* 7 status badges */}
             <div className="grid grid-cols-4 gap-1.5 mb-3">
               {[
-                {l:'Chờ XN',       v:apptPending,    c:'text-amber-700 bg-amber-50'},
-                {l:'Đã XN',        v:apptConfirmed,  c:'text-blue-700 bg-blue-50'},
-                {l:'Check-in',     v:apptCheckedIn,  c:'text-orange-700 bg-orange-50'},
-                {l:'Đang làm',     v:apptInProgress, c:'text-purple-700 bg-purple-50'},
-                {l:'Hoàn thành',   v:apptCompleted,  c:'text-emerald-700 bg-emerald-50'},
-                {l:'Huỷ',          v:apptCancelled,  c:'text-rose-700 bg-rose-50'},
-                {l:'No-show',      v:apptNoShow,     c:'text-slate-700 bg-slate-100'},
-                {l:'Tổng',         v:apptTotal,      c:'text-slate-800 bg-slate-50 border border-slate-200'},
+                {l: t('reports.status_pending', 'Pending'),      v:apptPending,    c:'text-amber-700 bg-amber-50'},
+                {l: t('reports.status_confirmed', 'Confirmed'),  v:apptConfirmed,  c:'text-blue-700 bg-blue-50'},
+                {l: t('reports.status_checked_in', 'Checked In'),v:apptCheckedIn,  c:'text-orange-700 bg-orange-50'},
+                {l: t('reports.status_in_progress', 'In Progress'), v:apptInProgress, c:'text-purple-700 bg-purple-50'},
+                {l: t('reports.status_completed', 'Completed'),  v:apptCompleted,  c:'text-emerald-700 bg-emerald-50'},
+                {l: t('reports.status_cancelled', 'Cancelled'),  v:apptCancelled,  c:'text-rose-700 bg-rose-50'},
+                {l: t('reports.status_no_show', 'No Show'),      v:apptNoShow,     c:'text-slate-700 bg-slate-100'},
+                {l: t('reports.label_total', 'Total'),           v:apptTotal,      c:'text-slate-800 bg-slate-50 border border-slate-200'},
               ].map(x=>(
                 <div key={x.l} className={`rounded-xl p-2 text-center ${x.c}`}>
                   <div className="text-base font-extrabold leading-tight">{x.v}</div>
@@ -543,28 +546,24 @@ export default function OverviewTab({
                 <YAxis tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false} width={25}/>
                 <Tooltip contentStyle={{borderRadius:12,border:'none',fontSize:10}}/>
                 <Legend wrapperStyle={{fontSize:9}} iconType="circle"/>
-                <Area type="monotone" dataKey="completed" name="Hoàn thành" stroke={C.emerald} fill={`${C.emerald}20`} strokeWidth={2}/>
-                <Area type="monotone" dataKey="pending"   name="Chờ"       stroke={C.amber}   fill={`${C.amber}15`}   strokeWidth={1.5}/>
-                <Area type="monotone" dataKey="cancelled" name="Huỷ"       stroke={C.rose}    fill={`${C.rose}15`}    strokeWidth={1.5}/>
-                <Area type="monotone" dataKey="noshow"    name="No-show"   stroke={C.orange}  fill={`${C.orange}10`}  strokeWidth={1}/>
+                <Area type="monotone" dataKey="completed" name={t('reports.status_completed', 'Completed')} stroke={C.emerald} fill={`${C.emerald}20`} strokeWidth={2}/>
+                <Area type="monotone" dataKey="pending"   name={t('reports.status_pending', 'Pending')} stroke={C.amber}   fill={`${C.amber}15`}   strokeWidth={1.5}/>
+                <Area type="monotone" dataKey="cancelled" name={t('reports.status_cancelled', 'Cancelled')} stroke={C.rose}    fill={`${C.rose}15`}    strokeWidth={1.5}/>
+                <Area type="monotone" dataKey="noshow"    name={t('reports.status_no_show', 'No Show')} stroke={C.orange}  fill={`${C.orange}10`}  strokeWidth={1}/>
               </AreaChart>
             </ResponsiveContainer>
           </Card>
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 5: Peak Hours Heatmap
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Heatmap khung giờ đông khách" sub="Thứ × Giờ — giúp lên lịch nhân viên tối ưu" icon={Clock} iconColor="text-indigo-600">
+      {/* SECTION 5: Peak Hours Heatmap */}
+      <Section title={t('reports.sec_peak_hours', 'Peak Hours Heatmap')} sub={t('reports.sub_peak_hours', 'Day × Hour — optimal staff scheduling')} icon={Clock} iconColor="text-indigo-600">
         <Card className="p-5 overflow-x-auto">
           <div className="min-w-[520px]">
-            {/* header hours */}
             <div className="grid gap-1" style={{gridTemplateColumns:`60px repeat(15,1fr)`}}>
               <div/>
               {VI_HOURS.map(h=><div key={h} className="text-center text-[9px] font-semibold text-slate-400">{h}</div>)}
             </div>
-            {/* rows */}
             {VI_DAYS.map((day,di)=>(
               <div key={day} className="grid gap-1 mt-1" style={{gridTemplateColumns:`60px repeat(15,1fr)`}}>
                 <div className="text-[10px] font-semibold text-slate-500 flex items-center">{day}</div>
@@ -574,24 +573,22 @@ export default function OverviewTab({
               </div>
             ))}
             <div className="flex items-center gap-2 mt-3 justify-end">
-              <span className="text-[9px] text-slate-400">Ít</span>
+              <span className="text-[9px] text-slate-400">{t('reports.low_density', 'Low')}</span>
               {[0.1,0.3,0.5,0.7,0.9].map(p=>(
                 <div key={p} className="w-4 h-3 rounded-sm" style={{backgroundColor:`rgba(59,130,246,${p})`}}/>
               ))}
-              <span className="text-[9px] text-slate-400">Nhiều</span>
+              <span className="text-[9px] text-slate-400">{t('reports.high_density', 'High')}</span>
             </div>
           </div>
         </Card>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 6 + 7: Top Employees + Top Services
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION 6 + 7: Top Employees + Top Services */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Section title="Top nhân viên doanh số" sub="Xếp hạng theo doanh thu" icon={Users} iconColor="text-blue-600">
+        <Section title={t('reports.sec_top_staff', 'Top Revenue Staff')} sub={t('reports.sub_rank_revenue', 'Ranked by revenue')} icon={Users} iconColor="text-blue-600">
           <Card className="p-5">
             {staffPerf.length===0
-              ? <p className="text-xs text-slate-400 text-center py-10">Chưa có dữ liệu</p>
+              ? <p className="text-xs text-slate-400 text-center py-10">{t('reports.no_data', 'No data available')}</p>
               : (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={staffPerf} layout="vertical" barSize={16}>
@@ -599,8 +596,8 @@ export default function OverviewTab({
                     <XAxis type="number" tickFormatter={v=>shortVND(v)} tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false}/>
                     <YAxis type="category" dataKey="name" tick={{fontSize:10,fill:'#475569'}} axisLine={false} tickLine={false} width={70}/>
                     <Tooltip content={<VNDTooltip/>}/>
-                    <Bar dataKey="revenue" name="Doanh số" radius={[0,6,6,0]} fill={C.blue}
-                      onClick={row=>onDrillDown&&onDrillDown(`Nhân viên: ${row.fullName||row.name}`,invoices.filter(i=>(i.items||[]).some(it=>it.staff_id===staff.find(s=>s.full_name===row.fullName)?.id)))}
+                    <Bar dataKey="revenue" name={t('reports.revenue_label', 'Revenue')} radius={[0,6,6,0]} fill={C.blue}
+                      onClick={row=>onDrillDown&&onDrillDown(`${t('reports.col_staff', 'Staff')}: ${row.fullName||row.name}`,invoices.filter(i=>(i.items||[]).some(it=>it.staff_id===staff.find(s=>s.full_name===row.fullName)?.id)))}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -609,10 +606,10 @@ export default function OverviewTab({
           </Card>
         </Section>
 
-        <Section title="Top dịch vụ doanh thu cao" sub="Theo doanh số từ hóa đơn" icon={Scissors} iconColor="text-purple-600">
+        <Section title={t('reports.sec_top_services', 'Top Revenue Services')} sub={t('reports.sub_from_invoices', 'Based on invoice sales')} icon={Scissors} iconColor="text-purple-600">
           <Card className="p-5">
             {servicePerf.length===0
-              ? <p className="text-xs text-slate-400 text-center py-10">Chưa có dữ liệu</p>
+              ? <p className="text-xs text-slate-400 text-center py-10">{t('reports.no_data', 'No data available')}</p>
               : (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={servicePerf} layout="vertical" barSize={16}>
@@ -620,7 +617,7 @@ export default function OverviewTab({
                     <XAxis type="number" tickFormatter={v=>shortVND(v)} tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false}/>
                     <YAxis type="category" dataKey="name" tick={{fontSize:10,fill:'#475569'}} axisLine={false} tickLine={false} width={120}/>
                     <Tooltip content={<VNDTooltip/>}/>
-                    <Bar dataKey="revenue" name="Doanh thu" radius={[0,6,6,0]} fill={C.purple}/>
+                    <Bar dataKey="revenue" name={t('reports.revenue_label', 'Revenue')} radius={[0,6,6,0]} fill={C.purple}/>
                   </BarChart>
                 </ResponsiveContainer>
               )
@@ -629,18 +626,16 @@ export default function OverviewTab({
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 8 + 9: Customer Analysis + Payment Analysis
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION 8 + 9: Customer Analysis + Payment Analysis */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Customer Donut */}
-        <Section title="Phân tích khách hàng" sub="Phân khúc & chỉ số giá trị" icon={Users} iconColor="text-teal-600">
+        <Section title={t('reports.sec_customer_analysis', 'Customer Analysis')} sub={t('reports.sub_cust_segments', 'Segmentation & value metrics')} icon={Users} iconColor="text-teal-600">
           <Card className="p-5 space-y-3">
             <div className="flex gap-4 items-center">
               <div className="shrink-0">
                 <ResponsiveContainer width={140} height={140}>
                   <PieChart>
-                    <Pie data={custPieData.length?custPieData:[{name:'Chưa có',value:1}]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={38}>
+                    <Pie data={custPieData.length?custPieData:[{name:t('reports.no_data', 'No data'),value:1}]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={38}>
                       {(custPieData.length?custPieData:[{color:'#e2e8f0'}]).map((entry,i)=>(
                         <Cell key={i} fill={entry.color||PIE_COLORS[i%PIE_COLORS.length]}/>
                       ))}
@@ -651,13 +646,13 @@ export default function OverviewTab({
               </div>
               <div className="flex-1 space-y-2">
                 {[
-                  {l:'Tổng KH',       v:totalCustomers, c:'text-slate-800'},
-                  {l:'Khách vãng lai', v:walkInCount,     c:'text-slate-500'},
-                  {l:'Khách mới',     v:newCustomers,   c:'text-blue-600'},
-                  {l:'Quay lại',      v:returnCustomers,c:'text-emerald-600'},
-                  {l:'VIP (5tr+)',    v:vipCustomers,   c:'text-amber-600'},
-                  {l:'Tỷ lệ quay lại', v:`${repeatRate}%`,c:'text-purple-600'},
-                  {l:'LTV thành viên',v:shortVND(avgLTV),c:'text-slate-700'},
+                  {l: t('reports.kpi_total_customers', 'Total Customers'),       v:totalCustomers, c:'text-slate-800'},
+                  {l: t('reports.walk_in_customer', 'Walk-in Customer'), v:walkInCount,     c:'text-slate-500'},
+                  {l: t('reports.new_customer', 'New Customer'),     v:newCustomers,   c:'text-blue-600'},
+                  {l: t('reports.returning_customer', 'Returning Customer'),      v:returnCustomers,c:'text-emerald-600'},
+                  {l: t('reports.vip_customer', 'VIP Customer (5M+)'),    v:vipCustomers,   c:'text-amber-600'},
+                  {l: t('reports.repeat_rate', 'Return Rate'), v:`${repeatRate}%`,c:'text-purple-600'},
+                  {l: t('reports.member_ltv', 'Member LTV'),v:shortVND(avgLTV),c:'text-slate-700'},
                 ].map(x=>(
                   <div key={x.l} className="flex justify-between items-center border-b border-slate-50 pb-1 last:border-0">
                     <span className="text-[11px] text-slate-500">{x.l}</span>
@@ -670,10 +665,10 @@ export default function OverviewTab({
         </Section>
 
         {/* Payment Analysis */}
-        <Section title="Phân tích thanh toán" sub="Cơ cấu phương thức" icon={CreditCard} iconColor="text-sky-600">
+        <Section title={t('reports.sec_payment_analysis', 'Payment Analysis')} sub={t('reports.sub_payment_methods', 'Method breakdown')} icon={CreditCard} iconColor="text-sky-600">
           <Card className="p-5">
             {paymentData.length===0
-              ? <p className="text-xs text-slate-400 text-center py-10">Chưa có dữ liệu</p>
+              ? <p className="text-xs text-slate-400 text-center py-10">{t('reports.no_data', 'No data available')}</p>
               : (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={paymentData}>
@@ -681,7 +676,7 @@ export default function OverviewTab({
                     <XAxis dataKey="name" tick={{fontSize:10,fill:'#64748B'}} axisLine={false} tickLine={false}/>
                     <YAxis tickFormatter={v=>shortVND(v)} tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false} width={52}/>
                     <Tooltip content={<VNDTooltip/>}/>
-                    <Bar dataKey="value" name="Doanh thu" radius={[6,6,0,0]}>
+                    <Bar dataKey="value" name={t('reports.revenue_label', 'Revenue')} radius={[6,6,0,0]}>
                       {paymentData.map((_,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
                     </Bar>
                   </BarChart>
@@ -692,10 +687,8 @@ export default function OverviewTab({
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 10: Cash Flow Waterfall
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Dòng tiền & Lợi nhuận (P&L)" sub="Phân tích cấu trúc tài chính" icon={Wallet} iconColor="text-emerald-600">
+      {/* SECTION 10: Cash Flow Waterfall */}
+      <Section title={t('reports.sec_pnl', 'Cash Flow & Profit (P&L)')} sub={t('reports.sub_pnl_struct', 'Financial structure breakdown')} icon={Wallet} iconColor="text-emerald-600">
         <Card className="p-5">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {waterfallData.map((item,i)=>(
@@ -717,22 +710,20 @@ export default function OverviewTab({
         </Card>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 11: Inventory Health
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Sức khỏe kho hàng" sub={`${products.length} sản phẩm · ${outOfStockProducts.length} hết hàng · ${lowStockProducts.length} sắp hết`} icon={Package} iconColor="text-orange-500">
+      {/* SECTION 11: Inventory Health */}
+      <Section title={t('reports.sec_inventory_health', 'Inventory Health')} sub={`${products.length} ${t('reports.unit_products', 'products')} · ${outOfStockProducts.length} ${t('reports.out_of_stock', 'out of stock')} · ${lowStockProducts.length} ${t('reports.low_stock', 'low stock')}`} icon={Package} iconColor="text-orange-500">
         <div className="grid md:grid-cols-2 gap-4">
           {/* Out/Low stock list */}
           <Card className="p-4 space-y-2">
-            <p className="text-[11px] font-bold text-rose-600 uppercase tracking-wide">⚠️ Cần nhập hàng ngay</p>
+            <p className="text-[11px] font-bold text-rose-600 uppercase tracking-wide">{t('reports.reorder_immediately', '⚠️ Reorder Needed Immediately')}</p>
             {outOfStockProducts.length===0&&lowStockProducts.length===0
-              ? <p className="text-xs text-slate-400 text-center py-6">Kho đang ổn định ✅</p>
+              ? <p className="text-xs text-slate-400 text-center py-6">{t('reports.inventory_healthy', 'Inventory is healthy ✅')}</p>
               : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {[...outOfStockProducts.slice(0,5), ...lowStockProducts.slice(0,5)].map((p,i)=>(
                     <div key={i} className={`flex items-center justify-between text-xs px-3 py-2 rounded-xl ${(p.stock_quantity||0)<=0?'bg-rose-50 text-rose-700':'bg-amber-50 text-amber-700'}`}>
                       <span className="font-medium truncate">{p.name}</span>
-                      <span className="font-bold shrink-0 ml-2">{(p.stock_quantity||0)<=0?'Hết hàng':`Còn ${p.stock_quantity}`}</span>
+                      <span className="font-bold shrink-0 ml-2">{(p.stock_quantity||0)<=0?t('reports.out_of_stock_label', 'Out of stock'):t('reports.in_stock_left', 'In stock: {count}', { count: p.stock_quantity })}</span>
                     </div>
                   ))}
                 </div>
@@ -742,14 +733,13 @@ export default function OverviewTab({
 
           {/* Inventory + Catalog stats */}
           <Card className="p-4 space-y-3">
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Tổng quan kho & Danh mục</p>
-            {/* Kho stats */}
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">{t('reports.inv_catalog_summary', 'Inventory & Catalog Summary')}</p>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                {l:'Tổng sản phẩm',     v:products.length,               c:'bg-blue-50 text-blue-700'},
-                {l:'Giá trị kho',       v:shortVND(totalInventoryValue),  c:'bg-emerald-50 text-emerald-700'},
-                {l:'Sắp hết (≤5)',      v:lowStockProducts.length,        c:'bg-amber-50 text-amber-700'},
-                {l:'Hết hàng',          v:outOfStockProducts.length,      c:'bg-rose-50 text-rose-600'},
+                {l: t('reports.total_products', 'Total Products'),     v:products.length,               c:'bg-blue-50 text-blue-700'},
+                {l: t('reports.kpi_inventory_value', 'Inventory Value'),       v:shortVND(totalInventoryValue),  c:'bg-emerald-50 text-emerald-700'},
+                {l: t('reports.low_stock_threshold', 'Low Stock (≤5)'),      v:lowStockProducts.length,        c:'bg-amber-50 text-amber-700'},
+                {l: t('reports.out_of_stock_label', 'Out of Stock'),          v:outOfStockProducts.length,      c:'bg-rose-50 text-rose-600'},
               ].map(x=>(
                 <div key={x.l} className={`rounded-xl p-2.5 text-center ${x.c}`}>
                   <div className="text-base font-extrabold">{x.v}</div>
@@ -757,17 +747,16 @@ export default function OverviewTab({
                 </div>
               ))}
             </div>
-            {/* Catalog danh mục */}
             <div className="pt-1 border-t border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Danh mục đang hoạt động</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">{t('reports.active_catalog_cats', 'Active Catalog Categories')}</p>
               <div className="grid grid-cols-3 gap-1.5">
                 {[
-                  {l:'Dịch vụ',      v:services.length,      c:'bg-blue-50 text-blue-700'},
-                  {l:'Gói DV',       v:packages.length,      c:'bg-purple-50 text-purple-700'},
-                  {l:'Liệu trình',   v:treatments.length,    c:'bg-pink-50 text-pink-700'},
-                  {l:'Combo DV',     v:serviceCombos.length, c:'bg-amber-50 text-amber-700'},
-                  {l:'Combo SP',     v:productCombos.length, c:'bg-teal-50 text-teal-700'},
-                  {l:'Thẻ tiền mặt',v:prepaidCards.filter(c=>(c.balance||0)>0).length, c:'bg-indigo-50 text-indigo-700'},
+                  {l: t('reports.cat_services', 'Services'),      v:services.length,      c:'bg-blue-50 text-blue-700'},
+                  {l: t('reports.cat_packages', 'Packages'),       v:packages.length,      c:'bg-purple-50 text-purple-700'},
+                  {l: t('reports.cat_treatments', 'Treatments'),   v:treatments.length,    c:'bg-pink-50 text-pink-700'},
+                  {l: t('reports.cat_service_combos', 'Svc Combos'),v:serviceCombos.length, c:'bg-amber-50 text-amber-700'},
+                  {l: t('reports.cat_product_combos', 'Prod Combos'),v:productCombos.length, c:'bg-teal-50 text-teal-700'},
+                  {l: t('reports.cat_prepaid_cards', 'Prepaid Cards'),v:prepaidCards.filter(c=>(c.balance||0)>0).length, c:'bg-indigo-50 text-indigo-700'},
                 ].map(x=>(
                   <div key={x.l} className={`rounded-xl p-2 text-center ${x.c}`}>
                     <div className="text-base font-extrabold">{x.v}</div>
@@ -780,13 +769,11 @@ export default function OverviewTab({
         </div>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 12: Upcoming Appointments
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Section title="Lịch hẹn sắp tới hôm nay" sub={`${upcomingAppts.length} lịch hẹn từ bây giờ trở đi`} icon={Clock} iconColor="text-blue-600">
+      {/* SECTION 12: Upcoming Appointments */}
+      <Section title={t('reports.sec_upcoming_today', 'Upcoming Appointments Today')} sub={t('reports.sub_upcoming_count', '{count} appointments from now onwards', { count: upcomingAppts.length })} icon={Clock} iconColor="text-blue-600">
         <Card className="p-4">
           {upcomingAppts.length===0
-            ? <p className="text-xs text-slate-400 text-center py-8">Không còn lịch hẹn nào hôm nay</p>
+            ? <p className="text-xs text-slate-400 text-center py-8">{t('reports.no_upcoming_today', 'No remaining appointments today')}</p>
             : (
               <div className="space-y-2">
                 {upcomingAppts.map((a,i)=>(
@@ -795,8 +782,8 @@ export default function OverviewTab({
                       <div className="text-sm font-bold text-blue-600">{a.time||a.start_time||'--:--'}</div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-slate-800 truncate">{a.customer_name||'Khách vãng lai'}</div>
-                      <div className="text-[10px] text-slate-400 truncate">{a.service_name||a.notes||'Dịch vụ'}</div>
+                      <div className="text-xs font-semibold text-slate-800 truncate">{a.customer_name||t('reports.walk_in_customer', 'Walk-in Customer')}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{a.service_name||a.notes||t('reports.default_service_name', 'Service')}</div>
                     </div>
                     <div className="text-[10px] text-slate-400 shrink-0">{a.staff_name||''}</div>
                     <div className={`w-2 h-2 rounded-full shrink-0 ${a.status==='confirmed'?'bg-emerald-400':a.status==='pending'?'bg-amber-400':'bg-blue-400'}`}/>

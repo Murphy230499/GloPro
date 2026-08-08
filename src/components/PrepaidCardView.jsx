@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useT } from '@/lib/i18n';
 import { formatVND } from '@/lib/format';
 
 function shadeColor(hex, percent) {
@@ -11,6 +12,7 @@ function shadeColor(hex, percent) {
 }
 
 export default function PrepaidCardView({ card, size = 'md' }) {
+  const { t } = useT();
   const color = card.color || '#FF6B9D';
   const dims = size === 'sm' ? 'h-36' : 'h-44';
   const gradient = `linear-gradient(135deg, ${color}, ${shadeColor(color, -50)})`;
@@ -24,7 +26,7 @@ export default function PrepaidCardView({ card, size = 'md' }) {
       <div className="relative flex items-start justify-between">
         <div>
           <div className="text-[10px] opacity-80 font-medium uppercase tracking-widest">Prepaid</div>
-          <div className="font-bold text-lg leading-tight mt-0.5">{card.name || 'Thẻ tiền mặt'}</div>
+          <div className="font-bold text-lg leading-tight mt-0.5">{card.name || t('catalog.card_default_name', 'Thẻ tiền mặt')}</div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="w-7 h-5 rounded-md bg-yellow-300/80" />
@@ -33,19 +35,19 @@ export default function PrepaidCardView({ card, size = 'md' }) {
       </div>
 
       <div className="relative">
-        <div className="text-[10px] opacity-70 mb-0.5">Mệnh giá</div>
+        <div className="text-[10px] opacity-70 mb-0.5">{t('catalog.card_face_value', 'Mệnh giá')}</div>
         <div className="font-bold text-xl drop-shadow-sm">{formatVND(card.face_value)}</div>
       </div>
 
       <div className="relative flex items-end justify-between">
         <div>
-          <div className="text-[9px] opacity-60 uppercase tracking-wide">Mã thẻ</div>
+          <div className="text-[9px] opacity-60 uppercase tracking-wide">{t('catalog.card_code', 'Mã thẻ')}</div>
           <div className="font-mono text-sm tracking-wide">{card.card_code || '•••• •••• •••• ••••'}</div>
         </div>
         <div className="text-right">
-          {card.expiry_months > 0 && <div className="text-[9px] opacity-70">Hạn: {card.expiry_months}T</div>}
+          {card.expiry_months > 0 && <div className="text-[9px] opacity-70">{t('catalog.card_expiry', 'Hạn:')} {card.expiry_months} {t('catalog.card_months', 'tháng')}</div>}
           {card.selling_price != null && card.selling_price !== card.face_value && (
-            <div className="text-[9px] opacity-70">Bán: {formatVND(card.selling_price)}</div>
+            <div className="text-[9px] opacity-70">{t('catalog.card_sell_price', 'Bán:')} {formatVND(card.selling_price)}</div>
           )}
         </div>
       </div>

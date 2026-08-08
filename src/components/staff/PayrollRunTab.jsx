@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Plus, CalendarDays, Users, Gift, Wallet } from 'lucide-react';
@@ -57,6 +58,7 @@ const ROLES = {
 };
 
 export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffForDetail }) {
+  const { t } = useT();
   const router = useRouter();
   const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
   const [selectedStaffIds, setSelectedStaffIds] = useState(staff.map(s => s.id));
@@ -253,7 +255,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                 ) : (
                   <>
                     <CalendarDays className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400 lowercase">khoảng thời gian</span>
+                    <span className="text-slate-400 lowercase">{t('staff.payroll.date_placeholder', 'khoảng thời gian')}</span>
                   </>
                 )}
               </button>
@@ -273,13 +275,13 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                   onClick={() => setIsDatePickerOpen(false)}
                   className="flex-1 py-1.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors"
                 >
-                  Hủy
+                  {t('staff.scheduler.cancel', 'Hủy')}
                 </button>
                 <button 
                   onClick={() => { setDate(tempDate); setIsDatePickerOpen(false); }}
                   className="flex-1 py-1.5 rounded-xl bg-orange-500 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
                 >
-                  Áp dụng
+                  {t('staff.commission.apply_btn', 'Áp dụng')}
                 </button>
               </div>
             </PopoverContent>
@@ -294,10 +296,10 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
               <span className={`flex items-center gap-2 truncate ${selectedStaffIds.length === 0 || selectedStaffIds.length === staff.length ? 'text-slate-400/80 font-normal lowercase text-[13px]' : ''}`}>
                 <Users className="w-4 h-4 shrink-0 text-slate-400" />
                 {selectedStaffIds.length === 0 
-                  ? 'tất cả nhân viên' 
+                  ? t('staff.payroll.all_staff', 'tất cả nhân viên') 
                   : selectedStaffIds.length === staff.length 
-                    ? 'tất cả nhân viên' 
-                    : `Đã chọn ${selectedStaffIds.length} nhân viên`}
+                    ? t('staff.payroll.all_staff', 'tất cả nhân viên') 
+                    : t('staff.payroll.selected_staff', 'Đã chọn {count} nhân viên').replace('{count}', selectedStaffIds.length)}
               </span>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
@@ -309,7 +311,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                   <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
                     <input
                       type="text"
-                      placeholder="tìm kiếm nhân viên..."
+                      placeholder={t("staff.commission.search_staff", "tìm kiếm nhân viên...")}
                       value={staffSearch}
                       onChange={(e) => setStaffSearch(e.target.value)}
                       className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400/50 placeholder:font-normal placeholder:lowercase"
@@ -322,7 +324,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                         onCheckedChange={handleSelectAllStaff}
                         className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
                       />
-                      <span className="text-xs font-normal text-slate-700">Chọn tất cả</span>
+                      <span className="text-xs font-normal text-slate-700">{t('staff.commission.select_all', 'Chọn tất cả')}</span>
                     </label>
 
                     {Object.entries(groupedStaff).map(([roleName, members]) => {
@@ -377,14 +379,14 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
             className="flex items-center bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors"
           >
             <Gift className="w-4 h-4 mr-2 text-slate-500" />
-            Thêm thưởng/phạt
+            {t('staff.payroll.add_adjustment', 'Thêm thưởng/phạt')}
           </button>
           <button 
             onClick={() => setIsRunPayrollModalOpen(true)}
             className="flex items-center bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors"
           >
             <Wallet className="w-4 h-4 mr-2" />
-            Thanh toán lương
+            {t('staff.payroll.run_payroll', 'Thanh toán lương')}
           </button>
         </div>
       </div>
@@ -395,12 +397,12 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
           <table className="w-full text-left border-collapse font-sans min-w-max whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Nhân viên</th>
+                <th className="py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.commission.staff_col', 'Nhân viên')}</th>
                 {PAYROLL_COLUMNS.map(col => {
                   if (!visibleColumns.includes(col.id)) return null;
                   return (
                     <th key={col.id} className={`py-4 ${col.px || 'px-3'} border-r border-slate-100`}>
-                      {col.label}
+                      {t(`staff.payroll.col_${col.id}`, col.label)}
                     </th>
                   );
                 })}
@@ -413,7 +415,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                     </PopoverTrigger>
                     <PopoverContent className="w-[280px] p-0 rounded-2xl shadow-xl border-slate-200" align="end">
                       <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 rounded-t-2xl">
-                        <span className="text-sm font-medium text-slate-700">Chọn cột muốn hiển thị</span>
+                        <span className="text-sm font-medium text-slate-700">{t('staff.payroll.choose_columns', 'Chọn cột muốn hiển thị')}</span>
                       </div>
                       <div className="max-h-[300px] overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
                         {PAYROLL_COLUMNS.map(col => {
@@ -430,7 +432,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                               <div className={`shrink-0 flex items-center justify-center w-4 h-4 rounded ${isSelected ? 'bg-orange-500 border-orange-500' : 'bg-white border-slate-300'} border`}>
                                 {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                               </div>
-                              <span className="text-sm font-normal text-slate-700">{col.label}</span>
+                              <span className="text-sm font-normal text-slate-700">{t(`staff.payroll.col_${col.id}`, col.label)}</span>
                             </button>
                           )
                         })}
@@ -440,7 +442,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                            Hủy
                         </button>
                         <button onClick={() => { setVisibleColumns(tempVisibleColumns); setIsColumnPickerOpen(false); }} className="flex-1 py-2 rounded-xl bg-orange-500 text-sm font-medium text-white hover:bg-orange-600 transition-colors">
-                          Áp dụng
+                          {t('staff.commission.apply_btn', 'Áp dụng')}
                         </button>
                       </div>
                     </PopoverContent>
@@ -456,7 +458,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                   router.push(`/staff/payroll/${row.id}`);
                 }}
                 className="hover:bg-orange-50/40 cursor-pointer transition-colors group"
-                title="Bấm để xem chi tiết lương nhân viên"
+                title={t("staff.payroll.view_detail_tooltip", "Bấm để xem chi tiết lương nhân viên")}
               >
                 <td className="py-3 px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white group-hover:bg-orange-50/80 z-10 border-r border-slate-100 transition-colors">
                   <div className="flex items-center gap-3">
@@ -487,7 +489,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
           </tbody>
           <tfoot className="bg-slate-50 border-t border-slate-100">
             <tr className="text-xs font-semibold text-slate-800">
-              <td className="py-4 px-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Tổng cộng</td>
+              <td className="py-4 px-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.payroll.total_sum', 'Tổng cộng')}</td>
               {PAYROLL_COLUMNS.map(col => {
                 if (!visibleColumns.includes(col.id)) return null;
                 const value = col.type === 'money' ? formatMoney(totals[col.id]) : col.type === 'text' ? totals[col.id] : formatNum(totals[col.id]);
@@ -511,7 +513,7 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
         dateRange={date}
         onRunPayroll={(newRun) => {
           if (onRunPayroll) onRunPayroll(newRun);
-          toast.success('Thanh toán lương thành công!');
+          toast.success(t('staff.payroll.run_success', 'Thanh toán lương thành công!'));
           setIsRunPayrollModalOpen(false);
         }}
       />

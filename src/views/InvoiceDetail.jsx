@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Printer, Trash2, Edit3, Plus, Minus, CreditCard, X, Crown, Phone, Clock, User, Users, Camera, RefreshCw, History, RotateCcw } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 import { formatVND, formatDate } from '@/lib/format';
 import { toast } from '@/components/Layout';
@@ -10,32 +11,11 @@ import POSInvoiceModal from '@/components/POSInvoiceModal';
 import Avatar from '@/components/Avatar';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 
-const METHODS = [
-  { value: 'cash', label: 'Tiền mặt' },
-  { value: 'transfer', label: 'Chuyển khoản' },
-  { value: 'card', label: 'Thẻ tín dụng' },
-  { value: 'ewallet', label: 'Ví điện tử' },
-  { value: 'membership', label: 'Thẻ tiền mặt' },
-  { value: 'points', label: 'Điểm tích lũy' },
-  { value: 'debt', label: 'Ghi nợ' },
-];
 
-const STATUS_BADGE = {
-  paid: { bg: '#E6F4EA', text: '#137333', border: '#CEEAD6', label: 'Đã thanh toán' },
-  unpaid: { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A', label: 'Chưa thanh toán' },
-  cancelled: { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', label: 'Đã huỷ' },
-  refunded: { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', label: 'Đã hoàn' },
-};
 
-const TYPE_LABELS = {
-  service: 'Dịch vụ',
-  product: 'Sản phẩm',
-  package: 'Gói dịch vụ',
-  treatment: 'Liệu trình',
-  service_combo: 'Combo dịch vụ',
-  product_combo: 'Combo sản phẩm',
-  prepaid_card: 'Thẻ tiền mặt',
-};
+
+
+
 
 const groupCartItems = (cart) => {
   const groups = {};
@@ -50,6 +30,34 @@ const groupCartItems = (cart) => {
 };
 
 export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
+  const { t } = useT();
+
+  const METHODS = [
+    { value: 'cash', label: t('pos.payment.cash', 'Tiền mặt') },
+    { value: 'transfer', label: t('pos.payment.transfer', 'Chuyển khoản') },
+    { value: 'card', label: t('pos.payment.card', 'Thẻ tín dụng') },
+    { value: 'ewallet', label: t('pos.payment.ewallet', 'Ví điện tử') },
+    { value: 'membership', label: t('pos.payment.membership', 'Thẻ tiền mặt') },
+    { value: 'points', label: t('pos.payment.points', 'Điểm tích lũy') },
+    { value: 'debt', label: t('pos.payment.debt', 'Ghi nợ') },
+  ];
+
+  const STATUS_BADGE = {
+    paid: { bg: '#E6F4EA', text: '#137333', border: '#CEEAD6', label: t('invoices.status.paid', 'Đã thanh toán') },
+    unpaid: { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A', label: t('invoices.status.unpaid', 'Chưa thanh toán') },
+    cancelled: { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', label: t('invoices.status.cancelled', 'Đã huỷ') },
+    refunded: { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', label: t('invoices.status.refunded', 'Đã hoàn') },
+  };
+
+  const TYPE_LABELS = {
+    service: t('pos.invoice.service', 'Dịch vụ'),
+    product: t('pos.invoice.product', 'Sản phẩm'),
+    package: t('pos.invoice.package', 'Gói dịch vụ'),
+    treatment: t('pos.invoice.treatment', 'Liệu trình'),
+    service_combo: t('pos.invoice.service_combo', 'Combo dịch vụ'),
+    product_combo: t('pos.invoice.product_combo', 'Combo sản phẩm'),
+    prepaid_card: t('pos.invoice.prepaid_card', 'Thẻ tiền mặt'),
+  };
   const params = useParams();
   const id = invoiceIdProp || params?.id;
   const router = useRouter();
@@ -88,7 +96,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
       setEditDiscount(inv.discount || 0);
       setEditTip(inv.tip || 0);
 
-      const matchedCustomer = cus.find(c => (inv.customer_id && String(c.id) === String(inv.customer_id)) || (inv.customer_name && inv.customer_name !== 'Khách vãng lai' && c.name && c.name.trim().toLowerCase() === inv.customer_name.trim().toLowerCase()));
+      const matchedCustomer = cus.find(c => (inv.customer_id && String(c.id) === String(inv.customer_id)) || (inv.customer_name && inv.customer_name !== t('invoices.walk_in', 'Khách vãng lai') && c.name && c.name.trim().toLowerCase() === inv.customer_name.trim().toLowerCase()));
       setCustomer(matchedCustomer || null);
 
       if (inv.total) {
@@ -179,9 +187,9 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
     try {
       const newSubtotal = editItems.reduce((s, x) => s + (x.price || 0) * (x.qty || 1), 0);
       const newTotal = Math.max(0, newSubtotal - editDiscount);
-      const updatedLogs = addLogEntry('Chỉnh sửa hoá đơn', `Cập nhật lại chi tiết hoá đơn và giảm giá (${formatVND(editDiscount)})`);
+      const updatedLogs = addLogEntry(t('invoices.action.edit', 'Chỉnh sửa hoá đơn'), `Cập nhật lại chi tiết hoá đơn và giảm giá (${formatVND(editDiscount)})`);
       await base44.entities.Invoice.update(id, {
-        customer_name: (invoice.customer_name && invoice.customer_name.trim()) ? invoice.customer_name.trim() : 'Khách vãng lai',
+        customer_name: (invoice.customer_name && invoice.customer_name.trim()) ? invoice.customer_name.trim() : t('invoices.walk_in', 'Khách vãng lai'),
         items: editItems,
         discount: editDiscount,
         subtotal: newSubtotal,
@@ -189,24 +197,24 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
         tip: editTip,
         logs: JSON.stringify(updatedLogs),
       });
-      toast.success('Đã cập nhật hoá đơn');
+      toast.success(t('invoice_detail.toast_updated', 'Đã cập nhật hoá đơn'));
       setEditing(false);
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
   const cancelInvoice = async () => {
-    if (!confirm('Huỷ hoá đơn này? Hành động không thể hoàn tác.')) return;
+    if (!confirm(`${t('invoices.action.delete', 'Huỷ hoá đơn')} này? Hành động không thể hoàn tác.`)) return;
     try {
       const prevStatus = invoice.status || 'unpaid';
-      const updatedLogs = addLogEntry('Huỷ hoá đơn', 'Huỷ hoá đơn khỏi hệ thống');
+      const updatedLogs = addLogEntry(t('invoices.action.delete', 'Huỷ hoá đơn'), `${t('invoices.action.delete', 'Huỷ hoá đơn')} khỏi hệ thống`);
       await base44.entities.Invoice.update(id, { status: 'cancelled', previous_status: prevStatus, logs: JSON.stringify(updatedLogs) });
-      toast.success('Đã huỷ hoá đơn');
+      toast.success(t('invoices.action.delete', 'Đã huỷ hoá đơn'));
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -217,13 +225,13 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
       toast.success('Đã xoá vĩnh viễn hoá đơn');
       router.back(); // Quay lại trang trước đó sau khi xoá vĩnh viễn
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
   const restoreInvoice = async () => {
     const targetStatus = invoice.previous_status || 'unpaid';
-    const statusLabel = targetStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán';
+    const statusLabel = targetStatus === 'paid' ? t('invoices.status.paid', 'Đã thanh toán') : 'Chưa thanh toán';
     if (!confirm(`Khôi phục hoá đơn về trạng thái ${statusLabel}?`)) return;
     try {
       const updatedLogs = addLogEntry('Khôi phục hoá đơn', `Khôi phục hoá đơn về trạng thái ${statusLabel}`);
@@ -236,14 +244,14 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
   };
 
   const unpayInvoice = async () => {
-    if (!confirm('Huỷ thanh toán cho hoá đơn này và chuyển lại về trạng thái Chưa thanh toán?')) return;
+    if (!confirm(`${t('invoices.action.cancel_payment', 'Huỷ thanh toán')} cho hoá đơn này và chuyển lại về trạng thái Chưa thanh toán?`)) return;
     try {
-      const updatedLogs = addLogEntry('Huỷ thanh toán', 'Chuyển hoá đơn về trạng thái chưa thanh toán');
+      const updatedLogs = addLogEntry(t('invoices.action.cancel_payment', 'Huỷ thanh toán'), 'Chuyển hoá đơn về trạng thái chưa thanh toán');
       await base44.entities.Invoice.update(id, { status: 'unpaid', payment_methods: [], logs: JSON.stringify(updatedLogs) });
       toast.success('Đã chuyển hoá đơn về trạng thái chưa thanh toán');
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -253,20 +261,20 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
     try {
       const methods = payMethods.filter((p) => p.amount > 0);
       const methodLabels = methods.map(m => METHODS.find(x => x.value === m.method)?.label || m.method).join(', ');
-      const updatedLogs = addLogEntry('Thanh toán hoá đơn', `Thanh toán số tiền ${formatVND(invoice.total || total)} qua ${methodLabels || 'Tiền mặt'}`);
+      const updatedLogs = addLogEntry(`${t('invoice_detail.pay', 'Thanh toán')} hoá đơn`, `${t('invoice_detail.pay', 'Thanh toán')} số tiền ${formatVND(invoice.total || total)} qua ${methodLabels || 'Tiền mặt'}`);
       await base44.entities.Invoice.update(id, {
-        customer_name: (invoice.customer_name && invoice.customer_name.trim()) ? invoice.customer_name.trim() : 'Khách vãng lai',
+        customer_name: (invoice.customer_name && invoice.customer_name.trim()) ? invoice.customer_name.trim() : t('invoices.walk_in', 'Khách vãng lai'),
         status: 'paid',
         payment_methods: methods,
         tip: editTip,
         logs: JSON.stringify(updatedLogs),
       });
-      toast.success('Thanh toán thành công');
+      toast.success(`${t('invoice_detail.pay', 'Thanh toán')} thành công`);
       setPaying(false);
       setShowPayModal(false);
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
       setPaying(false);
     }
   };
@@ -308,7 +316,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
     `);
     win.document.close();
     win.print();
-    const updatedLogs = addLogEntry('In hoá đơn thanh toán', `In hoá đơn lần thứ ${(invoice.print_count || 0) + 1}`);
+    const updatedLogs = addLogEntry(`${t('invoices.action.print', 'In hoá đơn')} thanh toán`, `${t('invoices.action.print', 'In hoá đơn')} lần thứ ${(invoice.print_count || 0) + 1}`);
     await base44.entities.Invoice.update(id, { print_count: (invoice.print_count || 0) + 1, logs: JSON.stringify(updatedLogs) });
     load();
   };
@@ -327,7 +335,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
-            Chi tiết hoá đơn {invoice.invoice_code ? `#${invoice.invoice_code}` : ''}
+            {t('invoice_detail.title', 'Chi tiết hoá đơn')} {invoice.invoice_code ? `#${invoice.invoice_code}` : ''}
           </h1>
         </div>
 
@@ -337,7 +345,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             onClick={() => setShowHistoryModal(true)} 
             className="px-3.5 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <History className="w-4 h-4 text-slate-500" /> Lịch sử thao tác
+            <History className="w-4 h-4 text-slate-500" /> {t('invoice_detail.action_history', 'Lịch sử thao tác')}
           </button>
           {isCancelled && (
             <>
@@ -360,7 +368,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               onClick={cancelInvoice} 
               className="px-3.5 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Trash2 className="w-4 h-4" /> Huỷ hoá đơn
+              <Trash2 className="w-4 h-4" /> {t('invoices.action.delete', 'Huỷ hoá đơn')}
             </button>
           )}
           {!isCancelled && (
@@ -371,21 +379,21 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               }} 
               className="px-3.5 py-2 rounded-lg border border-blue-400 text-blue-600 hover:bg-blue-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Users className="w-4 h-4" /> Xếp nhân viên
+              <Users className="w-4 h-4" /> {t('invoice_detail.assign_staff', 'Xếp nhân viên')}
             </button>
           )}
           <button 
             onClick={printInvoice} 
             className="px-3.5 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Printer className="w-4 h-4" /> In hoá đơn
+            <Printer className="w-4 h-4" /> {t('invoices.action.print', 'In hoá đơn')}
           </button>
           {!isCancelled && (
             <button 
               onClick={() => setShowPosModal(true)} 
               className="px-3.5 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Edit3 className="w-4 h-4" /> Chỉnh sửa
+              <Edit3 className="w-4 h-4" /> {t('invoices.action.edit', 'Chỉnh sửa')}
             </button>
           )}
           {isUnpaid && !isCancelled ? (
@@ -393,14 +401,14 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               onClick={() => setShowPosModal(true)} 
               className="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
             >
-              <CreditCard className="w-4 h-4" /> Thanh toán
+              <CreditCard className="w-4 h-4" /> {t('invoice_detail.pay', 'Thanh toán')}
             </button>
           ) : isPaid && !isCancelled ? (
             <button 
               onClick={unpayInvoice} 
               className="px-3.5 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <RefreshCw className="w-4 h-4" /> Huỷ thanh toán
+              <RefreshCw className="w-4 h-4" /> {t('invoices.action.cancel_payment', 'Huỷ thanh toán')}
             </button>
           ) : null}
         </div>
@@ -416,13 +424,13 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           >
             <Avatar 
               src={customer?.avatar_url || invoice.customer_avatar} 
-              name={customer?.name || invoice.customer_name || 'Khách vãng lai'} 
+              name={customer?.name || invoice.customer_name || t('invoices.walk_in', 'Khách vãng lai')} 
               size={32} 
               color="#10B981" 
             />
             <div className="flex flex-col">
               <span className="font-bold text-blue-600 group-hover:underline text-xs md:text-sm leading-snug">
-                {customer?.name || invoice.customer_name || 'Khách vãng lai'}
+                {customer?.name || invoice.customer_name || t('invoices.walk_in', 'Khách vãng lai')}
               </span>
               {(customer?.phone || invoice.customer_phone) && (
                 <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
@@ -457,13 +465,13 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-900 font-bold">
               <tr>
-                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">Tên</th>
-                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">Loại</th>
-                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">Nhân viên</th>
-                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">Đơn giá</th>
-                <th className="py-3.5 px-4 text-center font-bold text-slate-900 whitespace-nowrap">Số lượng</th>
-                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">Giảm giá</th>
-                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">Tổng tiền</th>
+                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">{t('invoice_detail.table.name', 'Tên')}</th>
+                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">{t('invoice_detail.table.type', 'Loại')}</th>
+                <th className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">{t('invoices.table.staff', 'Nhân viên')}</th>
+                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">{t('invoice_detail.table.unit_price', 'Đơn giá')}</th>
+                <th className="py-3.5 px-4 text-center font-bold text-slate-900 whitespace-nowrap">{t('invoice_detail.table.qty', 'Số lượng')}</th>
+                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">{t('invoices.print.discount', 'Giảm giá')}</th>
+                <th className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">{t('invoices.table.total', 'Tổng tiền')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -500,11 +508,11 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
                     {/* Loại */}
                     <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                       {isService ? (
-                        <div>Làm dịch vụ</div>
+                        <div>{t('invoice_detail.type.service', 'Làm dịch vụ')}</div>
                       ) : isPackage ? (
-                        <div>Bán gói</div>
+                        <div>{t('invoice_detail.type.package', 'Bán gói')}</div>
                       ) : (
-                        <div>Bán sản phẩm</div>
+                        <div>{t('invoice_detail.type.product', 'Bán sản phẩm')}</div>
                       )}
                     </td>
 
@@ -525,7 +533,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
                               {it.do_staff_amount ? <span className="text-slate-600 font-normal">: {formatVND(it.do_staff_amount)}</span> : null}
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-normal">Chưa xếp nhân viên</span>
+                            <span className="text-slate-400 font-normal">{t('invoice_detail.unassigned', 'Chưa xếp nhân viên')}</span>
                           )}
                         </div>
                       )}
@@ -598,7 +606,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setEditing(false)} className="px-4 py-2 rounded bg-white border border-slate-200 font-bold text-slate-600">Huỷ</button>
-            <button onClick={saveEdit} className="px-4 py-2 rounded bg-emerald-500 text-white font-bold shadow-2xs">Lưu thay đổi</button>
+            <button onClick={saveEdit} className="px-4 py-2 rounded bg-emerald-500 text-white font-bold shadow-2xs">{t('invoice_detail.save_changes', 'Lưu thay đổi')}</button>
           </div>
         </div>
       )}
@@ -607,16 +615,16 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
       <div className="flex justify-end pt-2 pb-6 bg-white">
         <div className="w-full md:w-80 space-y-2.5 text-xs md:text-sm text-slate-700 text-right">
           <div className="flex justify-between items-center">
-            <span>Thành tiền</span>
+            <span>{t('invoice_detail.subtotal', 'Thành tiền')}</span>
             <span className="text-slate-900 font-bold">{formatVND(invoice.subtotal || subtotal)}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Cần thanh toán</span>
+            <span>{t('invoice_detail.need_to_pay', 'Cần thanh toán')}</span>
             <span className="text-slate-900 font-bold">{formatVND(invoice.total || total)}</span>
           </div>
           {isPaid && (
             <div className="flex justify-between items-center">
-              <span>Đã thanh toán</span>
+              <span>{t('invoices.status.paid', 'Đã thanh toán')}</span>
               <span className="text-slate-900 font-bold">{formatVND(invoice.total || total)}</span>
             </div>
           )}
@@ -630,7 +638,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <Users className="w-5 h-5 text-emerald-500" />
-                Xếp nhân viên hàng loạt
+                {t('invoice_detail.assign_staff', 'Xếp nhân viên')} {t('invoice_detail.bulk', 'hàng loạt')}
               </h3>
               <button onClick={() => setShowStaffModal(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -686,7 +694,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             <button 
               onClick={async () => {
                 try {
-                  const updatedLogs = addLogEntry('Xếp nhân viên', 'Cập nhật phân công nhân viên phục vụ & bán hàng');
+                  const updatedLogs = addLogEntry(t('invoice_detail.assign_staff', 'Xếp nhân viên'), 'Cập nhật phân công nhân viên phục vụ & bán hàng');
                   await base44.entities.Invoice.update(id, { items: editItems, logs: JSON.stringify(updatedLogs) });
                   toast.success('Đã xếp nhân viên thành công');
                   setShowStaffModal(false);
@@ -708,7 +716,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs select-none" onClick={() => setShowPayModal(false)}>
           <div className="relative bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 select-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-800">Thanh toán hoá đơn</h3>
+              <h3 className="text-base font-bold text-slate-800">{t('invoice_detail.pay', 'Thanh toán')} hoá đơn</h3>
               <button onClick={() => setShowPayModal(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
 
@@ -762,7 +770,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <History className="w-5 h-5 text-emerald-500" />
-                Lịch sử thao tác đơn
+                {t('invoice_detail.action_history', 'Lịch sử thao tác')} đơn
               </h3>
               <button onClick={() => setShowHistoryModal(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />

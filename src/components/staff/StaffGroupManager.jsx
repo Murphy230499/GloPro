@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit3, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -7,6 +8,7 @@ import { toast } from '@/components/Layout';
 const COLORS = ['#A78BFA', '#FF6B9D', '#34D399', '#60A5FA', '#FBBF24', '#F97316', '#FB7185', '#06B6D4', '#94A3B8'];
 
 export default function StaffGroupManager({ branchId, onClose, onChanged }) {
+  const { t } = useT();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -27,15 +29,15 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
   useEffect(() => { load(); }, []);
 
   const save = async () => {
-    if (!name.trim()) return toast.error('Nhập tên nhóm');
+    if (!name.trim()) return toast.error(t('staff.group_manager.err_name', 'Nhập tên nhóm'));
     const payload = { name, color };
     try {
       if (editingId && !editingId.toString().startsWith('local_')) {
         await base44.entities.StaffGroup.update(editingId, payload);
-        toast.success('Đã cập nhật nhóm nhân viên');
+        toast.success(t('staff.group_manager.msg_update_success', 'Đã cập nhật nhóm nhân viên'));
       } else if (!editingId) {
         await base44.entities.StaffGroup.create(payload);
-        toast.success('Đã thêm nhóm nhân viên');
+        toast.success(t('staff.group_manager.msg_add_success', 'Đã thêm nhóm nhân viên'));
       } else {
         throw new Error('Local item update');
       }
@@ -71,7 +73,7 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
   };
 
   const remove = async (id) => {
-    if (!window.confirm('Xoá nhóm này? Các nhân viên thuộc nhóm này sẽ không còn nhóm.')) return;
+    if (!window.confirm(t('staff.group_manager.confirm_del', 'Xoá nhóm này? Các nhân viên thuộc nhóm này sẽ không còn nhóm.'))) return;
     try {
       if (id && id.toString().startsWith('local_')) {
         throw new Error('Local group deletion');
@@ -79,7 +81,7 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
       await base44.entities.StaffGroup.delete(id);
       load();
       onChanged?.();
-      toast.success('Đã xoá nhóm nhân viên');
+      toast.success(t('staff.group_manager.msg_del_success', 'Đã xoá nhóm nhân viên'));
     } catch (e) {
       console.error('Lỗi khi xóa nhóm:', e);
       if (id && id.toString().startsWith('local_')) {
@@ -101,7 +103,7 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-950/45 backdrop-blur-xs" onClick={onClose}>
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4 shrink-0">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Quản lý nhóm nhân viên</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.group_manager.title', 'Quản lý nhóm nhân viên')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
             <X className="w-4 h-4 text-slate-500" />
           </button>
@@ -110,20 +112,20 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
         {/* Create/Edit Form */}
         <div className="bg-slate-50 rounded-2xl p-3 mb-4 space-y-3 shrink-0">
           <div className="text-xs font-bold text-slate-400 uppercase">
-            {editingId ? 'Chỉnh sửa nhóm' : 'Thêm nhóm mới'}
+            {editingId ? t('staff.group_manager.edit', 'Chỉnh sửa nhóm') : t('staff.group_manager.add_new', 'Thêm nhóm mới')}
           </div>
           <div className="flex gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Tên nhóm nhân viên..."
+              placeholder={t('staff.group_manager.name_placeholder', 'Tên nhóm nhân viên...')}
               className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-purple-400 bg-white"
             />
             <button
               onClick={save}
               className="px-4 py-2 bg-purple-500 text-white rounded-xl text-sm font-semibold hover:bg-purple-600 transition-colors"
             >
-              {editingId ? 'Lưu' : 'Thêm'}
+              {editingId ? t('common.save', 'Lưu') : t('common.add', 'Thêm')}
             </button>
           </div>
           <div className="flex gap-1.5 flex-wrap">
@@ -145,9 +147,9 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
         {/* Group List */}
         <div className="flex-1 overflow-y-auto space-y-2 max-h-60 pr-1">
           {loading ? (
-            <div className="text-center py-4 text-xs text-slate-400">Đang tải nhóm...</div>
+            <div className="text-center py-4 text-xs text-slate-400">{t('common.loading', 'Đang tải...')}</div>
           ) : groups.length === 0 ? (
-            <div className="text-center py-4 text-xs text-slate-400">Chưa có nhóm nhân viên nào</div>
+            <div className="text-center py-4 text-xs text-slate-400">{t('staff.group_manager.empty', 'Chưa có nhóm nhân viên nào')}</div>
           ) : (
             groups.map((g) => (
               <div key={g.id} className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 transition-colors">

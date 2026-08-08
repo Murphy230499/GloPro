@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { X, Calendar, Gift, Percent, MapPin, Tag, ShoppingCart, Clock, TrendingUp, Users, DollarSign, Activity, CheckCircle2, User, Phone } from 'lucide-react';
 import { formatVND, formatDate } from '@/lib/format';
 import { useBranch } from '@/lib/BranchContext';
+import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 
@@ -13,7 +14,14 @@ const SCOPES = {
 };
 
 export default function PromoDetailModal({ promo, usages, onClose }) {
+  const { t } = useT();
   const { branches } = useBranch();
+
+  const getScopeLabel = (type) => {
+    if (type === 'service') return t('discounts.scope_service', 'Chỉ dịch vụ');
+    if (type === 'product') return t('discounts.scope_product', 'Chỉ sản phẩm');
+    return t('discounts.scope_invoice', 'Toàn hóa đơn');
+  };
   const [customers, setCustomers] = useState([]);
   const [giftedList, setGiftedList] = useState([]);
   const [activeSubTab, setActiveSubTab] = useState('gifted'); // 'gifted' | 'usages'
@@ -192,8 +200,8 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
                 <div className="text-slate-500 font-normal">Mức giảm:</div>
                 <div className="font-normal text-slate-800">{promo.valueType === 'percent' ? `${promo.value}%` : formatVND(promo.value)}</div>
                 
-                <div className="text-slate-500 font-normal">Phạm vi áp dụng:</div>
-                <div className="font-normal text-slate-700">{SCOPES[promo.type] || 'Toàn hóa đơn'}</div>
+                <div className="text-slate-500 font-normal">{t('discounts.scope', 'Phạm vi áp dụng:')}</div>
+                <div className="font-normal text-slate-700">{getScopeLabel(promo.type)}</div>
                 
                 <div className="text-slate-500 font-normal">Đơn tối thiểu:</div>
                 <div className="font-normal text-slate-700">{promo.minSpend ? formatVND(promo.minSpend) : 'Không yêu cầu'}</div>

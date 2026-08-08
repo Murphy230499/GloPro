@@ -7,7 +7,10 @@ import { DEFAULT_INCOME_TYPES, DEFAULT_EXPENSE_TYPES } from '@/lib/cashFlowHelpe
 
 const COLOR_PRESETS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#EC4899', '#94A3B8'];
 
+import { useT } from '@/lib/i18n';
+
 export default function VoucherTypeManager({ branchId }) {
+  const { t } = useT();
   const [flow, setFlow] = useState('income');
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,20 +61,24 @@ export default function VoucherTypeManager({ branchId }) {
     }
   };
 
-  const handleStartEdit = (t) => {
-    setEditingId(t.id);
-    setEditName(t.name);
-    setEditColor(t.color || '#94A3B8');
+  const handleStartEdit = (tItem) => {
+    setEditingId(tItem.id);
+    setEditName(tItem.name);
+    setEditColor(tItem.color || '#94A3B8');
   };
 
   const handleSaveEdit = async (id) => {
+    if (!editName.trim()) return toast.error('Vui lòng nhập tên hạng mục');
     try {
-      await base44.entities.CashVoucherType.update(id, { name: editName, color: editColor });
-      toast.success('Đã cập nhật');
+      setTypes(prev => prev.map(item => item.id === id ? { ...item, name: editName.trim(), color: editColor } : item));
       setEditingId(null);
+      await base44.entities.CashVoucherType.update(id, { name: editName.trim(), color: editColor });
+      toast.success('Đã cập nhật hạng mục');
       loadTypes();
     } catch (e) {
-      toast.error('Lỗi: ' + e.message);
+      console.error(e);
+      toast.error('Lỗi khi lưu: ' + (e.message || e));
+      loadTypes();
     }
   };
 
@@ -92,8 +99,8 @@ export default function VoucherTypeManager({ branchId }) {
       {/* Flow tabs */}
       <div className="flex gap-3">
         {[
-          { value: 'income', label: 'Loại Thu', count: incomeCount, icon: TrendingUp, color: 'emerald' },
-          { value: 'expense', label: 'Loại Chi', count: expenseCount, icon: TrendingDown, color: 'red' },
+          { value: 'income', label: t('cashflow.type_income', 'Loại Thu'), count: incomeCount, icon: TrendingUp, color: 'emerald' },
+          { value: 'expense', label: t('cashflow.type_expense', 'Loại Chi'), count: expenseCount, icon: TrendingDown, color: 'red' },
         ].map(tab => {
           const Icon = tab.icon;
           const active = flow === tab.value;
@@ -125,12 +132,12 @@ export default function VoucherTypeManager({ branchId }) {
           <div className="py-12 text-center text-sm text-slate-400">Đang tải...</div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filtered.map(t => (
-              <div key={t.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 group">
+            {filtered.map(tItem => (
+              <div key={tItem.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 group">
                 {/* Color dot */}
-                <div className="w-3 h-3 rounded-full shrink-0" style={{ background: t.color || '#94A3B8' }} />
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ background: tItem.color || '#94A3B8' }} />
 
-                {editingId === t.id ? (
+                {editingId === tItem.id ? (
                   <>
                     <input
                       value={editName}
@@ -148,7 +155,7 @@ export default function VoucherTypeManager({ branchId }) {
                         />
                       ))}
                     </div>
-                    <button onClick={() => handleSaveEdit(t.id)} className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200">
+                    <button onClick={() => handleSaveEdit(tItem.id)} className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200">
                       <Check className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => setEditingId(null)} className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
@@ -157,28 +164,30 @@ export default function VoucherTypeManager({ branchId }) {
                   </>
                 ) : (
                   <>
-                    <span className="flex-1 text-sm font-medium text-slate-800">{t.name}</span>
-                    {t.is_system && (
+                    <span className="flex-1 text-sm font-medium text-slate-800">
+                      {tItem.name}
+                    </span>
+                    {tItem.is_system && (
                       <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold">
-                        <Lock className="w-2.5 h-2.5" /> Hệ thống
+                        <Lock className="w-2.5 h-2.5" /> {t('cashflow.system_tag', 'Hệ thống')}
                       </span>
                     )}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleStartEdit(t)}
-                        className="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-100"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      {!t.is_system && (
+                    {!tItem.is_system && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => handleDelete(t)}
+                          onClick={() => handleStartEdit(tItem)}
+                          className="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-100"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(tItem)}
                           className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -191,7 +200,7 @@ export default function VoucherTypeManager({ branchId }) {
                 <input
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  placeholder="Tên loại phiếu mới..."
+                  placeholder={t('cashflow.new_category_ph', 'Tên loại phiếu mới...')}
                   className="flex-1 px-2 py-1 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-emerald-400"
                   autoFocus
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
@@ -219,7 +228,7 @@ export default function VoucherTypeManager({ branchId }) {
                 className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Thêm loại phiếu {flow === 'income' ? 'thu' : 'chi'}
+                {t('cashflow.btn_add_category', 'Thêm loại phiếu')} {flow === 'income' ? t('cashflow.income_word', 'thu') : t('cashflow.expense_word', 'chi')}
               </button>
             )}
           </div>

@@ -1,10 +1,12 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, History, Search, Calendar, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function AuditLogModal({ onClose }) {
+  const { t } = useT();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +51,7 @@ export default function AuditLogModal({ onClose }) {
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Lịch sử thao tác</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.commission.audit_log', 'Lịch sử thao tác')}</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -63,7 +65,7 @@ export default function AuditLogModal({ onClose }) {
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text"
-            placeholder="tìm kiếm lịch sử..."
+            placeholder={t("staff.commission.search_audit", "tìm kiếm lịch sử...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-transparent text-xs font-normal outline-none w-full text-slate-700 placeholder:text-slate-400/50"
@@ -76,7 +78,7 @@ export default function AuditLogModal({ onClose }) {
             <div className="text-center py-20"><Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto" /></div>
           ) : filteredLogs.length === 0 ? (
             <div className="text-center py-20 text-xs text-slate-400 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              Chưa ghi nhận hoạt động thao tác hoa hồng nào.
+              {t("staff.commission.no_audit_log", "Chưa ghi nhận hoạt động thao tác hoa hồng nào.")}
             </div>
           ) : (
             filteredLogs.map((log) => (

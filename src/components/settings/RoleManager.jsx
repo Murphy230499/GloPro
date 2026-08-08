@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X, Shield, User, Info, ChevronDown, ChevronRight, Plus, Trash2, Edit3 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
+import { useT } from '@/lib/i18n';
 
 const slugify = (str) => {
   return str
@@ -18,6 +19,7 @@ const slugify = (str) => {
 };
 
 export default function RoleManager({ accounts = [], roles = [], onRefresh, onClose }) {
+  const t = useT();
   const [expandedRole, setExpandedRole] = useState(null);
   
   // Form states for adding/editing role
@@ -37,12 +39,12 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
   // Save role (Create or Update)
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return toast.error('Vui lòng nhập tên vai trò');
+    if (!name.trim()) return toast.error(t('settings.msg_enter_role_name', 'Vui lòng nhập tên vai trò'));
     
     // Auto-generate code from name
     const normalizedCode = slugify(name.trim());
     if (!editingId && !normalizedCode) {
-      return toast.error('Tên vai trò không hợp lệ');
+      return toast.error(t('settings.msg_invalid_role_name', 'Tên vai trò không hợp lệ'));
     }
 
     const payload = {
@@ -54,20 +56,20 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
     try {
       if (editingId) {
         await base44.entities.Role.update(editingId, payload);
-        toast.success('Đã cập nhật thông tin vai trò');
+        toast.success(t('settings.msg_role_updated', 'Đã cập nhật thông tin vai trò'));
       } else {
         // Check if code already exists
         const exists = roles.some(r => r.code === normalizedCode);
         if (exists) {
-          return toast.error('Mã vai trò đã tồn tại trong hệ thống');
+          return toast.error(t('settings.msg_role_code_exists', 'Mã vai trò đã tồn tại trong hệ thống'));
         }
         await base44.entities.Role.create(payload);
-        toast.success('Đã thêm vai trò mới thành công');
+        toast.success(t('settings.msg_role_created', 'Đã thêm vai trò mới thành công'));
       }
       resetForm();
       onRefresh?.();
     } catch (err) {
-      toast.error('Lỗi khi lưu vai trò: ' + (err.message || err));
+      toast.error(t('settings.msg_save_role_error', 'Lỗi khi lưu vai trò: {msg}', { msg: err.message || err }));
     }
   };
 
@@ -82,17 +84,17 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
   const handleDelete = async (role) => {
     const members = membersByRole(role.code);
     if (members.length > 0) {
-      return toast.error(`Vai trò này đang được gán cho ${members.length} tài khoản. Vui lòng chuyển vai trò của họ trước khi xóa!`);
+      return toast.error(t('settings.msg_role_has_members_error', 'Vai trò này đang được gán cho {count} tài khoản. Vui lòng chuyển vai trò của họ trước khi xóa!', { count: members.length }));
     }
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa vai trò "${role.name}"?`)) return;
+    if (!window.confirm(t('settings.confirm_delete_role', 'Bạn có chắc chắn muốn xóa vai trò "{name}"?', { name: role.name }))) return;
 
     try {
       await base44.entities.Role.delete(role.id);
-      toast.success('Đã xóa vai trò thành công');
+      toast.success(t('settings.msg_role_deleted', 'Đã xóa vai trò thành công'));
       onRefresh?.();
     } catch (err) {
-      toast.error('Lỗi khi xóa vai trò: ' + (err.message || err));
+      toast.error(t('settings.msg_delete_role_error', 'Lỗi khi xóa vai trò: {msg}', { msg: err.message || err }));
     }
   };
 
@@ -115,7 +117,7 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
               <Shield className="w-4 h-4" />
             </div>
             <h2 className="text-base font-bold text-slate-800">
-              Vai trò hệ thống & Tự định nghĩa
+              {t('settings.role_mgr_title', 'Vai trò hệ thống & Tự định nghĩa')}
             </h2>
           </div>
           <button 
@@ -131,27 +133,27 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
           {/* Add/Edit Role Form */}
           <form onSubmit={handleSave} className="bg-slate-50 p-4 border border-slate-100 rounded-2xl space-y-3">
             <h4 className="text-xs font-bold text-slate-700">
-              {editingId ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
+              {editingId ? t('settings.role_mgr_edit_title', 'Chỉnh sửa vai trò') : t('settings.role_mgr_add_title', 'Thêm vai trò mới')}
             </h4>
             
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-500">Tên vai trò *</label>
+              <label className="block text-[10px] font-bold text-slate-500">{t('settings.role_mgr_name_label', 'Tên vai trò')} *</label>
               <input 
                 type="text" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                placeholder="Lễ tân" 
+                placeholder={t('settings.role_mgr_name_ph', 'Lễ tân')} 
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white outline-none focus:border-emerald-450 text-slate-700"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-500">Mô tả chi tiết</label>
+              <label className="block text-[10px] font-bold text-slate-500">{t('settings.role_mgr_desc_label', 'Mô tả chi tiết')}</label>
               <input 
                 type="text" 
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Chào đón khách hàng, thu ngân quầy phụ..." 
+                placeholder={t('settings.role_mgr_desc_ph', 'Chào đón khách hàng, thu ngân quầy phụ...')} 
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white outline-none focus:border-emerald-450 text-slate-700"
               />
             </div>
@@ -163,14 +165,14 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
                   onClick={resetForm} 
                   className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-250 text-[11px] font-bold text-slate-600 transition-colors"
                 >
-                  Hủy
+                  {t('settings.btn_cancel', 'Hủy')}
                 </button>
               )}
               <button 
                 type="submit" 
                 className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[11px] font-bold text-white transition-colors"
               >
-                {editingId ? 'Cập nhật' : 'Thêm vai trò'}
+                {editingId ? t('settings.btn_update', 'Cập nhật') : t('settings.btn_add_role', 'Thêm vai trò')}
               </button>
             </div>
           </form>
@@ -199,13 +201,13 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
                       <Shield className={`w-5 h-5 ${role.is_system ? 'text-amber-500' : 'text-emerald-500'} shrink-0`} />
                       <div className="min-w-0">
                         <h3 className="font-bold text-sm text-slate-800 leading-tight flex items-center gap-1.5">
-                          <span className="truncate">{role.name}</span>
+                          <span className="truncate">{t('settings.role_' + role.code, role.name)}</span>
                           {role.is_system && (
-                            <span className="bg-slate-100 text-slate-500 text-[8px] px-1 py-0.5 rounded scale-90 origin-left">Hệ thống</span>
+                            <span className="bg-slate-100 text-slate-500 text-[8px] px-1 py-0.5 rounded scale-90 origin-left">{t('settings.role_mgr_system_tag', 'Hệ thống')}</span>
                           )}
                         </h3>
                         <span className="text-[11px] text-slate-400 font-medium mt-0.5 block">
-                          {members.length} tài khoản
+                          {t('settings.role_mgr_account_count', '{count} tài khoản', { count: members.length })}
                         </span>
                       </div>
                     </button>
@@ -216,14 +218,14 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
                           <button 
                             onClick={() => handleEdit(role)} 
                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-450 hover:text-slate-650 transition-colors"
-                            title="Chỉnh sửa vai trò"
+                            title={t('settings.role_mgr_edit_role', 'Chỉnh sửa vai trò')}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button 
                             onClick={() => handleDelete(role)} 
                             className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-650 transition-colors"
-                            title="Xóa vai trò"
+                            title={t('settings.role_mgr_delete_role', 'Xóa vai trò')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -243,17 +245,17 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 border-t border-slate-100/50 space-y-3">
                       <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                        {role.description || 'Chưa có mô tả chi tiết cho vai trò này.'}
+                        {role.description || t('settings.role_mgr_no_desc', 'Chưa có mô tả chi tiết cho vai trò này.')}
                       </p>
 
                       {/* Members List */}
                       <div className="space-y-2">
                         <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Thành viên sở hữu
+                          {t('settings.role_mgr_members_header', 'Thành viên sở hữu')}
                         </h4>
                         {members.length === 0 ? (
                           <div className="text-xs text-slate-400 font-medium py-1 italic">
-                            Chưa có thành viên nào
+                            {t('settings.role_mgr_no_members', 'Chưa có thành viên nào')}
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 gap-2">
@@ -293,7 +295,7 @@ export default function RoleManager({ accounts = [], roles = [], onRefresh, onCl
             onClick={onClose} 
             className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors font-bold text-xs text-slate-600 text-center"
           >
-            Đóng
+            {t('settings.btn_close', 'Đóng')}
           </button>
         </div>
       </div>

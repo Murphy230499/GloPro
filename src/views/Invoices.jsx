@@ -9,8 +9,9 @@ import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
 import CheckoutModal from '@/components/pos/CheckoutModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
+import { useT } from '@/lib/i18n';
 
-function InvoiceCustomDatePickerPopover({ selectedDate, onSelectDate, onClose, align = 'left' }) {
+function InvoiceCustomDatePickerPopover({ selectedDate, onSelectDate, onClose, align = 'left' }) { const { t } = useT();
   const todayISO = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
@@ -150,7 +151,7 @@ function InvoiceCustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
   );
 }
 
-function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateChange }) {
+function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateChange }) { const { t } = useT();
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
   const startRef = React.useRef(null);
@@ -191,7 +192,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
   };
 
   const formatDateLabel = (iso) => {
-    if (!iso) return 'Chọn ngày';
+    if (!iso) return t('invoices.select_date', 'Chọn ngày');
     const parts = iso.split('-');
     if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
     return iso;
@@ -209,7 +210,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
           >
             <div className="flex items-center gap-2 truncate min-w-0">
               <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="text-[11px] text-slate-400 font-medium shrink-0">Từ:</span>
+              <span className="text-[11px] text-slate-400 font-medium shrink-0">{t("invoices.from", "Từ:")}</span>
               <span className="font-semibold text-slate-800 truncate">
                 {formatDateLabel(startDate)}
               </span>
@@ -218,7 +219,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
               <span 
                 onClick={(e) => { e.stopPropagation(); onStartDateChange(''); }} 
                 className="text-slate-300 hover:text-slate-500 text-xs px-1 font-bold shrink-0"
-                title="Xóa ngày"
+                title={t("invoices.clear_date", "Xóa ngày")}
               >
                 ×
               </span>
@@ -244,7 +245,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
           >
             <div className="flex items-center gap-2 truncate min-w-0">
               <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="text-[11px] text-slate-400 font-medium shrink-0">Đến:</span>
+              <span className="text-[11px] text-slate-400 font-medium shrink-0">{t("invoices.to", "Đến:")}</span>
               <span className="font-semibold text-slate-800 truncate">
                 {formatDateLabel(endDate)}
               </span>
@@ -253,7 +254,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
               <span 
                 onClick={(e) => { e.stopPropagation(); onEndDateChange(''); }} 
                 className="text-slate-300 hover:text-slate-500 text-xs px-1 font-bold shrink-0"
-                title="Xóa ngày"
+                title={t("invoices.clear_date", "Xóa ngày")}
               >
                 ×
               </span>
@@ -274,7 +275,7 @@ function InvoiceDateFilter({ startDate, endDate, onStartDateChange, onEndDateCha
   );
 }
 
-function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
+function InvoiceStaffFilter({ staffList = [], value = [], onChange }) { const { t } = useT();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = React.useRef(null);
@@ -298,7 +299,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
   });
 
   const staffByGroup = filteredStaff.reduce((acc, item) => {
-    const grp = (item.role || item.category || 'NHÂN VIÊN CHUYÊN MÔN').toUpperCase();
+    const grp = (item.role || item.category || t('invoices.specialist', 'NHÂN VIÊN CHUYÊN MÔN')).toUpperCase();
     (acc[grp] = acc[grp] || []).push(item);
     return acc;
   }, {});
@@ -321,7 +322,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
 
   const isAllSelected = staffList.length > 0 && selectedIds.length === staffList.length;
 
-  let staffLabel = 'Chọn nhân viên áp dụng';
+  let staffLabel = t('invoices.select_staff', 'Chọn nhân viên áp dụng');
   if (selectedIds.length === 1) {
     const s = staffList.find(x => x.id === selectedIds[0]);
     if (s) staffLabel = s.full_name || s.name;
@@ -353,7 +354,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
             <span 
               onClick={(e) => { e.stopPropagation(); onChange([]); }}
               className="text-slate-300 hover:text-slate-600 text-xs px-1 font-bold cursor-pointer"
-              title="Xóa lọc nhân viên"
+              title={t("invoices.clear_staff", "Xóa lọc nhân viên")}
             >
               ×
             </span>
@@ -368,7 +369,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
           <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
             <input
               type="text"
-              placeholder="Tìm kiếm nhân viên..."
+              placeholder={t("invoices.search_staff", "Tìm kiếm nhân viên...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-light"
@@ -388,7 +389,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
               }`}>
                 {isAllSelected && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
-              <span className="font-semibold text-slate-800">Chọn tất cả</span>
+              <span className="font-semibold text-slate-800">{t("invoices.select_all", "Chọn tất cả")}</span>
             </button>
 
             {/* Grouped Roles / Categories */}
@@ -437,7 +438,7 @@ function InvoiceStaffFilter({ staffList = [], value = [], onChange }) {
   );
 }
 
-function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
+function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) { const { t } = useT();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = React.useRef(null);
@@ -480,10 +481,10 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
 
   const isAllSelected = (customerList.length + 1) > 0 && selectedIds.length === (customerList.length + 1);
 
-  let customerLabel = 'Chọn khách hàng áp dụng';
+  let customerLabel = t('invoices.select_customer', 'Chọn khách hàng áp dụng');
   if (selectedIds.length === 1) {
     if (selectedIds[0] === 'walk-in') {
-      customerLabel = 'Khách vãng lai';
+      customerLabel = t('invoices.walk_in', 'Khách vãng lai');
     } else {
       const c = customerList.find(x => x.id === selectedIds[0]);
       if (c) customerLabel = c.name;
@@ -507,7 +508,7 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
       >
         <div className="flex items-center gap-2 truncate min-w-0 flex-1">
           {selectedIds.length === 1 && selectedIds[0] === 'walk-in' ? (
-            <Avatar name="Khách vãng lai" size={18} color="#94A3B8" />
+            <Avatar name={t("invoices.walk_in", "Khách vãng lai")} size={18} color="#94A3B8" />
           ) : singleCustomer ? (
             <Avatar src={singleCustomer.avatar_url} name={singleCustomer.name} size={18} color="#FBBF24" />
           ) : null}
@@ -518,7 +519,7 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
             <span 
               onClick={(e) => { e.stopPropagation(); onChange([]); }}
               className="text-slate-300 hover:text-slate-600 text-xs px-1 font-bold cursor-pointer"
-              title="Xóa lọc khách hàng"
+              title={t("invoices.clear_customer", "Xóa lọc khách hàng")}
             >
               ×
             </span>
@@ -533,7 +534,7 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
           <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
             <input
               type="text"
-              placeholder="Tìm kiếm khách hàng..."
+              placeholder={t("invoices.search_customer", "Tìm kiếm khách hàng...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-light"
@@ -553,7 +554,7 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
               }`}>
                 {isAllSelected && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
-              <span className="font-semibold text-slate-800">Chọn tất cả</span>
+              <span className="font-semibold text-slate-800">{t("invoices.select_all", "Chọn tất cả")}</span>
             </button>
 
             {/* Walk-in Customer */}
@@ -570,8 +571,8 @@ function InvoiceCustomerFilter({ customerList = [], value = [], onChange }) {
                 {selectedIds.includes('walk-in') && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
               <div className="flex items-center gap-2 truncate">
-                <Avatar name="Khách vãng lai" size={20} color="#94A3B8" />
-                <span className="truncate">Khách vãng lai</span>
+                <Avatar name={t("invoices.walk_in", "Khách vãng lai")} size={20} color="#94A3B8" />
+                <span className="truncate">{t('invoices.walk_in', 'Khách vãng lai')}</span>
               </div>
             </button>
 
@@ -615,16 +616,16 @@ const formatDateDDMMYYYY = (iso) => {
   return iso;
 };
 
-const STATUS_TABS = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'unpaid', label: 'Chưa thanh toán' },
-  { value: 'paid', label: 'Đã thanh toán' },
-  { value: 'cancelled', label: 'Đã huỷ' },
-];
-
 const PAGE_SIZE = 10;
 
 export default function Invoices() {
+  const { t } = useT();
+  const STATUS_TABS = [
+    { value: 'all', label: t('invoices.status.all', 'Tất cả') },
+    { value: 'unpaid', label: t('invoices.status.unpaid', 'Chưa thanh toán') },
+    { value: 'paid', label: t('invoices.status.paid', 'Đã thanh toán') },
+    { value: 'cancelled', label: t('invoices.status.cancelled', 'Đã huỷ') },
+  ];
   const router = useRouter();
   const { currentBranchId } = useBranch();
   const [invoices, setInvoices] = useState([]);
@@ -748,10 +749,10 @@ export default function Invoices() {
     if (!confirm(`Bạn có chắc muốn huỷ thanh toán cho hoá đơn ${inv.invoice_code}? Hoá đơn sẽ trở về trạng thái chưa thanh toán và chuyển về màn hình Thu ngân.`)) return;
     try {
       await base44.entities.Invoice.update(inv.id, { status: 'unpaid' });
-      toast.success('Đã huỷ thanh toán. Đang chuyển về màn hình Thu ngân...');
+      toast.success(t('invoices.cancel_payment_success', 'Đã huỷ thanh toán. Đang chuyển về màn hình Thu ngân...'));
       router.push(`/pos?edit_invoice_id=${inv.id}`);
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -767,13 +768,13 @@ export default function Invoices() {
           await base44.entities.Membership.update(m.id, { is_deleted: true, status: 'deleted' });
         }
       } catch (err) {
-        console.error('Lỗi khi cập nhật trạng thái thẻ mua kèm hoá đơn:', err);
+        console.error(t('invoices.error_update_card', 'Lỗi khi cập nhật trạng thái thẻ mua kèm hoá đơn:'), err);
       }
 
-      toast.success('Đã huỷ/xoá hoá đơn');
+      toast.success(t('invoices.cancel_success', 'Đã huỷ/xoá hoá đơn'));
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -781,10 +782,10 @@ export default function Invoices() {
     if (!confirm(`Bạn có chắc muốn xoá vĩnh viễn hoá đơn ${inv.invoice_code}? Hành động này không thể hoàn tác.`)) return;
     try {
       await base44.entities.Invoice.delete(inv.id);
-      toast.success('Đã xoá vĩnh viễn hoá đơn');
+      toast.success(t('invoices.permanent_delete_success', 'Đã xoá vĩnh viễn hoá đơn'));
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -815,14 +816,14 @@ export default function Invoices() {
         paid_at: new Date().toISOString(),
       });
 
-      toast.success(`Đã thanh toán thành công hóa đơn ${checkoutInvoice.invoice_code}`);
+      toast.success(t('invoices.pay_success', 'Đã thanh toán thành công hóa đơn ') + checkoutInvoice.invoice_code);
       setCheckoutOpen(false);
       setCheckoutInvoice(null);
       setCheckoutSession(null);
       load();
     } catch (err) {
-      console.error('Lỗi khi thanh toán hóa đơn:', err);
-      toast.error('Lỗi khi thanh toán: ' + (err.message || err));
+      console.error(t('invoices.error_payment', 'Lỗi khi thanh toán hóa đơn:'), err);
+      toast.error(t('invoices.error_payment_prefix', 'Lỗi khi thanh toán: ') + (err.message || err));
     } finally {
       setPaying(false);
     }
@@ -841,13 +842,13 @@ export default function Invoices() {
           await base44.entities.Membership.update(m.id, { is_deleted: false, status: 'active' });
         }
       } catch (err) {
-        console.error('Lỗi khi khôi phục trạng thái thẻ mua kèm hoá đơn:', err);
+        console.error(t('invoices.error_restore_card', 'Lỗi khi khôi phục trạng thái thẻ mua kèm hoá đơn:'), err);
       }
 
-      toast.success(`Đã khôi phục hoá đơn về trạng thái ${targetStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}`);
+      toast.success(`Đã khôi phục hoá đơn về trạng thái ${targetStatus === 'paid' ? t('invoices.status.paid', 'Đã thanh toán') : t('invoices.status.unpaid', 'Chưa thanh toán')}`);
       load();
     } catch (e) {
-      toast.error('Lỗi: ' + (e.message || e));
+      toast.error(t('invoices.error_prefix', 'Lỗi: ') + (e.message || e));
     }
   };
 
@@ -871,12 +872,12 @@ export default function Invoices() {
             <ChevronLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Danh sách hoá đơn</h1>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight">{t('invoices.title', 'Danh sách hoá đơn')}</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/pos')} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm shadow-sm transition-colors">
-            Quay lại thu ngân
+            {t('invoices.back_to_pos', 'Quay lại thu ngân')}
           </button>
         </div>
       </div>
@@ -898,7 +899,7 @@ export default function Invoices() {
           <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 flex-1 max-w-md">
             <Search className="w-3.5 h-3.5 text-slate-400" />
             <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Tìm theo mã đơn, khách hàng hoặc nhân viên..."
+              placeholder={t("invoices.search_placeholder", "Tìm theo mã đơn, khách hàng hoặc nhân viên...")}
               className="bg-transparent outline-none text-xs flex-1 text-slate-700" />
           </div>
           
@@ -907,10 +908,10 @@ export default function Invoices() {
               onClick={() => setFilterOpen(!filterOpen)} 
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${filterOpen ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50'}`}
             >
-              <Filter className="w-3.5 h-3.5" /> <span>Lọc</span>
+              <Filter className="w-3.5 h-3.5" /> <span>{t('invoices.filter', 'Lọc')}</span>
             </button>
             <button onClick={printList} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
-              <Printer className="w-3.5 h-3.5 text-slate-500" /> <span>In danh sách</span>
+              <Printer className="w-3.5 h-3.5 text-slate-500" /> <span>{t('invoices.print_list', 'In danh sách')}</span>
             </button>
           </div>
         </div>
@@ -946,21 +947,21 @@ export default function Invoices() {
         {loading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-100 border-t-primary rounded-full animate-spin" /></div>
         ) : invoices.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-sm">Chưa có hoá đơn nào.</div>
+          <div className="py-16 text-center text-slate-400 text-sm">{t('invoices.empty', 'Chưa có hoá đơn nào.')}</div>
         ) : pageData.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-sm">Không có hoá đơn nào phù hợp bộ lọc</div>
+          <div className="py-16 text-center text-slate-400 text-sm">{t('invoices.empty_filter', 'Không có hoá đơn nào phù hợp bộ lọc')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse font-sans whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs">
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Mã đơn</th>
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Khách hàng</th>
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Nhân viên</th>
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Ngày tạo</th>
-                  <th className="text-right px-5 py-4 font-bold text-slate-500 text-xs">Tổng tiền</th>
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Trạng thái</th>
-                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">Hành động</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.code', 'Mã đơn')}</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.customer', 'Khách hàng')}</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.staff', 'Nhân viên')}</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.created_at', 'Ngày tạo')}</th>
+                  <th className="text-right px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.total', 'Tổng tiền')}</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.status', 'Trạng thái')}</th>
+                  <th className="text-left px-5 py-4 font-bold text-slate-500 text-xs">{t('invoices.table.action', 'Hành động')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -986,16 +987,16 @@ export default function Invoices() {
                             size={28} 
                             color={custObj?.avatar_color || '#E879A9'} 
                             onClick={() => router.push(inv.customer_id ? `/customers?id=${inv.customer_id}` : `/customers?name=${encodeURIComponent(inv.customer_name)}`)}
-                            title="Click để xem chi tiết khách hàng"
+                            title={t("invoices.view_customer", "Click để xem chi tiết khách hàng")}
                           />
                           <div className="flex flex-col">
                             <button
                               type="button"
                               onClick={() => router.push(inv.customer_id ? `/customers?id=${inv.customer_id}` : `/customers?name=${encodeURIComponent(inv.customer_name)}`)}
                               className="text-xs font-bold text-slate-800 hover:text-orange-600 hover:underline cursor-pointer text-left leading-tight"
-                              title="Click để xem chi tiết khách hàng"
+                              title={t("invoices.view_customer", "Click để xem chi tiết khách hàng")}
                             >
-                              {inv.customer_name || 'Khách vãng lai'}
+                              {inv.customer_name || t('invoices.walk_in', 'Khách vãng lai')}
                             </button>
                             {phoneNum && <span className="text-[10px] text-slate-400 font-normal mt-0.5">{phoneNum}</span>}
                           </div>
@@ -1024,17 +1025,17 @@ export default function Invoices() {
                       <td className="px-5 py-3.5 text-left whitespace-nowrap">
                         {inv.status === 'paid' && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200/80">
-                            Đã thanh toán
+                            {t('invoices.status.paid', 'Đã thanh toán')}
                           </span>
                         )}
                         {inv.status === 'unpaid' && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80">
-                            Chưa thanh toán
+                            {t('invoices.status.unpaid', 'Chưa thanh toán')}
                           </span>
                         )}
                         {inv.status === 'cancelled' && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/80">
-                            Đã huỷ
+                            {t('invoices.status.cancelled', 'Đã huỷ')}
                           </span>
                         )}
                       </td>
@@ -1043,13 +1044,13 @@ export default function Invoices() {
                           {/* Render actions according to invoice status */}
                           {inv.status === 'paid' && (
                             <>
-                              <button onClick={() => cancelPayment(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-colors" title="Huỷ thanh toán & Sửa">
+                              <button onClick={() => cancelPayment(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-colors" title={t("invoices.action.cancel_edit", "Huỷ thanh toán & Sửa")}>
                                 <RotateCcw className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handlePrintPreview(inv, false)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-650 hover:bg-slate-50 hover:text-slate-850 transition-colors" title="In hoá đơn">
+                              <button onClick={() => handlePrintPreview(inv, false)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-650 hover:bg-slate-50 hover:text-slate-850 transition-colors" title={t("invoices.action.print", "In hoá đơn")}>
                                 <Printer className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => deleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors" title="Xoá hoá đơn">
+                              <button onClick={() => deleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors" title={t("invoices.action.delete", "Xoá hoá đơn")}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
@@ -1057,13 +1058,13 @@ export default function Invoices() {
 
                           {inv.status === 'unpaid' && (
                             <>
-                              <button onClick={() => payInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-green-600 hover:bg-green-50 hover:border-green-150 transition-colors" title="Thanh toán hóa đơn">
+                              <button onClick={() => payInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-green-600 hover:bg-green-50 hover:border-green-150 transition-colors" title={t("invoices.action.pay", "Thanh toán hóa đơn")}>
                                 <CreditCard className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => payInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-colors" title="Chỉnh sửa hóa đơn">
+                              <button onClick={() => payInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-colors" title={t("invoices.action.edit", "Chỉnh sửa hóa đơn")}>
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => deleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors" title="Xoá hoá đơn">
+                              <button onClick={() => deleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors" title={t("invoices.action.delete", "Xoá hoá đơn")}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
@@ -1071,10 +1072,10 @@ export default function Invoices() {
 
                           {inv.status === 'cancelled' && (
                             <>
-                              <button onClick={() => restoreInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-100 transition-colors" title="Khôi phục hoá đơn">
+                              <button onClick={() => restoreInvoice(inv)} className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-100 transition-colors" title={t("invoices.action.restore", "Khôi phục hoá đơn")}>
                                 <Undo2 className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => permanentlyDeleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors" title="Xoá vĩnh viễn hoá đơn">
+                              <button onClick={() => permanentlyDeleteInvoice(inv)} className="w-7 h-7 rounded-lg border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors" title={t("invoices.action.permanent_delete", "Xoá vĩnh viễn hoá đơn")}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
@@ -1113,7 +1114,7 @@ export default function Invoices() {
           <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col my-8">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 no-print">
               <span className="text-sm font-bold text-slate-700">
-                {isDraftPrint ? 'In hoá đơn tạm tính' : 'In hóa đơn thanh toán'}
+                {isDraftPrint ? t('invoices.print_draft', 'In hoá đơn tạm tính') : t('invoices.print_final', 'In hóa đơn thanh toán')}
               </span>
               <button onClick={() => setPrintingInvoice(null)} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
@@ -1128,7 +1129,7 @@ export default function Invoices() {
                 <div className="font-bold text-sm tracking-tight">GloPro Spa & Beauty</div>
                 <div className="text-[10px] text-slate-400">{printingInvoice.date || '—'}</div>
                 <div className="font-black text-sm tracking-wider uppercase pt-3 text-slate-750">
-                  {isDraftPrint ? 'HÓA ĐƠN TẠM TÍNH' : 'HÓA ĐƠN BÁN HÀNG'}
+                  {isDraftPrint ? t('invoices.receipt_draft', 'HÓA ĐƠN TẠM TÍNH') : t('invoices.receipt_final', 'HÓA ĐƠN BÁN HÀNG')}
                 </div>
                 <div className="inline-block border border-dashed border-slate-300 rounded px-2.5 py-1.5 font-bold tracking-tight bg-white text-[10px] mt-1">
                   {printingInvoice.invoice_code}
@@ -1137,9 +1138,9 @@ export default function Invoices() {
 
               {/* Customer Details */}
               <div className="space-y-1 border-b border-slate-200 pb-3">
-                <div className="flex justify-between"><span>Tên khách hàng:</span><span className="font-bold text-right truncate max-w-[180px]">{printingInvoice.customer_name || 'Khách vãng lai'}</span></div>
-                <div className="flex justify-between"><span>Số điện thoại:</span><span>—</span></div>
-                <div className="flex justify-between"><span>Mã hóa đơn:</span><span>{printingInvoice.invoice_code}</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.customer_name', 'Tên khách hàng:')}</span><span className="font-bold text-right truncate max-w-[180px]">{printingInvoice.customer_name || t('invoices.walk_in', 'Khách vãng lai')}</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.phone', 'Số điện thoại:')}</span><span>—</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.code', 'Mã hóa đơn:')}</span><span>{printingInvoice.invoice_code}</span></div>
               </div>
 
               {/* Line Items */}
@@ -1154,22 +1155,22 @@ export default function Invoices() {
 
               {/* Calculations */}
               <div className="space-y-1 border-b border-slate-200 pb-3">
-                <div className="flex justify-between"><span>Tạm tính:</span><span>{formatVND(printingInvoice.subtotal || 0)}</span></div>
-                <div className="flex justify-between"><span>Giảm giá:</span><span>-{formatVND(printingInvoice.discount || 0)}</span></div>
-                <div className="flex justify-between"><span>Thuế (Tax):</span><span>0 đ</span></div>
-                <div className="flex justify-between"><span>Tiền tip:</span><span>{formatVND(printingInvoice.tip || 0)}</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.subtotal', 'Tạm tính:')}</span><span>{formatVND(printingInvoice.subtotal || 0)}</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.discount', 'Giảm giá:')}</span><span>-{formatVND(printingInvoice.discount || 0)}</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.tax', 'Thuế (Tax):')}</span><span>0 đ</span></div>
+                <div className="flex justify-between"><span>{t('invoices.print.tip', 'Tiền tip:')}</span><span>{formatVND(printingInvoice.tip || 0)}</span></div>
               </div>
 
               {/* Total */}
               <div className="flex justify-between items-center text-sm font-black tracking-wider pb-3 border-b border-slate-200 text-slate-900">
-                <span>TỔNG THANH TOÁN:</span>
+                <span>{t('invoices.print.total', 'TỔNG THANH TOÁN:')}</span>
                 <span>{formatVND(printingInvoice.total || 0)}</span>
               </div>
 
               {/* Payments */}
               {!isDraftPrint && (
                 <div className="space-y-1">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Phương thức thanh toán</div>
+                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">{t('invoices.print.payment_method', 'Phương thức thanh toán')}</div>
                   {(printingInvoice.payment_methods || []).map((p, idx) => (
                     <div key={idx} className="flex justify-between">
                       <span className="capitalize">{METHODS.find(m => m.value === p.method)?.label || p.method}</span>
@@ -1181,7 +1182,7 @@ export default function Invoices() {
 
               {/* QR block code */}
               <div className="text-center space-y-2 pt-4 border-t border-slate-200">
-                <div className="text-[10px] text-slate-400 max-w-[200px] mx-auto">Quét mã QR để tải ứng dụng đặt lịch hẹn</div>
+                <div className="text-[10px] text-slate-400 max-w-[200px] mx-auto">{t('invoices.print.qr_note', 'Quét mã QR để tải ứng dụng đặt lịch hẹn')}</div>
                 <div className="bg-white border border-slate-200 p-2.5 rounded-xl inline-block shadow-xs">
                   <QrCode className="w-20 h-20 text-slate-700" />
                 </div>
@@ -1194,7 +1195,7 @@ export default function Invoices() {
             {/* Footer buttons */}
             <div className="mt-5 flex gap-2 w-full shrink-0 no-print">
               <button 
-                onClick={() => { window.print(); toast.success('Đang thực thi in...'); }}
+                onClick={() => { window.print(); toast.success(t('invoices.print_executing', 'Đang thực thi in...')); }}
                 className="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 bg-white"
               >
                 <Printer className="w-4 h-4" /> In hóa đơn

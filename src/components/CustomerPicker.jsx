@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n';
 
 export default function CustomerPicker({ customers, value, onChange, onAddNew }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const selected = customers.find((c) => c.id === value);
@@ -27,7 +29,7 @@ export default function CustomerPicker({ customers, value, onChange, onAddNew })
             </div>
           </>
         ) : (
-          <span className="text-slate-400 flex-1 text-left">— Chọn khách hàng —</span>
+          <span className="text-slate-400 flex-1 text-left">— {t('appt.modal.select_customer', 'Chọn khách hàng...')} —</span>
         )}
         <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
       </button>
@@ -41,7 +43,7 @@ export default function CustomerPicker({ customers, value, onChange, onAddNew })
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Tìm tên / SĐT..."
+                placeholder={t('customers.search_placeholder', 'Tìm tên / SĐT...')}
                 className="flex-1 text-sm outline-none"
               />
             </div>
@@ -52,7 +54,7 @@ export default function CustomerPicker({ customers, value, onChange, onAddNew })
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm text-emerald-600 font-semibold"
               >
                 <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">+</div>
-                Thêm mới khách hàng
+                {t('customers.add_new_customer', 'Thêm mới khách hàng')}
               </button>
               {filtered.map((c) => (
                 <button

@@ -8,13 +8,7 @@ import PreferencesTab from '@/components/booking/PreferencesTab';
 import PagesTab from '@/components/booking/PagesTab';
 import ServicesTab from '@/components/booking/ServicesTab';
 import EmployeesTab from '@/components/booking/EmployeesTab';
-
-const TABS = [
-  { id: 'preferences', label: 'Cài đặt' },
-  { id: 'pages', label: 'Giao Diện' },
-  { id: 'services', label: 'Dịch vụ' },
-  { id: 'employees', label: 'Nhân viên' },
-];
+import { useT } from '@/lib/i18n';
 
 const DEFAULT_SETTING = {
   slug: '',
@@ -65,12 +59,20 @@ const DEFAULT_SETTING = {
 };
 
 export default function Booking() {
+  const t = useT();
   const { currentBranchId } = useBranch();
   const [activeTab, setActiveTab] = useState('preferences');
   const [setting, setSetting] = useState(null);
   const [localSetting, setLocalSetting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const TABS = [
+    { id: 'preferences', label: t('booking.tab_preferences', 'Settings') },
+    { id: 'pages', label: t('booking.tab_pages', 'Interface') },
+    { id: 'services', label: t('booking.tab_services', 'Services') },
+    { id: 'employees', label: t('booking.tab_employees', 'Staff') },
+  ];
 
   useEffect(() => { loadSetting(); }, [currentBranchId]);
 
@@ -101,8 +103,8 @@ export default function Booking() {
         : await base44.entities.BookingSetting.create(payload);
       setSetting(saved);
       setLocalSetting({ ...DEFAULT_SETTING, ...saved });
-      toast.success('Đã lưu cài đặt booking!');
-    } catch (e) { toast.error('Lỗi: ' + (e.message || e)); }
+      toast.success(t('booking.saved_success', 'Booking settings saved!'));
+    } catch (e) { toast.error(t('booking.save_error', 'Error: ') + (e.message || e)); }
     finally { setSaving(false); }
   };
 
@@ -123,10 +125,10 @@ export default function Booking() {
       <div className="bg-pink-50 border-b border-pink-100 px-6 py-2.5 flex items-center gap-2.5">
         <Info className="w-4 h-4 text-pink-400 shrink-0" />
         <p className="text-sm text-slate-600">
-          Link đặt lịch của bạn:{' '}
+          {t('booking.link_banner', 'Your booking link: ')}{' '}
           {bookingUrl
             ? <a href={bookingUrl} target="_blank" rel="noreferrer" className="text-pink-500 font-medium hover:underline">{bookingUrl}</a>
-            : <span className="text-slate-400 italic">Chưa cấu hình — hãy điền slug trong tab "Giao Diện"</span>
+            : <span className="text-slate-400 italic">{t('booking.link_not_configured', 'Not configured — please enter a slug in the "Interface" tab')}</span>
           }
         </p>
       </div>
@@ -134,14 +136,14 @@ export default function Booking() {
       <div className="px-6 pt-5 pb-8 max-w-4xl">
         {/* Page header */}
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-bold text-slate-900">Booking Online</h1>
+          <h1 className="text-xl font-bold text-slate-900">{t('booking.title', 'Online Booking')}</h1>
           <button
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white text-sm font-semibold transition-all disabled:opacity-60 shadow-sm"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? t('booking.saving', 'Saving...') : t('booking.save_btn', 'Save Changes')}
           </button>
         </div>
 

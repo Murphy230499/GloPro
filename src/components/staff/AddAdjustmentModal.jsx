@@ -1,8 +1,10 @@
+import { useT } from '@/lib/i18n';
 import React, { useState } from 'react';
 import { X, CheckSquare, ChevronDown } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 
 export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) {
+  const { t } = useT();
   const [type, setType] = useState('bonus'); // 'bonus' or 'penalty'
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -13,7 +15,7 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
   if (!isOpen) return null;
 
   const groupedStaff = staff.reduce((acc, emp) => {
-    const role = emp.role || 'Chưa phân nhóm';
+    const role = emp.role || t('staff.payroll.uncategorized', 'Chưa phân nhóm');
     if (!acc[role]) acc[role] = [];
     acc[role].push(emp);
     return acc;
@@ -53,11 +55,11 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (selectedStaffIds.length === 0) {
-      alert('Vui lòng chọn ít nhất một nhân viên');
+      alert(t('staff.payroll.err_select_staff', 'Vui lòng chọn ít nhất một nhân viên'));
       return;
     }
     if (!amount || parseInt(amount, 10) <= 0) {
-      alert('Vui lòng nhập số tiền hợp lệ');
+      alert(t('staff.payroll.err_valid_amount', 'Vui lòng nhập số tiền hợp lệ'));
       return;
     }
 
@@ -87,7 +89,7 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl text-left flex flex-col max-h-[90vh] overflow-visible" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">Thêm thưởng / phạt</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.payroll.add_adj_title', 'Thêm thưởng / phạt')}</h2>
           <button 
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
@@ -101,22 +103,22 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
           
           {/* Type Selection */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-normal text-slate-500">Loại điều chỉnh</label>
+            <label className="block text-[11px] font-normal text-slate-500">{t('staff.payroll.adj_type', 'Loại điều chỉnh')}</label>
             <div className="flex gap-3">
               <label className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border cursor-pointer transition-colors ${type === 'bonus' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
                 <input type="radio" name="adjType" className="hidden" checked={type === 'bonus'} onChange={() => setType('bonus')} />
-                <span className="text-xs font-semibold">Thưởng</span>
+                <span className="text-xs font-semibold">{t('staff.payroll.bonus', 'Thưởng')}</span>
               </label>
               <label className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border cursor-pointer transition-colors ${type === 'penalty' ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
                 <input type="radio" name="adjType" className="hidden" checked={type === 'penalty'} onChange={() => setType('penalty')} />
-                <span className="text-xs font-semibold">Phạt</span>
+                <span className="text-xs font-semibold">{t('staff.payroll.penalty', 'Phạt')}</span>
               </label>
             </div>
           </div>
 
           {/* Staff Selection */}
           <div className="space-y-1.5 relative animate-in fade-in duration-200">
-            <label className="block text-[11px] font-normal text-slate-500">Áp dụng cho nhân viên</label>
+            <label className="block text-[11px] font-normal text-slate-500">{t('staff.payroll.apply_for_staff', 'Áp dụng cho nhân viên')}</label>
             <button
               type="button"
               onClick={() => setIsStaffDropdownOpen(!isStaffDropdownOpen)}
@@ -124,10 +126,10 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
             >
               <span className="truncate font-normal text-slate-600">
                 {selectedStaffIds.length === 0 
-                  ? 'Chọn nhân viên...' 
+                  ? t('staff.payroll.select_staff', 'Chọn nhân viên...') 
                   : selectedStaffIds.length === staff.length 
-                    ? 'Tất cả nhân viên' 
-                    : `Đã chọn ${selectedStaffIds.length} nhân viên`}
+                    ? t('staff.payroll.all_staff', 'Tất cả nhân viên') 
+                    : t('staff.payroll.selected_staff', 'Đã chọn {count} nhân viên').replace('{count}', selectedStaffIds.length)}
               </span>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
@@ -138,7 +140,7 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
                 <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
                   <input
                     type="text"
-                    placeholder="tìm kiếm nhân viên..."
+                    placeholder={t("staff.commission.search_staff", "tìm kiếm nhân viên...")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-transparent text-xs font-medium outline-none text-slate-700 placeholder:text-slate-400/50 placeholder:font-normal placeholder:lowercase"
@@ -159,7 +161,7 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
                         <div className="w-4 h-4 rounded-md border border-slate-300 bg-white" />
                       )}
                     </div>
-                    <span className="text-xs font-normal text-slate-700">Chọn tất cả</span>
+                    <span className="text-xs font-normal text-slate-700">{t('staff.commission.select_all', 'Chọn tất cả')}</span>
                   </button>
 
                   {/* Groups and targets */}
@@ -219,7 +221,7 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
 
           {/* Amount */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-normal text-slate-500">Số tiền (VNĐ)</label>
+            <label className="block text-[11px] font-normal text-slate-500">{t('staff.payroll.amount', 'Số tiền (VNĐ)')}</label>
             <div className="relative">
               <input 
                 type="text" 
@@ -234,11 +236,11 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
 
           {/* Note */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-normal text-slate-500">Ghi chú (tùy chọn)</label>
+            <label className="block text-[11px] font-normal text-slate-500">{t('staff.payroll.note_optional', 'Ghi chú (tùy chọn)')}</label>
             <textarea 
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Nhập lý do..."
+              placeholder={t("staff.payroll.enter_reason", "Nhập lý do...")}
               rows={2}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white resize-none"
             />
@@ -253,14 +255,14 @@ export default function AddAdjustmentModal({ isOpen, onClose, onApply, staff }) 
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans"
           >
-            Hủy
+            {t('staff.scheduler.cancel', 'Hủy')}
           </button>
           <button 
             type="button"
             onClick={handleSubmit}
             className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans"
           >
-            Áp dụng
+            {t('staff.commission.apply_btn', 'Áp dụng')}
           </button>
         </div>
 

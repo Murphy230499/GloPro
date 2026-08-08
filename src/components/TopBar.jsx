@@ -79,19 +79,19 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
           <button
             onClick={onNewAppointment}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-            title="Tạo lịch hẹn"
+            title={t('topbar.to_lch_hn', 'Tạo lịch hẹn')}
           >
             <CalendarDays className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-semibold hidden md:inline">Đặt lịch</span>
+            <span className="text-xs font-semibold hidden md:inline">{t('topbar.t_lch', 'Đặt lịch')}</span>
           </button>
           
           <button
             onClick={onNewInvoice}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-            title="Tạo hóa đơn"
+            title={t('topbar.to_ha_n', 'Tạo hóa đơn')}
           >
             <Receipt className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs font-semibold hidden md:inline">Tạo đơn</span>
+            <span className="text-xs font-semibold hidden md:inline">{t('topbar.to_n', 'Tạo đơn')}</span>
           </button>
 
           <NotificationCenter />

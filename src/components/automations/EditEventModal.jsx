@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronDown, Check, Zap, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/Layout';
 import { base44 } from '@/api/base44Client';
+import { useT } from '@/lib/i18n';
 import Link from 'next/link';
 
 // Options for Before Appointment Reminder
@@ -80,6 +81,7 @@ const parseDotsToNumber = (str) => {
 };
 
 export default function EditEventModal({ open, onClose, item, onSave }) {
+  const { t } = useT();
   const [selectedTimes, setSelectedTimes] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [promoDropdownOpen, setPromoDropdownOpen] = useState(false);
@@ -280,19 +282,9 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Chỉnh sửa kịch bản</h2>
+            <h2 className="text-base font-bold text-slate-800">{t('automations.modal_edit_title', 'Chỉnh sửa kịch bản')}</h2>
             <p className="text-[11px] text-slate-400 font-medium">
-              {isWelcomeNew
-                ? 'Cấu hình thời gian tự động gửi tin nhắn chào mừng sau khi tạo hồ sơ khách hàng mới'
-                : isRewardLoyal
-                ? 'Cấu hình mức chi tiêu tối thiểu và CTKM tự động tặng vào tài khoản khách hàng VIP'
-                : isThankYouEvent
-                ? 'Cấu hình thời gian gửi tin nhắn cảm ơn sau khi hoàn tất thanh toán hóa đơn'
-                : isBirthdayEvent
-                ? 'Cấu hình tự động gửi lời chúc mừng và quà tặng sinh nhật'
-                : isRebookReminder
-                ? 'Cấu hình thời gian gửi nhắc nhở đặt lịch lại sau khi hoàn thành dịch vụ'
-                : 'Cấu hình thời gian gửi và kênh phát thông báo'}
+              {t('automations.modal_edit_subtitle', 'Cấu hình thời gian gửi và kênh phát thông báo')}
             </p>
           </div>
           <button
@@ -308,7 +300,7 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
           
           {/* 1. Trigger Event Banner */}
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Sự kiện kích hoạt</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('automations.trigger_event_label', 'Sự kiện kích hoạt')}</label>
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl ${item.bgColor || 'bg-rose-50'} flex items-center justify-center shrink-0 shadow-2xs`}>
                 <IconComp className={`w-5 h-5 ${item.iconColor || 'text-rose-500'}`} />
@@ -323,13 +315,13 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
           {/* 2. Send time */}
           <div className="space-y-1" ref={dropdownRef}>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">
-              Thời gian gửi <span className="text-rose-500">*</span>
+              {t('automations.send_time_label', 'Thời gian gửi')} <span className="text-rose-500">*</span>
             </label>
 
             {isFixedImmediate ? (
               /* Fixed Immediate Read-Only Input */
               <div className="flex items-center border border-slate-200/90 rounded-xl bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-600 justify-between select-none cursor-not-allowed">
-                <span>Ngay lập tức</span>
+                <span>{t('automations.time_immediately', 'Ngay lập tức')}</span>
                 <ChevronDown className="w-4 h-4 text-slate-400 opacity-60" />
               </div>
             ) : (
@@ -504,7 +496,7 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
           {/* 3. Channels Selector */}
           <div>
             <label className="block font-bold text-slate-500 mb-1 text-[11px]">
-              Kênh phát thông báo <span className="text-rose-500">*</span>
+              {t('automations.channels_label', 'Kênh phát thông báo')} <span className="text-rose-500">*</span>
             </label>
 
             <div className="space-y-2">
@@ -527,7 +519,7 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
                   <div>
                     <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       Email
-                      {!isEmailConnected && <span className="text-[9px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Chưa kết nối</span>}
+                      {!isEmailConnected && <span className="text-[9px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">{t('automations.not_connected', 'Chưa kết nối')}</span>}
                     </h4>
                     <p className="text-[10px] text-slate-400">Gửi thông báo qua Email khách hàng</p>
                   </div>
@@ -708,9 +700,9 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
               {(!isEmailConnected || !isSmsConnected || !isWhatsappConnected || !isTelegramConnected || !isZaloConnected) && (
                 <div className="pt-2 text-[10px] text-slate-500 flex items-center gap-1.5 font-medium">
                   <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Kênh bị mờ yêu cầu thiết lập API Key.</span>
+                  <span>{t('automations.configure_api_key', 'Kênh bị mờ yêu cầu thiết lập API Key.')}</span>
                   <Link href="/settings?tab=integrations" onClick={onClose} className="text-blue-600 hover:underline font-bold ml-1">
-                    Đi tới Cài đặt &rarr;
+                    {t('automations.go_to_settings', 'Đi tới Cài đặt →')}
                   </Link>
                 </div>
               )}
@@ -734,14 +726,14 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
             onClick={onClose}
             className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer"
           >
-            Hủy
+            {t('automations.btn_cancel', 'Hủy')}
           </button>
           <button
             type="button"
             onClick={handleSave}
             className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
           >
-            Lưu thay đổi
+            {t('automations.btn_save_changes', 'Lưu thay đổi')}
           </button>
         </div>
 

@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n';
 
-export default function StaffAssignPicker({ staff, value, isRequested = false, onChange, placeholder = '— Phân KTV —', color = 'emerald-500', hideRequestedCheckbox = false, disabledStaffIds = [] }) {
+export default function StaffAssignPicker({ staff, value, isRequested = false, onChange, placeholder, color = 'emerald-500', hideRequestedCheckbox = false, disabledStaffIds = [] }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, openUp: false });
   const selected = staff.find((s) => s.id === value);
+  const displayPlaceholder = placeholder || t('pos.ticket.select_staff_placeholder', '— Phân KTV —');
 
   const handleToggle = (e) => {
     if (open) {
@@ -56,7 +59,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
             <span className="font-medium truncate">{selected.full_name}</span>
           </>
         ) : (
-          <span className="text-slate-400">{placeholder}</span>
+          <span className="text-slate-400">{displayPlaceholder}</span>
         )}
         <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-400 shrink-0 mr-1" />
       </button>
@@ -68,7 +71,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
             onChange={(e) => onChange(value, selected.full_name, e.target.checked)}
             className={`w-3.5 h-3.5 ${getCheckboxTextClass()} border-slate-300 rounded focus:ring-0 focus:outline-none cursor-pointer transition-all shrink-0`}
           />
-          <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">Yêu cầu</span>
+          <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">{t('pos.ticket.customer_requested', 'Yêu cầu')}</span>
         </label>
       )}
       {open && (
@@ -88,7 +91,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
               className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 text-xs text-slate-500"
             >
               <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center"><Check className="w-3 h-3 text-slate-400" /></div>
-              Bất kỳ / Chưa phân
+              {t('appointments.unassigned', 'Chưa phân công')}
             </button>
             {staff.map((s) => {
               const isDisabled = disabledStaffIds.includes(s.id);

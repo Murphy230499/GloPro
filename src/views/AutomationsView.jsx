@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import EditEventModal from '@/components/automations/EditEventModal';
 import ManageTemplatesView from '@/components/automations/ManageTemplatesView';
+import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 
 // Initial Automation Items Definition translated to Vietnamese
@@ -149,11 +150,50 @@ const INITIAL_CATEGORIES = [
 ];
 
 export default function AutomationsView() {
+  const { t } = useT();
   const router = useRouter();
   const [mainTab, setMainTab] = useState('events'); // 'events' | 'templates'
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [selectedTag, setSelectedTag] = useState('all');
   const [editingItem, setEditingItem] = useState(null);
+
+  const translateCatTitle = (cat) => t(`automations.cat_${cat.id}`, cat.title);
+  const translateItemTitle = (item) => t(`automations.item_${item.id}_title`, item.title);
+  const translateItemDesc = (item) => t(`automations.item_${item.id}_desc`, item.description);
+
+  const translateSendTime = (st) => {
+    if (st === 'Ngay lập tức') return t('automations.time_immediately', 'Ngay lập tức');
+    if (st.endsWith(' trước')) {
+      const parts = st.replace(' trước', '').split(' ');
+      const num = parts[0];
+      const unit = parts[1] || '';
+      let translatedUnit = unit;
+      if (unit === 'giờ' || unit === 'hours' || unit === 'hour') translatedUnit = t('automations.unit_hours', 'giờ');
+      if (unit === 'ngày' || unit === 'days' || unit === 'day') translatedUnit = t('automations.unit_days', 'ngày');
+      if (unit === 'tuần' || unit === 'weeks' || unit === 'week') translatedUnit = t('automations.unit_weeks', 'tuần');
+      return `${num} ${translatedUnit} ${t('automations.time_before', 'trước')}`;
+    }
+    if (st.endsWith(' sau')) {
+      const parts = st.replace(' sau', '').split(' ');
+      const num = parts[0];
+      const unit = parts[1] || '';
+      let translatedUnit = unit;
+      if (unit === 'giờ' || unit === 'hours' || unit === 'hour') translatedUnit = t('automations.unit_hours', 'giờ');
+      if (unit === 'ngày' || unit === 'days' || unit === 'day') translatedUnit = t('automations.unit_days', 'ngày');
+      if (unit === 'tuần' || unit === 'weeks' || unit === 'week') translatedUnit = t('automations.unit_weeks', 'tuần');
+      return `${num} ${translatedUnit} ${t('automations.time_after', 'sau')}`;
+    }
+    if (st.includes('trước sinh nhật')) {
+      const parts = st.replace(' trước sinh nhật', '').split(' ');
+      const num = parts[0];
+      const unit = parts[1] || '';
+      let translatedUnit = unit;
+      if (unit === 'ngày' || unit === 'days' || unit === 'day') translatedUnit = t('automations.unit_days', 'ngày');
+      if (unit === 'tuần' || unit === 'weeks' || unit === 'week') translatedUnit = t('automations.unit_weeks', 'tuần');
+      return `${num} ${translatedUnit} ${t('automations.time_before_birthday', 'trước sinh nhật')}`;
+    }
+    return st;
+  };
 
   const toggleAutomation = (catId, itemId, e) => {
     e.stopPropagation();
@@ -197,8 +237,8 @@ export default function AutomationsView() {
         <div className="px-8 py-6 md:px-10 bg-white border-b border-slate-200/80 sticky top-0 z-10 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tin nhắn Tự động (Automation)</h1>
-              <p className="text-xs text-slate-500 mt-1">Tự động gửi thông báo SMS, Email và WhatsApp theo từng sự kiện chăm sóc khách hàng</p>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t('automations.page_title', 'Tin nhắn Tự động (Automation)')}</h1>
+              <p className="text-xs text-slate-500 mt-1">{t('automations.page_subtitle', 'Tự động gửi thông báo SMS, Email và WhatsApp theo từng sự kiện chăm sóc khách hàng')}</p>
             </div>
             
             <div className="flex items-center gap-2">
@@ -207,7 +247,7 @@ export default function AutomationsView() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition shadow-2xs cursor-pointer"
               >
                 <LayoutTemplate className="w-3.5 h-3.5 text-blue-600" />
-                <span>Quản lý kịch bản mẫu</span>
+                <span>{t('automations.btn_manage_templates', 'Quản lý kịch bản mẫu')}</span>
               </button>
             </div>
           </div>
@@ -222,7 +262,7 @@ export default function AutomationsView() {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              Tất cả sự kiện ({categories.reduce((acc, c) => acc + c.items.length, 0)})
+              {t('automations.all_events', 'Tất cả sự kiện')} ({categories.reduce((acc, c) => acc + c.items.length, 0)})
             </button>
             {categories.map((cat) => (
               <button
@@ -234,7 +274,7 @@ export default function AutomationsView() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {cat.title} ({cat.items.length})
+                {translateCatTitle(cat)} ({cat.items.length})
               </button>
             ))}
           </div>
@@ -247,9 +287,9 @@ export default function AutomationsView() {
             .map((category) => (
               <div key={category.id} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{category.title}</h2>
+                  <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{translateCatTitle(category)}</h2>
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-200/60 text-slate-600">
-                    {category.items.length} kịch bản
+                    {category.items.length} {t('automations.scripts_count', 'kịch bản')}
                   </span>
                 </div>
 
@@ -299,11 +339,11 @@ export default function AutomationsView() {
                         {/* Title & Description */}
                         <div className="mb-4">
                           <h3 className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition flex items-center gap-1.5">
-                            <span>{item.title}</span>
+                            <span>{translateItemTitle(item)}</span>
                             <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 shrink-0" />
                           </h3>
                           <p className="text-xs text-slate-500 line-clamp-2 mt-1 font-normal leading-relaxed">
-                            {item.description}
+                            {translateItemDesc(item)}
                           </p>
                         </div>
 
@@ -311,11 +351,11 @@ export default function AutomationsView() {
                         <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
                           {/* Send Times */}
                           <div className="flex items-center gap-1 overflow-hidden">
-                            <span className="text-slate-400 font-medium shrink-0">Thời gian:</span>
+                            <span className="text-slate-400 font-medium shrink-0">{t('automations.send_time_prefix', 'Thời gian:')}</span>
                             <div className="flex items-center gap-1 truncate font-semibold text-slate-700">
                               {item.sendTimes.map((st, idx) => (
                                 <span key={idx} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px]">
-                                  {st}
+                                  {translateSendTime(st)}
                                 </span>
                               ))}
                             </div>

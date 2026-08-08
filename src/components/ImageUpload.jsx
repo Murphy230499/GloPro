@@ -3,8 +3,10 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
+import { useT } from '@/lib/i18n';
 
 export default function ImageUpload({ value, onChange, label, shape = 'square' }) {
+  const { t } = useT();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef(null);
 
@@ -31,24 +33,28 @@ export default function ImageUpload({ value, onChange, label, shape = 'square' }
     <div>
       {label && <label className="text-xs text-slate-400 mb-1.5 block">{label}</label>}
       <div className="flex items-center gap-3">
-        <div className={`relative w-20 h-20 ${rounded} bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0`}>
+        <div 
+          onClick={() => inputRef.current?.click()}
+          className={`group relative w-20 h-20 ${rounded} bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 cursor-pointer`}
+        >
           {value ? (
             <>
               <img src={value} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center">
-                <X className="w-3 h-3" />
-              </button>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-medium backdrop-blur-[2px] text-center px-1">
+                <Upload className="w-4 h-4 mb-0.5" /> {t('common.change_photo', 'Đổi ảnh')}
+              </div>
             </>
           ) : uploading ? (
             <div className="w-5 h-5 border-2 border-slate-300 border-t-pink-500 rounded-full animate-spin" />
           ) : (
-            <ImageIcon className="w-6 h-6 text-slate-300" />
+            <>
+              <ImageIcon className="w-6 h-6 text-slate-300" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-medium backdrop-blur-[2px] text-center px-1">
+                <Upload className="w-4 h-4 mb-0.5" /> {t('common.upload_photo', 'Tải ảnh lên')}
+              </div>
+            </>
           )}
         </div>
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-sm font-medium text-slate-600 disabled:opacity-50">
-          <Upload className="w-4 h-4" /> {value ? 'Đổi ảnh' : 'Tải ảnh lên'}
-        </button>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44, getCachedPermissions } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
+import { useT } from '@/lib/i18n';
 import {
   LayoutDashboard, TrendingUp, Calendar, Users, UserCheck, DollarSign,
   Scissors, Package, Layers, PackageCheck, Activity, Tag, CreditCard,
@@ -12,36 +13,36 @@ import { exportToCSV, printReportTable } from '@/lib/exportHelpers';
 
 // 18 Modules Definition
 const REPORT_MODULES = [
-  { id: 'overview', name: 'Dashboard', icon: LayoutDashboard },
-  { id: 'revenue', name: 'Doanh Thu', icon: TrendingUp },
-  { id: 'appointments', name: 'Lịch Hẹn', icon: Calendar },
-  { id: 'customers', name: 'Khách Hàng', icon: Users },
-  { id: 'staff', name: 'Nhân Viên', icon: UserCheck },
-  { id: 'pos_cashier', name: 'Thu Ngân', icon: DollarSign },
-  { id: 'services', name: 'Dịch Vụ', icon: Scissors },
-  { id: 'products', name: 'Sản Phẩm', icon: Package },
-  { id: 'inventory', name: 'Kho Hàng', icon: Layers },
-  { id: 'packages', name: 'Gói Dịch Vụ', icon: PackageCheck },
-  { id: 'treatments', name: 'Liệu Trình', icon: Activity },
-  { id: 'service_combos', name: 'Combo Dịch Vụ', icon: Tag },
-  { id: 'product_combos', name: 'Combo Sản Phẩm', icon: Tag },
-  { id: 'prepaid_cards', name: 'Thẻ Tiền Mặt', icon: CreditCard },
-  { id: 'tips', name: 'Tiền TIP', icon: Gift },
-  { id: 'marketing', name: 'Marketing', icon: Target },
-  { id: 'deposits', name: 'Tiền Cọc', icon: PiggyBank },
-  { id: 'kpi', name: 'Chỉ Số KPI', icon: Target },
-  { id: 'finance', name: 'Tài Chính (P&L)', icon: PieChart },
-  { id: 'cash_flow', name: 'Dòng Tiền', icon: Wallet },
-  { id: 'multi_branch', name: 'Chuỗi Chi Nhánh', icon: Building2 },
-  { id: 'ai_report', name: 'Tạo Báo Cáo AI', icon: Sparkles }
+  { id: 'overview', key: 'mod_overview', defaultName: 'Dashboard', icon: LayoutDashboard },
+  { id: 'revenue', key: 'mod_revenue', defaultName: 'Revenue', icon: TrendingUp },
+  { id: 'appointments', key: 'mod_appointments', defaultName: 'Appointments', icon: Calendar },
+  { id: 'customers', key: 'mod_customers', defaultName: 'Customers', icon: Users },
+  { id: 'staff', key: 'mod_staff', defaultName: 'Staff', icon: UserCheck },
+  { id: 'pos_cashier', key: 'mod_pos_cashier', defaultName: 'POS / Cashier', icon: DollarSign },
+  { id: 'services', key: 'mod_services', defaultName: 'Services', icon: Scissors },
+  { id: 'products', key: 'mod_products', defaultName: 'Products', icon: Package },
+  { id: 'inventory', key: 'mod_inventory', defaultName: 'Inventory', icon: Layers },
+  { id: 'packages', key: 'mod_packages', defaultName: 'Service Packages', icon: PackageCheck },
+  { id: 'treatments', key: 'mod_treatments', defaultName: 'Treatments', icon: Activity },
+  { id: 'service_combos', key: 'mod_service_combos', defaultName: 'Service Combos', icon: Tag },
+  { id: 'product_combos', key: 'mod_product_combos', defaultName: 'Product Combos', icon: Tag },
+  { id: 'prepaid_cards', key: 'mod_prepaid_cards', defaultName: 'Prepaid Cards', icon: CreditCard },
+  { id: 'tips', key: 'mod_tips', defaultName: 'Tips', icon: Gift },
+  { id: 'marketing', key: 'mod_marketing', defaultName: 'Marketing', icon: Target },
+  { id: 'deposits', key: 'mod_deposits', defaultName: 'Deposits', icon: PiggyBank },
+  { id: 'kpi', key: 'mod_kpi', defaultName: 'KPI Metrics', icon: Target },
+  { id: 'finance', key: 'mod_finance', defaultName: 'Financials (P&L)', icon: PieChart },
+  { id: 'cash_flow', key: 'mod_cash_flow', defaultName: 'Cash Flow', icon: Wallet },
+  { id: 'multi_branch', key: 'mod_multi_branch', defaultName: 'Multi-Branch', icon: Building2 },
+  { id: 'ai_report', key: 'mod_ai_report', defaultName: 'AI Report Generator', icon: Sparkles }
 ];
 
 export default function ReportLayout({ children, activeTab, setActiveTab, dataForExport = {} }) {
+  const t = useT();
   const [datePreset, setDatePreset] = useState('30d');
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [drillDownState, setDrillDownState] = useState({ open: false, title: '', data: [] });
-  // Mặc định luôn mở rộng danh mục báo cáo để dễ xem
   const [collapsed, setCollapsed] = useState(false);
 
   const [allowedModules, setAllowedModules] = useState(null);
@@ -75,13 +76,14 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
   }, [allowedModules, visibleModules, activeTab]);
 
   const activeModule = REPORT_MODULES.find(m => m.id === activeTab) || REPORT_MODULES[0];
+  const activeModuleName = t(`reports.${activeModule.key}`, activeModule.defaultName);
 
   const handleExportCSV = () => {
     const list = dataForExport[activeTab] || [];
     if (!list.length) return;
     const headers = Object.keys(list[0]);
     const rows = list.map(item => Object.values(item));
-    exportToCSV(`GloPro_BaoCao_${activeTab}`, headers, rows);
+    exportToCSV(`GloPro_Report_${activeTab}`, headers, rows);
   };
 
   const handleExportPDF = () => {
@@ -89,7 +91,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
     if (!list.length) return;
     const headers = Object.keys(list[0]);
     const rows = list.map(item => Object.values(item));
-    printReportTable(`Báo cáo ${activeModule.name}`, headers, rows);
+    printReportTable(`Report ${activeModuleName}`, headers, rows);
   };
 
   const handleOpenDrillDown = (title, data) => {
@@ -99,18 +101,19 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
   return (
     <div className="flex flex-col lg:flex-row gap-5 font-body w-full lg:items-start">
       
-      {/* Left Sidebar: 18 Modules Menu (Cố định mở rộng) */}
+      {/* Left Sidebar: Modules Menu */}
       <div 
         className={`bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs shrink-0 transition-all duration-300 relative lg:sticky lg:top-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto w-full lg:w-64`}
       >
         <div className="px-3 py-2 text-xs font-semibold text-slate-400 normal-case">
-          Danh mục báo cáo
+          {t('reports.sidebar_header', 'Report Categories')}
         </div>
 
         <div className="space-y-0.5">
           {visibleModules.map(mod => {
             const IconComp = mod.icon;
             const isActive = activeTab === mod.id;
+            const modName = t(`reports.${mod.key}`, mod.defaultName);
 
             return (
               <button
@@ -123,12 +126,12 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
                     ? 'bg-blue-50 text-blue-600 font-bold border border-blue-100 shadow-2xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
                   }`}
-                title={mod.name}
+                title={modName}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
                   <span className="truncate opacity-100">
-                    {mod.name}
+                    {modName}
                   </span>
                 </div>
                 {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
@@ -138,7 +141,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
         </div>
       </div>
 
-      {/* Main Content Area with min-w-0 for flex/Recharts safety */}
+      {/* Main Content Area */}
       <div className="flex-1 min-w-0 space-y-4">
         {/* Title Bar & FilterBar */}
         <div className="space-y-3">
@@ -146,9 +149,9 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <activeModule.icon className="w-6 h-6 text-blue-600" />
-                <span>{activeModule.name}</span>
+                <span>{activeModuleName}</span>
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">Phân tích chuyên sâu & hỗ trợ ra quyết định kinh doanh trong 30s</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('reports.header_subtitle', 'In-depth analysis & business decision support in 30s')}</p>
             </div>
           </div>
 

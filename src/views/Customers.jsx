@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Plus, X, Phone, Calendar, Gift, Edit3, Crown, Tag, Users, Trash2, ChevronDown, ChevronLeft, ChevronRight, Mail, MapPin, Sparkles, MessageSquare, PlusCircle, User, Check, ShieldCheck, Play, ArrowRight, UserCheck, CalendarDays, MoreHorizontal, Filter, RotateCw, Receipt, RotateCcw, Printer, CreditCard, QrCode, Megaphone, Percent } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -50,6 +51,7 @@ class CustomerDetailErrorBoundary extends React.Component {
 }
 
 export default function Customers() {
+  const { t } = useT();
   const searchParams = useSearchParams();
   const urlId = searchParams?.get('id') || searchParams?.get('customerId');
   const urlName = searchParams?.get('name');
@@ -291,25 +293,25 @@ export default function Customers() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            {tab === 'list' && 'Khách hàng'}
-            {tab === 'tiers' && 'Hạng khách hàng'}
-            {tab === 'segments' && 'Tập khách hàng'}
-            {tab === 'points' && 'Tích điểm'}
+            {tab === 'list' && t('customers.title', 'Khách hàng')}
+            {tab === 'tiers' && t('customers.tabs.tiers', 'Hạng khách hàng')}
+            {tab === 'segments' && t('customers.tabs.segments', 'Tập khách hàng')}
+            {tab === 'points' && t('customers.tabs.points', 'Tích điểm')}
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            {tab === 'list' && `${customers.length} khách hàng toàn chuỗi`}
-            {tab === 'tiers' && 'Định nghĩa điều kiện lên hạng và quyền lợi giảm giá thành viên.'}
-            {tab === 'segments' && 'Bộ lọc tập khách hàng theo các điều kiện hành vi & thông tin.'}
-            {tab === 'points' && 'Cấu hình tỷ lệ tích lũy điểm và chính sách reset điểm tích lũy.'}
+            {tab === 'list' && (customers.length + ' ' + t('customers.total_customers', 'khách hàng toàn chuỗi'))}
+            {tab === 'tiers' && t('customers.tiers.desc', 'Định nghĩa điều kiện lên hạng và quyền lợi giảm giá thành viên.')}
+            {tab === 'segments' && t('customers.segments.desc', 'Bộ lọc tập khách hàng theo các điều kiện hành vi & thông tin.')}
+            {tab === 'points' && t('customers.points.desc', 'Cấu hình tỷ lệ tích luỹ điểm và chính sách reset điểm tích luỹ.')}
           </p>
         </div>
         {tab === 'list' && (
           <div className="flex items-center gap-2">
             <button onClick={() => setGroupManagerOpen(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-semibold text-sm">
-              <Tag className="w-4 h-4 text-slate-400" /> Quản lý nhóm
+              <Tag className="w-4 h-4 text-slate-400" /> {t('customers.manage_groups', 'Quản lý nhóm')}
             </button>
             <button onClick={() => {setEditing({});}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors">
-              <Plus className="w-4 h-4" /> Thêm khách
+              <Plus className="w-4 h-4" /> {t('customers.add_customer', 'Thêm khách')}
             </button>
           </div>
         )}
@@ -318,7 +320,7 @@ export default function Customers() {
             onClick={() => setTierCreateTrigger(prev => prev + 1)} 
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm font-sans hover:bg-amber-600 transition-colors"
           >
-            <Plus className="w-4 h-4" /> Tạo hạng thành viên
+            <Plus className="w-4 h-4" /> {t('customers.tiers.create', 'Tạo hạng thành viên')}
           </button>
         )}
         {tab === 'segments' && (
@@ -326,7 +328,7 @@ export default function Customers() {
             onClick={() => setSegmentCreateTrigger(prev => prev + 1)} 
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm font-sans hover:bg-amber-600 transition-colors"
           >
-            <Plus className="w-4 h-4" /> Tạo tập khách hàng
+            <Plus className="w-4 h-4" /> {t('customers.segments.create', 'Tạo tập khách hàng')}
           </button>
         )}
       </div>
@@ -341,7 +343,7 @@ export default function Customers() {
           }`}
         >
           <Users className="w-4 h-4 shrink-0" />
-          <span>Quản lý khách hàng</span>
+          <span>{t('customers.tabs.manage', 'Quản lý khách hàng')}</span>
         </button>
         <button onClick={() => setTab('tiers')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
@@ -351,7 +353,7 @@ export default function Customers() {
           }`}
         >
           <Crown className="w-4 h-4 shrink-0" />
-          <span>Hạng khách hàng</span>
+          <span>{t('customers.tabs.tiers', 'Hạng khách hàng')}</span>
         </button>
         <button onClick={() => setTab('segments')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
@@ -361,7 +363,7 @@ export default function Customers() {
           }`}
         >
           <Tag className="w-4 h-4 shrink-0" />
-          <span>Tập khách hàng</span>
+          <span>{t('customers.tabs.segments', 'Tập khách hàng')}</span>
         </button>
         <button onClick={() => setTab('points')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
@@ -371,7 +373,7 @@ export default function Customers() {
           }`}
         >
           <Gift className="w-4 h-4 shrink-0" />
-          <span>Tích điểm</span>
+          <span>{t('customers.tabs.points', 'Tích điểm')}</span>
         </button>
       </div>
 
@@ -379,7 +381,7 @@ export default function Customers() {
         <>
           <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2.5">
             <Search className="w-4 h-4 text-slate-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên hoặc SĐT..." className="bg-transparent outline-none text-sm flex-1" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("customers.search_placeholder", "Tìm theo tên hoặc SĐT...")} className="bg-transparent outline-none text-sm flex-1" />
           </div>
 
           {loading ? (
@@ -437,15 +439,15 @@ export default function Customers() {
                       <div className="grid grid-cols-3 text-center bg-slate-50/80 rounded-xl p-2 border border-slate-100">
                         <div>
                           <div className="font-bold text-xs text-slate-800">{c.visit_count || 0}</div>
-                          <div className="text-[9px] text-slate-400 font-medium">lần đến</div>
+                          <div className="text-[9px] text-slate-400 font-medium">{t('customers.visits', 'lần đến')}</div>
                         </div>
                         <div>
                           <div className="font-bold text-xs text-slate-800">{c.points || 0}</div>
-                          <div className="text-[9px] text-slate-400 font-medium">điểm</div>
+                          <div className="text-[9px] text-slate-400 font-medium">{t('customers.points', 'điểm')}</div>
                         </div>
                         <div>
                           <div className="font-bold text-xs text-pink-600">{formatVND(c.total_spent || 0).replace('₫', '')}</div>
-                          <div className="text-[9px] text-slate-400 font-medium">VNĐ</div>
+                          <div className="text-[9px] text-slate-400 font-medium">{t('customers.currency', 'VNĐ')}</div>
                         </div>
                       </div>
                     </div>
@@ -453,7 +455,7 @@ export default function Customers() {
                     {/* Bottom toolbar for edit & delete */}
                     <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 shrink-0">
                       <button onClick={() => handleOpenDetail(c)} className="text-[11px] text-orange-500 font-bold hover:underline cursor-pointer">
-                        Xem chi tiết &rarr;
+                        {t('customers.view_detail', 'Xem chi tiết')} &rarr;
                       </button>
 
                       <div className="flex items-center gap-0.5">
@@ -517,6 +519,7 @@ const SCOPES = {
 const isExpired = (date) => date && new Date(date) < new Date(new Date().setHours(0,0,0,0));
 
 function CustomerDetail({ customer, customerGroups = [], customerTiers = [], invoices = [], memberships = [], onClose, onEdit, onDelete, onInvoiceCreated }) {
+  const { t } = useT();
   const router = useRouter();
   const custGroup = customer ? (customerGroups || []).find(g => g && g.id === customer.group_id) : null;
   const sortedTiers = [...(customerTiers || [])].sort((a, b) => ((b && b.min_spend) || 0) - ((a && a.min_spend) || 0));
@@ -725,13 +728,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
     const isCompleted = m.type !== 'cash_card' && m.sessions_remaining <= 0;
     const isExpired = !isCompleted && m.expiry_date && new Date(m.expiry_date) < new Date();
     
-    let statusText = 'Đang sử dụng';
+    let statusCode = 'active';
     if (!m.is_active) {
-      statusText = 'Đang bảo lưu';
+      statusCode = 'suspended';
     } else if (isCompleted) {
-      statusText = 'Đã hoàn thành';
+      statusCode = 'completed';
     } else if (isExpired) {
-      statusText = 'Đã hết hạn';
+      statusCode = 'expired';
     }
     
     return (
@@ -763,9 +766,9 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
           const lastUsageDate = getLastUsageDate(m);
           return (
             <div className="text-[9px] text-white/80 space-y-0.5 relative z-10 text-left my-2 font-medium">
-              <div>Kích hoạt: {formatDate(m.purchased_date || m.date_purchased || '')}</div>
-              <div>Hết hạn: {m.expiry_date ? formatDate(m.expiry_date) : 'Vô thời hạn'}</div>
-              <div>Đến gần nhất: {lastUsageDate ? formatDate(lastUsageDate) : 'Chưa sử dụng'}</div>
+              <div>{t('common.activated', 'Kích hoạt:')} {formatDate(m.purchased_date || m.date_purchased || '')}</div>
+              <div>{t('common.expired_colon', 'Hết hạn:')} {m.expiry_date ? formatDate(m.expiry_date) : t('common.lifetime', 'Vô thời hạn')}</div>
+              <div>{t('customers.detail.last_visit', 'Đến gần nhất:')} {lastUsageDate ? formatDate(lastUsageDate) : t('common.unused', 'Chưa sử dụng')}</div>
             </div>
           );
         })()}
@@ -773,19 +776,22 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
         <div className="relative z-10 flex justify-between items-end w-full mt-auto gap-2">
           <div className="space-y-0.5 text-left min-w-0 flex-1">
             <span className="text-[8px] text-white/70 font-medium uppercase tracking-wider block whitespace-nowrap">
-              {isCashCard ? 'Số dư thẻ' : 'Hạn mức sử dụng'}
+              {isCashCard ? t('customers.detail.card_balance', 'Số dư thẻ') : t('customers.detail.usage_limit', 'Hạn mức sử dụng')}
             </span>
             <span className="font-black text-xs md:text-sm tracking-wider block whitespace-nowrap">
-              {isCashCard ? formatVND(m.balance) : `Đã dùng ${m.total_sessions - m.sessions_remaining}/${m.total_sessions} buổi`}
+              {isCashCard ? formatVND(m.balance) : `${t('customers.detail.used', 'Đã dùng')} ${m.total_sessions - m.sessions_remaining}/${m.total_sessions} ${t('customers.detail.sessions', 'buổi')}`}
             </span>
           </div>
           <span className={`text-[8px] px-2 py-0.5 rounded-full backdrop-blur-xs text-white border border-white/15 font-bold uppercase tracking-wider whitespace-nowrap shrink-0 ${
-            statusText === 'Đang bảo lưu' ? 'bg-amber-500/40' : 
-            statusText === 'Đã hết hạn' ? 'bg-rose-500/40' : 
-            statusText === 'Đã hoàn thành' ? 'bg-blue-500/40' : 
+            statusCode === 'suspended' ? 'bg-amber-500/40' : 
+            statusCode === 'expired' ? 'bg-rose-500/40' : 
+            statusCode === 'completed' ? 'bg-blue-500/40' : 
             'bg-emerald-500/40'
           }`}>
-            {statusText}
+            {statusCode === 'suspended' ? t('common.status_suspended', 'Đang bảo lưu') :
+             statusCode === 'expired' ? t('common.status_expired', 'Đã hết hạn') :
+             statusCode === 'completed' ? t('common.status_completed', 'Đã hoàn thành') :
+             t('common.status_active', 'Đang sử dụng')}
           </span>
         </div>
       </div>
@@ -830,10 +836,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             setAppointments(sorted.filter(Boolean).map((a, i) => ({
               id: a.id || `SC_000${100 + i}`,
               staff_id: a.staff_id || '',
-              staff_name: a.staff_name || 'Nhân viên',
+              staff_name: a.staff_name || t('customers.form.staff', 'Nhân viên'),
               date: a.date || new Date().toISOString().split('T')[0],
               time: a.time || '10:00 AM',
-              service_name: a.service_name || 'Dịch vụ spa',
+              service_name: a.service_name || t('customers.detail.spa_service', 'Dịch vụ spa'),
               status: a.status || 'booked',
               price: a.price || 150000,
               note: a.note || ''
@@ -1034,7 +1040,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
       await base44.entities.Invoice.create({
         invoice_code: saleCode,
-        customer_name: appt.customer_name || 'Khách vãng lai',
+        customer_name: appt.customer_name || t('customers.detail.guest_customer', 'Khách vãng lai'),
         customer_id: appt.customer_id || '',
         branch_id: appt.branch_id || '',
         items,
@@ -1180,12 +1186,12 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
   const paginatedAppts = filteredAppts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const statusMap = {
-    completed: { label: 'Đã hoàn thành', bg: 'bg-green-50 text-green-600 border-green-100' },
-    checked_in: { label: 'Đã check-in', bg: 'bg-blue-50 text-blue-600 border-blue-100' },
-    booked: { label: 'Đã đặt', bg: 'bg-amber-50 text-amber-600 border-amber-100' },
-    no_show: { label: 'Không đến', bg: 'bg-rose-50 text-rose-600 border-rose-100' },
-    cancelled: { label: 'Đã hủy', bg: 'bg-slate-100 text-slate-500 border-slate-200' },
-    confirmed: { label: 'Đã xác nhận', bg: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    completed: { label: t('common.status_completed', 'Đã hoàn thành'), bg: 'bg-green-50 text-green-600 border-green-100' },
+    checked_in: { label: t('common.status_checked_in', 'Đã check-in'), bg: 'bg-blue-50 text-blue-600 border-blue-100' },
+    booked: { label: t('common.status_booked', 'Đã đặt'), bg: 'bg-amber-50 text-amber-600 border-amber-100' },
+    no_show: { label: t('common.status_no_show', 'Không đến'), bg: 'bg-rose-50 text-rose-600 border-rose-100' },
+    cancelled: { label: t('common.status_cancelled', 'Đã hủy'), bg: 'bg-slate-100 text-slate-500 border-slate-200' },
+    confirmed: { label: t('common.status_confirmed', 'Đã xác nhận'), bg: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
   };
 
   const filteredInvoices = (invoices || []).filter(inv => {
@@ -1259,7 +1265,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 type="text" 
                 value={purchasedSearch} 
                 onChange={(e) => setPurchasedSearch(e.target.value)} 
-                placeholder="Tìm tên, mã HĐ, nhân viên..." 
+                placeholder={t('customers.detail.search_purchases_placeholder', 'Tìm tên, mã HĐ, nhân viên...')}
                 className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 focus:outline-none w-48 font-normal font-sans transition-colors"
               />
             </div>
@@ -1273,13 +1279,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100 font-sans font-bold">
                 <tr>
-                  <th className="px-4 py-3">Mã HĐ</th>
-                  <th className="px-4 py-3">Mặt hàng</th>
-                  <th className="px-4 py-3">Ngày mua</th>
-                  <th className="px-4 py-3">Nhân viên</th>
-                  <th className="px-4 py-3 text-right">Đơn giá</th>
-                  <th className="px-4 py-3 text-center">Số lượng</th>
-                  <th className="px-4 py-3 text-center">Hành động</th>
+                  <th className="px-4 py-3">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
+                  <th className="px-4 py-3">{t('customers.detail.item', 'Mặt hàng')}</th>
+                  <th className="px-4 py-3">{t('common.purchase_date', 'Ngày mua')}</th>
+                  <th className="px-4 py-3">{t('customers.form.staff', 'Nhân viên')}</th>
+                  <th className="px-4 py-3 text-right">{t('customers.detail.unit_price', 'Đơn giá')}</th>
+                  <th className="px-4 py-3 text-center">{t('customers.detail.quantity', 'Số lượng')}</th>
+                  <th className="px-4 py-3 text-center">{t('common.action', 'Hành động')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-655 font-normal font-sans">
@@ -1321,11 +1327,11 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         <button
                           onClick={() => handleBuyAgain(item)}
                           className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors mx-auto relative group"
-                          title="Mua lại"
+                          title={t('customers.detail.buy_again', 'Mua lại')}
                         >
                           <RotateCw className="w-3.5 h-3.5" />
                           <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-sm font-sans z-20">
-                            Mua lại
+                            {t('customers.detail.buy_again', 'Mua lại')}
                           </span>
                         </button>
                       </td>
@@ -1341,20 +1347,20 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
   };
 
   const tabsList = [
-    { id: 'activity', label: 'Hoạt động' },
-    { id: 'appointments', label: 'Lịch hẹn' },
-    { id: 'deposits', label: 'Đặt cọc' },
-    { id: 'sales', label: 'Hóa đơn' },
-    { id: 'purchased_services', label: 'Dịch vụ' },
-    { id: 'purchased_products', label: 'Sản phẩm' },
-    { id: 'purchased_service_combos', label: 'Combo dịch vụ' },
-    { id: 'purchased_product_combos', label: 'Combo sản phẩm' },
-    { id: 'cash_cards', label: 'Thẻ tiền mặt' },
-    { id: 'packages', label: 'Gói dịch vụ' },
-    { id: 'treatments', label: 'Liệu trình' },
-    { id: 'notes', label: 'Ghi chú' },
-    { id: 'promotions', label: 'Khuyến mãi' },
-    { id: 'messages', label: 'Tin nhắn' },
+    { id: 'activity', label: t('customers.tabs.activity', 'Hoạt động') },
+    { id: 'appointments', label: t('customers.tabs.appointments', 'Lịch hẹn') },
+    { id: 'deposits', label: t('customers.tabs.deposits', 'Đặt cọc') },
+    { id: 'sales', label: t('customers.tabs.invoices', 'Hóa đơn') },
+    { id: 'purchased_services', label: t('customers.tabs.services', 'Dịch vụ') },
+    { id: 'purchased_products', label: t('customers.tabs.products', 'Sản phẩm') },
+    { id: 'purchased_service_combos', label: t('customers.tabs.service_combos', 'Combo dịch vụ') },
+    { id: 'purchased_product_combos', label: t('customers.tabs.product_combos', 'Combo sản phẩm') },
+    { id: 'cash_cards', label: t('customers.tabs.cash_cards', 'Thẻ tiền mặt') },
+    { id: 'packages', label: t('customers.tabs.packages', 'Gói dịch vụ') },
+    { id: 'treatments', label: t('customers.tabs.treatments', 'Liệu trình') },
+    { id: 'notes', label: t('customers.tabs.notes', 'Ghi chú') },
+    { id: 'promotions', label: t('customers.tabs.promotions', 'Khuyến mãi') },
+    { id: 'messages', label: t('customers.tabs.messages', 'Tin nhắn') },
   ];
 
   return (
@@ -1363,10 +1369,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
           <button onClick={onClose} className="flex items-center gap-1 hover:text-slate-600 transition-colors">
-            <ChevronLeft className="w-3.5 h-3.5" /> Quản lý khách hàng
+            <ChevronLeft className="w-3.5 h-3.5" /> {t('customers.tabs.manage', 'Quản lý khách hàng')}
           </button>
           <span>/</span>
-          <span className="text-slate-800 font-semibold">Chi tiết khách hàng</span>
+          <span className="text-slate-800 font-semibold">{t('customers.detail.title', 'Chi tiết khách hàng')}</span>
         </div>
 
         {/* Actions & Book Appointment Buttons */}
@@ -1377,7 +1383,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               onClick={() => setActionsOpen(!actionsOpen)} 
               className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
             >
-              Thao tác <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              {t('common.actions', 'Thao tác')} <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
             {actionsOpen && (
               <>
@@ -1387,13 +1393,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     onClick={() => { onEdit(); setActionsOpen(false); }} 
                     className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-2"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-slate-400" /> Sửa thông tin khách
+                    <Edit3 className="w-3.5 h-3.5 text-slate-400" /> {t('customers.detail.edit_info', 'Sửa thông tin khách')}
                   </button>
                   <button 
                     onClick={() => { onDelete(customer.id); setActionsOpen(false); }} 
                     className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-red-650 flex items-center gap-2 border-t border-slate-50"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" /> Xóa khách hàng
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" /> {t('customers.detail.delete_customer', 'Xóa khách hàng')}
                   </button>
                 </div>
               </>
@@ -1401,17 +1407,17 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
           </div>
 
           <button onClick={handleBookNow} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <CalendarDays className="w-3.5 h-3.5" /> Đặt lịch ngay
+            <CalendarDays className="w-3.5 h-3.5" /> {t('customers.detail.book_now', 'Đặt lịch ngay')}
           </button>
 
-          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-xs font-bold shadow-xs hover:bg-amber-100 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <Receipt className="w-3.5 h-3.5" /> Tạo hóa đơn
+          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
+            <Plus className="w-3.5 h-3.5" /> {t('topbar.to_n', 'New Sale')}
           </button>
         </div>
       </div>
 
       <div className="flex items-center justify-between border-b border-slate-100 pb-1 text-left">
-        <h2 className="text-xl md:text-2xl font-semibold text-slate-800">Chi tiết khách hàng</h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-slate-800">{t('customers.detail.title', 'Chi tiết khách hàng')}</h2>
       </div>
 
       {/* Full Width Layout Container */}
@@ -1427,26 +1433,26 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                   {tier && (
                     <span className="text-[10px] px-2.5 py-1 rounded-full text-white font-bold shadow-xs flex items-center gap-1.5 inline-flex" style={{ backgroundColor: tier.color || '#F97316' }}>
                       {getTierIcon(tier.name, tier.id, "w-3.5 h-3.5 shrink-0 text-white")}
-                      <span>Hạng: {tier.name}</span>
+                      <span>{t('customers.detail.tier', 'Hạng:')} {tier.name}</span>
                     </span>
                   )}
                   {custGroup && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-55 bg-slate-100 text-slate-600 font-medium border border-slate-200">
-                      Nhóm: {custGroup.name}
+                      {t('customers.detail.group', 'Nhóm:')} {custGroup.name}
                     </span>
                   )}
                   {invoices.length > 0 ? (
                     <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100 font-medium">
-                      Khách hàng cũ
+                      {t('customers.detail.old_customer', 'Khách hàng cũ')}
                     </span>
                   ) : (
                     <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-650 border border-blue-100 font-medium">
-                      Khách hàng mới
+                      {t('customers.detail.new_customer', 'Khách hàng mới')}
                     </span>
                   )}
                 </div>
                 <div className="text-[11px] text-slate-400 font-normal flex items-center gap-1">
-                  <CalendarDays className="w-3 h-3 text-slate-400" /> Truy cập lần cuối: {customer.birthday ? formatDate(customer.birthday) : 'Hôm nay'}
+                  <CalendarDays className="w-3 h-3 text-slate-400" /> {t('customers.detail.last_visit', 'Truy cập lần cuối:')} {customer.birthday ? formatDate(customer.birthday) : t('common.today', 'Hôm nay')}
                 </div>
               </div>
             </div>
@@ -1455,17 +1461,17 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             <div className="grid grid-cols-3 gap-6 md:gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-8 w-full md:w-auto text-center md:text-left">
               <div>
                 <div className="text-2xl font-semibold text-slate-700">{customer.visit_count || 0}</div>
-                <div className="text-xs text-slate-400 mt-1">Lịch hẹn</div>
+                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_appointments', 'Lịch hẹn')}</div>
               </div>
               <div>
                 <div className="text-2xl font-semibold text-slate-700">{customer.points || 0}</div>
-                <div className="text-xs text-slate-400 mt-1">Tích điểm</div>
+                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_points', 'Tích điểm')}</div>
               </div>
               <div>
                 <div className="text-2xl font-semibold text-amber-600">
                   {formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}
                 </div>
-                <div className="text-xs text-slate-400 mt-1">Chi tiêu (đ)</div>
+                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_spend', 'Chi tiêu (đ)')}</div>
               </div>
             </div>
           </div>
@@ -1495,16 +1501,16 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               <div className="space-y-4">
                 <div className="flex justify-between items-center flex-wrap gap-2">
                   <div className="space-y-0.5 text-left">
-                    <h4 className="font-semibold text-sm text-slate-800">Danh sách lịch hẹn</h4>
+                    <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.appointments_list', 'Danh sách lịch hẹn')}</h4>
                     <div className="text-[11px] text-slate-400 font-normal">
-                      Tổng số lịch hẹn đã đặt: <span className="font-semibold text-slate-650">{appointments.length}</span> | Điểm tích lũy hiện tại: <span className="font-semibold text-pink-650">{customer.points || 0} điểm</span>
+                      {t('customers.total_appointments', 'Tổng số lịch hẹn đã đặt:')} <span className="font-semibold text-slate-650">{appointments.length}</span> | {t('customers.current_points', 'Điểm tích lũy hiện tại:')} <span className="font-semibold text-pink-650">{customer.points || 0} {t('customers.points', 'điểm')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative w-60">
                       <input 
                         type="text" 
-                        placeholder="Tìm theo mã, KTV, dịch vụ..." 
+                        placeholder={t("customers.detail.search_appointments_placeholder", "Tìm theo mã, KTV, dịch vụ...")} 
                         value={searchAppt}
                         onChange={(e) => { setSearchAppt(e.target.value); setCurrentPage(1); }}
                         className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-slate-700 transition-colors"
@@ -1515,7 +1521,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       onClick={() => setFilterPanelOpen(!filterPanelOpen)} 
                       className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-semibold transition-all ${filterPanelOpen ? 'border-amber-500 bg-amber-50 text-amber-600' : 'border-slate-200 text-slate-650 bg-white hover:bg-slate-50'}`}
                     >
-                      <Filter className="w-3.5 h-3.5" /> Lọc
+                      <Filter className="w-3.5 h-3.5" /> {t('common.filter', 'Lọc')}
                     </button>
                   </div>
                 </div>
@@ -1536,7 +1542,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 font-semibold uppercase">Dịch vụ</label>
+                      <label className="text-[10px] text-slate-400 font-semibold uppercase">{t('common.service', 'Dịch vụ')}</label>
                       <select 
                         value={filterService}
                         onChange={(e) => { setFilterService(e.target.value); setCurrentPage(1); }}
@@ -1548,7 +1554,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 font-semibold uppercase">Trạng thái</label>
+                      <label className="text-[10px] text-slate-400 font-semibold uppercase">{t('common.status', 'Trạng thái')}</label>
                       <select 
                         value={filterStatus}
                         onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
@@ -1591,7 +1597,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                           }} 
                           className="text-xs text-red-500 hover:text-red-700 font-semibold"
                         >
-                          Xóa bộ lọc
+                          {t('common.clear_filter', 'Xóa bộ lọc')}
                         </button>
                       </div>
                     )}
@@ -1599,22 +1605,22 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 )}
 
                 {loadingAppts ? (
-                  <div className="py-16 text-center text-xs text-slate-400 animate-pulse">Đang tải lịch hẹn...</div>
+                  <div className="py-16 text-center text-xs text-slate-400 animate-pulse">{t('customers.detail.loading_appointments', 'Đang tải lịch hẹn...')}</div>
                 ) : filteredAppts.length === 0 ? (
-                  <div className="py-16 text-center text-xs text-slate-400">Không tìm thấy lịch hẹn nào</div>
+                  <div className="py-16 text-center text-xs text-slate-400">{t('customers.detail.no_appointments_found', 'Không tìm thấy lịch hẹn nào')}</div>
                 ) : (
                   <div className="space-y-3">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-slate-100 text-slate-400 font-medium">
-                            <th className="pb-2 font-medium">Mã lịch</th>
-                            <th className="pb-2 font-medium">Nhân viên</th>
-                            <th className="pb-2 font-medium">Ngày & giờ</th>
-                            <th className="pb-2 font-medium">Dịch vụ</th>
-                            <th className="pb-2 font-medium">Trạng thái</th>
-                            <th className="pb-2 text-right font-medium">Tổng tiền</th>
-                            <th className="pb-2 text-center font-medium w-24">Hành động</th>
+                            <th className="pb-2 font-medium">{t('customers.detail.booking_code', 'Mã lịch')}</th>
+                            <th className="pb-2 font-medium">{t('customers.form.staff', 'Nhân viên')}</th>
+                            <th className="pb-2 font-medium">{t('common.date_time', 'Ngày & giờ')}</th>
+                            <th className="pb-2 font-medium">{t('common.service', 'Dịch vụ')}</th>
+                            <th className="pb-2 font-medium">{t('common.status', 'Trạng thái')}</th>
+                            <th className="pb-2 text-right font-medium">{t('common.total', 'Tổng tiền')}</th>
+                            <th className="pb-2 text-center font-medium w-24">{t('common.action', 'Hành động')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -1827,7 +1833,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             {activeTab === 'sales' && (
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between flex-wrap gap-2.5">
-                  <h4 className="font-semibold text-sm text-slate-800">Lịch sử thanh toán hóa đơn</h4>
+                  <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.invoice_payment_history', 'Lịch sử thanh toán hóa đơn')}</h4>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1835,7 +1841,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         type="text" 
                         value={invSearch} 
                         onChange={(e) => setInvSearch(e.target.value)} 
-                        placeholder="Tìm mã hóa đơn, tên hàng..." 
+                        placeholder={t('customers.detail.search_invoice_placeholder', 'Tìm mã hóa đơn, tên hàng...')}
                         className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 w-48 font-normal transition-colors"
                       />
                     </div>
@@ -1851,7 +1857,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 {invFilterOpen && (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 flex-wrap animate-in fade-in duration-200">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-slate-500 font-semibold">Từ ngày</span>
+                      <span className="text-[11px] text-slate-500 font-semibold">{t('common.from_date', 'Từ ngày')}</span>
                       <input 
                         type="date" 
                         value={invStartDate} 
@@ -1860,7 +1866,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-slate-500 font-semibold">Đến ngày</span>
+                      <span className="text-[11px] text-slate-500 font-semibold">{t('common.to_date', 'Đến ngày')}</span>
                       <input 
                         type="date" 
                         value={invEndDate} 
@@ -1873,25 +1879,25 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         onClick={() => { setInvStartDate(''); setInvEndDate(''); setInvSearch(''); }} 
                         className="text-[10px] text-pink-600 font-bold hover:underline ml-auto"
                       >
-                        Xóa bộ lọc
+                        {t('common.clear_filter', 'Xóa bộ lọc')}
                       </button>
                     )}
                   </div>
                 )}
 
                 {filteredInvoices.length === 0 ? (
-                  <p className="text-slate-400 text-xs text-center py-10">Không tìm thấy hóa đơn nào phù hợp</p>
+                  <p className="text-slate-400 text-xs text-center py-10">{t('customers.detail.no_invoice_found', 'Không tìm thấy hóa đơn nào phù hợp')}</p>
                 ) : (
                   <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white">
                     <table className="w-full text-xs text-left">
                       <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100">
                         <tr>
-                          <th className="px-4 py-3 font-bold">Mã HĐ</th>
-                          <th className="px-4 py-3 font-bold">Chi tiết dịch vụ/sản phẩm</th>
-                          <th className="px-4 py-3 font-bold">Ngày tạo</th>
-                          <th className="px-4 py-3 font-bold">Nhân viên</th>
-                          <th className="px-4 py-3 font-bold text-right">Tổng tiền</th>
-                          <th className="px-4 py-3 font-bold text-center">Hành động</th>
+                          <th className="px-4 py-3 font-bold">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
+                          <th className="px-4 py-3 font-bold">{t('customers.detail.item_details', 'Chi tiết dịch vụ/sản phẩm')}</th>
+                          <th className="px-4 py-3 font-bold">{t('common.created_date', 'Ngày tạo')}</th>
+                          <th className="px-4 py-3 font-bold">{t('customers.form.staff', 'Nhân viên')}</th>
+                          <th className="px-4 py-3 font-bold text-right">{t('common.total', 'Tổng tiền')}</th>
+                          <th className="px-4 py-3 font-bold text-center">{t('common.action', 'Hành động')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-655 font-normal">
@@ -1941,7 +1947,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   <button 
                                     onClick={() => cancelInvoicePayment(inv)} 
                                     className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-colors" 
-                                    title="Huỷ thanh toán & Sửa"
+                                    title={t('customers.detail.cancel_payment_edit', 'Huỷ thanh toán & Sửa')}
                                   >
                                     <RotateCcw className="w-3.5 h-3.5" />
                                   </button>
@@ -1971,28 +1977,28 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               </div>
             )}
 
-            {activeTab === 'purchased_services' && renderPurchasedTable(getFilteredItems('service'), 'Dịch vụ đã mua', 'Chưa mua dịch vụ nào')}
-            {activeTab === 'purchased_products' && renderPurchasedTable(getFilteredItems('product'), 'Sản phẩm đã mua', 'Chưa mua sản phẩm nào')}
-            {activeTab === 'purchased_service_combos' && renderPurchasedTable(getFilteredItems('package', false), 'Combo dịch vụ đã mua', 'Chưa mua combo dịch vụ nào')}
-            {activeTab === 'purchased_product_combos' && renderPurchasedTable(getFilteredItems('package', true), 'Combo sản phẩm đã mua', 'Chưa mua combo sản phẩm nào')}
+            {activeTab === 'purchased_services' && renderPurchasedTable(getFilteredItems('service'), t('customers.purchases.services_bought', 'Dịch vụ đã mua'), t('customers.purchases.no_services', 'Chưa mua dịch vụ nào'))}
+            {activeTab === 'purchased_products' && renderPurchasedTable(getFilteredItems('product'), t('customers.purchases.products_bought', 'Sản phẩm đã mua'), t('customers.purchases.no_products', 'Chưa mua sản phẩm nào'))}
+            {activeTab === 'purchased_service_combos' && renderPurchasedTable(getFilteredItems('package', false), t('customers.purchases.service_combos_bought', 'Combo dịch vụ đã mua'), t('customers.purchases.no_service_combos', 'Chưa mua combo dịch vụ nào'))}
+            {activeTab === 'purchased_product_combos' && renderPurchasedTable(getFilteredItems('package', true), t('customers.purchases.product_combos_bought', 'Combo sản phẩm đã mua'), t('customers.purchases.no_product_combos', 'Chưa mua combo sản phẩm nào'))}
 
             {activeTab === 'deposits' && (
               <div className="space-y-4 text-left">
-                <h4 className="font-semibold text-sm text-slate-800">Lịch sử đặt cọc</h4>
+                <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.deposit_history', 'Lịch sử đặt cọc')}</h4>
                 {deposits.length === 0 ? (
                   <div className="p-8 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    Chưa có lịch sử đặt cọc nào.
+                    {t('customers.detail.no_deposit_history', 'Chưa có lịch sử đặt cọc nào.')}
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <table className="w-full text-xs text-left">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                         <tr>
-                          <th className="px-4 py-3 font-semibold">Mã ĐC</th>
-                          <th className="px-4 py-3 font-semibold">Ngày tạo</th>
-                          <th className="px-4 py-3 font-semibold text-right">Cần cọc</th>
-                          <th className="px-4 py-3 font-semibold text-right">Đã cọc</th>
-                          <th className="px-4 py-3 font-semibold text-center">Trạng thái</th>
+                          <th className="px-4 py-3 font-semibold">{t('customers.detail.deposit_code', 'Mã ĐC')}</th>
+                          <th className="px-4 py-3 font-semibold">{t('common.created_date', 'Ngày tạo')}</th>
+                          <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.required_deposit', 'Cần cọc')}</th>
+                          <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.paid_deposit', 'Đã cọc')}</th>
+                          <th className="px-4 py-3 font-semibold text-center">{t('common.status', 'Trạng thái')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -2010,10 +2016,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                 d.status === 'refunded' ? 'bg-slate-100 text-slate-700' :
                                 'bg-slate-100 text-slate-600'
                               }`}>
-                                {d.status === 'paid' ? 'Đã thu' : 
-                                 d.status === 'partially_paid' ? 'Thu một phần' : 
-                                 d.status === 'applied' ? 'Đã áp dụng' : 
-                                 d.status === 'refunded' ? 'Đã hoàn' : d.status}
+                                {d.status === 'paid' ? t('common.status_collected', 'Đã thu') : 
+                                 d.status === 'partially_paid' ? t('common.status_partially_collected', 'Thu một phần') : 
+                                 d.status === 'applied' ? t('common.status_applied', 'Đã áp dụng') : 
+                                 d.status === 'refunded' ? t('common.status_refunded', 'Đã hoàn') : d.status}
                               </span>
                             </td>
                           </tr>
@@ -2027,24 +2033,24 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'activity' && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-sm text-slate-800">Dòng thời gian hoạt động</h4>
+                <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.activity_timeline', 'Dòng thời gian hoạt động')}</h4>
                 
                 {/* Upgrade timeline */}
                 <div className="space-y-5 pl-4 border-l border-slate-100 relative text-left">
                   <div className="relative pl-3">
                     <div className="absolute -left-[22px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-white ring-4 ring-pink-50" />
-                    <div className="text-xs font-semibold text-slate-700">Đăng ký hồ sơ khách hàng</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5 font-normal">Khởi tạo hồ sơ khách hàng mới trên hệ thống GloPro.</div>
+                    <div className="text-xs font-semibold text-slate-700">{t('customers.detail.register_profile', 'Đăng ký hồ sơ khách hàng')}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 font-normal">{t('customers.detail.create_new_profile_desc', 'Khởi tạo hồ sơ khách hàng mới trên hệ thống GloPro.')}</div>
                   </div>
 
                   {tierHistory.map((h, idx) => (
                     <div key={idx} className="relative pl-3">
                       <div className="absolute -left-[22px] top-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-white ring-4 ring-amber-50" />
                       <div className="text-xs font-semibold text-slate-700">
-                        Cập nhật hạng thành viên: {h.old_tier_name} &rarr; {h.new_tier_name}
+                        {t('customers.detail.update_tier', 'Cập nhật hạng thành viên:')} {h.old_tier_name} &rarr; {h.new_tier_name}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5 font-normal">
-                        {h.date} • Lý do: {h.reason}
+                        {h.date} • {t('common.reason', 'Lý do:')} {h.reason}
                       </div>
                     </div>
                   ))}
@@ -2052,8 +2058,8 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                   {appointments.slice(0, 3).map((appt, idx) => (
                     <div key={idx} className="relative pl-3">
                       <div className="absolute -left-[22px] top-1 w-3 h-3 rounded-full bg-blue-400 border-2 border-white ring-4 ring-blue-50" />
-                      <div className="text-xs font-semibold text-slate-700">Đặt lịch dịch vụ: {appt.service_name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5 font-normal">Thực hiện bởi KTV {appt.staff_name} lúc {appt.time} ngày {formatDate(appt.date)}.</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('customers.detail.activity_booked_service', 'Đặt lịch dịch vụ:')} {appt.service_name}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 font-normal">{t('customers.detail.activity_performed_by', 'Thực hiện bởi KTV')} {appt.staff_name} {t('common.at', 'lúc')} {appt.time} {t('common.on_date', 'ngày')} {formatDate(appt.date)}.</div>
                     </div>
                   ))}
                 </div>
@@ -2062,7 +2068,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'cash_cards' && (
               <div className="space-y-4 text-left">
-                <h4 className="font-semibold text-sm text-slate-800">Thẻ tiền mặt tích lũy</h4>
+                <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.cash_cards_accumulated', 'Thẻ tiền mặt tích lũy')}</h4>
                 {(memberships || []).filter(m => m && m.type === 'cash_card').length === 0 ? (
                   <p className="text-slate-400 text-xs text-center py-10 font-normal">Khách hàng chưa đăng ký thẻ tiền mặt nào</p>
                 ) : (
@@ -2075,7 +2081,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'packages' && (
               <div className="space-y-4 text-left">
-                <h4 className="font-semibold text-sm text-slate-800">Gói dịch vụ combo trả trước</h4>
+                <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.prepaid_packages', 'Gói dịch vụ combo trả trước')}</h4>
                 {(memberships || []).filter(m => m && m.type === 'package').length === 0 ? (
                   <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                     <p className="text-slate-400 text-xs font-normal">Khách hàng chưa sở hữu gói combo dịch vụ nào</p>
@@ -2106,14 +2112,14 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                   <div>
-                    <h4 className="font-semibold text-sm text-slate-800">Khuyến mãi & Quà tặng của khách</h4>
-                    <div className="text-[11px] text-slate-400 mt-0.5">Mặc định hưởng ưu đãi hạng: <span className="font-semibold text-pink-600">{tier ? `${tier.discount_percent}%` : '0%'}</span> ({tier?.name || 'thường'})</div>
+                    <h4 className="font-semibold text-sm text-slate-800">{t('customers.detail.promotions_gifts', 'Khuyến mãi & Quà tặng của khách')}</h4>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{t('customers.detail.default_tier_promo', 'Mặc định hưởng ưu đãi hạng:')} <span className="font-semibold text-pink-600">{tier ? `${tier.discount_percent}%` : '0%'}</span> ({tier?.name || t('customers.detail.tier_normal', 'thường')})</div>
                   </div>
                   <button 
                     onClick={() => setShowGiftModal(true)}
                     className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-600 font-semibold text-xs hover:bg-amber-100 transition-colors border border-amber-200 flex items-center gap-1"
                   >
-                    <Gift className="w-3.5 h-3.5" /> Tặng ưu đãi
+                    <Gift className="w-3.5 h-3.5" /> {t('customers.detail.give_promotion_btn', 'Tặng ưu đãi')}
                   </button>
                 </div>
 
@@ -2122,16 +2128,16 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowGiftModal(false)} />
                     <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold font-sans text-slate-800">Tặng Khuyến mãi</h2>
+                        <h2 className="text-xl font-bold font-sans text-slate-800">{t('customers.detail.give_promotion', 'Tặng Khuyến mãi')}</h2>
                         <button onClick={() => setShowGiftModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
                           <X className="w-5 h-5" />
                         </button>
                       </div>
-                      <p className="text-xs text-slate-500 font-medium truncate mb-4">Khách hàng: <span className="font-bold text-slate-700">{customer.name}</span></p>
+                      <p className="text-xs text-slate-500 font-medium truncate mb-4">{t('customers.detail.customer_label', 'Khách hàng:')} <span className="font-bold text-slate-700">{customer.name}</span></p>
                       
                       <div className="flex-1 overflow-y-auto bg-slate-50 rounded-2xl p-3 space-y-3">
                         {allPromotions.filter(p => p.isGiftable).length === 0 ? (
-                          <div className="py-8 text-center text-xs text-slate-400">Không có chương trình khuyến mãi nào đang bật tính năng Quà tặng.</div>
+                          <div className="py-8 text-center text-xs text-slate-400">{t('customers.detail.no_promotions', 'Không có chương trình khuyến mãi nào đang bật tính năng Quà tặng.')}</div>
                         ) : (
                           allPromotions.filter(p => p.isGiftable).map(p => (
                             <div key={p.id} className="flex justify-between items-center p-3 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-pink-200 transition-colors">
@@ -2141,10 +2147,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                 </div>
                                 <div>
                                   <div className="font-bold text-xs text-slate-800 truncate">{p.name}</div>
-                                  <div className="text-[10px] text-slate-500">Giảm <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></div>
+                                  <div className="text-[10px] text-slate-500">{t('customers.detail.discount', 'Giảm')} <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></div>
                                 </div>
                               </div>
-                              <button onClick={() => handleGivePromo(p)} className="px-3 py-1.5 bg-pink-600 text-white text-[10px] font-bold rounded-xl hover:bg-pink-700 transition-colors shadow-sm">Tặng</button>
+                              <button onClick={() => handleGivePromo(p)} className="px-3 py-1.5 bg-pink-600 text-white text-[10px] font-bold rounded-xl hover:bg-pink-700 transition-colors shadow-sm">{t('customers.detail.give', 'Tặng')}</button>
                             </div>
                           ))
                         )}
@@ -2155,7 +2161,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
                 {customerGifts.length === 0 ? (
                   <div className="py-8 text-center text-xs text-slate-400 font-sans">
-                    Khách hàng chưa có quà tặng nào trong ví.
+                    {t('customers.detail.no_gifts_in_wallet', 'Khách hàng chưa có quà tặng nào trong ví.')}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -2191,18 +2197,18 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   ? 'bg-red-50 text-red-500 border border-red-100' 
                                   : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                               }`}>
-                                {isUsed ? 'Đã dùng' : expired ? 'Hết hạn' : 'Chưa dùng'}
+                                {isUsed ? t('common.status_used', 'Đã dùng') : expired ? t('common.status_expired', 'Hết hạn') : t('common.status_unused', 'Chưa dùng')}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5 font-medium truncate">
-                              <span>Giảm <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></span>
+                              <span>{t('customers.detail.discount', 'Giảm')} <span className="font-bold text-pink-600">{p.valueType === 'percent' ? `${p.value}%` : formatVND(p.value)}</span></span>
                               <span className="text-slate-300">•</span>
-                              <span className="truncate">{SCOPES[p.type] || 'Tất cả'}</span>
+                              <span className="truncate">{SCOPES[p.type] || t('customers.detail.all_scopes', 'Tất cả')}</span>
                               {p.expiryDate && (
                                 <>
                                   <span className="text-slate-300">•</span>
-                                  <span className="text-slate-400">HSD: {formatDate(p.expiryDate)}</span>
+                                  <span className="text-slate-400">{t('customers.detail.expiry_date_label', 'HSD:')} {formatDate(p.expiryDate)}</span>
                                 </>
                               )}
                             </div>
@@ -2217,32 +2223,32 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'messages' && (
               <div className="space-y-4 text-left">
-                <h4 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">Lịch sử tin nhắn đã gửi cho khách hàng</h4>
+                <h4 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">{t('customers.detail.message_history', 'Lịch sử tin nhắn đã gửi cho khách hàng')}</h4>
                 <div className="space-y-3.5 max-h-[450px] overflow-y-auto pr-1 animate-in fade-in duration-200">
                   {[
                     {
                       id: 1,
                       type: 'SMS',
                       sender: 'GloPro Brandname',
-                      time: '10:15 AM - Hôm nay',
-                      content: `Xin chào ${customer.name}, lịch hẹn của bạn tại GloPro đã hoàn thành. Hãy đánh giá dịch vụ của chúng tôi để nhận thêm 20 điểm tích lũy nhé!`,
-                      status: 'Đã gửi thành công'
+                      time: `10:15 AM - ${t('common.today', 'Hôm nay')}`,
+                      content: `${t('customers.detail.mock_msg_1', 'Xin chào ')}${customer.name}${t('customers.detail.mock_msg_1_tail', ', lịch hẹn của bạn tại GloPro đã hoàn thành. Hãy đánh giá dịch vụ của chúng tôi để nhận thêm 20 điểm tích lũy nhé!')}`,
+                      status: t('common.status_sent_success', 'Đã gửi thành công')
                     },
                     {
                       id: 2,
                       type: 'Zalo ZNS',
                       sender: 'GloPro Spa & Beauty',
                       time: '09:02 AM - 31/10/2024',
-                      content: `Cảm ơn bạn ${customer.name} đã đặt lịch hẹn lúc 11:13 AM hôm nay. Trân trọng kính mời bạn đến đúng giờ để nhận phục vụ tốt nhất!`,
-                      status: 'Đã nhận'
+                      content: `${t('customers.detail.mock_msg_2', 'Cảm ơn bạn ')}${customer.name}${t('customers.detail.mock_msg_2_tail', ' đã đặt lịch hẹn lúc 11:13 AM hôm nay. Trân trọng kính mời bạn đến đúng giờ để nhận phục vụ tốt nhất!')}`,
+                      status: t('common.status_received', 'Đã nhận')
                     },
                     {
                       id: 3,
                       type: 'SMS',
                       sender: 'GloPro Brandname',
                       time: '08:00 AM - 20/10/2024',
-                      content: `Mừng ngày 20/10! GloPro gửi tặng khách hàng VIP ${customer.name} mã voucher giảm 15% cho tất cả dịch vụ làm đẹp: GP2010. Đặt lịch ngay!`,
-                      status: 'Đã gửi thành công'
+                      content: `${t('customers.detail.mock_msg_3', 'Mừng ngày 20/10! GloPro gửi tặng khách hàng VIP ')}${customer.name}${t('customers.detail.mock_msg_3_tail', ' mã voucher giảm 15% cho tất cả dịch vụ làm đẹp: GP2010. Đặt lịch ngay!')}`,
+                      status: t('common.status_sent_success', 'Đã gửi thành công')
                     }
                   ].map((msg) => (
                     <div key={msg.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 hover:border-slate-200 transition-colors">
@@ -2268,14 +2274,14 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'notes' && (
               <div className="space-y-5 text-left">
-                <h4 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">Ghi chú nội bộ ({notes.length})</h4>
+                <h4 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">{t('customers.detail.internal_notes', 'Ghi chú nội bộ')} ({notes.length})</h4>
                 
                 {/* Note creator form */}
                 <div className="space-y-2 max-w-xl">
                   <textarea 
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Ghi chú da khô, tình trạng kích ứng hoặc yêu cầu KTV riêng..." 
+                    placeholder={t("customers.detail.notes_placeholder", "Ghi chú da khô, tình trạng kích ứng hoặc yêu cầu KTV riêng...")} 
                     className="w-full px-4 py-3 text-xs border border-slate-200 rounded-2xl outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 min-h-[90px] text-slate-700 resize-none font-normal transition-colors"
                   />
                   <div className="flex justify-end">
@@ -2283,7 +2289,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       onClick={handleAddNote}
                       className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
                     >
-                      <PlusCircle className="w-4 h-4" /> Thêm ghi chú mới
+                      <PlusCircle className="w-4 h-4" /> {t('customers.detail.add_new_note', 'Thêm ghi chú mới')}
                     </button>
                   </div>
                 </div>
@@ -2291,7 +2297,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 {/* Notes List Timeline */}
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                   {notes.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-10 font-normal">Chưa có ghi chú nội bộ cho khách hàng này</p>
+                    <p className="text-xs text-slate-400 text-center py-10 font-normal">{t('customers.detail.no_internal_notes', 'Chưa có ghi chú nội bộ cho khách hàng này')}</p>
                   ) : (
                     notes.map((n, idx) => (
                       <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 relative text-xs text-slate-650">
@@ -2358,7 +2364,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             <div className="space-y-3 pt-1">
               <div className="flex justify-between">
-                <span className="text-slate-400">Mã lịch hẹn:</span>
+                <span className="text-slate-400">{t('customers.detail.booking_code_colon', 'Mã lịch hẹn:')}</span>
                 <span className="font-semibold text-slate-850">#{formatAppointmentId(selectedApptDetail.id)}</span>
               </div>
               <div className="flex justify-between">
@@ -2370,26 +2376,26 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 <span className="font-semibold text-slate-850">{formatDate(selectedApptDetail.date)} lúc {selectedApptDetail.time}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Dịch vụ:</span>
+                <span className="text-slate-400">{t('common.service_colon', 'Dịch vụ:')}</span>
                 <span className="font-semibold text-slate-850 text-right max-w-[250px]">{selectedApptDetail.service_name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">KTV phụ trách:</span>
-                <span className="font-semibold text-slate-850">{selectedApptDetail.staff_name || 'Chưa phân'}</span>
+                <span className="font-semibold text-slate-850">{selectedApptDetail.staff_name || t('common.unassigned', 'Chưa phân')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Trạng thái:</span>
+                <span className="text-slate-400">{t('common.status_colon', 'Trạng thái:')}</span>
                 <span className={`px-2.5 py-0.5 rounded border font-semibold ${statusMap[selectedApptDetail.status]?.bg || 'bg-slate-50 text-slate-500'}`}>
                   {statusMap[selectedApptDetail.status]?.label || selectedApptDetail.status}
                 </span>
               </div>
               <div className="flex justify-between border-t border-slate-100 pt-3">
-                <span className="text-slate-450 font-semibold text-xs">Tổng tiền:</span>
+                <span className="text-slate-450 font-semibold text-xs">{t('common.total_colon', 'Tổng tiền:')}</span>
                 <span className="font-bold text-sm text-pink-650">{formatVND(selectedApptDetail.price)}</span>
               </div>
               {selectedApptDetail.note && (
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-150 mt-1">
-                  <div className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Ghi chú nội bộ</div>
+                  <div className="text-[10px] text-slate-400 font-semibold uppercase mb-1">{t('customers.detail.internal_notes', 'Ghi chú nội bộ')}</div>
                   <p className="text-slate-650 font-normal leading-relaxed">{selectedApptDetail.note}</p>
                 </div>
               )}
@@ -2538,7 +2544,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
               <div>
                 <h3 className="text-base font-bold text-slate-800 font-sans">Thông tin chi tiết thẻ</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">Thẻ & Lịch sử tiêu dùng</p>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">{t('customers.detail.card_and_usage_history', 'Thẻ & Lịch sử tiêu dùng')}</p>
               </div>
               <button 
                 onClick={handleCloseMembershipModal} 
@@ -2566,7 +2572,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                   </div>
                   <div className="text-left space-y-0.5">
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">Ngày hết hạn</span>
-                    <div className="font-semibold text-xs text-slate-700 font-sans">{selectedMembership.expiry_date ? formatDate(selectedMembership.expiry_date) : 'Vô thời hạn'}</div>
+                    <div className="font-semibold text-xs text-slate-700 font-sans">{selectedMembership.expiry_date ? formatDate(selectedMembership.expiry_date) : t('common.lifetime', 'Vô thời hạn')}</div>
                   </div>
                 </div>
                 {selectedMembership.type !== 'cash_card' && (
@@ -2604,7 +2610,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     <div className="text-left space-y-0.5">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">Tiêu dùng</span>
                       <div className="font-semibold text-xs text-slate-700 font-sans">
-                        Đã dùng {selectedMembership.total_sessions - selectedMembership.sessions_remaining}/{selectedMembership.total_sessions} buổi
+                        {t('customers.detail.used', 'Đã dùng')} {selectedMembership.total_sessions - selectedMembership.sessions_remaining}/{selectedMembership.total_sessions} {t('customers.detail.sessions', 'buổi')}
                       </div>
                     </div>
                   )}
@@ -2613,7 +2619,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
               {/* Card Actions */}
               <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-2 shrink-0">
-                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-left font-sans">Thao tác thẻ</div>
+                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-left font-sans">{t('customers.detail.card_actions', 'Thao tác thẻ')}</div>
                 
                 {extendingExpiry ? (
                   <div className="space-y-2">
@@ -2753,7 +2759,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                             </div>
                           </div>
                           <div className="space-y-1 text-left">
-                            <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">Số buổi</label>
+                            <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">{t('customers.detail.sessions_count', 'Số buổi')}</label>
                             <input 
                               type="number"
                               min="1"
@@ -2829,12 +2835,12 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                       if (dates.length === 0) return null;
                       return (
                         <div className="bg-slate-100/60 rounded-xl p-3 border border-slate-150/40 text-left space-y-1.5">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">Danh sách lịch hẹn dự kiến ({dates.length} buổi):</span>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">{t('customers.detail.expected_appointments', 'Danh sách lịch hẹn dự kiến')} ({dates.length} buổi):</span>
                           <div className="max-h-[90px] overflow-y-auto space-y-1 text-[11px] font-sans text-slate-650 pr-1">
                             {dates.map((d, i) => (
                               <div key={i} className="flex justify-between items-center font-normal">
                                 <span>Buổi {i+1}: {formatDate(d.date)} lúc {d.start_time}</span>
-                                <span className="text-[9px] text-slate-400 italic">KTV: {bulkBookingStaffName || 'Chưa phân'}</span>
+                                <span className="text-[9px] text-slate-400 italic">KTV: {bulkBookingStaffName || t('common.unassigned', 'Chưa phân')}</span>
                               </div>
                             ))}
                           </div>
@@ -2884,7 +2890,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                         </button>
                       ) : selectedMembership.type !== 'cash_card' && selectedMembership.sessions_remaining <= 0 ? (
                         <div className="flex-1 text-center py-2 text-slate-400 font-semibold text-xs bg-slate-50 rounded-xl border border-slate-200/60 font-sans">
-                          {selectedMembership.type === 'package' ? 'Gói dịch vụ đã hoàn thành' : 'Liệu trình đã hoàn thành'}
+                          {selectedMembership.type === 'package' ? t('customers.detail.package_completed', 'Gói dịch vụ đã hoàn thành') : t('customers.detail.treatment_completed', 'Liệu trình đã hoàn thành')}
                         </div>
                       ) : selectedMembership.is_active ? (
                         <button 
@@ -2964,7 +2970,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
               {/* Spending History Title */}
               <div className="space-y-3">
-                <div className="text-xs font-bold text-slate-800 uppercase tracking-wider font-sans">Lịch sử giao dịch</div>
+                <div className="text-xs font-bold text-slate-800 uppercase tracking-wider font-sans">{t('customers.detail.transaction_history', 'Lịch sử giao dịch')}</div>
                 
                 <div className="space-y-2">
                   {getMembershipHistory(selectedMembership).length === 0 ? (
@@ -3036,6 +3042,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 }
 
 function CustomerForm({ customer, groups = [], onClose, onSave }) {
+  const { t } = useT();
   const initialFirstName = customer.first_name || (() => {
     if (!customer.name) return '';
     const parts = customer.name.trim().split(/\s+/);
@@ -3104,7 +3111,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 mb-4">
           <h2 className="text-base font-bold text-slate-800 font-sans">
-            {customer.id ? 'Sửa khách hàng' : 'Thêm khách hàng'}
+            {customer.id ? t('customers.form.edit_title', 'Sửa khách hàng') : t('customers.form.add_title', 'Thêm khách hàng')}
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
             <X className="w-4 h-4" />
@@ -3116,20 +3123,20 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           {/* Họ & Tên */}
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Họ</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.last_name', 'Họ')}</label>
               <input 
                 value={f.last_name} 
                 onChange={(e) => setF({ ...f, last_name: e.target.value })} 
-                placeholder="Ví dụ: Nguyễn" 
+                placeholder={t("customers.form.placeholder_last_name", "Ví dụ: Nguyễn")} 
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Tên *</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.first_name', 'Tên *')}</label>
               <input 
                 value={f.first_name} 
                 onChange={(e) => setF({ ...f, first_name: e.target.value })} 
-                placeholder="Ví dụ: Anh" 
+                placeholder={t("customers.form.placeholder_first_name", "Ví dụ: Anh")} 
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
@@ -3138,20 +3145,20 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           {/* Số điện thoại & Email */}
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Số điện thoại *</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.phone', 'Số điện thoại *')}</label>
               <input 
                 value={f.phone} 
                 onChange={(e) => setF({ ...f, phone: e.target.value })} 
-                placeholder="Số điện thoại *" 
+                placeholder={t("customers.form.phone_placeholder", "Số điện thoại *")} 
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Địa chỉ email</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.email', 'Địa chỉ email')}</label>
               <input 
                 value={f.email} 
                 onChange={(e) => setF({ ...f, email: e.target.value })} 
-                placeholder="Địa chỉ email" 
+                placeholder={t("customers.form.email_placeholder", "Địa chỉ email")} 
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
               />
             </div>
@@ -3159,11 +3166,11 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           
           {/* Địa chỉ */}
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Địa chỉ</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t("customers.form.address", "Địa chỉ")}</label>
             <input 
               value={f.address} 
               onChange={(e) => setF({ ...f, address: e.target.value })} 
-              placeholder="Địa chỉ" 
+              placeholder={t("customers.form.address_placeholder", "Địa chỉ")} 
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 bg-white text-slate-700" 
             />
           </div>
@@ -3171,23 +3178,23 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           {/* Giới tính & Ngày sinh */}
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Giới tính</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.gender', 'Giới tính')}</label>
               <div className="relative">
                 <select 
                   value={f.gender} 
                   onChange={(e) => setF({ ...f, gender: e.target.value })} 
                   className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none"
                 >
-                  <option value="female">Nữ</option>
-                  <option value="male">Nam</option>
-                  <option value="other">Khác</option>
+                  <option value="female">{t('customers.form.female', 'Nữ')}</option>
+                  <option value="male">{t('customers.form.male', 'Nam')}</option>
+                  <option value="other">{t('customers.form.other', 'Khác')}</option>
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ngày sinh</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.birth_date', 'Ngày sinh')}</label>
               <div className="relative">
                 <input 
                   type={f.birthday ? "date" : "text"} 
@@ -3195,7 +3202,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                   onFocus={(e) => e.target.type = 'date'}
                   onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                   onChange={(e) => setF({ ...f, birthday: e.target.value })} 
-                  placeholder="Ngày sinh" 
+                  placeholder={t("customers.form.birth_date_placeholder", "Ngày sinh")} 
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none text-slate-700 bg-white" 
                 />
               </div>
@@ -3205,14 +3212,14 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
           {/* Nhóm & Nguồn */}
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Nhóm khách hàng</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.customer_group', 'Nhóm khách hàng')}</label>
               <div className="relative">
                 <select 
                   value={f.group_id} 
                   onChange={(e) => setF({ ...f, group_id: e.target.value })} 
                   className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none"
                 >
-                  <option value="">— Chọn nhóm —</option>
+                  <option value="">{t('customers.form.select_group', '— Chọn nhóm —')}</option>
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>{g.name}</option>
                   ))}
@@ -3222,19 +3229,19 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
             </div>
 
             <div>
-              <label className="block font-bold text-slate-500 mb-1 text-[11px]">Nguồn khách hàng</label>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.customer_source', 'Nguồn khách hàng')}</label>
               <div className="relative">
                 <select 
                   value={f.client_source} 
                   onChange={(e) => setF({ ...f, client_source: e.target.value })} 
                   className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none bg-white text-slate-700 appearance-none"
                 >
-                  <option value="">— Chọn nguồn khách —</option>
+                  <option value="">{t('customers.form.select_source', '— Chọn nguồn khách —')}</option>
                   <option value="Facebook">Facebook</option>
                   <option value="Google">Google</option>
                   <option value="Tiktok">Tiktok</option>
                   <option value="Giới thiệu">Giới thiệu</option>
-                  <option value="Khác">Khác</option>
+                  <option value="Khác">{t('customers.form.other', 'Khác')}</option>
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -3243,7 +3250,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
 
           {/* Notifications config */}
           <div className="p-3.5 bg-slate-50/50 rounded-xl border border-slate-150 flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-slate-500">Thông báo lịch hẹn</span>
+            <span className="text-xs font-semibold text-slate-500">{t('customers.form.appointment_notify', 'Thông báo lịch hẹn')}</span>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input 
@@ -3269,7 +3276,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
 
           {/* Referred by card (defensive layout grid with custom Avatar selection list) */}
           <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-150 space-y-3">
-            <span className="block text-xs font-semibold text-slate-500">Được giới thiệu bởi</span>
+            <span className="block text-xs font-semibold text-slate-500">{t('customers.form.referred_by', 'Được giới thiệu bởi')}</span>
             
             <div className="grid grid-cols-3 gap-2">
               <button 
@@ -3277,7 +3284,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 onClick={() => setF({ ...f, referred_type: 'staff', referred_id: '' })} 
                 className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'staff' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
-                Nhân viên
+                {t('customers.form.staff', 'Nhân viên')}
               </button>
               
               <button 
@@ -3285,7 +3292,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 onClick={() => setF({ ...f, referred_type: 'customer', referred_id: '' })} 
                 className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'customer' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
-                Khách hàng
+                {t('customers.title', 'Khách hàng')}
               </button>
 
               <button 
@@ -3293,7 +3300,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                 onClick={() => setF({ ...f, referred_type: 'none', referred_id: '' })} 
                 className={`py-2 rounded-xl text-xs font-semibold border transition-all text-center ${f.referred_type === 'none' ? 'bg-white border-amber-500 text-amber-600 shadow-xs' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'}`}
               >
-                Không có
+                {t('customers.form.none', 'Không có')}
               </button>
             </div>
 
@@ -3310,7 +3317,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
                       <span className="truncate text-slate-700">{selectedReferred.name || selectedReferred.full_name}</span>
                     </>
                   ) : (
-                    <span className="text-slate-400">— Chọn người giới thiệu —</span>
+                    <span className="text-slate-400">{t('customers.form.select_referrer', '— Chọn người giới thiệu —')}</span>
                   )}
                   <ChevronDown className="w-4 h-4 ml-auto text-slate-400 shrink-0" />
                 </button>
@@ -3361,11 +3368,11 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
 
           {/* Ghi chú */}
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ghi chú</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.notes', 'Ghi chú')}</label>
             <textarea 
               value={f.note} 
               onChange={(e) => setF({ ...f, note: e.target.value })} 
-              placeholder="Ghi chú (dị ứng, sở thích...)" 
+              placeholder={t("customers.form.notes_placeholder", "Ghi chú (dị ứng, sở thích...)")} 
               rows={3} 
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 resize-none bg-white" 
             />
@@ -3373,7 +3380,7 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
 
           {/* Avatar Upload (Without duplicate span header) */}
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Ảnh đại diện</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('customers.form.avatar', 'Ảnh đại diện')}</label>
             <ImageUpload value={f.avatar_url} onChange={(v) => setF({ ...f, avatar_url: v })} label="" shape="circle" />
           </div>
         </div>
@@ -3381,10 +3388,10 @@ function CustomerForm({ customer, groups = [], onClose, onSave }) {
         {/* Footer actions */}
         <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-2xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">
-            Hủy
+            {t('common.cancel', 'Hủy')}
           </button>
           <button onClick={handleSave} className="flex-1 py-3 rounded-2xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 transition-colors font-sans">
-            Lưu
+            {t('common.save', 'Lưu')}
           </button>
         </div>
       </div>

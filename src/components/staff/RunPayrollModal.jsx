@@ -1,9 +1,11 @@
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { format } from 'date-fns';
 
 export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange, onRunPayroll }) {
+  const { t } = useT();
   // State to track which employees are selected for this payroll run
   const [selectedStaffIds, setSelectedStaffIds] = useState(staffData.map(s => s.id));
 
@@ -26,7 +28,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
   };
 
   const formatPayPeriod = () => {
-    if (!dateRange || (!dateRange.from && !dateRange.to)) return 'Chưa chọn';
+    if (!dateRange || (!dateRange.from && !dateRange.to)) return t('staff.payroll.unselected', 'Chưa chọn');
     const from = dateRange.from ? format(dateRange.from, 'dd/MM/yyyy') : '...';
     const to = dateRange.to ? format(dateRange.to, 'dd/MM/yyyy') : '...';
     return `${from} - ${to}`;
@@ -62,7 +64,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
     const newRun = {
       payDate: format(new Date(), "d 'Th'MM, yyyy"),
       payPeriod: formatPayPeriod(),
-      status: 'Hoàn thành',
+      status: t('staff.payroll.completed', 'Hoàn thành'),
       total: totals.total,
     };
     if (onRunPayroll) onRunPayroll(newRun);
@@ -82,7 +84,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
       <div className="relative bg-slate-50 w-full max-w-[1300px] max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Thanh toán lương</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t('staff.payroll.run_payroll_title', 'Thanh toán lương')}</h2>
           <button 
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
@@ -100,7 +102,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-500 mb-0.5">Kỳ lương</p>
+                <p className="text-xs font-medium text-slate-500 mb-0.5">{t('staff.payroll.pay_period', 'Kỳ lương')}</p>
                 <p className="text-sm font-normal text-slate-800">{formatPayPeriod()}</p>
               </div>
             </div>
@@ -110,7 +112,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-500 mb-0.5">Ngày thanh toán</p>
+                <p className="text-xs font-medium text-slate-500 mb-0.5">{t('staff.payroll.pay_date', 'Ngày thanh toán')}</p>
                 <p className="text-sm font-normal text-slate-800">{format(new Date(), 'dd/MM/yyyy')}</p>
               </div>
             </div>
@@ -120,7 +122,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-500 mb-0.5">Tổng thanh toán</p>
+                <p className="text-xs font-medium text-slate-500 mb-0.5">{t('staff.payroll.total_payout', 'Tổng thanh toán')}</p>
                 <p className="text-sm font-normal text-slate-800">{formatMoney(totals.total)}</p>
               </div>
             </div>
@@ -132,23 +134,23 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
               <table className="w-full text-left min-w-max border-collapse">
                 <thead>
                   <tr className="bg-[#eff5ff] text-slate-700 font-semibold text-xs border-b border-slate-200">
-                    <th className="py-4 px-5 sticky left-0 bg-[#eff5ff] z-10 min-w-[250px] whitespace-nowrap">Nhân viên</th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">Phương thức TT</th>
-                    <th className="py-4 px-4 text-right">Lương CB</th>
-                    <th className="py-4 px-4 text-right">HH Sản phẩm</th>
-                    <th className="py-4 px-4 text-right">HH Dịch vụ</th>
-                    <th className="py-4 px-4 text-right">HH Liệu trình</th>
-                    <th className="py-4 px-4 text-right">HH Gói DV</th>
-                    <th className="py-4 px-4 text-right">HH Combo DV</th>
-                    <th className="py-4 px-4 text-right">HH Combo SP</th>
-                    <th className="py-4 px-4 text-right">HH Thẻ TM</th>
-                    <th className="py-4 px-4 text-right">HH Khách yêu cầu</th>
-                    <th className="py-4 px-4 text-right">HH Tăng ca</th>
-                    <th className="py-4 px-4 text-right">HH Doanh thu</th>
-                    <th className="py-4 px-4 text-right">Tiền Tip</th>
-                    <th className="py-4 px-4 text-right">Thưởng</th>
-                    <th className="py-4 px-4 text-right">Phạt</th>
-                    <th className="py-4 px-5 text-right sticky right-0 bg-[#eff5ff] z-10 border-l border-slate-200 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Tổng nhận</th>
+                    <th className="py-4 px-5 sticky left-0 bg-[#eff5ff] z-10 min-w-[250px] whitespace-nowrap">{t('staff.payroll.col_staff', 'Nhân viên')}</th>
+                    <th className="py-4 px-4 text-center whitespace-nowrap">{t('staff.payroll.col_payment_method', 'Phương thức TT')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_base_salary', 'Lương CB')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_prod_com', 'HH Sản phẩm')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_svc_com', 'HH Dịch vụ')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_trt_com', 'HH Liệu trình')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_pkg_com', 'HH Gói DV')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_svccmb_com', 'HH Combo DV')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_prodcmb_com', 'HH Combo SP')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_card_com', 'HH Thẻ TM')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_req_com', 'HH Khách yêu cầu')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_ot_com', 'HH Tăng ca')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_rev_com', 'HH Doanh thu')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_tip', 'Tiền Tip')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_bonus', 'Thưởng')}</th>
+                    <th className="py-4 px-4 text-right">{t('staff.payroll.col_penalty', 'Phạt')}</th>
+                    <th className="py-4 px-5 text-right sticky right-0 bg-[#eff5ff] z-10 border-l border-slate-200 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">{t('staff.payroll.col_total', 'Tổng nhận')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -170,7 +172,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
                           </div>
                         </div>
                         </td>
-                        <td className="py-4 px-4 text-sm font-normal text-slate-600 text-center">Tiền mặt</td>
+                        <td className="py-4 px-4 text-sm font-normal text-slate-600 text-center">{t('staff.payroll.cash', 'Tiền mặt')}</td>
                         <td className="py-4 px-4 text-sm font-normal text-slate-600 text-right">{formatMoney(row.salary)}</td>
                         <td className="py-4 px-4 text-sm font-normal text-slate-600 text-right">{formatMoney(row.productCom)}</td>
                         <td className="py-4 px-4 text-sm font-normal text-slate-600 text-right">{formatMoney(row.serviceCom)}</td>
@@ -194,7 +196,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
                 </tbody>
                 <tfoot className="bg-[#eff5ff] border-t border-slate-200">
                   <tr className="text-sm font-bold text-slate-800">
-                    <td className="py-4 px-5 sticky left-0 bg-[#eff5ff] z-10">Tổng cộng</td>
+                    <td className="py-4 px-5 sticky left-0 bg-[#eff5ff] z-10">{t('staff.payroll.total_sum', 'Tổng cộng')}</td>
                     <td className="py-4 px-4"></td>
                     <td className="py-4 px-4 text-right">{formatMoney(totals.salary)}</td>
                     <td className="py-4 px-4 text-right">{formatMoney(totals.productCom)}</td>
@@ -226,7 +228,7 @@ export default function RunPayrollModal({ isOpen, onClose, staffData, dateRange,
             onClick={handleConfirm}
             className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-colors"
           >
-            Thanh toán
+            {t('staff.payroll.pay', 'Thanh toán')}
           </button>
         </div>
       </div>

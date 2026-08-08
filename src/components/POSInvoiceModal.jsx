@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { todayStr } from '@/lib/format';
@@ -11,8 +12,11 @@ import NewCustomerModal from '@/components/pos/NewCustomerModal';
 import { useBranch } from '@/lib/BranchContext';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { createIncomeVoucher } from '@/lib/cashFlowHelper';
+import { useT } from '@/lib/i18n';
 
-export default function POSInvoiceModal({ open, customer, initialCart = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
+export default function POSInvoiceModal({
+  open, customer, initialCart = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
+  const { t } = useT();
   const { currentBranchId, branches } = useBranch();
   // POS tab and search states
   useEffect(() => {
@@ -45,18 +49,29 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
   const [session, setSession] = useState(null);
 
   const loadData = () => {
-    const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+    const filter = (currentBranchId && currentBranchId !== 'all') ? { branch_id: currentBranchId } : {};
+
+    const safeFilter = (entityName, query) => {
+      return base44.entities[entityName].filter(query).catch(err => {
+        if (err?.message?.includes('branch_id does not exist') || err?.code === '42703') {
+          return base44.entities[entityName].list();
+        }
+        console.warn(`[POS] Failed to fetch ${entityName}:`, err);
+        return [];
+      });
+    };
+
     Promise.all([
-      base44.entities.Service.filter(filter),
-      base44.entities.Product.filter(filter),
-      base44.entities.ServicePackage.filter(filter),
-      base44.entities.Treatment.filter(filter),
-      base44.entities.ServiceCombo.filter(filter),
-      base44.entities.ProductCombo.filter(filter),
-      base44.entities.PrepaidCard.filter(filter),
-      base44.entities.ServiceGroup.filter(filter),
-      base44.entities.Staff.filter(filter),
-      base44.entities.Customer.list()
+      safeFilter('Service', filter),
+      safeFilter('Product', filter),
+      safeFilter('ServicePackage', filter),
+      safeFilter('Treatment', filter),
+      safeFilter('ServiceCombo', filter),
+      safeFilter('ProductCombo', filter),
+      safeFilter('PrepaidCard', filter),
+      base44.entities.ServiceGroup.list().catch(() => []),
+      safeFilter('Staff', filter),
+      base44.entities.Customer.list().catch(() => [])
     ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
       setServices(s.filter(x => x.is_active));
       setProducts(p.filter(x => x.is_active));
@@ -91,7 +106,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         };
       });
     }).catch(err => {
-      console.error('Lỗi tải danh mục POS:', err);
+      console.error(t('pos.invoice.error_catalog', 'Lỗi tải danh mục POS:'), err);
     });
   };
 
@@ -122,7 +137,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         const mappedCart = (existingInvoice.items || []).map(mapCartItem);
         let resolvedCustomer = customer;
         if (!resolvedCustomer && existingInvoice) {
-          if (existingInvoice.customer_name && existingInvoice.customer_name !== 'Khách vãng lai') {
+          if (existingInvoice.customer_name && existingInvoice.customer_name !== t('invoices.walk_in', 'Khách vãng lai')) {
             resolvedCustomer = { name: existingInvoice.customer_name, id: existingInvoice.customer_id || null };
           } else {
             resolvedCustomer = null;
@@ -163,9 +178,9 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
       const initialLog = {
         id: 'log_create_' + Date.now(),
         action: `Tạo hoá đơn #${saleCode}`,
-        details: `Khởi tạo hoá đơn cho ${customer?.name || 'Khách vãng lai'}`,
+        details: `Khởi tạo hoá đơn cho ${customer?.name || t('invoices.walk_in', 'Khách vãng lai')}`,
         time: new Date().toISOString(),
-        user: 'Lễ tân'
+        user: t('pos.invoice.receptionist', 'Lễ tân')
       };
 
       try {
@@ -237,7 +252,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
           const total = Math.max(0, subtotal - discount) + Math.round(session.tip || 0);
 
           await base44.entities.Invoice.update(session.id, {
-            customer_name: session.customer?.name || 'Khách vãng lai',
+            customer_name: session.customer?.name || t('invoices.walk_in', 'Khách vãng lai'),
             customer_id: session.customer?.id || null,
             items: (session.cart || []).map(x => ({
               name: x.name,
@@ -276,7 +291,19 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
     session?.logs
   ]);
 
-  if (!open || !session) return null;
+  if (!open) return null;
+
+  if (!session) {
+    const loadingContent = (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-3 bg-slate-950/65 backdrop-blur-xs animate-in fade-in duration-200 pointer-events-auto select-none">
+        <div className="bg-white p-8 rounded-3xl flex flex-col items-center gap-4 shadow-2xl">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold text-slate-700">{t('pos.invoice.loading', 'Đang khởi tạo hoá đơn...')}</p>
+        </div>
+      </div>
+    );
+    return typeof document !== 'undefined' ? createPortal(loadingContent, document.body) : loadingContent;
+  }
 
   // Handle updates from TicketColumn
   const handleUpdateSession = (patch) => {
@@ -286,14 +313,14 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
 
       if (patch.customer !== undefined && patch.customer !== prev.customer) {
         if (patch.customer) {
-          logs = [...logs, createLogEntry('Chọn khách hàng', patch.customer.name, 'Lễ tân')];
+          logs = [...logs, createLogEntry(t('pos.invoice.select_customer', 'Chọn khách hàng'), patch.customer.name, t('pos.invoice.receptionist', 'Lễ tân'))];
         } else if (prev.customer) {
-          logs = [...logs, createLogEntry('Bỏ chọn khách hàng', prev.customer.name, 'Lễ tân')];
+          logs = [...logs, createLogEntry(t('pos.invoice.deselect_customer', 'Bỏ chọn khách hàng'), prev.customer.name, t('pos.invoice.receptionist', 'Lễ tân'))];
         }
       }
 
       if (patch.discountValue !== undefined && patch.discountValue !== prev.discountValue) {
-        logs = [...logs, createLogEntry('Thay đổi giảm giá hóa đơn', `Mức giảm: ${patch.discountValue}`, 'Lễ tân')];
+        logs = [...logs, createLogEntry(t('pos.invoice.change_discount', 'Thay đổi giảm giá hóa đơn'), `Mức giảm: ${patch.discountValue}`, t('pos.invoice.receptionist', 'Lễ tân'))];
       }
 
       if (patch.cart !== undefined) {
@@ -302,21 +329,21 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         if (newCart.length > oldCart.length) {
           const added = newCart[newCart.length - 1];
           if (added) {
-            logs = [...logs, createLogEntry('Thêm vào giỏ hàng', `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`, 'Lễ tân')];
+            logs = [...logs, createLogEntry(t('pos.invoice.add_to_cart', 'Thêm vào giỏ hàng'), `${added.name} (${added.type === 'service' ? 'Dịch vụ' : 'Sản phẩm'})`, t('pos.invoice.receptionist', 'Lễ tân'))];
           }
         } else if (newCart.length < oldCart.length) {
           const removed = oldCart.find((x) => !newCart.some((y) => y.id === x.id || (y.name === x.name && y.type === x.type)));
           if (removed) {
-            logs = [...logs, createLogEntry('Xóa khỏi giỏ hàng', `${removed.name} (x${removed.qty})`, 'Lễ tân')];
+            logs = [...logs, createLogEntry(t('pos.invoice.remove_from_cart', 'Xóa khỏi giỏ hàng'), `${removed.name} (x${removed.qty})`, t('pos.invoice.receptionist', 'Lễ tân'))];
           }
         } else {
           newCart.forEach((item, idx) => {
             const oldItem = oldCart[idx];
             if (oldItem && oldItem.qty !== item.qty) {
-              logs = [...logs, createLogEntry(`Thay đổi số lượng ${item.name}`, `${oldItem.qty} -> ${item.qty}`, 'Lễ tân')];
+              logs = [...logs, createLogEntry(`Thay đổi số lượng ${item.name}`, `${oldItem.qty} -> ${item.qty}`, t('pos.invoice.receptionist', 'Lễ tân'))];
             }
             if (oldItem && oldItem.staff_id !== item.staff_id) {
-              logs = [...logs, createLogEntry(`Phân công nhân viên ${item.name}`, item.staff_name || 'Lễ tân', 'Lễ tân')];
+              logs = [...logs, createLogEntry(`Phân công nhân viên ${item.name}`, item.staff_name || t('pos.invoice.receptionist', 'Lễ tân'), t('pos.invoice.receptionist', 'Lễ tân'))];
             }
           });
         }
@@ -371,7 +398,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
     const cart = session.cart || [];
     const hasMembershipItem = cart.some(item => item.type !== 'service' && item.type !== 'product');
     if (hasMembershipItem && (!session.customer || !session.customer.id)) {
-      return toast.error('Vui lòng chọn khách hàng khi thanh toán gói dịch vụ, liệu trình hoặc thẻ tiền mặt');
+      return toast.error(t('pos.invoice.error_require_customer', 'Vui lòng chọn khách hàng khi thanh toán gói dịch vụ, liệu trình hoặc thẻ tiền mặt'));
     }
 
     setPaying(true);
@@ -386,7 +413,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
 
       const invoiceData = {
         invoice_code: session.saleCode,
-        customer_name: session.customer?.name || 'Khách vãng lai',
+        customer_name: session.customer?.name || t('invoices.walk_in', 'Khách vãng lai'),
         customer_id: session.customer?.id || null,
         branch_id: resolvedBranchId,
         items: cart.map((x) => {
@@ -519,7 +546,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         if (saleAmount > 0) {
           await createIncomeVoucher({
             typeCode: hasMembership ? 'membership_sale' : 'sale',
-            typeName: hasMembership ? 'Bán gói / Thẻ' : 'Bán hàng / Dịch vụ',
+            typeName: hasMembership ? t('pos.invoice.sell_package', 'Bán gói / Thẻ') : t('pos.invoice.sell_service', 'Bán hàng / Dịch vụ'),
             amount: saleAmount,
             description: `Thanh toán hoá đơn #${invCode}`,
             paymentMethod: primaryMethod,
@@ -531,7 +558,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         if (Math.round(tip) > 0) {
           await createIncomeVoucher({
             typeCode: 'tip',
-            typeName: 'Tiền TIP',
+            typeName: t('pos.invoice.tip', 'Tiền TIP'),
             amount: Math.round(tip),
             description: `Tiền TIP hoá đơn #${invCode}`,
             paymentMethod: primaryMethod,
@@ -549,14 +576,14 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
       setCheckoutOpen(false);
       onSaved();
     } catch (e) {
-      toast.error('Lỗi khi thanh toán: ' + (e.message || e));
+      toast.error(t('pos.invoice.error_payment', 'Lỗi khi thanh toán: ') + (e.message || e));
     }
     setPaying(false);
   };
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-3 bg-slate-950/65 backdrop-blur-xs animate-in fade-in duration-200 pointer-events-auto select-none"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-3 bg-slate-950/65 backdrop-blur-xs animate-in fade-in duration-200 pointer-events-auto select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -570,7 +597,7 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
         <div className="bg-white px-5 py-2.5 flex justify-between items-center border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="text-sm font-bold text-slate-800">Tạo Hóa Đơn Trực Tiếp</h2>
+            <h2 className="text-sm font-bold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn Trực Tiếp')}</h2>
           </div>
           <button 
             onClick={onClose} 
@@ -637,12 +664,12 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
                 points: 0,
                 total_spent: 0
               });
-              toast.success('Đã thêm khách hàng mới');
+              toast.success(t('pos.invoice.add_customer_success', 'Đã thêm khách hàng mới'));
               setCustomers((prev) => [created, ...prev]);
               handleUpdateSession({ customer: created });
               setCustModal(false);
             } catch (err) {
-              toast.error('Lỗi khi tạo khách hàng: ' + (err.message || err));
+              toast.error(t('pos.invoice.error_create_customer', 'Lỗi khi tạo khách hàng: ') + (err.message || err));
             }
           }}
         />
@@ -661,4 +688,6 @@ export default function POSInvoiceModal({ open, customer, initialCart = [], exis
       )}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Archive, Boxes, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Building2, Plus, Sparkles, RefreshCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
+import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import ProductForm from '@/components/services/ProductForm';
 
@@ -18,15 +19,15 @@ import {
   loadStockTransfersData, saveStockTransfersData
 } from '@/lib/seeders/inventorySeeder';
 
-const TABS = [
-  { id: 'overview', label: 'Tổng Quan Tồn Kho', icon: Boxes },
-  { id: 'stock_in', label: 'Quản Lý Nhập Kho', icon: ArrowDownLeft },
-  { id: 'stock_out', label: 'Quản Lý Xuất Kho', icon: ArrowUpRight },
-  { id: 'transfer', label: 'Chuyển Kho Chi Nhánh', icon: ArrowRightLeft },
-  { id: 'suppliers', label: 'Nhà Cung Cấp', icon: Building2 }
-];
-
 export default function InventoryView() {
+  const { t } = useT();
+  const TABS = [
+    { id: 'overview', label: t('inventory.tab_overview', 'Tổng Quan Tồn Kho'), icon: Boxes },
+    { id: 'stock_in', label: t('inventory.tab_stock_in', 'Quản Lý Nhập Kho'), icon: ArrowDownLeft },
+    { id: 'stock_out', label: t('inventory.tab_stock_out', 'Quản Lý Xuất Kho'), icon: ArrowUpRight },
+    { id: 'transfer', label: t('inventory.tab_transfer', 'Chuyển Kho Chi Nhánh'), icon: ArrowRightLeft },
+    { id: 'suppliers', label: t('inventory.tab_suppliers', 'Nhà Cung Cấp'), icon: Building2 }
+  ];
   const { currentBranchId } = useBranch();
   const [activeTab, setActiveTab] = useState('overview');
   const [products, setProducts] = useState([]);
@@ -42,7 +43,7 @@ export default function InventoryView() {
     setLoading(true);
     try {
       // 1. Fetch Products
-      const filter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
+      const filter = currentBranchId === 'all' ? {} : { branch_ids: currentBranchId };
       const prods = await base44.entities.Product.filter(filter).catch(() => []);
       setProducts(prods);
 
@@ -161,7 +162,7 @@ export default function InventoryView() {
         await base44.entities.Product.update(editingProduct.id, formData);
         toast.success('Đã cập nhật sản phẩm');
       } else {
-        await base44.entities.Product.create({ ...formData, branch_id: currentBranchId });
+        await base44.entities.Product.create({ ...formData, branch_ids: currentBranchId === 'all' ? [] : [currentBranchId] });
         toast.success('Đã tạo mới sản phẩm kho');
       }
       setEditingProduct(null);
@@ -176,8 +177,8 @@ export default function InventoryView() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 text-left">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Quản Lý Kho Hàng</h1>
-          <p className="text-slate-400 text-sm mt-1">Theo dõi tồn kho, nhập kho, xuất kho, điều chuyển chi nhánh & công nợ nhà cung cấp</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{t('inventory.page_title', 'Quản Lý Kho Hàng')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('inventory.page_subtitle', 'Theo dõi tồn kho, nhập kho, xuất kho, điều chuyển chi nhánh & công nợ nhà cung cấp')}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -185,27 +186,27 @@ export default function InventoryView() {
             onClick={() => setEditingProduct({ type: 'product' })}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Thêm Sản Phẩm Mới
+            <Plus className="w-4 h-4" /> {t('inventory.add_new_product', 'Thêm Sản Phẩm Mới')}
           </button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
       <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
-        {TABS.map((t) => {
-          const Icon = t.icon;
+        {TABS.map((tabItem) => {
+          const Icon = tabItem.icon;
           return (
             <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
+              key={tabItem.id}
+              onClick={() => setActiveTab(tabItem.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === t.id
+                activeTab === tabItem.id
                   ? 'bg-purple-600 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              {t.label}
+              {tabItem.label}
             </button>
           );
         })}
@@ -223,9 +224,9 @@ export default function InventoryView() {
               products={products}
               onEditProduct={(p) => setEditingProduct({ ...p, type: 'product' })}
               onDeleteProduct={async (id) => {
-                if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                if (confirm(t('inventory.confirm_delete_product', 'Bạn có chắc chắn muốn xóa sản phẩm này?'))) {
                   await base44.entities.Product.delete(id).catch(() => {});
-                  toast.success('Đã xóa sản phẩm');
+                  toast.success(t('inventory.msg_product_deleted', 'Đã xóa sản phẩm'));
                   loadAllData();
                 }
               }}

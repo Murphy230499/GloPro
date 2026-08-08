@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2, CalendarDays, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -7,16 +8,7 @@ import Avatar from '@/components/Avatar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
-const ROLES = {
-  manager: { label: 'Quản lý', color: '#FF6B9D' },
-  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
-  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
-  barber: { label: 'Barber', color: '#34D399' },
-  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
-  nail_tech: { label: 'Nail tech', color: '#F472B6' },
-  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
-  cashier: { label: 'Thu ngân', color: '#94A3B8' },
-};
+
 
 
 // Helper to perform API operations in small batches to avoid 429 Rate Limits
@@ -49,19 +41,39 @@ const getWeekDays = (baseDateStr) => {
   return dates;
 };
 
-const formatVietnameseDate = (dateStr) => {
+const formatVietnameseDate = (dateStr, t) => {
   const d = new Date(dateStr);
-  const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const days = [
+    t('common.sunday', 'Chủ nhật'), 
+    t('common.monday', 'Thứ 2'), 
+    t('common.tuesday', 'Thứ 3'), 
+    t('common.wednesday', 'Thứ 4'), 
+    t('common.thursday', 'Thứ 5'), 
+    t('common.friday', 'Thứ 6'), 
+    t('common.saturday', 'Thứ 7')
+  ];
   const dayLabel = days[d.getDay()];
   const dateNum = d.getDate().toString().padStart(2, '0');
   const monthNum = (d.getMonth() + 1).toString().padStart(2, '0');
   const year = d.getFullYear();
-  return `${dayLabel} ngày ${dateNum} tháng ${monthNum} năm ${year}`;
+  return t('common.full_date', '{day} ngày {dd} tháng {mm} năm {yyyy}')
+    .replace('{day}', dayLabel)
+    .replace('{dd}', dateNum)
+    .replace('{mm}', monthNum)
+    .replace('{yyyy}', year);
 };
 
-const formatDateHeader = (dateStr) => {
+const formatDateHeader = (dateStr, t) => {
   const d = new Date(dateStr);
-  const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const days = [
+    t('common.sun', 'CN'), 
+    t('common.mon', 'T2'), 
+    t('common.tue', 'T3'), 
+    t('common.wed', 'T4'), 
+    t('common.thu', 'T5'), 
+    t('common.fri', 'T6'), 
+    t('common.sat', 'T7')
+  ];
   const dayLabel = days[d.getDay()];
   const dateNum = d.getDate().toString().padStart(2, '0');
   const monthNum = (d.getMonth() + 1).toString().padStart(2, '0');
@@ -69,6 +81,17 @@ const formatDateHeader = (dateStr) => {
 };
 
 export default function SchedulerGrid({ branchId }) {
+  const { t } = useT();
+  const ROLES = {
+    manager: { label: t('staff.roles.manager', 'Quản lý'), color: '#FF6B9D' },
+    receptionist: { label: t('staff.roles.receptionist', 'Lễ tân'), color: '#60A5FA' },
+    stylist: { label: t('staff.roles.stylist', 'Kỹ thuật viên tóc'), color: '#A78BFA' },
+    barber: { label: t('staff.roles.barber', 'Barber'), color: '#34D399' },
+    therapist: { label: t('staff.roles.therapist', 'Chuyên viên Spa'), color: '#FBBF24' },
+    nail_tech: { label: t('staff.roles.nail_tech', 'Nail tech'), color: '#F472B6' },
+    technician: { label: t('staff.roles.technician', 'Kỹ thuật viên'), color: '#F97316' },
+    cashier: { label: t('staff.roles.cashier', 'Thu ngân'), color: '#94A3B8' },
+  };
   const [baseDate, setBaseDate] = useState(new Date().toISOString().slice(0, 10));
   const [staff, setStaff] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -113,7 +136,7 @@ export default function SchedulerGrid({ branchId }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('glopro_auto_copy_schedule', JSON.stringify(val));
     }
-    toast.success(val ? 'Đã BẬT tự động sao chép lịch tuần mới' : 'Đã TẮT tự động sao chép lịch tuần mới');
+    toast.success(val ? t('staff.scheduler.msg_auto_copy_on', 'Đã BẬT tự động sao chép lịch tuần mới') : t('staff.scheduler.msg_auto_copy_off', 'Đã TẮT tự động sao chép lịch tuần mới'));
   };
 
   const weekDays = getWeekDays(baseDate);
@@ -192,7 +215,7 @@ export default function SchedulerGrid({ branchId }) {
 
             if (createPayloads.length > 0) {
               await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
-              toast.success(`Đã tự động sao chép ${createPayloads.length} ca xếp từ tuần trước sang tuần này`);
+              toast.success(t('staff.scheduler.msg_auto_copy_success', 'Đã tự động sao chép {n} ca xếp từ tuần trước sang tuần này').replace('{n}', createPayloads.length));
               // Re-fetch fresh schedules list
               const freshAll = await base44.entities.StaffSchedule.list().catch(() => []);
               schedList = freshAll.filter(s => weekDays.includes(s.date));
@@ -314,7 +337,7 @@ export default function SchedulerGrid({ branchId }) {
   // --- Copy operations ---
 
   const handleCopyWeek = async () => {
-    if (!window.confirm('Sao chép toàn bộ lịch xếp ca của tuần hiện tại sang tuần tiếp theo?')) return;
+    if (!window.confirm(t('staff.scheduler.msg_copy_week_confirm', 'Sao chép toàn bộ lịch xếp ca của tuần hiện tại sang tuần tiếp theo?'))) return;
     
     // Calculate next week days
     const d = new Date(baseDate);
@@ -322,7 +345,7 @@ export default function SchedulerGrid({ branchId }) {
     const nextWeekDays = getWeekDays(d.toISOString().slice(0, 10));
 
     setIsProcessing(true);
-    setProcessingMsg('Đang sao chép lịch sang tuần tiếp theo...');
+    setProcessingMsg(t('staff.scheduler.msg_copy_week_processing', 'Đang sao chép lịch sang tuần tiếp theo...'));
     try {
       // Clear existing schedules in the target week in parallel
       const allScheds = await base44.entities.StaffSchedule.list();
@@ -352,20 +375,20 @@ export default function SchedulerGrid({ branchId }) {
       }
       await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       
-      toast.success(`Đã sao chép thành công ${createPayloads.length} ca xếp sang tuần tiếp theo`);
+      toast.success(t('staff.scheduler.msg_copy_week_success', 'Đã sao chép thành công {n} ca xếp sang tuần tiếp theo').replace('{n}', createPayloads.length));
       await loadData();
     } catch (e) {
-      toast.error('Lỗi khi sao chép lịch: ' + (e.message || e));
+      toast.error(t('staff.scheduler.msg_copy_err', 'Lỗi khi sao chép lịch: ') + (e.message || e));
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleCopyStaff = async () => {
-    if (!srcStaffId || destStaffIds.length === 0) return toast.error('Vui lòng chọn nhân sự nguồn và ít nhất một nhân sự đích');
+    if (!srcStaffId || destStaffIds.length === 0) return toast.error(t('staff.scheduler.error_select_src_dest', 'Vui lòng chọn nhân sự nguồn và ít nhất một nhân sự đích'));
 
     setIsProcessing(true);
-    setProcessingMsg('Đang sao chép lịch nhân sự...');
+    setProcessingMsg(t('staff.scheduler.msg_copy_staff_processing', 'Đang sao chép lịch nhân sự...'));
     try {
       // Get all current week's schedules for source staff
       const srcScheds = schedules.filter(s => s.staff_id === srcStaffId);
@@ -393,13 +416,13 @@ export default function SchedulerGrid({ branchId }) {
         await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       }));
 
-      toast.success('Đã sao chép lịch làm việc thành công');
+      toast.success(t('staff.scheduler.msg_copy_staff_success', 'Đã sao chép lịch làm việc thành công'));
       setCopyStaffModal(false);
       setSrcStaffId('');
       setDestStaffIds([]);
       await loadData();
     } catch (e) {
-      toast.error('Lỗi sao chép: ' + (e.message || e));
+      toast.error(t('staff.scheduler.msg_copy_err', 'Lỗi sao chép: ') + (e.message || e));
     } finally {
       setIsProcessing(false);
     }
@@ -410,11 +433,11 @@ export default function SchedulerGrid({ branchId }) {
 
     const srcScheds = schedules.filter(s => s.date === srcDay);
     if (srcScheds.length === 0) {
-      return toast.error(`Ngày nguồn (${formatDateHeader(srcDay)}) chưa có lịch làm việc nào để sao chép`);
+      return toast.error(t('staff.scheduler.msg_copy_day_empty', 'Ngày nguồn ({date}) chưa có lịch làm việc nào để sao chép').replace('{date}', formatDateHeader(srcDay, t)));
     }
 
     setIsProcessing(true);
-    setProcessingMsg('Đang sao chép ca ngày...');
+    setProcessingMsg(t('staff.scheduler.msg_copy_day_processing', 'Đang sao chép ca ngày...'));
     try {
       const allScheds = await base44.entities.StaffSchedule.list();
       // Filter by branch to avoid cross-branch deletions
@@ -447,13 +470,13 @@ export default function SchedulerGrid({ branchId }) {
         await batchPromises(createPayloads, data => base44.entities.StaffSchedule.create(data), 3);
       }));
 
-      toast.success(`Đã sao chép ${srcScheds.length} ca từ ${formatDateHeader(srcDay)} sang ${destDays.length} ngày`);
+      toast.success(t('staff.scheduler.msg_copy_day_success', 'Đã sao chép {n1} ca từ {d1} sang {n2} ngày').replace('{n1}', srcScheds.length).replace('{d1}', formatDateHeader(srcDay, t)).replace('{n2}', destDays.length));
       setCopyDayModal(false);
       setSrcDay('');
       setDestDays([]);
       await loadData();
     } catch (e) {
-      toast.error('Lỗi sao chép ngày: ' + (e.message || e));
+      toast.error(t('staff.scheduler.msg_copy_err', 'Lỗi sao chép ngày: ') + (e.message || e));
     } finally {
       setIsProcessing(false);
     }
@@ -566,7 +589,7 @@ export default function SchedulerGrid({ branchId }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs font-semibold text-slate-700 shrink-0 transition-colors shadow-none"
                 >
                   <CalendarDays className="w-3.5 h-3.5 text-orange-500" />
-                  <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
+                  <span>{t('staff.scheduler.week', 'Tuần:')} {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
                   <ChevronDown className="w-3 h-3 text-slate-400" />
                 </button>
               </PopoverTrigger>
@@ -617,42 +640,42 @@ export default function SchedulerGrid({ branchId }) {
               onChange={handleToggleAutoCopy}
               className="w-3.5 h-3.5 text-orange-600 rounded border-orange-300 focus:ring-0 cursor-pointer"
             />
-            <span className="text-xs font-bold text-orange-700">Tự động lặp lịch</span>
+            <span className="text-xs font-bold text-orange-700">{t('staff.scheduler.auto_schedule', 'Tự động lập lịch')}</span>
           </label>
           <button 
             disabled={isProcessing}
             onClick={handleCopyWeek} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Copy className="w-3.5 h-3.5" /> Sao chép tuần sau
+            <Copy className="w-3.5 h-3.5" /> {t('staff.scheduler.copy_next_week', 'Sao chép tuần sau')}
           </button>
           <button 
             disabled={isProcessing}
             onClick={() => { setSrcStaffId(''); setDestStaffIds([]); setCopyStaffModal(true); }} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Copy className="w-3.5 h-3.5" /> Sao chép nhân sự
+            <Copy className="w-3.5 h-3.5" /> {t('staff.scheduler.copy_staff', 'Sao chép nhân sự')}
           </button>
           <button 
             disabled={isProcessing}
             onClick={() => { setSrcDay(''); setDestDays([]); setCopyDayModal(true); }} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-semibold text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Copy className="w-3.5 h-3.5" /> Sao chép ca ngày
+            <Copy className="w-3.5 h-3.5" /> {t('staff.scheduler.copy_day', 'Sao chép ca ngày')}
           </button>
           <button 
             disabled={isProcessing}
             onClick={() => { setSwapStaffA(''); setSwapStaffB(''); setSwapDay(''); setSwapModal(true); }} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 font-semibold text-xs hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Đổi ca nhân sự
+            <RefreshCw className="w-3.5 h-3.5" /> {t('staff.scheduler.swap_staff', 'Đổi ca nhân sự')}
           </button>
           <button 
             disabled={isProcessing}
             onClick={handleClearAllSchedules} 
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 font-semibold text-xs hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <Trash2 className="w-3.5 h-3.5" /> Xóa lịch tuần này
+            <Trash2 className="w-3.5 h-3.5" /> {t('staff.scheduler.clear_week', 'Xóa lịch tuần này')}
           </button>
         </div>
       </div>
@@ -668,9 +691,9 @@ export default function SchedulerGrid({ branchId }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Nhân sự</th>
+                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.scheduler.staff_column', 'Nhân sự')}</th>
                   {weekDays.map(d => (
-                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[120px]">{formatDateHeader(d)}</th>
+                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[120px]">{formatDateHeader(d, t)}</th>
                   ))}
                 </tr>
               </thead>
@@ -772,19 +795,22 @@ export default function SchedulerGrid({ branchId }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setCopyStaffModal(false)}>
           <div className="relative bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-sm text-slate-800">Sao chép lịch nhân sự</h3>
+              <h3 className="font-bold text-sm text-slate-800">{t('staff.scheduler.copy_staff', 'Sao chép lịch nhân sự')}</h3>
               <button onClick={() => setCopyStaffModal(false)} className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><X className="w-4.5 h-4.5 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự nguồn (Sao chép từ)</label>
-                <select value={srcStaffId} onChange={(e) => { setSrcStaffId(e.target.value); setDestStaffIds([]); }} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                  <option value="">— Chọn nhân sự nguồn —</option>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.src_staff', 'Nhân sự nguồn (Sao chép từ)')}</label>
+                <div className="relative">
+                  <select value={srcStaffId} onChange={(e) => { setSrcStaffId(e.target.value); setDestStaffIds([]); }} className={`w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs appearance-none outline-none focus:border-orange-400 transition-colors ${!srcStaffId ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+                  <option value="">{t('staff.scheduler.select_src_staff', '— Chọn nhân sự nguồn —')}</option>
                   {staff.map(x => <option key={x.id} value={x.id}>{x.full_name}</option>)}
                 </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự đích (Chọn các nhân sự dán lịch đến)</label>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.dest_staff_label', 'Nhân sự đích (Chọn các nhân sự dán lịch đến)')}</label>
                 <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
                   {staff.filter(x => x.id !== srcStaffId).map(x => (
                     <label key={x.id} className="flex items-center gap-2 text-xs text-slate-750 cursor-pointer select-none">
@@ -804,12 +830,12 @@ export default function SchedulerGrid({ branchId }) {
                     </label>
                   ))}
                   {staff.filter(x => x.id !== srcStaffId).length === 0 && (
-                    <span className="text-[10px] text-slate-400 italic">Chọn nhân sự nguồn trước</span>
+                    <span className="text-[10px] text-slate-400 italic">{t('staff.scheduler.select_src_first', 'Chọn nhân sự nguồn trước')}</span>
                   )}
                 </div>
               </div>
             </div>
-            <button onClick={handleCopyStaff} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Bắt đầu sao chép</button>
+            <button onClick={handleCopyStaff} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">{t('staff.scheduler.start_copy', 'Bắt đầu sao chép')}</button>
           </div>
         </div>
       )}
@@ -819,19 +845,22 @@ export default function SchedulerGrid({ branchId }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setCopyDayModal(false)}>
           <div className="relative bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-sm text-slate-800">Sao chép ca ngày</h3>
+              <h3 className="font-bold text-sm text-slate-800">{t('staff.scheduler.copy_day', 'Sao chép ca ngày')}</h3>
               <button onClick={() => setCopyDayModal(false)} className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><X className="w-4.5 h-4.5 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày nguồn (Sao chép từ)</label>
-                <select value={srcDay} onChange={(e) => { setSrcDay(e.target.value); setDestDays([]); }} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                  <option value="">— Chọn ngày nguồn —</option>
-                  {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d)}</option>)}
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.src_day', 'Ngày nguồn (Sao chép từ)')}</label>
+                <div className="relative">
+                  <select value={srcDay} onChange={(e) => { setSrcDay(e.target.value); setDestDays([]); }} className={`w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs appearance-none outline-none focus:border-orange-400 transition-colors ${!srcDay ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+                  <option value="">{t('staff.scheduler.select_src_day', '— Chọn ngày nguồn —')}</option>
+                  {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d, t)}</option>)}
                 </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Ngày đích (Chọn các ngày dán lịch đến)</label>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.dest_day_label', 'Ngày đích (Chọn các ngày dán lịch đến)')}</label>
                 <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
                   {weekDays.filter(d => d !== srcDay).map(d => (
                     <label key={d} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
@@ -847,16 +876,16 @@ export default function SchedulerGrid({ branchId }) {
                         }}
                         className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 w-3.5 h-3.5"
                       />
-                      <span>{formatDateHeader(d)}</span>
+                      <span>{formatDateHeader(d, t)}</span>
                     </label>
                   ))}
                   {!srcDay && (
-                    <span className="text-[10px] text-slate-400 italic">Chọn ngày nguồn trước</span>
+                    <span className="text-[10px] text-slate-400 italic">{t('staff.scheduler.select_day_first', 'Chọn ngày nguồn trước')}</span>
                   )}
                 </div>
               </div>
             </div>
-            <button onClick={handleCopyDay} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Bắt đầu sao chép</button>
+            <button onClick={handleCopyDay} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">{t('staff.scheduler.start_copy', 'Bắt đầu sao chép')}</button>
           </div>
         </div>
       )}
@@ -865,35 +894,44 @@ export default function SchedulerGrid({ branchId }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setSwapModal(false)}>
           <div className="relative bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-sm text-slate-800">Đổi ca nhân sự</h3>
+              <h3 className="font-bold text-sm text-slate-800">{t('staff.scheduler.swap_staff', 'Đổi ca nhân sự')}</h3>
               <button onClick={() => setSwapModal(false)} className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><X className="w-4.5 h-4.5 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Chọn ngày đổi ca</label>
-                <select value={swapDay} onChange={(e) => setSwapDay(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                  <option value="">— Chọn ngày đổi ca —</option>
-                  {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d)}</option>)}
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.select_swap_day_label', 'Chọn ngày đổi ca')}</label>
+                <div className="relative">
+                  <select value={swapDay} onChange={(e) => setSwapDay(e.target.value)} className={`w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs appearance-none outline-none focus:border-orange-400 transition-colors ${!swapDay ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+                  <option value="">{t('staff.scheduler.select_swap_day', '— Chọn ngày đổi ca —')}</option>
+                  {weekDays.map(d => <option key={d} value={d}>{formatDateHeader(d, t)}</option>)}
                 </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự A</label>
-                  <select value={swapStaffA} onChange={(e) => setSwapStaffA(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                    <option value="">— Chọn nhân sự A —</option>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.staff_a', 'Nhân sự A')}</label>
+                  <div className="relative">
+                  <select value={swapStaffA} onChange={(e) => setSwapStaffA(e.target.value)} className={`w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs appearance-none outline-none focus:border-orange-400 transition-colors ${!swapStaffA ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+                    <option value="">{t('staff.scheduler.select_staff_a', '— Chọn nhân sự A —')}</option>
                     {staff.map(x => <option key={x.id} value={x.id}>{x.full_name}</option>)}
                   </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nhân sự B</label>
-                  <select value={swapStaffB} onChange={(e) => setSwapStaffB(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
-                    <option value="">— Chọn nhân sự B —</option>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">{t('staff.scheduler.staff_b', 'Nhân sự B')}</label>
+                  <div className="relative">
+                  <select value={swapStaffB} onChange={(e) => setSwapStaffB(e.target.value)} className={`w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs appearance-none outline-none focus:border-orange-400 transition-colors ${!swapStaffB ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+                    <option value="">{t('staff.scheduler.select_staff_b', '— Chọn nhân sự B —')}</option>
                     {staff.map(x => <option key={x.id} value={x.id}>{x.full_name}</option>)}
                   </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
                 </div>
               </div>
             </div>
-            <button onClick={handleSwapShifts} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">Xác nhận đổi ca</button>
+            <button onClick={handleSwapShifts} className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-semibold mt-4 hover:bg-orange-600 transition-colors">{t('staff.scheduler.confirm_swap', 'Xác nhận đổi ca')}</button>
           </div>
         </div>
       )}
@@ -907,9 +945,9 @@ export default function SchedulerGrid({ branchId }) {
             {/* Header */}
             <div className="flex items-center justify-between mb-4 shrink-0">
               <div>
-                <h2 className="text-base font-bold text-slate-800 font-sans">Xếp lịch làm việc</h2>
+                <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.scheduler.assign_modal_title', 'Xếp lịch làm việc')}</h2>
                 <p className="text-slate-400 text-[10px] mt-0.5 font-medium font-sans">
-                  Nhân viên: <span className="text-slate-600 font-bold">{assignModalCell.staff.full_name}</span> - {formatVietnameseDate(assignModalCell.date)}
+                  Nhân viên: <span className="text-slate-600 font-bold">{assignModalCell.staff.full_name}</span> - {formatVietnameseDate(assignModalCell.date, t)}
                 </p>
               </div>
               <button onClick={() => setAssignModalCell(null)} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
@@ -923,15 +961,15 @@ export default function SchedulerGrid({ branchId }) {
               <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white font-sans text-xs">
                 {/* Table Header */}
                 <div className="grid grid-cols-3 bg-slate-50 border-b border-slate-100 py-3 px-4 text-slate-500 font-bold text-[11px]">
-                  <div>Ca làm việc</div>
-                  <div className="text-center">Thời gian làm việc</div>
-                  <div className="text-right">Thêm</div>
+                  <div>{t('staff.scheduler.shift_label', 'Ca làm việc')}</div>
+                  <div className="text-center">{t('staff.scheduler.work_time', 'Thời gian làm việc')}</div>
+                  <div className="text-right">{t('staff.scheduler.add_action', 'Thêm')}</div>
                 </div>
 
                 {/* Table Rows */}
                 <div className="divide-y divide-slate-100">
                   {templates.length === 0 ? (
-                    <div className="text-center py-6 text-slate-400 font-medium">Chưa định nghĩa ca làm việc nào. Hãy định nghĩa ca trước.</div>
+                    <div className="text-center py-6 text-slate-400 font-medium">{t('staff.scheduler.no_templates', 'Chưa định nghĩa ca làm việc nào. Hãy định nghĩa ca trước.')}</div>
                   ) : (
                     templates.map(t => (
                       <div key={t.id} className="grid grid-cols-3 items-center py-3.5 px-4">
@@ -979,7 +1017,7 @@ export default function SchedulerGrid({ branchId }) {
                     <div className="w-5 h-5 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
                       <span className="text-red-600 font-bold text-[10px]">✕</span>
                     </div>
-                    <span className="font-bold text-slate-800 text-xs">Đăng ký nghỉ ngày này</span>
+                    <span className="font-bold text-slate-800 text-xs">{t('staff.scheduler.register_off', 'Đăng ký nghỉ ngày này')}</span>
                   </div>
                   
                   <button
@@ -1001,7 +1039,7 @@ export default function SchedulerGrid({ branchId }) {
 
                 {isOff && (
                   <div className="flex gap-4 pl-7.5 items-center">
-                    <span className="font-bold text-slate-500 text-[11px]">Lý do nghỉ:</span>
+                    <span className="font-bold text-slate-500 text-[11px]">{t('staff.scheduler.off_reason_label', 'Lý do nghỉ:')}</span>
                     <div className="flex gap-3">
                       <label className="flex items-center gap-1.5 font-semibold text-xs text-slate-700 cursor-pointer">
                         <input 
@@ -1011,7 +1049,7 @@ export default function SchedulerGrid({ branchId }) {
                           onChange={() => setOffType('vacation')}
                           className="text-red-500 focus:ring-red-400"
                         />
-                        <span>Nghỉ phép</span>
+                        <span>{t('staff.scheduler.off_vacation', 'Nghỉ phép')}</span>
                       </label>
                       <label className="flex items-center gap-1.5 font-semibold text-xs text-slate-700 cursor-pointer">
                         <input 
@@ -1021,7 +1059,7 @@ export default function SchedulerGrid({ branchId }) {
                           onChange={() => setOffType('sick')}
                           className="text-red-500 focus:ring-red-400"
                         />
-                        <span>Nghỉ ốm</span>
+                        <span>{t('staff.scheduler.off_sick', 'Nghỉ ốm')}</span>
                       </label>
                       <label className="flex items-center gap-1.5 font-semibold text-xs text-slate-700 cursor-pointer">
                         <input 
@@ -1031,7 +1069,7 @@ export default function SchedulerGrid({ branchId }) {
                           onChange={() => setOffType('other')}
                           className="text-red-500 focus:ring-red-400"
                         />
-                        <span>Khác</span>
+                        <span>{t('staff.scheduler.off_other', 'Khác')}</span>
                       </label>
                     </div>
                   </div>
@@ -1066,7 +1104,7 @@ export default function SchedulerGrid({ branchId }) {
             <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
             <div>
               <p className="text-sm font-bold text-slate-800 font-sans">{processingMsg}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5 font-sans">Vui lòng chờ trong giây lát...</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 font-sans">{t('staff.scheduler.please_wait', 'Vui lòng chờ trong giây lát...')}</p>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { Plus, Scissors, Package, Edit3, ToggleLeft, ToggleRight, Trash2, Gift, Sparkles, Layers, Boxes, Archive, Tag, AlertTriangle, CreditCard, RotateCcw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
@@ -17,23 +18,26 @@ import PrepaidCardView from '@/components/PrepaidCardView';
 import EmptyStateSeeder from '@/components/EmptyStateSeeder';
 import { seedServiceData } from '@/lib/seeders/serviceSeeder';
 
-const TABS = [
-{ v: 'service', l: 'Dịch vụ', i: Scissors, grp: 'service' },
-{ v: 'product', l: 'Sản phẩm', i: Package, grp: 'product' },
-{ v: 'package', l: 'Gói dịch vụ', i: Gift, grp: 'package' },
-{ v: 'treatment', l: 'Liệu trình', i: Sparkles, grp: 'treatment' },
-{ v: 'service_combo', l: 'Combo dịch vụ', i: Layers, grp: null },
-{ v: 'product_combo', l: 'Combo sản phẩm', i: Boxes, grp: null },
-{ v: 'prepaid_card', l: 'Thẻ tiền mặt', i: CreditCard, grp: null }];
+
 
 
 const ENTITY_MAP = { service: 'Service', product: 'Product', package: 'ServicePackage', treatment: 'Treatment', service_combo: 'ServiceCombo', product_combo: 'ProductCombo', prepaid_card: 'PrepaidCard' };
-const ADD_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình', service_combo: 'combo dịch vụ', product_combo: 'combo sản phẩm', prepaid_card: 'thẻ tiền mặt' };
-const GROUP_LABEL = { service: 'dịch vụ', product: 'sản phẩm', package: 'gói dịch vụ', treatment: 'liệu trình' };
+
 
 export default function Services() {
+  const { t } = useT();
   const { currentBranchId, branches } = useBranch();
   const [tab, setTab] = useState('service');
+  const TABS = [
+  { v: 'service', l: t('catalog.tab_services', 'Dịch vụ'), i: Scissors, grp: 'service' },
+  { v: 'product', l: t('catalog.tab_products', 'Sản phẩm'), i: Package, grp: 'product' },
+  { v: 'package', l: t('catalog.tab_packages', 'Gói dịch vụ'), i: Gift, grp: 'package' },
+  { v: 'treatment', l: t('catalog.tab_treatments', 'Liệu trình'), i: Sparkles, grp: 'treatment' },
+  { v: 'service_combo', l: t('catalog.tab_service_combos', 'Combo dịch vụ'), i: Layers, grp: null },
+  { v: 'product_combo', l: t('catalog.tab_product_combos', 'Combo sản phẩm'), i: Boxes, grp: null },
+  { v: 'prepaid_card', l: t('catalog.tab_prepaid_cards', 'Thẻ tiền mặt'), i: CreditCard, grp: null }];
+  const ADD_LABEL = { service: t('catalog.add_label_service', 'dịch vụ'), product: t('catalog.add_label_product', 'sản phẩm'), package: t('catalog.add_label_package', 'gói dịch vụ'), treatment: t('catalog.add_label_treatment', 'liệu trình'), service_combo: t('catalog.add_label_service_combo', 'combo dịch vụ'), product_combo: t('catalog.add_label_product_combo', 'combo sản phẩm'), prepaid_card: t('catalog.add_label_prepaid_card', 'thẻ tiền mặt') };
+  const GROUP_LABEL = { service: t('catalog.group_label_service', 'dịch vụ'), product: t('catalog.group_label_product', 'sản phẩm'), package: t('catalog.group_label_package', 'gói dịch vụ'), treatment: t('catalog.group_label_treatment', 'liệu trình') };
   const [services, setServices] = useState([]);
   const [products, setProducts] = useState([]);
   const [packages, setPackages] = useState([]);
@@ -390,7 +394,7 @@ export default function Services() {
             {grp ? (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span>
             ) : (
-              <span className="text-[11px] text-slate-300">Không nhóm</span>
+              <span className="text-[11px] text-slate-300">{t('catalog.no_group', 'Không nhóm')}</span>
             )}
             <button onClick={() => toggleActive('service', item)}>{item.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
           </div>
@@ -399,12 +403,12 @@ export default function Services() {
           {item.description && <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">{item.description}</div>}
           <div className="flex items-center justify-between mt-3">
             {item.price_from > 0 ? <span className="font-bold text-pink-600 text-sm">từ {formatVND(item.price_from)}</span> : <span className="font-bold text-pink-600 text-sm">{formatVND(item.price)}</span>}
-            <span className="text-xs text-slate-400">{item.duration_minutes || 0} phút</span>
+            <span className="text-xs text-slate-400">{item.duration_minutes || 0} {t('catalog.minutes', 'phút')}</span>
           </div>
-          {item.cost > 0 && <div className="text-xs text-slate-400 mt-0.5">Chi phí: {formatVND(item.cost)}</div>}
-          {item.accompanied_products?.length > 0 && <div className="mt-1 text-xs text-slate-400">{item.accompanied_products.length} sản phẩm đi kèm</div>}
+          {item.cost > 0 && <div className="text-xs text-slate-400 mt-0.5">{t('catalog.cost_label', 'Chi phí:')} {formatVND(item.cost)}</div>}
+          {item.accompanied_products?.length > 0 && <div className="mt-1 text-xs text-slate-400">{item.accompanied_products.length} {t('catalog.accompanied_products', 'sản phẩm đi kèm')}</div>}
           <div className="flex gap-1.5 mt-3">
-            <button onClick={() => setEditing({ ...item, type: 'service' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+            <button onClick={() => setEditing({ ...item, type: 'service' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
             <button onClick={() => remove('service', item.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
@@ -418,17 +422,17 @@ export default function Services() {
           className={`rounded-2xl p-4 border border-slate-100 shadow-sm bg-white hover:shadow-md transition-all ${!item.is_active ? 'opacity-50' : ''}`}
         >
           <div className="flex items-start justify-between">
-            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
+            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">{t('catalog.no_group', 'Không nhóm')}</span>}
             <button onClick={() => toggleActive('product', item)}>{item.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
           </div>
           {item.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /></div>}
           <div className="font-bold text-sm text-slate-800 truncate mt-1">{item.name}</div>
           <div className="flex items-center justify-between mt-3">
             <span className="font-bold text-pink-600 text-sm">{formatVND(item.price)}</span>
-            <span className="text-xs text-slate-400">Tồn: {item.stock || 0}</span>
+            <span className="text-xs text-slate-400">{t('catalog.stock_label', 'Tồn:')} {item.stock || 0}</span>
           </div>
           <div className="flex gap-1.5 mt-3">
-            <button onClick={() => setEditing({ ...item, type: 'product' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+            <button onClick={() => setEditing({ ...item, type: 'product' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
             <button onClick={() => remove('product', item.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
@@ -442,7 +446,7 @@ export default function Services() {
           className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all ${!item.is_active ? 'opacity-50' : ''}`}
         >
           <div className="flex items-start justify-between">
-            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
+            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">{t('catalog.no_group', 'Không nhóm')}</span>}
             <button onClick={() => toggleActive('package', item)}>{item.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
           </div>
           {item.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /></div>}
@@ -450,10 +454,10 @@ export default function Services() {
           {item.description && <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">{item.description}</div>}
           <div className="flex items-center justify-between mt-3">
             <span className="font-bold text-pink-600 text-sm">{formatVND(item.price)}</span>
-            <span className="text-xs text-slate-400">{item.usage_count || 1} lần sử dụng</span>
+            <span className="text-xs text-slate-400">{item.usage_count || 1} {t('catalog.usage_times', 'lần sử dụng')}</span>
           </div>
           {(item.expiry_months > 0 || item.expiry_days > 0) && (
-            <div className="text-xs text-slate-400 mt-0.5">Hạn: {item.expiry_months > 0 ? `${item.expiry_months} tháng ` : ''}{item.expiry_days > 0 ? `${item.expiry_days} ngày` : ''}</div>
+            <div className="text-xs text-slate-400 mt-0.5">{t('catalog.expiry_label', 'Hạn:')} {item.expiry_months > 0 ? `${item.expiry_months} ${t('catalog.months', 'tháng')} ` : ''}{item.expiry_days > 0 ? `${item.expiry_days} ${t('catalog.days', 'ngày')}` : ''}</div>
           )}
           {item.services?.length > 0 && (
             <div className="mt-2 space-y-0.5">
@@ -461,7 +465,7 @@ export default function Services() {
             </div>
           )}
           <div className="flex gap-1.5 mt-3">
-            <button onClick={() => setEditing({ ...item, type: 'package' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+            <button onClick={() => setEditing({ ...item, type: 'package' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
             <button onClick={() => remove('package', item.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
@@ -475,7 +479,7 @@ export default function Services() {
           className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all ${!item.is_active ? 'opacity-50' : ''}`}
         >
           <div className="flex items-start justify-between">
-            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">Không nhóm</span>}
+            {grp ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: (grp.color || '#94A3B8') + '1a', color: grp.color || '#94A3B8' }}>{grp.name}</span> : <span className="text-[11px] text-slate-300">{t('catalog.no_group', 'Không nhóm')}</span>}
             <button onClick={() => toggleActive('treatment', item)}>{item.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
           </div>
           {item.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /></div>}
@@ -483,7 +487,7 @@ export default function Services() {
           {item.description && <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">{item.description}</div>}
           <div className="flex items-center justify-between mt-3">
             <span className="font-bold text-pink-600 text-sm">{formatVND(item.price)}</span>
-            {(item.expiry_months > 0 || item.expiry_days > 0) && <span className="text-xs text-slate-400">Hạn: {item.expiry_months > 0 ? `${item.expiry_months}T ` : ''}{item.expiry_days > 0 ? `${item.expiry_days}N` : ''}</span>}
+            {(item.expiry_months > 0 || item.expiry_days > 0) && <span className="text-xs text-slate-400">{t('catalog.expiry_label', 'Hạn:')} {item.expiry_months > 0 ? `${item.expiry_months}T ` : ''}{item.expiry_days > 0 ? `${item.expiry_days}N` : ''}</span>}
           </div>
           {item.services?.length > 0 && (
             <div className="mt-2 space-y-0.5">
@@ -491,7 +495,7 @@ export default function Services() {
             </div>
           )}
           <div className="flex gap-1.5 mt-3">
-            <button onClick={() => setEditing({ ...item, type: 'treatment' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+            <button onClick={() => setEditing({ ...item, type: 'treatment' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
             <button onClick={() => remove('treatment', item.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
@@ -512,8 +516,8 @@ export default function Services() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Danh mục</h1>
-          <p className="text-slate-400 text-sm mt-1">Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo, thẻ tiền mặt và kho</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('catalog.page_title', 'Danh mục')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('catalog.page_subtitle', 'Quản lý dịch vụ, sản phẩm, gói, liệu trình, combo, thẻ tiền mặt và kho')}</p>
         </div>
         <div className="flex items-center gap-2">
           {currentTab.grp && (
@@ -521,7 +525,7 @@ export default function Services() {
               onClick={() => setGroupModal(currentTab.grp)} 
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
             >
-              <Tag className="w-4 h-4 text-purple-600" /> Quản lý nhóm
+              <Tag className="w-4 h-4 text-purple-600" /> {t('catalog.manage_groups', 'Quản lý nhóm')}
             </button>
           )}
           {tab !== 'inventory' && (
@@ -529,7 +533,7 @@ export default function Services() {
               onClick={() => setEditing({ type: tab })} 
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Thêm {ADD_LABEL[tab]}
+              <Plus className="w-4 h-4" /> {t('catalog.add_new', 'Thêm')} {ADD_LABEL[tab]}
             </button>
           )}
         </div>
@@ -568,7 +572,7 @@ export default function Services() {
           seeding={seeding}
           seedProgress={seedProgress}
           onAdd={() => setEditing({ type: tab })}
-          addLabel={`Thêm ${ADD_LABEL[tab] || 'mới'}`}
+          addLabel={`{t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
           seedLabel="Tạo dữ liệu mẫu"
         />
       ) : (
@@ -634,7 +638,7 @@ export default function Services() {
                       className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all ${!c.is_active ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-start justify-between">
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Combo dịch vụ</span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">{t('catalog.tab_service_combos', 'Combo dịch vụ')}</span>
                         <button onClick={() => toggleActive('service_combo', c)}>{c.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
                       </div>
                       {c.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={c.image_url} alt={c.name} className="w-full h-full object-cover" /></div>}
@@ -644,11 +648,11 @@ export default function Services() {
                         {(c.items || []).map((it, i) => <div key={i} className="text-xs text-slate-500 flex justify-between"><span className="truncate">• {it.service_name}</span><span className="shrink-0">{formatVND(it.price)}</span></div>)}
                       </div>
                       <div className="mt-3 pt-2 border-t border-slate-50">
-                        <div className="flex items-center justify-between text-xs text-slate-400"><span>Giá gốc: <s>{formatVND(original)}</s></span>{discount > 0 && <span className="text-green-600 font-semibold">-{formatVND(discount)}</span>}</div>
+                        <div className="flex items-center justify-between text-xs text-slate-400"><span>{t('catalog.original_price', 'Giá gốc:')} <s>{formatVND(original)}</s></span>{discount > 0 && <span className="text-green-600 font-semibold">-{formatVND(discount)}</span>}</div>
                         <div className="font-bold text-pink-600 mt-1 text-sm">{formatVND(c.combo_price)}</div>
                       </div>
                       <div className="flex gap-1.5 mt-3">
-                        <button onClick={() => setEditing({ ...c, type: 'service_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+                        <button onClick={() => setEditing({ ...c, type: 'service_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
                         <button onClick={() => remove('service_combo', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
@@ -673,7 +677,7 @@ export default function Services() {
                       className={`bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all ${!c.is_active ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-start justify-between">
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Combo sản phẩm</span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">{t('catalog.tab_product_combos', 'Combo sản phẩm')}</span>
                         <button onClick={() => toggleActive('product_combo', c)}>{c.is_active ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}</button>
                       </div>
                       {c.image_url && <div className="h-24 -mx-4 mt-2 mb-2 overflow-hidden"><img src={c.image_url} alt={c.name} className="w-full h-full object-cover" /></div>}
@@ -683,11 +687,11 @@ export default function Services() {
                         {(c.items || []).map((it, i) => <div key={i} className="text-xs text-slate-500 flex justify-between"><span className="truncate">• {it.product_name} x{it.qty}</span><span className="shrink-0">{formatVND(it.price)}</span></div>)}
                       </div>
                       <div className="mt-3 pt-2 border-t border-slate-50">
-                        <div className="flex items-center justify-between text-xs text-slate-400"><span>Giá gốc: <s>{formatVND(original)}</s></span>{discount > 0 && <span className="text-green-600 font-semibold">-{formatVND(discount)}</span>}</div>
+                        <div className="flex items-center justify-between text-xs text-slate-400"><span>{t('catalog.original_price', 'Giá gốc:')} <s>{formatVND(original)}</s></span>{discount > 0 && <span className="text-green-600 font-semibold">-{formatVND(discount)}</span>}</div>
                         <div className="font-bold text-pink-600 mt-1 text-sm">{formatVND(c.combo_price)}</div>
                       </div>
                       <div className="flex gap-1.5 mt-3">
-                        <button onClick={() => setEditing({ ...c, type: 'product_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+                        <button onClick={() => setEditing({ ...c, type: 'product_combo' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
                         <button onClick={() => remove('product_combo', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
@@ -710,11 +714,11 @@ export default function Services() {
                   >
                     <PrepaidCardView card={c} />
                     <div className="flex items-center justify-between mt-2 px-1">
-                      <span className="text-xs text-slate-400">Giá bán: <span className="font-semibold text-pink-600">{formatVND(c.selling_price)}</span></span>
-                      {c.expiry_months > 0 && <span className="text-xs text-slate-400">Hạn: {c.expiry_months}T</span>}
+                      <span className="text-xs text-slate-400">{t('catalog.sell_price_label', 'Giá bán:')} <span className="font-semibold text-pink-600">{formatVND(c.selling_price)}</span></span>
+                      {c.expiry_months > 0 && <span className="text-xs text-slate-400">{t('catalog.expiry_label', 'Hạn:')} {c.expiry_months}{t('catalog.months_short', 'T')}</span>}
                     </div>
                     <div className="flex gap-1.5 mt-2">
-                      <button onClick={() => setEditing({ ...c, type: 'prepaid_card' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />Sửa</button>
+                      <button onClick={() => setEditing({ ...c, type: 'prepaid_card' })} className="flex-1 text-xs py-2 rounded-full bg-slate-100 font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Edit3 className="w-3.5 h-3.5" />{t('catalog.btn_edit', 'Sửa')}</button>
                       <button onClick={() => toggleActive('prepaid_card', c)} className="px-3 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors">{c.is_active ? <ToggleRight className="w-5 h-5 text-green-500" /> : <ToggleLeft className="w-5 h-5 text-slate-300" />}</button>
                       <button onClick={() => remove('prepaid_card', c.id)} className="px-3 py-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>

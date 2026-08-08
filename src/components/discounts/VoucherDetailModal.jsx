@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { X, Calendar, Ticket, Percent, MapPin, Tag, ShoppingCart, Clock, TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
 import { formatVND, formatDate } from '@/lib/format';
 import { useBranch } from '@/lib/BranchContext';
+import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 
 const SCOPES = {
@@ -12,7 +13,14 @@ const SCOPES = {
 };
 
 export default function VoucherDetailModal({ voucher, usages, onClose }) {
+  const { t } = useT();
   const { branches } = useBranch();
+
+  const getScopeLabel = (type) => {
+    if (type === 'service') return t('discounts.scope_service', 'Chỉ dịch vụ');
+    if (type === 'product') return t('discounts.scope_product', 'Chỉ sản phẩm');
+    return t('discounts.scope_invoice', 'Toàn hóa đơn');
+  };
   const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
@@ -152,8 +160,8 @@ export default function VoucherDetailModal({ voucher, usages, onClose }) {
                 <div className="text-slate-500 font-normal">Mức giảm:</div>
                 <div className="font-normal text-slate-800">{voucher.valueType === 'percent' ? `${voucher.value}%` : formatVND(voucher.value)}</div>
                 
-                <div className="text-slate-500 font-normal">Phạm vi áp dụng:</div>
-                <div className="font-normal text-slate-700">{SCOPES[voucher.type] || 'Toàn hóa đơn'}</div>
+                <div className="text-slate-500 font-normal">{t('discounts.scope', 'Phạm vi áp dụng:')}</div>
+                <div className="font-normal text-slate-700">{getScopeLabel(voucher.type)}</div>
                 
                 <div className="text-slate-500 font-normal">Mục tiêu:</div>
                 <div className="font-normal text-slate-700">

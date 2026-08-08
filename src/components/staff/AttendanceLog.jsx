@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, Calendar, Edit3, X, ChevronLeft, ChevronRight, Check, CalendarDays, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -7,28 +8,6 @@ import Avatar from '@/components/Avatar';
 import { todayStr } from '@/lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
-
-const ROLES = {
-  manager: { label: 'Quản lý', color: '#FF6B9D' },
-  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
-  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
-  barber: { label: 'Barber', color: '#34D399' },
-  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
-  nail_tech: { label: 'Nail tech', color: '#F472B6' },
-  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
-  cashier: { label: 'Thu ngân', color: '#94A3B8' },
-};
-
-const STATUS_CONFIG = {
-  full: { label: 'Đúng giờ', color: '#3B82F6', bg: '#EFF6FF', border: '#DBEAFE' },
-  late: { label: 'Đi trễ', color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
-  early_leave: { label: 'Về sớm', color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
-  late_early: { label: 'Trễ & Sớm', color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
-  missing_in: { label: 'Chưa chấm vào', color: '#D97706', bg: '#FFFBEB', border: '#FEF3C7' },
-  missing_out: { label: 'Chưa chấm ra', color: '#D97706', bg: '#FFFBEB', border: '#FEF3C7' },
-  no_show: { label: 'Chưa chấm công', color: '#8B5CF6', bg: '#F5F3FF', border: '#EDE9FE' },
-  off: { label: 'Nghỉ làm', color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB' }
-};
 
 const getWeekDays = (baseDateStr) => {
   const current = new Date(baseDateStr);
@@ -45,15 +24,47 @@ const getWeekDays = (baseDateStr) => {
   return dates;
 };
 
-const formatDateHeader = (dateStr) => {
+const formatDateHeader = (dateStr, t) => {
   const d = new Date(dateStr);
-  const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const days = [
+    t('common.sunday', 'Chủ nhật'), 
+    t('common.monday', 'Thứ 2'), 
+    t('common.tuesday', 'Thứ 3'), 
+    t('common.wednesday', 'Thứ 4'), 
+    t('common.thursday', 'Thứ 5'), 
+    t('common.friday', 'Thứ 6'), 
+    t('common.saturday', 'Thứ 7')
+  ];
   const dayNum = d.getDate().toString().padStart(2, '0');
   const monthNum = (d.getMonth() + 1).toString().padStart(2, '0');
   return `${days[d.getDay()]} - ${dayNum}/${monthNum}`;
 };
 
-export default function AttendanceLog({ branchId }) {
+export default function AttendanceLog({ branchId, staffData }) {
+  const { t } = useT();
+
+  const ROLES = {
+    manager: { label: t('staff.roles.manager', 'Quản lý'), color: '#FF6B9D' },
+    receptionist: { label: t('staff.roles.receptionist', 'Lễ tân'), color: '#60A5FA' },
+    stylist: { label: t('staff.roles.stylist', 'Kỹ thuật viên tóc'), color: '#A78BFA' },
+    barber: { label: t('staff.roles.barber', 'Barber'), color: '#34D399' },
+    therapist: { label: t('staff.roles.therapist', 'Chuyên viên Spa'), color: '#FBBF24' },
+    nail_tech: { label: t('staff.roles.nail_tech', 'Nail tech'), color: '#F472B6' },
+    technician: { label: t('staff.roles.technician', 'Kỹ thuật viên'), color: '#F97316' },
+    cashier: { label: t('staff.roles.cashier', 'Thu ngân'), color: '#94A3B8' },
+  };
+
+  const STATUS_CONFIG = {
+    full: { label: t('staff.attendance.on_time', 'Đúng giờ'), color: '#3B82F6', bg: '#EFF6FF', border: '#DBEAFE' },
+    late: { label: t('staff.attendance.late', 'Đi trễ'), color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
+    early_leave: { label: t('staff.attendance.early_leave', 'Về sớm'), color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
+    late_and_early: { label: t('staff.attendance.late_and_early', 'Trễ & Sớm'), color: '#EF4444', bg: '#FEF2F2', border: '#FEE2E2' },
+    missing_in: { label: t('staff.attendance.missing_in', 'Chưa chấm vào'), color: '#F59E0B', bg: '#FEF3C7', border: '#FDE68A' },
+    missing_out: { label: t('staff.attendance.missing_out', 'Chưa chấm ra'), color: '#F59E0B', bg: '#FEF3C7', border: '#FDE68A' },
+    no_attendance: { label: t('staff.attendance.no_attendance', 'Chưa chấm công'), color: '#8B5CF6', bg: '#F5F3FF', border: '#EDE9FE' },
+    absent: { label: t('staff.attendance.absent', 'Nghỉ làm'), color: '#6B7280', bg: '#F3F4F6', border: '#E5E7EB' }
+  };
+
   const [baseDate, setBaseDate] = useState(todayStr());
   const [staff, setStaff] = useState([]);
   const [schedules, setSchedules] = useState([]);
@@ -89,7 +100,7 @@ export default function AttendanceLog({ branchId }) {
       setSchedules(allScheds.filter(s => weekDays.includes(s.date)));
       setAttendances(allAtts.filter(a => weekDays.includes(a.date)));
     } catch (e) {
-      console.error('Lỗi khi tải dữ liệu chấm công:', e);
+      console.error(t('staff.attendance.load_error', 'Lỗi khi tải dữ liệu chấm công:'), e);
       const localStaff = localStorage.getItem('glopro_staff');
       setStaff(localStaff ? JSON.parse(localStaff) : []);
       const localTemplates = localStorage.getItem('glopro_shift_templates');
@@ -194,7 +205,7 @@ export default function AttendanceLog({ branchId }) {
         }
       }
 
-      toast.success('Đã điều chỉnh công thành công');
+      toast.success(t('staff.attendance.update_success', 'Đã điều chỉnh công thành công'));
       setEditingCell(null);
       loadData();
     } catch (e) {
@@ -219,7 +230,7 @@ export default function AttendanceLog({ branchId }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs font-semibold text-slate-700 transition-colors shadow-none"
                 >
                   <CalendarDays className="w-3.5 h-3.5 text-orange-500" />
-                  <span>Tuần: {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
+                  <span>{t('staff.scheduler.week', 'Tuần:')} {weekDays[0].split('-').reverse().slice(0, 2).join('/')} - {weekDays[6].split('-').reverse().slice(0, 2).join('/')}</span>
                   <ChevronDown className="w-3 h-3 text-slate-400" />
                 </button>
               </PopoverTrigger>
@@ -262,11 +273,11 @@ export default function AttendanceLog({ branchId }) {
 
           {/* Status Color Legend */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-550" style={{ backgroundColor: '#3B82F6' }} /> Đúng giờ</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-550" style={{ backgroundColor: '#EF4444' }} /> Đi trễ / Về sớm</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-550" style={{ backgroundColor: '#8B5CF6' }} /> Chưa chấm công</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-550" style={{ backgroundColor: '#D97706' }} /> Chấm công thiếu</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-450" style={{ backgroundColor: '#6B7280' }} /> Nghỉ làm</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-550" style={{ backgroundColor: '#3B82F6' }} /> {t('staff.attendance.on_time', 'Đúng giờ')}</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-550" style={{ backgroundColor: '#EF4444' }} /> {t('staff.attendance.late_early', 'Đi trễ / Về sớm')}</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-550" style={{ backgroundColor: '#8B5CF6' }} /> {t('staff.attendance.no_attendance', 'Chưa chấm công')}</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-550" style={{ backgroundColor: '#D97706' }} /> {t('staff.attendance.missing_punch', 'Chấm công thiếu')}</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-450" style={{ backgroundColor: '#6B7280' }} /> {t('staff.attendance.absent', 'Nghỉ làm')}</span>
           </div>
         </div>
 
@@ -279,9 +290,9 @@ export default function AttendanceLog({ branchId }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">Nhân sự</th>
+                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.scheduler.staff_column', 'Nhân sự')}</th>
                   {weekDays.map(d => (
-                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[160px]">{formatDateHeader(d)}</th>
+                    <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[160px]">{formatDateHeader(d, t)}</th>
                   ))}
                 </tr>
               </thead>
@@ -312,7 +323,7 @@ export default function AttendanceLog({ branchId }) {
                         <td key={date} className="p-2 text-center relative group min-h-[70px]">
                           <div className="flex flex-col gap-1.5">
                             {dayScheds.length === 0 ? (
-                              <div className="text-[10px] text-slate-300 italic py-3">Không xếp ca</div>
+                              <div className="text-[10px] text-slate-300 italic py-3">{t('staff.attendance.no_shift', 'Không xếp ca')}</div>
                             ) : (
                               dayScheds.map(sched => {
                                 const matchedTmpl = templates.find(t => t.id === sched.shift_template_id);
@@ -322,14 +333,14 @@ export default function AttendanceLog({ branchId }) {
                                 const att = dayAtts.find(a => a.staff_id === s.id);
                                 
                                 // Determine status config
-                                let statusKey = 'no_show';
+                                let statusKey = 'no_attendance';
                                 if (sched.is_off) {
                                   statusKey = 'off';
                                 } else if (att) {
                                   statusKey = att.status || 'full';
                                 }
                                 
-                                const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.no_show;
+                                const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.no_attendance;
                                 const checkInLabel = att?.check_in || '--:--';
                                 const checkOutLabel = att?.check_out || '--:--';
 
@@ -351,7 +362,7 @@ export default function AttendanceLog({ branchId }) {
                                       <button 
                                         onClick={() => openEditModal(s, date, sched, att)}
                                         className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-md hover:bg-slate-200/50 text-slate-500 shrink-0"
-                                        title="Chỉnh sửa chấm công"
+                                        title={t('staff.attendance.edit_tooltip', 'Chỉnh sửa chấm công')}
                                       >
                                         <Edit3 className="w-2.5 h-2.5" />
                                       </button>
@@ -395,7 +406,7 @@ export default function AttendanceLog({ branchId }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setEditingCell(null)}>
           <div className="relative bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-sm text-slate-800">Điều chỉnh chấm công</h3>
+              <h3 className="font-bold text-sm text-slate-800">{t('staff.attendance.update_modal_title', 'Điều chỉnh chấm công')}</h3>
               <button onClick={() => setEditingCell(null)} className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><X className="w-4.5 h-4.5 text-slate-500" /></button>
             </div>
             
@@ -405,7 +416,7 @@ export default function AttendanceLog({ branchId }) {
                 <Avatar src={editingCell.staff.avatar_url} name={editingCell.staff.full_name} size={36} color={editingCell.staff.avatar_color} />
                 <div>
                   <div className="font-bold text-xs text-slate-800">{editingCell.staff.full_name}</div>
-                  <div className="text-[10px] text-slate-450 font-semibold mt-0.5">Ngày: {editingCell.date.split('-').reverse().join('/')}</div>
+                  <div className="text-[10px] text-slate-450 font-semibold mt-0.5">{t('staff.attendance.date_label', 'Ngày:')} {editingCell.date.split('-').reverse().join('/')}</div>
                 </div>
               </div>
 
@@ -417,13 +428,13 @@ export default function AttendanceLog({ branchId }) {
                   onChange={(e) => setEditIsOff(e.target.checked)}
                   className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-4 h-4"
                 />
-                <span>Nhân viên nghỉ làm hôm nay (Vắng mặt)</span>
+                <span>{t('staff.attendance.mark_absent_long', 'Nhân viên nghỉ làm hôm nay (Vắng mặt)')}</span>
               </label>
 
               {!editIsOff && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Giờ Vào (Check-In)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('staff.attendance.check_in_long', 'Giờ Vào (Check-In)')}</label>
                     <input 
                       type="time" 
                       value={editCheckIn}
@@ -432,7 +443,7 @@ export default function AttendanceLog({ branchId }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-550 mb-1">Giờ Ra (Check-Out)</label>
+                    <label className="block text-[10px] font-bold text-slate-550 mb-1">{t('staff.attendance.check_out_long', 'Giờ Ra (Check-Out)')}</label>
                     <input 
                       type="time" 
                       value={editCheckOut}
@@ -449,13 +460,13 @@ export default function AttendanceLog({ branchId }) {
                 onClick={() => setEditingCell(null)} 
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
               >
-                Hủy
+                {t('staff.scheduler.cancel', 'Hủy')}
               </button>
               <button 
                 onClick={handleSaveEdit} 
                 className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 transition-colors"
               >
-                Lưu chỉnh sửa
+                {t('staff.attendance.save_changes', 'Lưu chỉnh sửa')}
               </button>
             </div>
           </div>

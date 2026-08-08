@@ -4,15 +4,18 @@ import { X, Plus, Check, Trash2, AlertCircle, AlertTriangle, CheckCircle, QrCode
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
-
-const METHODS = [
-  { value: 'cash', label: 'Tiền mặt' },
-  { value: 'card', label: 'Thẻ tín dụng' },
-  { value: 'transfer', label: 'Chuyển khoản' },
-  { value: 'ewallet', label: 'Ví điện tử' },
-];
+import { useT } from '@/lib/i18n';
 
 export default function CheckoutModal({ open, onClose, session, staff, onConfirm, paying }) {
+  const { t } = useT();
+
+  const METHODS = [
+    { value: 'cash', label: t('pos.checkout.cash', 'Tiền mặt') },
+    { value: 'card', label: t('pos.checkout.credit_card', 'Thẻ tín dụng') },
+    { value: 'transfer', label: t('pos.checkout.bank_transfer', 'Chuyển khoản') },
+    { value: 'ewallet', label: t('pos.checkout.ewallet', 'Ví điện tử') },
+  ];
+
   const [step, setStep] = useState('payment'); // 'payment', 'confirm', 'processing', 'receipt'
   const [printBill, setPrintBill] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -251,7 +254,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   // Confirm and proceed to loading step
   const handleContinue = () => {
     if (remaining > 1) {
-      return toast.error(`Số tiền chưa đủ (còn thiếu ${formatVND(remaining)})`);
+      return toast.error(`${t('pos.checkout.need_additional_payment', 'Cần thanh toán thêm')} ${formatVND(remaining)}`);
     }
     setStep('confirm');
   };
@@ -275,7 +278,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
   // Trigger Receipt Printing
   const handlePrint = () => {
     window.print();
-    toast.success('Đang khởi tạo lệnh in hóa đơn...');
+    toast.success(t('pos.checkout.print_init', 'Đang khởi tạo lệnh in hóa đơn...'));
   };
 
   // 1. Edit Tip Sub-screen Rendering
@@ -286,7 +289,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
         <div className="relative bg-white w-full max-w-md rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[85vh] select-auto" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800">Chia tiền tip</h2>
+            <h2 className="text-lg font-bold text-slate-800">{t('pos.checkout.split_tip', 'Chia tiền tip')}</h2>
             <button onClick={() => setIsEditingTip(false)} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
               <X className="w-4 h-4" />
             </button>
@@ -305,8 +308,9 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                       staff={availableStaff}
                       value={split.staffId}
                       onChange={(id) => setTempSplits(tempSplits.map((x, j) => j === index ? { ...x, staffId: id } : x))}
-                      placeholder="Chọn nhân viên"
+                      placeholder={t('pos.checkout.select_staff', 'Chọn nhân viên')}
                       color="emerald-500"
+                      hideRequestedCheckbox={true}
                     />
                   </div>
                   <div className="relative w-32 shrink-0">
@@ -314,7 +318,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                       type="number" 
                       value={split.amount || ''} 
                       onChange={(e) => setTempSplits(tempSplits.map((x, j) => j === index ? { ...x, amount: Number(e.target.value) || 0 } : x))} 
-                      placeholder="Nhập số tiền"
+                      placeholder={t('pos.checkout.enter_amount', 'Nhập số tiền')}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-right pl-6" 
                     />
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">đ</span>
@@ -333,19 +337,19 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               onClick={() => setTempSplits([...tempSplits, { staffId: '', amount: 0 }])}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs font-bold hover:bg-primary/10 transition-colors mt-2"
             >
-              <Plus className="w-3.5 h-3.5" /> Thêm nhân viên
+              <Plus className="w-3.5 h-3.5" /> {t('pos.checkout.add_staff', 'Thêm nhân viên')}
             </button>
           </div>
 
           {/* Footer */}
           <div className="bg-slate-50/50 px-6 py-5 border-t border-slate-100 flex items-center justify-between gap-4">
             <div className="flex flex-col">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tổng tiền tip</span>
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t('pos.checkout.total_tip', 'Tổng tiền tip')}</span>
               <span className="text-lg font-black text-slate-700">{formatVND(tempTotalTip)}</span>
             </div>
             <div className="flex gap-2 shrink-0">
-              <button onClick={() => setIsEditingTip(false)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-              <button onClick={handleApplyTipSplits} className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors">Áp dụng</button>
+              <button onClick={() => setIsEditingTip(false)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors">{t('common.cancel', 'Hủy')}</button>
+              <button onClick={handleApplyTipSplits} className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/95 transition-colors">{t('common.apply', 'Áp dụng')}</button>
             </div>
           </div>
         </div>
@@ -365,8 +369,8 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Xác nhận thanh toán?</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Hành động này không thể hoàn tác. Bạn có chắc chắn?</p>
+              <h2 className="text-lg font-bold text-slate-800">{t('pos.checkout.confirm_payment_title', 'Xác nhận thanh toán?')}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{t('pos.checkout.confirm_payment_desc', 'Hành động này không thể hoàn tác. Bạn có chắc chắn?')}</p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
               <X className="w-4 h-4" />
@@ -377,19 +381,19 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
           <div className="flex-1 overflow-y-auto px-6 py-5">
             <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-4">
               <div className="space-y-2 text-sm text-slate-600">
-                <div className="flex justify-between"><span>Tạm tính</span><span className="font-semibold text-slate-800">{formatVND(subtotal)}</span></div>
-                <div className="flex justify-between"><span>Giảm giá</span><span className="font-semibold text-slate-800">-{formatVND(discount)}</span></div>
-                <div className="flex justify-between"><span>Thuế (Tax)</span><span className="font-semibold text-slate-800">{formatVND(tax)}</span></div>
+                <div className="flex justify-between"><span>{t('pos.ticket.subtotal', 'Tạm tính')}</span><span className="font-semibold text-slate-800">{formatVND(subtotal)}</span></div>
+                <div className="flex justify-between"><span>{t('pos.ticket.discount', 'Giảm giá')}</span><span className="font-semibold text-slate-800">-{formatVND(discount)}</span></div>
+                <div className="flex justify-between"><span>{t('pos.checkout.tax', 'Thuế (Tax)')}</span><span className="font-semibold text-slate-800">{formatVND(tax)}</span></div>
                 {depositPaid > 0 && (
-                  <div className="flex justify-between mt-1 text-pink-600"><span>Đã cọc</span><span>-{formatVND(depositPaid)}</span></div>
+                  <div className="flex justify-between mt-1 text-pink-600"><span>{t('pos.checkout.deposit_paid', 'Đã cọc')}</span><span>-{formatVND(depositPaid)}</span></div>
                 )}
                 {tip > 0 && (
-                  <div className="flex justify-between mt-1 text-emerald-600"><span>Tiền tip</span><span>+{formatVND(tip)}</span></div>
+                  <div className="flex justify-between mt-1 text-emerald-600"><span>{t('pos.checkout.tip', 'Tiền tip')}</span><span>+{formatVND(tip)}</span></div>
                 )}
               </div>
               
               <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
-                <span className="font-bold text-slate-800">Tổng thanh toán</span>
+                <span className="font-bold text-slate-800">{t('pos.checkout.total_payment', 'Tổng thanh toán')}</span>
                 <span className="text-xl font-black text-emerald-600">{formatVND(total)}</span>
               </div>
 
@@ -401,7 +405,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                   </div>
                 ))}
                 <div className="flex justify-between text-emerald-600">
-                  <span>Tiền thừa (Change)</span>
+                  <span>{t('pos.checkout.change_amount', 'Tiền thừa (Change)')}</span>
                   <span className="font-bold">{formatVND(change)}</span>
                 </div>
               </div>
@@ -409,7 +413,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
             {/* Print Bill Toggle Option */}
             <div className="mt-5 flex items-center justify-between bg-slate-50/30 border border-slate-150 rounded-2xl px-4 py-3">
-              <span className="text-sm font-semibold text-slate-700">In hóa đơn sau khi thanh toán</span>
+              <span className="text-sm font-semibold text-slate-700">{t('pos.checkout.print_after_payment', 'In hóa đơn sau khi thanh toán')}</span>
               <button 
                 onClick={() => setPrintBill(!printBill)}
                 className={`w-11 h-6 rounded-full p-0.5 transition-colors focus:outline-none ${printBill ? 'bg-emerald-600' : 'bg-slate-200'}`}
@@ -421,10 +425,10 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
           {/* Footer */}
           <div className="px-6 py-5 border-t border-slate-100 flex items-center justify-between gap-3">
-            <button onClick={() => setStep('payment')} className="text-emerald-600 font-bold hover:underline text-sm px-2">Sửa</button>
+            <button onClick={() => setStep('payment')} className="text-emerald-600 font-bold hover:underline text-sm px-2">{t('common.edit', 'Sửa')}</button>
             <div className="flex gap-2 shrink-0 ml-auto">
-              <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">Hủy</button>
-              <button onClick={handleProceed} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-sm">Xác nhận</button>
+              <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">{t('common.cancel', 'Hủy')}</button>
+              <button onClick={handleProceed} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-sm">{t('common.confirm', 'Xác nhận')}</button>
             </div>
           </div>
         </div>
@@ -441,9 +445,9 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
             <CheckCircle className="w-10 h-10" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-800">Đang xử lý thanh toán...</h2>
+            <h2 className="text-lg font-bold text-slate-800">{t('pos.checkout.processing_payment', 'Đang xử lý thanh toán...')}</h2>
             <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
-              Giao dịch đang được xử lý, vui lòng không đóng cửa sổ hoặc chuyển hướng trang này. Có thể mất một vài giây...
+              {t('pos.checkout.processing_payment_desc', 'Giao dịch đang được xử lý, vui lòng không đóng cửa sổ hoặc chuyển hướng trang này. Có thể mất một vài giây...')}
             </p>
           </div>
 
@@ -471,7 +475,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto pointer-events-auto select-none" onClick={handleReceiptDone}>
         <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col my-8 select-auto" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 no-print">
-            <span className="text-sm font-bold text-slate-700">Xem hóa đơn thanh toán</span>
+            <span className="text-sm font-bold text-slate-700">{t('pos.checkout.view_invoice_receipt', 'Xem hóa đơn thanh toán')}</span>
             <button onClick={handleReceiptDone} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
           </div>
 
@@ -484,7 +488,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               </div>
               <div className="font-bold text-sm tracking-tight">GloPro Spa & Beauty</div>
               <div className="text-[10px] text-slate-400">{currentTime}</div>
-              <div className="font-black text-sm tracking-wider uppercase pt-3 text-slate-700">HÓA ĐƠN BÁN HÀNG</div>
+              <div className="font-black text-sm tracking-wider uppercase pt-3 text-slate-700">{t('pos.checkout.receipt_sales_invoice', 'HÓA ĐƠN BÁN HÀNG')}</div>
               <div className="inline-block border border-dashed border-slate-300 rounded px-2.5 py-1.5 font-bold tracking-tight bg-white text-[10px] mt-1">
                 {session.saleCode}
               </div>
@@ -492,16 +496,16 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
             {/* Customer Details */}
             <div className="space-y-1 border-b border-slate-200 pb-3">
-              <div className="flex justify-between"><span>Tên khách hàng:</span><span className="font-bold text-right truncate max-w-[180px]">{session.customer?.name || 'Khách vãng lai'}</span></div>
-              <div className="flex justify-between"><span>Số điện thoại:</span><span>{session.customer?.phone || '—'}</span></div>
-              <div className="flex justify-between"><span>Mã hóa đơn:</span><span>{session.saleCode}</span></div>
+              <div className="flex justify-between"><span>{t('pos.checkout.customer_name', 'Tên khách hàng:')}</span><span className="font-bold text-right truncate max-w-[180px]">{session.customer?.name || t('pos.checkout.walk_in', 'Khách vãng lai')}</span></div>
+              <div className="flex justify-between"><span>{t('pos.checkout.phone', 'Số điện thoại:')}</span><span>{session.customer?.phone || '—'}</span></div>
+              <div className="flex justify-between"><span>{t('pos.checkout.invoice_code', 'Mã hóa đơn:')}</span><span>{session.saleCode}</span></div>
             </div>
 
             {/* Line Items */}
             <div className="space-y-3 pb-3 border-b border-slate-200">
               {services.length > 0 && (
                 <div className="space-y-1">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Dịch vụ</div>
+                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">{t('pos.checkout.services_section', 'Dịch vụ')}</div>
                   {services.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-start">
                       <span className="truncate pr-2">{item.name} {item.qty > 1 && `x${item.qty}`}</span>
@@ -512,7 +516,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               )}
               {products.length > 0 && (
                 <div className="space-y-1">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Sản phẩm</div>
+                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">{t('pos.checkout.products_section', 'Sản phẩm')}</div>
                   {products.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-start">
                       <span className="truncate pr-2">{item.name} {item.qty > 1 && `x${item.qty}`}</span>
@@ -523,7 +527,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               )}
               {others.length > 0 && (
                 <div className="space-y-1">
-                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Khác / Thẻ / Gói</div>
+                  <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">{t('pos.checkout.others_cards_packages', 'Khác / Thẻ / Gói')}</div>
                   {others.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-start">
                       <span className="truncate pr-2">{item.name} {item.qty > 1 && `x${item.qty}`}</span>
@@ -536,22 +540,22 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
 
             {/* Math Calculations */}
             <div className="space-y-1 border-b border-slate-200 pb-3">
-              <div className="flex justify-between"><span>Tạm tính:</span><span>{formatVND(subtotal)}</span></div>
-              <div className="flex justify-between"><span>Giảm giá:</span><span>-{formatVND(discount)}</span></div>
-              <div className="flex justify-between"><span>Thuế (Tax):</span><span>0 đ</span></div>
-              {depositPaid > 0 && <div className="flex justify-between font-medium text-pink-600"><span>Đã cọc:</span><span>-{formatVND(depositPaid)}</span></div>}
-              <div className="flex justify-between"><span>Tiền tip:</span><span>{formatVND(tip)}</span></div>
+              <div className="flex justify-between"><span>{t('pos.ticket.subtotal', 'Tạm tính:')}</span><span>{formatVND(subtotal)}</span></div>
+              <div className="flex justify-between"><span>{t('pos.ticket.discount', 'Giảm giá:')}</span><span>-{formatVND(discount)}</span></div>
+              <div className="flex justify-between"><span>{t('pos.checkout.tax', 'Thuế (Tax):')}</span><span>0 đ</span></div>
+              {depositPaid > 0 && <div className="flex justify-between font-medium text-pink-600"><span>{t('pos.checkout.deposit_paid', 'Đã cọc:')}</span><span>-{formatVND(depositPaid)}</span></div>}
+              <div className="flex justify-between"><span>{t('pos.checkout.tip', 'Tiền tip:')}</span><span>{formatVND(tip)}</span></div>
             </div>
 
             {/* Total */}
             <div className="flex justify-between items-center text-sm font-black tracking-wider pb-3 border-b border-slate-200 text-slate-900">
-              <span>TỔNG THANH TOÁN:</span>
+              <span>{t('pos.checkout.total_payment', 'TỔNG THANH TOÁN:')}</span>
               <span>{formatVND(total)}</span>
             </div>
 
             {/* Payment detail rows */}
             <div className="space-y-1">
-              <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Phương thức thanh toán</div>
+              <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400">{t('pos.checkout.payment_method', 'Phương thức thanh toán')}</div>
               {payments.filter(p => p.amount > 0).map((p, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span className="capitalize">{METHODS.find(m => m.value === p.method)?.label || p.method}</span>
@@ -559,19 +563,19 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                 </div>
               ))}
               <div className="flex justify-between text-green-600 font-bold">
-                <span>Tiền thừa trả khách:</span>
+                <span>{t('pos.checkout.change_return_to_client', 'Tiền thừa trả khách:')}</span>
                 <span>{formatVND(change)}</span>
               </div>
             </div>
 
             {/* QR block code placeholder */}
             <div className="text-center space-y-2 pt-4 border-t border-slate-200">
-              <div className="text-[10px] text-slate-400 max-w-[200px] mx-auto">Quét mã QR để tải ứng dụng đặt lịch hẹn</div>
+              <div className="text-[10px] text-slate-400 max-w-[200px] mx-auto">{t('pos.checkout.scan_qr_desc', 'Quét mã QR để tải ứng dụng đặt lịch hẹn')}</div>
               <div className="bg-white border border-slate-200 p-2.5 rounded-xl inline-block shadow-xs">
                 <QrCode className="w-20 h-20 text-slate-700" />
               </div>
               <div className="text-[9px] text-slate-400 max-w-[240px] mx-auto pt-2 leading-relaxed font-sans">
-                Cảm ơn quý khách đã sử dụng dịch vụ tại GloPro Spa & Beauty. Rất hân hạnh được phục vụ quý khách lần sau!
+                {t('pos.checkout.receipt_thanks_footer', 'Cảm ơn quý khách đã sử dụng dịch vụ tại GloPro Spa & Beauty. Rất hân hạnh được phục vụ quý khách lần sau!')}
               </div>
             </div>
           </div>
@@ -582,13 +586,13 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
               onClick={handlePrint} 
               className="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 bg-white"
             >
-              <Printer className="w-4 h-4" /> In hóa đơn
+              <Printer className="w-4 h-4" /> {t('pos.checkout.print_invoice', 'In hóa đơn')}
             </button>
             <button 
               onClick={handleReceiptDone} 
               className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1.5"
             >
-              Hoàn thành
+              {t('common.done', 'Hoàn thành')}
             </button>
           </div>
         </div>
@@ -602,7 +606,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
       <div className="relative bg-white w-full max-w-lg rounded-3xl border border-slate-100 shadow-xl overflow-hidden flex flex-col max-h-[90vh] select-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Thanh toán hóa đơn</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t('pos.checkout.pay_invoice_title', 'Thanh toán hóa đơn')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
             <X className="w-4 h-4" />
           </button>
@@ -613,9 +617,9 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
           {/* Select tip block */}
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
-              <span>Chọn tiền tip</span>
+              <span>{t('pos.checkout.choose_tip', 'Chọn tiền tip')}</span>
               <div className="text-xs text-slate-400">
-                Số tiền tip: <span className="font-bold text-slate-700 ml-1">{formatVND(tip)}</span>
+                {t('pos.checkout.tip_amount', 'Số tiền tip:')} <span className="font-bold text-slate-700 ml-1">{formatVND(tip)}</span>
               </div>
             </div>
 
@@ -653,7 +657,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                 type="number"
                 value={customTip}
                 onChange={(e) => handleCustomTipChange(e.target.value)}
-                placeholder="Hoặc nhập số tiền cụ thể..."
+                placeholder={t('pos.checkout.or_enter_custom_tip', 'Hoặc nhập số tiền cụ thể...')}
                 className="flex-1 px-3.5 py-2 bg-transparent outline-none text-sm font-semibold text-slate-700 w-full"
               />
             </div>
@@ -664,23 +668,23 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                 <span className="truncate">
                   {tipSplits.length > 0 ? (
                     <>
-                      Chia tiền tip: {tipSplits.map(s => {
+                      {t('pos.checkout.tip_split_display', 'Chia tiền tip:')} {tipSplits.map(s => {
                         const st = getSelectableStaff().find(x => x.id === s.staffId);
                         return `${st?.full_name || st?.name || 'Nhân viên'}: ${formatVND(s.amount)}`;
                       }).join(', ')}
                     </>
                   ) : (
-                    "Tiền tip chưa được chia cho nhân viên"
+                    t('pos.checkout.tip_not_assigned', 'Tiền tip chưa được chia cho nhân viên')
                   )}
                 </span>
-                <button onClick={handleOpenEditTip} className="text-emerald-600 font-bold hover:underline shrink-0 ml-2">Sửa</button>
+                <button onClick={handleOpenEditTip} className="text-emerald-600 font-bold hover:underline shrink-0 ml-2">{t('common.edit', 'Sửa')}</button>
               </div>
             )}
           </div>
 
           {/* Select payment methods block */}
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-slate-700">Chọn phương thức thanh toán <span className="text-red-500">*</span></div>
+            <div className="text-sm font-semibold text-slate-700">{t('pos.checkout.select_payment_methods', 'Chọn phương thức thanh toán')} <span className="text-red-500">*</span></div>
             
             <div className="space-y-2">
               {payments.map((p, i) => (
@@ -701,7 +705,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                       type="number" 
                       value={p.amount || ''} 
                       onChange={(e) => setPayments(payments.map((x, j) => j === i ? { ...x, amount: Number(e.target.value) || 0 } : x))} 
-                      placeholder="0"
+                      placeholder={t('pos.checkout.enter_amount', 'Nhập số tiền')}
                       className="w-full pl-7 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-right" 
                     />
                   </div>
@@ -709,7 +713,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                     <button 
                       onClick={() => setPayments([...payments, { method: 'cash', amount: 0 }])}
                       className="p-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shrink-0 shadow-2xs"
-                      title="Thêm phương thức"
+                      title={t('pos.checkout.add_method', 'Thêm phương thức')}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -717,7 +721,7 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
                     <button 
                       onClick={() => setPayments(payments.filter((_, j) => j !== i))}
                       className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 transition-colors shrink-0"
-                      title="Xoá phương thức"
+                      title={t('pos.checkout.delete_method', 'Xoá phương thức')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -732,22 +736,22 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
             <div className="bg-red-50 text-red-600 border border-red-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-2xs">
               <span className="flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                Cần thanh toán thêm {formatVND(remaining)}
+                {t('pos.checkout.need_additional_payment', 'Cần thanh toán thêm')} {formatVND(remaining)}
               </span>
-              <button onClick={handleAddRemainingToCash} className="text-red-700 hover:underline cursor-pointer">Thêm vào tiền mặt</button>
+              <button onClick={handleAddRemainingToCash} className="text-red-700 hover:underline cursor-pointer">{t('pos.checkout.add_to_cash', 'Thêm vào tiền mặt')}</button>
             </div>
           ) : remaining < 0 ? (
             <div className="bg-emerald-50 text-emerald-700 border border-emerald-100/80 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-2xs">
               <span className="flex items-center gap-1.5">
                 <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-                Tiền thừa: {formatVND(-remaining)}
+                {t('pos.checkout.change_prefix', 'Tiền thừa:')} {formatVND(-remaining)}
               </span>
-              <button onClick={handleAddChangeToTip} className="text-emerald-800 hover:underline cursor-pointer">Thêm vào tiền tip</button>
+              <button onClick={handleAddChangeToTip} className="text-emerald-800 hover:underline cursor-pointer">{t('pos.checkout.add_to_tip', 'Thêm vào tiền tip')}</button>
             </div>
           ) : (
             <div className="bg-emerald-50 text-emerald-700 border border-emerald-100/80 rounded-xl px-4 py-2.5 flex items-center gap-1.5 text-xs font-bold shadow-2xs">
               <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-              Đủ thanh toán ✓
+              {t('pos.checkout.sufficient_payment', 'Đủ thanh toán ✓')}
             </div>
           )}
         </div>
@@ -755,13 +759,13 @@ export default function CheckoutModal({ open, onClose, session, staff, onConfirm
         {/* Footer */}
         <div className="bg-slate-50/50 px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4 shrink-0 font-sans">
           <div className="flex flex-col">
-            <span className="text-xs text-slate-400 font-bold">Tổng thanh toán</span>
+            <span className="text-xs text-slate-400 font-bold">{t('pos.checkout.total_payment', 'Tổng thanh toán')}</span>
             <span className="text-xl font-black text-slate-800 tracking-tight">{formatVND(total)}</span>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">Hủy</button>
+            <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">{t('common.cancel', 'Hủy')}</button>
             <button onClick={handleContinue} disabled={paying || remaining > 1} className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs">
-              Tiếp tục
+              {t('common.continue', 'Tiếp tục')}
             </button>
           </div>
         </div>

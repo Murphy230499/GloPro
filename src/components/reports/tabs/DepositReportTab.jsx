@@ -7,9 +7,11 @@ import {
 import KPICard from '../KPICard';
 import DataTable from '../DataTable';
 import { formatVND } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
-  // Aggregate data
+  const t = useT();
+
   const metrics = useMemo(() => {
     let totalReceived = 0;
     let totalApplied = 0;
@@ -39,12 +41,10 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
     };
   }, [deposits]);
 
-  // Chart data: Trend of deposits over time
   const trendData = useMemo(() => {
     const trendMap = {};
     deposits.forEach(d => {
       if (!d.created_date) return;
-      // count all received (available + applied)
       if (d.status === 'refunded' || d.status === 'cancelled') return;
       const day = d.created_date.substring(0, 10);
       trendMap[day] = (trendMap[day] || 0) + (d.amount || 0);
@@ -52,47 +52,46 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
 
     return Object.entries(trendMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-30) // last 30 days of data
+      .slice(-30)
       .map(([date, amount]) => ({
-        date: date.substring(5), // MM-DD
+        date: date.substring(5),
         amount
       }));
   }, [deposits]);
 
-  // Table Columns
   const columns = [
     {
       key: 'created_date',
-      label: 'Ngày tạo',
+      label: t('reports.col_created_date', 'Created Date'),
       render: (val) => val ? new Date(val).toLocaleDateString('vi-VN') : '-'
     },
     {
       key: 'customer_name',
-      label: 'Khách hàng',
-      render: (val) => <span className="font-medium text-slate-800">{val || 'Khách vãng lai'}</span>
+      label: t('reports.col_customer', 'Customer'),
+      render: (val) => <span className="font-medium text-slate-800">{val || t('reports.walk_in_customer', 'Walk-in Customer')}</span>
     },
     {
       key: 'amount',
-      label: 'Số tiền',
+      label: t('reports.col_amount', 'Amount'),
       render: (val) => <span className="font-semibold text-slate-800">{formatVND(val)}</span>
     },
     {
       key: 'payment_method',
-      label: 'Hình thức',
+      label: t('reports.col_method', 'Payment Method'),
       render: (val) => {
-        const labels = { cash: 'Tiền mặt', bank: 'Chuyển khoản', card: 'Quẹt thẻ' };
-        return <span className="text-slate-600">{labels[val] || val || 'Khác'}</span>;
+        const labels = { cash: t('reports.pm_cash', 'Cash'), bank: t('reports.pm_bank', 'Bank Transfer'), card: t('reports.pm_card', 'Credit Card') };
+        return <span className="text-slate-600">{labels[val] || val || t('reports.other', 'Other')}</span>;
       }
     },
     {
       key: 'status',
-      label: 'Trạng thái',
+      label: t('reports.col_status', 'Status'),
       render: (val) => {
         const statusConfig = {
-          available: { bg: 'bg-emerald-50 text-emerald-700', label: 'Khả dụng' },
-          applied: { bg: 'bg-blue-50 text-blue-700', label: 'Đã dùng' },
-          refunded: { bg: 'bg-slate-50 text-slate-600', label: 'Đã hoàn' },
-          cancelled: { bg: 'bg-red-50 text-red-700', label: 'Đã huỷ' }
+          available: { bg: 'bg-emerald-50 text-emerald-700', label: t('reports.status_available', 'Available') },
+          applied: { bg: 'bg-blue-50 text-blue-700', label: t('reports.status_applied', 'Applied') },
+          refunded: { bg: 'bg-slate-50 text-slate-600', label: t('reports.status_refunded', 'Refunded') },
+          cancelled: { bg: 'bg-red-50 text-red-700', label: t('reports.status_cancelled', 'Cancelled') }
         };
         const config = statusConfig[val] || { bg: 'bg-slate-50 text-slate-600', label: val };
         return (
@@ -116,35 +115,35 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Tổng Cọc Đã Nhận"
+          title={t('reports.kpi_total_dep_rec', 'Total Received Deposits')}
           value={formatVND(metrics.totalReceived)}
           icon={DollarSign}
           growth={12}
-          compareText="so với kỳ trước"
+          compareText={t('reports.vs_prev_period', 'vs previous period')}
           color="emerald"
         />
         <KPICard
-          title="Cọc Khả Dụng"
+          title={t('reports.kpi_avail_deposits', 'Available Deposits')}
           value={formatVND(metrics.totalAvailable)}
           icon={ShieldCheck}
           growth={5}
-          compareText="số tiền khách chưa dùng"
+          compareText={t('reports.unused_bal', 'unused balance')}
           color="blue"
         />
         <KPICard
-          title="Cọc Đã Dùng"
+          title={t('reports.kpi_applied_deposits', 'Applied Deposits')}
           value={formatVND(metrics.totalApplied)}
           icon={CheckCircle}
           growth={8}
-          compareText="đã dùng thanh toán HĐ"
+          compareText={t('reports.used_for_inv', 'used for invoice payment')}
           color="indigo"
         />
         <KPICard
-          title="Đã Hoàn/Huỷ"
+          title={t('reports.kpi_refunded_dep', 'Refunded / Cancelled')}
           value={formatVND(metrics.totalRefunded)}
           icon={RefreshCcw}
           growth={0}
-          compareText="tiền cọc trả lại khách"
+          compareText={t('reports.ret_to_cust', 'returned to customer')}
           color="slate"
         />
       </div>
@@ -154,7 +153,7 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-pink-600" />
-            <h3 className="font-bold text-slate-800">Biểu đồ Nhận Cọc</h3>
+            <h3 className="font-bold text-slate-800">{t('reports.deposit_rec_chart', 'Deposit Receipts Chart')}</h3>
           </div>
           <div className="h-[300px]">
             {trendData.length > 0 ? (
@@ -172,14 +171,14 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
                   <Tooltip 
                     cursor={{fill: '#F8FAFC'}}
                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                    formatter={(val) => [formatVND(val), 'Số tiền']}
+                    formatter={(val) => [formatVND(val), t('reports.amount_label', 'Amount')]}
                   />
                   <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-slate-400">
-                Không có dữ liệu trong khoảng thời gian này
+                {t('reports.no_data_range', 'No data available for this time range')}
               </div>
             )}
           </div>
@@ -190,9 +189,9 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
           <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Wallet className="w-8 h-8 text-pink-600" />
           </div>
-          <h3 className="font-bold text-slate-800 text-lg mb-2">Tầm quan trọng của Đặt Cọc</h3>
+          <h3 className="font-bold text-slate-800 text-lg mb-2">{t('reports.deposit_mgmt_importance', 'Importance of Deposit Management')}</h3>
           <p className="text-slate-500 text-sm leading-relaxed mb-6">
-            Theo dõi dòng tiền cọc giúp đảm bảo tính thanh khoản và thể hiện mức độ cam kết của khách hàng. Hãy khuyến khích khách hàng đặt cọc cho các dịch vụ giá trị cao.
+            {t('reports.deposit_mgmt_desc', 'Tracking deposit cash flow ensures liquidity and customer commitment. Encourage deposits for high-value services.')}
           </p>
         </div>
       </div>
@@ -201,12 +200,12 @@ export default function DepositReportTab({ deposits = [], searchQuery = '' }) {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-indigo-600" />
-          Chi Tiết Khoản Cọc
+          {t('reports.deposit_trans_detail', 'Deposit Transactions Detail')}
         </h3>
         <DataTable
           columns={columns}
           data={filteredDeposits}
-          emptyText="Không tìm thấy dữ liệu đặt cọc phù hợp"
+          emptyText={t('reports.no_matching_deposits', 'No matching deposit records found')}
         />
       </div>
     </div>

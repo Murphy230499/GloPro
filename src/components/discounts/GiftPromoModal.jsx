@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Gift, CheckCircle2, User, Filter, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useT } from '@/lib/i18n';
 import toast from 'react-hot-toast';
 import { loadCustomerTiers, loadCustomerSegments } from '@/utils/loyaltyFallbacks';
 
 export default function GiftPromoModal({ promo, onClose }) {
+  const { t } = useT();
   const [customers, setCustomers] = useState([]);
   const [tiers, setTiers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -165,7 +167,7 @@ export default function GiftPromoModal({ promo, onClose }) {
               <Gift className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-slate-800">Tặng Khuyến mãi</h2>
+              <h2 className="font-bold text-lg text-slate-800">{t('discounts.gift_modal_title', 'Tặng Khuyến mãi')}</h2>
               <p className="text-xs text-slate-500 font-medium truncate max-w-[300px]">{promo.name}</p>
             </div>
           </div>
@@ -180,7 +182,7 @@ export default function GiftPromoModal({ promo, onClose }) {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
-              placeholder="Tìm tên hoặc SĐT khách hàng..." 
+              placeholder={t('discounts.search_customer_ph', 'Tìm tên hoặc SĐT khách hàng...')} 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-pink-400 transition-colors text-slate-700 shadow-sm"
@@ -193,9 +195,9 @@ export default function GiftPromoModal({ promo, onClose }) {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full pl-3 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none text-slate-700 appearance-none"
               >
-                <option value="all">Loại: Tất cả</option>
-                <option value="new">Khách mới</option>
-                <option value="returning">Khách cũ</option>
+                <option value="all">{t('discounts.filter_type_all', 'Loại: Tất cả')}</option>
+                <option value="new">{t('discounts.filter_type_new', 'Khách mới')}</option>
+                <option value="returning">{t('discounts.filter_type_returning', 'Khách cũ')}</option>
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
@@ -206,7 +208,7 @@ export default function GiftPromoModal({ promo, onClose }) {
                 className="w-full pl-3 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none text-slate-700 appearance-none"
               >
                 <option value="all">Hạng: Tất cả</option>
-                {tiers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {tiers.map(tier => <option key={tier.id} value={tier.id}>{tier.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
@@ -297,14 +299,14 @@ export default function GiftPromoModal({ promo, onClose }) {
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl flex justify-between items-center gap-4">
           <div className="text-sm font-semibold text-slate-600">
-            Đã chọn: <span className="text-pink-600 font-bold">{selectedIds.length}</span> khách
+            {t('discounts.selected_customers', 'Đã chọn:')} <span className="text-pink-600 font-bold">{selectedIds.length}</span> {t('discounts.customers_unit', 'khách')}
           </div>
           <button 
             onClick={handleGift}
             disabled={selectedIds.length === 0}
-            className="flex-1 py-3 rounded-xl bg-pink-600 text-white font-bold text-sm shadow-sm hover:bg-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 max-w-[200px]"
+            className="flex-1 py-3 rounded-xl bg-pink-600 text-white font-bold text-sm shadow-sm hover:bg-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 max-w-[200px] cursor-pointer"
           >
-            <Gift className="w-4 h-4" /> Tặng {selectedIds.length > 0 ? selectedIds.length : ''} quà
+            <Gift className="w-4 h-4" /> {t('discounts.btn_gift', 'Tặng')} {selectedIds.length > 0 ? selectedIds.length : ''} {t('discounts.gift_item_unit', 'quà')}
           </button>
         </div>
       </div>

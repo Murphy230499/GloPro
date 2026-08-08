@@ -31,7 +31,7 @@ const NAV = [
   { to: '/cash-flow', tkey: 'nav.cash_flow', icon: Wallet, color: '#10B981' },
   { to: '/reports', tkey: 'nav.reports', icon: BarChart3, color: '#C084FC' },
   { to: '/booking', tkey: 'nav.booking', icon: CalendarCheck, color: '#EC4899' },
-  { to: '/deposits', tkey: 'Đặt cọc', icon: PiggyBank, color: '#F43F5E' },
+  { to: '/deposits', tkey: 'nav.deposits', icon: PiggyBank, color: '#F43F5E' },
   { to: '/settings', tkey: 'nav.settings', icon: SettingsIcon, color: '#94A3B8' }
 ];
 

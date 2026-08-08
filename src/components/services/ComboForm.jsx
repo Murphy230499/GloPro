@@ -1,11 +1,13 @@
 'use client';
 import React, { useState } from 'react';
+import { useT } from '@/lib/i18n';
 import {  X, Plus, Trash2 , ChevronDown } from 'lucide-react';
 import { toast } from '@/components/Layout';
 import { formatVND } from '@/lib/format';
 import ImageUpload from '@/components/ImageUpload';
 
 export default function ComboForm({ item,  services, branches, onClose, onSave }) {
+  const { t } = useT();
   const [f, setF] = useState({
     name: item.name || '',
     branch_ids: item.branch_ids || [],description: item.description || '',
@@ -21,8 +23,8 @@ export default function ComboForm({ item,  services, branches, onClose, onSave }
 
   const addService = () => {
     const svc = services.find((s) => s.id === selService);
-    if (!svc) return toast.error('Chọn dịch vụ');
-    if (f.items.find((x) => x.service_id === selService)) return toast.error('Đã có dịch vụ này');
+    if (!svc) return toast.error(t('catalog.err_select_service', 'Chọn dịch vụ'));
+    if (f.items.find((x) => x.service_id === selService)) return toast.error(t('catalog.err_service_exists', 'Đã có dịch vụ này'));
     setF({ ...f, items: [...f.items, { service_id: svc.id, service_name: svc.name, price: svc.price }] });
     setSelService('');
   };
@@ -36,18 +38,18 @@ export default function ComboForm({ item,  services, branches, onClose, onSave }
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-800 font-sans">{item.id ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ'}</h2>
+          <h2 className="text-base font-bold text-slate-800 font-sans">{item.id ? t('catalog.title_edit_service_combo', 'Sửa combo dịch vụ') : t('catalog.title_add_service_combo', 'Thêm combo dịch vụ')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
-          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tên gói dịch vụ" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
+          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={t('catalog.ph_service_combo_name', 'Tên combo dịch vụ')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
 
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <label className="block font-medium text-slate-700 mb-2 text-xs">Áp dụng tại chi nhánh:</label>
+            <label className="block font-medium text-slate-700 mb-2 text-xs">{t('catalog.apply_branches', 'Áp dụng tại chi nhánh:')}</label>
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={!f.branch_ids || f.branch_ids.length === 0} onChange={() => setF({...f, branch_ids: []})} className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300" />
-                <span className="text-xs text-slate-600 font-medium">Tất cả</span>
+                <span className="text-xs text-slate-600 font-medium">{t('catalog.all_branches', 'Tất cả')}</span>
               </label>
               {(branches || []).map(b => (
                 <label key={b.id} className="flex items-center gap-1.5 cursor-pointer">
@@ -63,13 +65,13 @@ export default function ComboForm({ item,  services, branches, onClose, onSave }
               ))}
             </div>
           </div>
-          <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Mô tả" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
+          <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder={t('catalog.label_description', 'Mô tả')} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white" />
 
           <div>
-            <label className="block font-bold text-slate-500 mb-1 text-[11px]">Dịch vụ trong gói</label>
+            <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('catalog.services_in_combo', 'Dịch vụ trong combo')}</label>
             <div className="flex gap-1.5 mt-1">
               <select value={selService} onChange={(e) => setSelService(e.target.value)} className="flex-1 px-2.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white">
-                <option value="">— Chọn dịch vụ —</option>
+                <option value="">{t('catalog.select_service_placeholder', '— Chọn dịch vụ —')}</option>
                 {services.map((s) => <option key={s.id} value={s.id}>{s.name} — {formatVND(s.price)}</option>)}
               </select>
               <button type="button" onClick={addService} className="px-3 rounded-xl bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><Plus className="w-4 h-4" /></button>
@@ -89,26 +91,26 @@ export default function ComboForm({ item,  services, branches, onClose, onSave }
 
           <div className="bg-slate-50 rounded-xl p-3 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Giá gốc (tổng):</span>
+              <span className="text-slate-400">{t('catalog.original_total_label', 'Giá gốc (tổng):')}</span>
               <span className="font-medium">{formatVND(originalPrice)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <label className="text-sm text-slate-400 shrink-0">Giá combo:</label>
+              <label className="text-sm text-slate-400 shrink-0">{t('catalog.combo_price_label', 'Giá combo:')}</label>
               <input type="number" value={f.combo_price || ''} onChange={(e) => setF({ ...f, combo_price: Number(e.target.value) || 0 })} className="w-32 px-2.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-700 bg-white text-right" />
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm text-green-600 font-semibold">
-                <span>Tiết kiệm:</span>
+                <span>{t('catalog.savings_label', 'Tiết kiệm:')}</span>
                 <span>{formatVND(discount)}</span>
               </div>
             )}
           </div>
 
-          <ImageUpload value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} label="Hình minh hoạ" />
+          <ImageUpload value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} label={t('catalog.illustration_label', 'Hình minh hoạ')} />
         </div>
         <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
-          <button onClick={() => (f.name ? onSave(f) : toast.error('Nhập tên gói'))} className="flex-1 py-2.5 rounded-xl bg-purple-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">Lưu</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">{t('catalog.btn_cancel', 'Hủy')}</button>
+          <button onClick={() => (f.name ? onSave(f) : toast.error(t('catalog.err_enter_combo_name', 'Nhập tên combo')))} className="flex-1 py-2.5 rounded-xl bg-purple-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all font-sans">{t('catalog.btn_save', 'Lưu')}</button>
         </div>
       </div>
     </div>

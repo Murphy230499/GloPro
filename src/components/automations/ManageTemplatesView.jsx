@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Search, Pencil, RotateCcw, ChevronLeft, ChevronRight, Check, X, Sparkles } from 'lucide-react';
 import { toast } from '@/components/Layout';
+import { useT } from '@/lib/i18n';
 
 // Tailored, purpose-built initial templates for 10 automation events in Vietnamese
 const INITIAL_EMAIL_TEMPLATES = [
@@ -267,6 +268,7 @@ const INITIAL_ZALO_TEMPLATES = INITIAL_WHATSAPP_TEMPLATES.map(t => ({
 }));
 
 export default function ManageTemplatesView({ onBackToEvents }) {
+  const { t } = useT();
   const [activeChannel, setActiveChannel] = useState('Email');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -333,17 +335,17 @@ export default function ManageTemplatesView({ onBackToEvents }) {
             onClick={onBackToEvents}
             className="text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
           >
-            Sự kiện tự động
+            {t('automations.breadcrumb_events', 'Sự kiện tự động')}
           </button>
           <span>/</span>
-          <span className="text-slate-800 font-semibold">Quản lý kịch bản mẫu</span>
+          <span className="text-slate-800 font-semibold">{t('automations.btn_manage_templates', 'Quản lý kịch bản mẫu')}</span>
         </div>
 
         {/* Title Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Quản lý kịch bản mẫu</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Tùy chỉnh tiêu đề và nội dung tin nhắn tự động theo từng kênh phát email, sms và whatsapp</p>
+            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">{t('automations.btn_manage_templates', 'Quản lý kịch bản mẫu')}</h1>
+            <p className="text-xs text-slate-500 mt-0.5">{t('automations.manage_templates_subtitle', 'Tùy chỉnh tiêu đề và nội dung tin nhắn tự động theo từng kênh phát email, sms và whatsapp')}</p>
           </div>
 
           <button
@@ -351,7 +353,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-semibold transition shadow-2xs cursor-pointer shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Quay lại kịch bản</span>
+            <span>{t('automations.btn_back_to_events', 'Quay lại kịch bản')}</span>
           </button>
         </div>
 
@@ -382,7 +384,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tiêu đề hoặc sự kiện..."
+              placeholder={t('automations.search_template_ph', 'Tìm theo tiêu đề hoặc sự kiện...')}
               className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200/90 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 bg-white shadow-2xs placeholder:text-slate-400"
             />
             {searchQuery && (
@@ -406,9 +408,9 @@ export default function ManageTemplatesView({ onBackToEvents }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200/80 bg-slate-50/60 text-xs font-medium text-slate-500 normal-case">
-                <th className="py-3.5 px-6 font-medium text-slate-600">Tiêu đề</th>
-                <th className="py-3.5 px-6 font-medium text-slate-600">Sự kiện kích hoạt</th>
-                <th className="py-3.5 px-6 font-medium text-slate-600 text-right">Thao tác</th>
+                <th className="py-3.5 px-6 font-medium text-slate-600">{t('automations.col_subject', 'Tiêu đề')}</th>
+                <th className="py-3.5 px-6 font-medium text-slate-600">{t('automations.col_trigger_event', 'Sự kiện kích hoạt')}</th>
+                <th className="py-3.5 px-6 font-medium text-slate-600 text-right">{t('automations.col_actions', 'Thao tác')}</th>
               </tr>
             </thead>
 
@@ -416,7 +418,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
               {paginatedList.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-12 text-center text-slate-400 font-medium">
-                    Không tìm thấy mẫu kịch bản phù hợp
+                    {t('automations.no_templates_found', 'Không tìm thấy mẫu kịch bản phù hợp')}
                   </td>
                 </tr>
               ) : (
@@ -426,10 +428,10 @@ export default function ManageTemplatesView({ onBackToEvents }) {
                     {/* Subject */}
                     <td className="py-4 px-6 font-medium text-slate-800 max-w-xs md:max-w-md truncate">
                       <div className="flex items-center gap-2">
-                        <span className="truncate">{tpl.subject}</span>
+                        <span className="truncate">{tpl.triggerId ? `${t(`automations.item_${tpl.triggerId}_title`, tpl.triggerEvent)} (${activeChannel})` : tpl.subject}</span>
                         {tpl.isCustomized && (
                           <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px] font-semibold shrink-0">
-                            Đã sửa
+                            {t('automations.status_customized', 'Đã sửa')}
                           </span>
                         )}
                       </div>
@@ -437,7 +439,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
 
                     {/* Trigger event */}
                     <td className="py-4 px-6 font-medium text-slate-600">
-                      {tpl.triggerEvent}
+                      {tpl.triggerId ? t(`automations.item_${tpl.triggerId}_title`, tpl.triggerEvent) : tpl.triggerEvent}
                     </td>
 
                     {/* Action buttons (Pencil & Revert) */}
@@ -551,6 +553,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
 
 // Modal component for editing template content
 function EditTemplateModal({ open, template, channel, onClose, onSave }) {
+  const { t } = useT();
   const [subject, setSubject] = useState(template.subject);
   const [body, setBody] = useState(template.body);
 
@@ -558,6 +561,13 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
 
   const insertToken = (tokenStr) => {
     setBody(prev => prev + ` ${tokenStr} `);
+  };
+
+  const getTranslatedTriggerEvent = (tpl) => {
+    if (tpl.triggerId) {
+      return t(`automations.item_${tpl.triggerId}_title`, tpl.triggerEvent);
+    }
+    return tpl.triggerEvent;
   };
 
   return (
@@ -571,8 +581,8 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-800">Chỉnh sửa mẫu tin nhắn ({channel})</h2>
-            <p className="text-[11px] text-slate-400 font-medium">Sự kiện: {template.triggerEvent}</p>
+            <h2 className="text-base font-semibold text-slate-800">{t('automations.modal_edit_template_title', 'Chỉnh sửa mẫu tin nhắn')} ({channel})</h2>
+            <p className="text-[11px] text-slate-400 font-medium">{t('automations.event_label', 'Sự kiện')}: {getTranslatedTriggerEvent(template)}</p>
           </div>
           <button
             onClick={onClose}
@@ -588,7 +598,7 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
           {/* Subject (for Email) */}
           {channel === 'Email' && (
             <div className="space-y-1">
-              <label className="block font-medium text-slate-500 text-[11px]">Tiêu đề email *</label>
+              <label className="block font-medium text-slate-500 text-[11px]">{t('automations.email_subject_label', 'Tiêu đề email *')}</label>
               <input
                 type="text"
                 value={subject}
@@ -600,7 +610,7 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
 
           {/* Body Content */}
           <div className="space-y-1">
-            <label className="block font-medium text-slate-500 text-[11px]">Nội dung tin nhắn *</label>
+            <label className="block font-medium text-slate-500 text-[11px]">{t('automations.message_content_label', 'Nội dung tin nhắn *')}</label>
             <textarea
               rows={7}
               value={body}
@@ -611,17 +621,17 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
 
           {/* Insert Token Badges */}
           <div>
-            <label className="block font-medium text-slate-500 mb-1.5 text-[11px]">Thẻ chèn tự động:</label>
+            <label className="block font-medium text-slate-500 mb-1.5 text-[11px]">{t('automations.insertable_variables_label', 'Thẻ chèn tự động:')}</label>
             <div className="flex flex-wrap gap-1.5">
               {[
-                { token: '{{client.FirstName}}', label: 'Tên khách hàng' },
-                { token: '{{salon.Name}}', label: 'Tên salon' },
-                { token: '{{appointment.Date}}', label: 'Ngày hẹn' },
-                { token: '{{appointment.Time}}', label: 'Giờ hẹn' },
-                { token: '{{service.Name}}', label: 'Tên dịch vụ' },
-                { token: '{{salon.Phone}}', label: 'SĐT salon' },
-                { token: '{{booking.Link}}', label: 'Link đặt lịch' },
-                { token: '{{review.Link}}', label: 'Link đánh giá' }
+                { token: '{{client.FirstName}}', label: t('automations.tag_client_name', 'Tên khách hàng') },
+                { token: '{{salon.Name}}', label: t('automations.tag_salon_name', 'Tên salon') },
+                { token: '{{appointment.Date}}', label: t('automations.tag_appt_date', 'Ngày hẹn') },
+                { token: '{{appointment.Time}}', label: t('automations.tag_appt_time', 'Giờ hẹn') },
+                { token: '{{service.Name}}', label: t('automations.tag_service_name', 'Tên dịch vụ') },
+                { token: '{{salon.Phone}}', label: t('automations.tag_salon_phone', 'SĐT salon') },
+                { token: '{{booking.Link}}', label: t('automations.tag_booking_link', 'Link đặt lịch') },
+                { token: '{{review.Link}}', label: t('automations.tag_review_link', 'Link đánh giá') }
               ].map(item => (
                 <button
                   key={item.token}
@@ -644,14 +654,14 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
             onClick={onClose}
             className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition cursor-pointer"
           >
-            Hủy
+            {t('automations.btn_cancel', 'Hủy')}
           </button>
           <button
             type="button"
             onClick={() => onSave({ ...template, subject, body })}
             className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
           >
-            Lưu mẫu tin
+            {t('automations.btn_save_template', 'Lưu mẫu tin')}
           </button>
         </div>
 

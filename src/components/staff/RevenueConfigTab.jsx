@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Trash2, Search, ChevronDown, UserCheck, FolderCheck, AlertCircle 
@@ -21,6 +22,7 @@ export default function RevenueConfigTab({
   productCombos, 
   prepaidCards 
 }) {
+  const { t } = useT();
   const [rules, setRules] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,7 +181,7 @@ export default function RevenueConfigTab({
         localStorage.setItem('glopro_revenue_bonus_rules', JSON.stringify(savedRules));
       }
       
-      toast.success('Cập nhật cấu hình hoa hồng doanh thu thành công!');
+      toast.success(t('staff.commission.save_revenue_success', 'Cập nhật cấu hình hoa hồng doanh thu thành công!'));
     } catch (e) {
       console.error('Lỗi khi lưu cấu hình hoa hồng doanh thu:', e);
       toast.error('Lỗi khi lưu: ' + (e.message || e));
@@ -249,8 +251,8 @@ export default function RevenueConfigTab({
       {/* Header Block */}
       <div className="flex justify-between items-center bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
         <div>
-          <h2 className="font-bold text-slate-800 text-sm">Hoa hồng theo doanh thu</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Nhân viên sẽ được nhận hoa hồng khi tổng doanh thu kỳ lương đạt mức đã cài đặt</p>
+          <h2 className="font-bold text-slate-800 text-sm">{t("staff.commission.revenue_title", "Hoa hồng theo doanh thu")}</h2>
+          <p className="text-[10px] text-slate-400 mt-1">{t("staff.commission.revenue_subtitle", "Nhân viên sẽ được nhận hoa hồng khi tổng doanh thu kỳ lương đạt mức đã cài đặt")}</p>
         </div>
         <button 
           onClick={handleSaveAll}
@@ -269,12 +271,12 @@ export default function RevenueConfigTab({
           <div key={rule.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-5 relative">
             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tên cấu hình hoa hồng</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t('staff.commission.rule_name', 'Tên cấu hình hoa hồng')}</span>
                 <input 
                   type="text" 
                   value={rule.name}
                   onChange={(e) => handleUpdateRule(rule.id, { name: e.target.value })}
-                  placeholder="nhập tên cấu hình hoa hồng"
+                  placeholder={t("staff.commission.rule_name_placeholder", "nhập tên cấu hình hoa hồng")}
                   className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-750 bg-white outline-none focus:border-orange-500 w-80 shadow-sm placeholder:text-slate-400/45 placeholder:font-normal placeholder:lowercase"
                 />
               </div>
@@ -291,7 +293,7 @@ export default function RevenueConfigTab({
               
               {/* Staff Select Dropdown */}
               <div className="space-y-1.5 relative">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><UserCheck className="w-3.5 h-3.5 text-orange-500" /> Nhân viên áp dụng</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><UserCheck className="w-3.5 h-3.5 text-orange-500" /> {t('staff.commission.apply_staff', 'Nhân viên áp dụng')}</span>
                 <button
                   type="button"
                   onClick={() => { setActiveStaffDrop(isStaffDropOpen ? null : rule.id); setActiveItemDrop(null); }}
@@ -299,7 +301,7 @@ export default function RevenueConfigTab({
                 >
                   <span className="truncate min-w-0 flex-1 text-left">
                     {rule.staff_ids.length === 0 
-                      ? 'chọn nhân viên áp dụng' 
+                      ? t('staff.commission.select_staff_empty', 'chọn nhân viên áp dụng') 
                       : staff.filter(s => rule.staff_ids.includes(s.id)).map(s => s.full_name).join(', ')
                     }
                   </span>
@@ -312,7 +314,7 @@ export default function RevenueConfigTab({
                       <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <input 
                         type="text"
-                        placeholder="tìm kiếm nhân viên..."
+                        placeholder={t("staff.commission.search_staff", "tìm kiếm nhân viên...")}
                         value={staffSearch}
                         onChange={(e) => setStaffSearch(e.target.value)}
                         className="bg-transparent text-xs font-medium outline-none w-full text-slate-700 placeholder:text-slate-400"
@@ -333,7 +335,7 @@ export default function RevenueConfigTab({
                           }}
                           className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
                         />
-                        <span className="text-xs font-bold text-slate-650">Tất cả nhân viên</span>
+                        <span className="text-xs font-bold text-slate-650">{t('staff.commission.all_staff', 'Tất cả nhân viên')}</span>
                       </label>
 
                       {/* Grouped list */}
@@ -375,7 +377,7 @@ export default function RevenueConfigTab({
               </div>
                  {/* Catalog Items Select Dropdown */}
               <div className="space-y-1.5 relative">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><FolderCheck className="w-3.5 h-3.5 text-orange-500" /> Danh mục áp dụng</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><FolderCheck className="w-3.5 h-3.5 text-orange-500" /> {t('staff.commission.apply_catalog', 'Danh mục áp dụng')}</span>
                 <button
                   type="button"
                   onClick={() => { setActiveItemDrop(isItemDropOpen ? null : rule.id); setActiveStaffDrop(null); }}
@@ -383,8 +385,8 @@ export default function RevenueConfigTab({
                 >
                   <span className="truncate min-w-0 flex-1 text-left">
                     {rule.item_ids.length === 0 
-                      ? 'chọn dịch vụ / sản phẩm áp dụng' 
-                      : `đã chọn ${rule.item_ids.length} mục`
+                      ? t('staff.commission.select_catalog_empty', 'chọn dịch vụ / sản phẩm áp dụng') 
+                      : `đã chọn ${rule.item_ids.length} ${t('staff.commission.items', 'mục')}`
                     }
                   </span>
                   <ChevronDown className="w-4 h-4 text-slate-450 shrink-0 ml-2" />
@@ -399,12 +401,12 @@ export default function RevenueConfigTab({
                       <input 
                         type="text"
                         placeholder={
-                          activeItemTab === 'service' ? 'Tìm kiếm dịch vụ...' :
-                          activeItemTab === 'product' ? 'Tìm kiếm sản phẩm...' :
-                          activeItemTab === 'package' ? 'Tìm kiếm gói dịch vụ...' :
-                          activeItemTab === 'treatment' ? 'Tìm kiếm liệu trình...' :
-                          activeItemTab === 'prepaid_card' ? 'Tìm kiếm thẻ tiền mặt...' :
-                          'Tìm kiếm...'
+                          activeItemTab === 'service' ? t('staff.commission.search_service', 'Tìm kiếm dịch vụ...') :
+                          activeItemTab === 'product' ? t('staff.commission.search_product', 'Tìm kiếm sản phẩm...') :
+                          activeItemTab === 'package' ? t('staff.commission.search_package', 'Tìm kiếm gói dịch vụ...') :
+                          activeItemTab === 'treatment' ? t('staff.commission.search_treatment', 'Tìm kiếm liệu trình...') :
+                          activeItemTab === 'prepaid_card' ? t('staff.commission.search_card', 'Tìm kiếm thẻ tiền mặt...') :
+                          t('staff.common.search', 'Tìm kiếm...')
                         }
                         value={itemSearch}
                         onChange={(e) => setItemSearch(e.target.value)}
@@ -415,13 +417,13 @@ export default function RevenueConfigTab({
                     {/* Item categories navigation tabs */}
                     <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-none gap-5 pt-1">
                       {[
-                        { id: 'service', label: 'Dịch vụ' },
-                        { id: 'product', label: 'Sản phẩm' },
-                        { id: 'package', label: 'Gói dịch vụ' },
-                        { id: 'treatment', label: 'Liệu trình' },
-                        { id: 'prepaid_card', label: 'Thẻ tiền mặt' },
-                        { id: 'service_combo', label: 'Combo DV' },
-                        { id: 'product_combo', label: 'Combo SP' }
+                        { id: 'service', label: t('staff.commission.item_service', 'Dịch vụ') },
+                        { id: 'product', label: t('staff.commission.item_product', 'Sản phẩm') },
+                        { id: 'package', label: t('staff.commission.item_package', 'Gói dịch vụ') },
+                        { id: 'treatment', label: t('staff.commission.item_treatment', 'Liệu trình') },
+                        { id: 'prepaid_card', label: t('staff.commission.item_prepaid_card', 'Thẻ tiền mặt') },
+                        { id: 'service_combo', label: t('staff.commission.item_service_combo', 'Combo dịch vụ') },
+                        { id: 'product_combo', label: t('staff.commission.item_product_combo', 'Combo sản phẩm') }
                       ].map(t => (
                         <button
                           key={t.id}
@@ -469,7 +471,7 @@ export default function RevenueConfigTab({
                                   }}
                                   className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500 data-[state=checked]:text-white focus-visible:ring-orange-500 cursor-pointer"
                                 />
-                                <span className="text-xs font-normal text-slate-700">Chọn tất cả</span>
+                                <span className="text-xs font-normal text-slate-700">{t('staff.commission.select_all', 'Chọn tất cả')}</span>
                               </label>
                             )}
 
@@ -530,7 +532,7 @@ export default function RevenueConfigTab({
                                               <div className="relative group flex items-center shrink-0">
                                                 <AlertCircle className="w-3.5 h-3.5 text-amber-500 cursor-pointer ml-1" />
                                                 <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-slate-900 text-white text-[10px] rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap pointer-events-none z-50 font-medium">
-                                                  Dịch vụ đã được cài đặt
+                                                  {t('staff.commission.item_configured', 'Dịch vụ đã được cài đặt')}
                                                 </div>
                                               </div>
                                             )}
@@ -557,14 +559,14 @@ export default function RevenueConfigTab({
                         onClick={() => setActiveItemDrop(null)}
                         className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                       >
-                        Huỷ
+                        {t('staff.scheduler.cancel', 'Huỷ')}
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setActiveItemDrop(null)}
                         className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-sm transition-colors"
                       >
-                        Áp dụng
+                        {t('staff.commission.apply_btn', 'Áp dụng')}
                       </button>
                     </div>
                   </div>
@@ -576,7 +578,7 @@ export default function RevenueConfigTab({
             {/* Rates Table Configuration */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cài đặt tỉ lệ hoa hồng</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('staff.commission.rate_setting', 'Cài đặt tỉ lệ hoa hồng')}</span>
                 
                 {/* Threshold vs Tiered Mode Toggles */}
                 <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-150 shadow-xs">
@@ -585,14 +587,14 @@ export default function RevenueConfigTab({
                     onClick={() => handleUpdateRule(rule.id, { mechanism: 'threshold' })}
                     className={`px-3 py-1 text-[10.5px] font-bold rounded-md transition-colors ${rule.mechanism === 'threshold' ? 'bg-orange-500 text-white shadow-xs' : 'text-slate-400 hover:text-slate-650'}`}
                   >
-                    Mốc doanh thu
+                    {t('staff.commission.mech_threshold', 'Mốc doanh thu')}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleUpdateRule(rule.id, { mechanism: 'tiered' })}
                     className={`px-3 py-1 text-[10.5px] font-bold rounded-md transition-colors ${rule.mechanism === 'tiered' ? 'bg-orange-500 text-white shadow-xs' : 'text-slate-400 hover:text-slate-655'}`}
                   >
-                    Bậc thang
+                    {t('staff.commission.mech_tiered', 'Bậc thang')}
                   </button>
                 </div>
               </div>
@@ -600,8 +602,8 @@ export default function RevenueConfigTab({
               {/* Table Headers */}
               <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50 shadow-sm p-4 space-y-3">
                 <div className="grid grid-cols-12 gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider pb-1 px-1.5">
-                  <div className="col-span-8">Mức doanh thu</div>
-                  <div className="col-span-3 text-right">Tỉ lệ hoa hồng</div>
+                  <div className="col-span-8">{t('staff.commission.revenue_level', 'Mức doanh thu')}</div>
+                  <div className="col-span-3 text-right">{t('staff.commission.revenue_rate', 'Tỉ lệ hoa hồng')}</div>
                   <div className="col-span-1"></div>
                 </div>
 
@@ -611,10 +613,10 @@ export default function RevenueConfigTab({
                       
                       {/* Revenue Bounds Inputs */}
                       <div className="col-span-8 flex items-center gap-2">
-                        <span className="text-[10px] text-slate-450 font-bold shrink-0">Từ</span>
+                        <span className="text-[10px] text-slate-450 font-bold shrink-0">{t('staff.commission.from', 'Từ')}</span>
                         <input 
                           type="text"
-                          placeholder="nhập giá trị"
+                          placeholder={t("staff.commission.enter_value", "nhập giá trị")}
                           value={range.from ? new Intl.NumberFormat('vi-VN').format(range.from) : (range.from === 0 ? '0' : '')}
                           onChange={(e) => {
                             let rawVal = e.target.value.replace(/\./g, '');
@@ -632,10 +634,10 @@ export default function RevenueConfigTab({
                           }}
                           className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-normal text-slate-700 bg-white outline-none focus:border-orange-500 w-full shadow-sm placeholder:text-slate-400/40 placeholder:font-normal placeholder:lowercase"
                         />
-                        <span className="text-[10px] text-slate-450 font-bold shrink-0">Đến</span>
+                        <span className="text-[10px] text-slate-450 font-bold shrink-0">{t('staff.commission.to', 'Đến')}</span>
                         <input 
                           type="text"
-                          placeholder="nhập giá trị"
+                          placeholder={t("staff.commission.enter_value", "nhập giá trị")}
                           value={range.to ? new Intl.NumberFormat('vi-VN').format(range.to) : (range.to === 0 ? '0' : '')}
                           onChange={(e) => {
                             let rawVal = e.target.value.replace(/\./g, '');
@@ -725,7 +727,7 @@ export default function RevenueConfigTab({
                     className="flex items-center justify-center gap-1 w-full py-2 rounded-xl border border-dashed border-slate-200 hover:border-orange-500 text-slate-400 hover:text-orange-600 font-bold text-xs transition-colors bg-white shadow-xs mt-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Thêm mới
+                    {t('staff.commission.add_new', 'Thêm mới')}
                   </button>
                 </div>
               </div>
@@ -741,7 +743,7 @@ export default function RevenueConfigTab({
         className="flex items-center justify-center gap-1.5 w-full py-3.5 rounded-2xl border border-dashed border-slate-200 hover:border-orange-500 text-slate-450 hover:text-orange-600 font-bold text-xs transition-colors bg-slate-50/50 shadow-sm"
       >
         <Plus className="w-4 h-4" />
-        Thêm tùy chọn hoa hồng
+        {t('staff.commission.add_revenue_option', 'Thêm tùy chọn hoa hồng')}
       </button>
     </div>
   );

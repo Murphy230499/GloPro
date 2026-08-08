@@ -10,6 +10,7 @@ import {
 import Avatar from '@/components/Avatar';
 import AppointmentModal from '@/components/AppointmentModal';
 import EditEventModal from '@/components/automations/EditEventModal';
+import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 
 // Mock recipient data with Vietnamese tags & names
@@ -139,6 +140,7 @@ const MOCK_RECIPIENTS = [
 ];
 
 export default function AutomationDetailView({ id = 'appointment-reminder' }) {
+  const { t } = useT();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('metrics'); // 'metrics' | 'details'
   const [search, setSearch] = useState('');
@@ -161,10 +163,10 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
     'welcome-new-clients': 'Chào mừng khách hàng mới',
   };
 
-  const titleFormatted = TITLE_MAP[id] || id
+  const titleFormatted = t(`automations.item_${id}_title`, TITLE_MAP[id] || id
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .join(' '));
 
   const filteredRecipients = MOCK_RECIPIENTS.filter(rec =>
     rec.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -204,7 +206,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
             <Link href="/automations" className="hover:text-blue-600 transition-colors">
-              Danh sách kịch bản
+              {t('automations.breadcrumb_list', 'Danh sách kịch bản')}
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-blue-600 font-semibold">{titleFormatted}</span>
@@ -216,11 +218,11 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-slate-900 tracking-tight">{titleFormatted}</h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-xs font-bold">
-                  Đang hoạt động
+                  {t('automations.status_active', 'Đang hoạt động')}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-500">
-                <span>Gửi thông báo tự động tới khách hàng khi kích hoạt sự kiện</span>
+                <span>{t('automations.detail_subtitle', 'Gửi thông báo tự động tới khách hàng khi kích hoạt sự kiện')}</span>
                 <span className="text-slate-300">•</span>
                 <div className="flex items-center gap-1.5 font-medium">
                   <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px]">SMS</span>
@@ -236,7 +238,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 onClick={() => setActionsOpen(!actionsOpen)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition shadow-2xs cursor-pointer"
               >
-                <span>Thao tác</span>
+                <span>{t('automations.actions', 'Thao tác')}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
@@ -246,13 +248,13 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                     onClick={() => { setActionsOpen(false); toast.success('Đã tạm dừng kịch bản'); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Tạm dừng kịch bản
+                    {t('automations.pause_script', 'Tạm dừng kịch bản')}
                   </button>
                   <button
                     onClick={() => { setActionsOpen(false); setEditModalOpen(true); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Chỉnh sửa kịch bản
+                    {t('automations.edit_script', 'Chỉnh sửa kịch bản')}
                   </button>
                 </div>
               )}
@@ -269,7 +271,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              Thống kê hiệu quả
+              {t('automations.tab_performance', 'Thống kê hiệu quả')}
             </button>
             <button
               onClick={() => setActiveTab('details')}
@@ -279,7 +281,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              Thông tin kịch bản
+              {t('automations.tab_info', 'Thông tin kịch bản')}
             </button>
           </div>
         </div>
@@ -295,7 +297,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 {/* 1. Sent */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-4 hover:shadow-md transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã gửi</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('automations.sent', 'Đã gửi')}</span>
                     <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                       <Send className="w-5 h-5" />
                     </div>
@@ -313,7 +315,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 {/* 2. Delivered */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-4 hover:shadow-md transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã nhận thành công</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('automations.delivered', 'Đã nhận thành công')}</span>
                     <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                       <MailCheck className="w-5 h-5" />
                     </div>
@@ -334,7 +336,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 {/* 3. Failed */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-4 hover:shadow-md transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gửi thất bại</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('automations.failed', 'Gửi thất bại')}</span>
                     <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                       <AlertTriangle className="w-5 h-5" />
                     </div>
@@ -355,7 +357,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 {/* 4. Opened */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-4 hover:shadow-md transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã mở xem</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('automations.opened', 'Đã mở xem')}</span>
                     <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                       <MailOpen className="w-5 h-5" />
                     </div>
@@ -380,14 +382,14 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                 
                 {/* Search & Filter Header */}
                 <div className="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between gap-4 flex-wrap">
-                  <h3 className="font-bold text-slate-900 text-sm">Danh sách Nhật ký Gửi tin</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">{t('automations.log_title', 'Danh sách Nhật ký Gửi tin')}</h3>
 
                   <div className="flex items-center gap-3 flex-1 max-w-md justify-end">
                     <div className="relative flex-1">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
-                        placeholder="Tìm theo tên khách hàng, số điện thoại..."
+                        placeholder={t('automations.search_recipient_ph', 'Tìm theo tên khách hàng, số điện thoại...')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-blue-500 bg-slate-50/50"
@@ -395,7 +397,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                     </div>
                     <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition shadow-2xs">
                       <Filter className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Lọc</span>
+                      <span>{t('automations.btn_filter', 'Lọc')}</span>
                     </button>
                   </div>
                 </div>
@@ -405,13 +407,13 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="py-3 px-4">Khách hàng</th>
-                        <th className="py-3 px-4">Email</th>
-                        <th className="py-3 px-4">Số điện thoại</th>
-                        <th className="py-3 px-4">Kênh gửi</th>
-                        <th className="py-3 px-4">Thời gian</th>
-                        <th className="py-3 px-4">Trạng thái</th>
-                        <th className="py-3 px-4 text-right">Thao tác</th>
+                        <th className="py-3 px-4">{t('automations.col_customer', 'Khách hàng')}</th>
+                        <th className="py-3 px-4">{t('automations.col_email', 'Email')}</th>
+                        <th className="py-3 px-4">{t('automations.col_phone', 'Số điện thoại')}</th>
+                        <th className="py-3 px-4">{t('automations.col_channel', 'Kênh gửi')}</th>
+                        <th className="py-3 px-4">{t('automations.col_time', 'Thời gian')}</th>
+                        <th className="py-3 px-4">{t('automations.col_status', 'Trạng thái')}</th>
+                        <th className="py-3 px-4 text-right">{t('automations.col_actions', 'Thao tác')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
@@ -432,7 +434,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                                 <span className={`inline-block text-[10px] font-semibold ${
                                   rec.type === 'Khách quay lại' ? 'text-blue-600' : 'text-emerald-600'
                                 }`}>
-                                  {rec.type}
+                                  {rec.type === 'Khách quay lại' ? t('automations.cust_returning', 'Khách quay lại') : t('automations.cust_new', 'Khách mới')}
                                 </span>
                               </div>
                             </div>
@@ -458,12 +460,12 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                           <td className="py-3 px-4">
                             {rec.status === 'Delivered' ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200/60">
-                                Đã nhận
+                                {t('automations.status_delivered', 'Đã nhận')}
                               </span>
                             ) : (
                               <div className="relative group/err inline-block">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-200/60">
-                                  Thất bại
+                                  {t('automations.status_failed', 'Thất bại')}
                                   <Info className="w-3 h-3 text-rose-500" />
                                 </span>
                                 {/* Error Tooltip Popover */}
@@ -480,7 +482,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
                               onClick={(e) => { e.stopPropagation(); handleRowClick(rec); }}
                               className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center justify-end gap-1 ml-auto"
                             >
-                              <span>Xem lịch</span>
+                              <span>{t('automations.view_appointment', 'Xem lịch')}</span>
                               <ExternalLink className="w-3 h-3" />
                             </button>
                           </td>
@@ -492,7 +494,7 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
 
                 {/* Pagination Footer */}
                 <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Hiển thị 1 - 10 trên 1,575 nhật ký</span>
+                  <span>{t('automations.pagination_showing', 'Hiển thị 1 - 10 trên 1,575 nhật ký')}</span>
                   <div className="flex items-center gap-1">
                     <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-400">
                       <ChevronLeft className="w-4 h-4" />
@@ -523,22 +525,22 @@ export default function AutomationDetailView({ id = 'appointment-reminder' }) {
             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <span className="text-xs font-semibold text-slate-400">Mã kịch bản</span>
+                  <span className="text-xs font-semibold text-slate-400">{t('automations.script_code_label', 'Mã kịch bản')}</span>
                   <p className="text-sm font-bold text-slate-900 mt-1">AM_00592</p>
                 </div>
 
                 <div>
-                  <span className="text-xs font-semibold text-slate-400">Thời gian gửi</span>
-                  <p className="text-sm font-bold text-slate-900 mt-1">2 giờ trước, 12 giờ trước</p>
+                  <span className="text-xs font-semibold text-slate-400">{t('automations.send_time_label', 'Thời gian gửi')}</span>
+                  <p className="text-sm font-bold text-slate-900 mt-1">{t('automations.timing_example', '2 giờ trước, 12 giờ trước')}</p>
                 </div>
 
                 <div>
-                  <span className="text-xs font-semibold text-slate-400">Kênh phát thông báo</span>
+                  <span className="text-xs font-semibold text-slate-400">{t('automations.channels_label', 'Kênh phát thông báo')}</span>
                   <p className="text-sm font-bold text-slate-900 mt-1">Email, SMS, WhatsApp</p>
                 </div>
 
                 <div>
-                  <span className="text-xs font-semibold text-slate-400">Ngày khởi tạo</span>
+                  <span className="text-xs font-semibold text-slate-400">{t('automations.created_date_label', 'Ngày khởi tạo')}</span>
                   <p className="text-sm font-bold text-slate-900 mt-1">31/10/2024</p>
                 </div>
               </div>

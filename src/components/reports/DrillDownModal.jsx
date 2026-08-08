@@ -2,8 +2,10 @@
 import React from 'react';
 import { X, FileText, User, Tag, Calendar, DollarSign } from 'lucide-react';
 import { formatVND } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 export default function DrillDownModal({ open, title, data = [], onClose }) {
+  const t = useT();
   if (!open) return null;
 
   return (
@@ -19,9 +21,9 @@ export default function DrillDownModal({ open, title, data = [], onClose }) {
           <div>
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>Truy vết chi tiết: {title}</span>
+              <span>{t('reports.drilldown_title', 'Detail Traceability')}: {title}</span>
             </h3>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">Hiển thị {data.length} bản ghi ghi nhận chi tiết</p>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">{t('reports.drilldown_count', 'Showing {count} detailed records', { count: data.length })}</p>
           </div>
           <button
             onClick={onClose}
@@ -35,14 +37,14 @@ export default function DrillDownModal({ open, title, data = [], onClose }) {
         <div className="flex-1 overflow-y-auto py-4 space-y-2.5">
           {data.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs">
-              Không có dữ liệu chi tiết
+              {t('reports.drilldown_empty', 'No detailed records available')}
             </div>
           ) : (
             data.map((item, idx) => (
               <div key={item.id || idx} className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition flex items-center justify-between gap-3 text-xs">
                 <div className="space-y-1 truncate">
                   <div className="font-bold text-slate-800 flex items-center gap-2">
-                    <span>{item.invoice_code || item.name || item.customer_name || `Mục #${idx + 1}`}</span>
+                    <span>{item.invoice_code || item.name || item.customer_name || `Item #${idx + 1}`}</span>
                     {item.status && (
                       <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
                         {item.status}
@@ -88,7 +90,7 @@ export default function DrillDownModal({ open, title, data = [], onClose }) {
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
           >
-            Đóng
+            {t('reports.btn_close', 'Close')}
           </button>
         </div>
 

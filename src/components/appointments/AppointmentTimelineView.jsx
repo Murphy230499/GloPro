@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n';
 import { TIMELINE_SLOTS, timeStringToMinutes, getAppointmentTimes, DEFAULT_FACILITIES } from './constants';
 import { formatVND } from '@/lib/format';
 import { User, Building2, Edit3, Trash2, X } from 'lucide-react';
 
 export default function AppointmentTimelineView({
+
   targetEntity = 'staff', // 'staff' | 'facility'
   appointments = [],
   staffList = [],
@@ -18,6 +20,7 @@ export default function AppointmentTimelineView({
   onSlotClick,
   onApptDrop
 }) {
+  const { t } = useT();
   const [currentTime, setCurrentTime] = useState('09:48');
   const [currentMinutes, setCurrentMinutes] = useState(588);
   const [hoveredAppt, setHoveredAppt] = useState(null);
@@ -77,7 +80,7 @@ export default function AppointmentTimelineView({
   };
 
   const sampleStaffRows = [
-    { id: '__unassigned', name: 'Chưa phân công', avatar_url: null, role: 'Lịch tự do' },
+    { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, role: t('appointments.free_slot', 'Lịch tự do') },
     { id: 'st_1', name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', role: 'KTV Chuyên nghiệp' },
     { id: 'st_2', name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', role: 'Nail Specialist' },
     { id: 'st_3', name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100', role: 'Chuyên gia Tóc' },
@@ -87,20 +90,21 @@ export default function AppointmentTimelineView({
     { id: 'st_7', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' },
   ];
 
+  
   const ROLE_MAP = {
-    manager: 'Quản lý',
-    receptionist: 'Lễ tân',
-    stylist: 'Kỹ thuật viên tóc',
-    barber: 'Barber',
-    therapist: 'Chuyên viên Spa',
-    nail_tech: 'Nail tech',
-    technician: 'Kỹ thuật viên',
-    cashier: 'Thu ngân'
+    manager: t('roles.manager', 'Quản lý'),
+    receptionist: t('roles.receptionist', 'Lễ tân'),
+    stylist: t('roles.stylist', 'Kỹ thuật viên tóc'),
+    barber: t('roles.barber', 'Barber'),
+    therapist: t('roles.therapist', 'Chuyên viên Spa'),
+    nail_tech: t('roles.nail_tech', 'Nail tech'),
+    technician: t('roles.technician', 'Kỹ thuật viên'),
+    cashier: t('roles.cashier', 'Thu ngân')
   };
 
   let rawRows = targetEntity === 'staff'
     ? (staffList.length ? [
-        { id: '__unassigned', name: 'Chưa phân công', avatar_url: null, role: 'Lịch tự do' },
+        { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, role: t('appointments.free_slot', 'Lịch tự do') },
         ...staffList.map(s => ({
           id: s.id,
           name: s.full_name || s.name,
@@ -213,7 +217,7 @@ export default function AppointmentTimelineView({
           {targetEntity === 'staff' ? (
             <>
               <User className="w-4 h-4 text-blue-600" />
-              <span>Nhân viên</span>
+              <span>{t('invoices.table.staff', t('invoices.table.staff', 'Nhân viên'))}</span>
             </>
           ) : (
             <>
@@ -472,11 +476,11 @@ export default function AppointmentTimelineView({
                       <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
                         <Avatar
                           src={hoveredAppt.staff_avatar_url}
-                          name={hoveredAppt.staff_name || 'Nhân viên'}
+                          name={hoveredAppt.staff_name || t('invoices.table.staff', 'Nhân viên')}
                           size={18}
                           color="#10B981"
                         />
-                        <span>{hoveredAppt.staff_name || 'Nhân viên'}</span>
+                        <span>{hoveredAppt.staff_name || t('invoices.table.staff', 'Nhân viên')}</span>
                       </p>
                     </div>
                     <div className="font-extrabold text-sm text-slate-900">

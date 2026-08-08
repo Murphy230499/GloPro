@@ -8,9 +8,11 @@ import {
 import KPICard from '../KPICard';
 import DataTable from '../DataTable';
 import { formatVND } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 export default function TipReportTab({ invoices = [], staff = [], searchQuery = '' }) {
-  // ── Tổng hợp từ invoice.tip ──────────────────────────────────────────────
+  const t = useT();
+
   const invoicesWithTip = invoices.filter(i => i && (i.tip || 0) > 0);
   const totalTip = invoices.reduce((s, i) => s + (i?.tip || 0), 0);
   const totalRevenue = invoices.reduce((s, i) => s + (i?.total || 0), 0);
@@ -21,7 +23,6 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
     ? ((totalTip / totalRevenue) * 100).toFixed(1)
     : '0.0';
 
-  // ── Xu hướng TIP theo ngày ───────────────────────────────────────────────
   const trendMap = {};
   invoices.forEach(i => {
     if (!i?.created_date) return;
@@ -33,7 +34,6 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
     .slice(-30)
     .map(([date, tip]) => ({ date: date.substring(5), tip }));
 
-  // ── Phân bổ TIP theo nhân viên (từ tip_splits) ───────────────────────────
   const staffTipMap = {};
   invoices.forEach(inv => {
     if (!inv?.tip_splits?.length) return;
@@ -42,7 +42,7 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
       if (!staffTipMap[split.staff_id]) {
         staffTipMap[split.staff_id] = {
           id: split.staff_id,
-          name: split.staff_name || 'Không rõ',
+          name: split.staff_name || t('reports.unknown', 'Unknown'),
           total: 0,
           count: 0
         };
@@ -60,7 +60,6 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
     tip: s.total
   }));
 
-  // ── Bảng chi tiết ────────────────────────────────────────────────────────
   const tableData = staffTipStats.map(s => ({
     name: s.name,
     count: s.count,
@@ -72,11 +71,11 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
   );
 
   const columns = [
-    { key: 'name', label: 'Nhân viên' },
-    { key: 'count', label: 'Số lần nhận', align: 'right', render: v => <span className="font-semibold text-slate-700">{v} lần</span> },
-    { key: 'total', label: 'Tổng TIP nhận', align: 'right', render: v => <span className="font-bold text-emerald-600">{formatVND(v)}</span> },
-    { key: 'avg', label: 'TIP TB / lần', align: 'right', render: v => <span className="font-semibold text-blue-600">{formatVND(v)}</span> },
-    { key: 'pct', label: '% Tổng TIP', align: 'right', render: v => (
+    { key: 'name', label: t('reports.col_staff', 'Staff Member') },
+    { key: 'count', label: t('reports.col_tip_count', 'Tip Count'), align: 'right', render: v => <span className="font-semibold text-slate-700">{v} {t('reports.times', 'times')}</span> },
+    { key: 'total', label: t('reports.col_total_tips_rec', 'Total Tips Received'), align: 'right', render: v => <span className="font-bold text-emerald-600">{formatVND(v)}</span> },
+    { key: 'avg', label: t('reports.col_avg_tip_time', 'Avg Tip / Time'), align: 'right', render: v => <span className="font-semibold text-blue-600">{formatVND(v)}</span> },
+    { key: 'pct', label: t('reports.col_pct_total_tips', '% Total Tips'), align: 'right', render: v => (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold text-xs">
         {v}%
       </span>
@@ -87,10 +86,10 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
     <div className="space-y-5">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <KPICard title="Tổng Tiền TIP Nhận" value={formatVND(totalTip)} growth={12} compareText="so với kỳ trước" icon={Gift} color="amber" />
-        <KPICard title="Hóa Đơn Có TIP" value={`${invoicesWithTip.length} đơn`} growth={8} compareText="so với kỳ trước" icon={Star} color="blue" />
-        <KPICard title="TIP Trung Bình / Đơn" value={formatVND(avgTipPerInvoice)} growth={4} compareText="so với kỳ trước" icon={DollarSign} color="emerald" />
-        <KPICard title="Tỷ Lệ TIP / Doanh Thu" value={`${tipRate}%`} growth={2} compareText="so với kỳ trước" icon={TrendingUp} color="purple" />
+        <KPICard title={t('reports.kpi_total_tips_received', 'Total Tips Received')} value={formatVND(totalTip)} growth={12} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={Gift} color="amber" />
+        <KPICard title={t('reports.kpi_invoices_with_tip', 'Invoices with Tips')} value={`${invoicesWithTip.length} ${t('reports.unit_invoices', 'invoices')}`} growth={8} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={Star} color="blue" />
+        <KPICard title={t('reports.kpi_avg_tip_invoice', 'Avg Tip / Invoice')} value={formatVND(avgTipPerInvoice)} growth={4} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={DollarSign} color="emerald" />
+        <KPICard title={t('reports.kpi_tip_rev_ratio', 'Tip / Revenue Ratio')} value={`${tipRate}%`} growth={2} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={TrendingUp} color="purple" />
       </div>
 
       {/* Charts Row */}
@@ -99,13 +98,13 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
         {/* Trend Chart */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3 min-w-0">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800">Xu Hướng Tiền TIP Theo Ngày</h3>
-            <span className="text-[11px] text-slate-400 font-medium">30 ngày gần nhất</span>
+            <h3 className="text-sm font-bold text-slate-800">{t('reports.daily_tip_trend', 'Daily Tip Trend')}</h3>
+            <span className="text-[11px] text-slate-400 font-medium">{t('reports.last_30_days', 'Last 30 days')}</span>
           </div>
           {trendData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
               <Gift className="w-8 h-8 opacity-30" />
-              <p className="text-xs">Chưa có dữ liệu TIP trong kỳ này</p>
+              <p className="text-xs">{t('reports.no_tip_data_period', 'No tip data in this period')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
@@ -118,9 +117,9 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => v >= 1000000 ? (v / 1000000) + 'tr' : v >= 1000 ? (v / 1000) + 'k' : v} tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={v => [formatVND(v), 'Tiền TIP']} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
-                <Area type="monotone" dataKey="tip" name="Tiền TIP" stroke="#F59E0B" strokeWidth={2.5} fillOpacity={1} fill="url(#tipGrad)" />
+                <YAxis tickFormatter={v => v >= 1000000 ? (v / 1000000) + 'M' : v >= 1000 ? (v / 1000) + 'k' : v} tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={v => [formatVND(v), t('reports.tip_label', 'Tips')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
+                <Area type="monotone" dataKey="tip" name={t('reports.tip_label', 'Tips')} stroke="#F59E0B" strokeWidth={2.5} fillOpacity={1} fill="url(#tipGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -129,22 +128,22 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
         {/* Staff TIP Bar Chart */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3 min-w-0">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800">Top Nhân Viên Nhận TIP Cao Nhất</h3>
+            <h3 className="text-sm font-bold text-slate-800">{t('reports.top_staff_receiving_tips', 'Top Staff Receiving Tips')}</h3>
             <span className="text-[11px] text-slate-400 font-medium">Top 10</span>
           </div>
           {topStaffChart.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
               <Users className="w-8 h-8 opacity-30" />
-              <p className="text-xs">Chưa có phân bổ TIP cho nhân viên</p>
+              <p className="text-xs">{t('reports.no_tip_alloc_staff', 'No tip allocations for staff yet')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={topStaffChart} layout="vertical" barSize={18}>
                 <CartesianGrid horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" tickFormatter={v => v >= 1000000 ? (v / 1000000) + 'tr' : v >= 1000 ? (v / 1000) + 'k' : v} tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <XAxis type="number" tickFormatter={v => v >= 1000000 ? (v / 1000000) + 'M' : v >= 1000 ? (v / 1000) + 'k' : v} tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} width={130} />
-                <Tooltip formatter={v => [formatVND(v), 'Tiền TIP']} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
-                <Bar dataKey="tip" name="Tiền TIP" radius={[0, 6, 6, 0]} fill="#F59E0B" />
+                <Tooltip formatter={v => [formatVND(v), t('reports.tip_label', 'Tips')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
+                <Bar dataKey="tip" name={t('reports.tip_label', 'Tips')} radius={[0, 6, 6, 0]} fill="#F59E0B" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -158,7 +157,11 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
           <Gift className="w-5 h-5 text-amber-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-800">
-              Tổng <span className="text-amber-600">{formatVND(totalTip)}</span> tiền TIP đã được ghi nhận từ <span className="text-amber-600">{invoicesWithTip.length}</span> hóa đơn và phân bổ cho <span className="text-amber-600">{staffTipStats.length}</span> nhân viên trong kỳ báo cáo.
+              {t('reports.tip_summary_banner', 'Total {total} in tips recorded from {invCount} invoices and allocated to {staffCount} staff in the report period.', {
+                total: formatVND(totalTip),
+                invCount: invoicesWithTip.length,
+                staffCount: staffTipStats.length
+              })}
             </p>
           </div>
         </div>
@@ -168,7 +171,7 @@ export default function TipReportTab({ invoices = [], staff = [], searchQuery = 
       <DataTable
         columns={columns}
         data={tableData}
-        emptyText="Chưa có dữ liệu phân bổ TIP trong kỳ này"
+        emptyText={t('reports.no_tip_alloc_data', 'No tip allocation data in this period')}
       />
     </div>
   );

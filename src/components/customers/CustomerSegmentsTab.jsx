@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useT } from '@/lib/i18n';
 import { Plus, Edit3, Trash2, Users, Search, Sparkles, ChevronDown, X, Gift } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { formatVND } from '@/lib/format';
@@ -10,6 +11,7 @@ import { loadCustomerSegments, saveCustomerSegment, deleteCustomerSegment } from
 const COLORS = ['#34D399', '#60A5FA', '#FF6B9D', '#A78BFA', '#FBBF24', '#F97316', '#FB7185', '#06B6D4', '#94A3B8'];
 
 export default function CustomerSegmentsTab({ createTrigger }) {
+  const { t } = useT();
   const [segments, setSegments] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedSegId, setSelectedSegId] = useState(null);
@@ -300,11 +302,11 @@ export default function CustomerSegmentsTab({ createTrigger }) {
     <div className="grid md:grid-cols-12 gap-5 items-start">
       {/* Left pane: Segments list selector */}
       <div className="col-span-12 md:col-span-6 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
-        <h3 className="font-bold text-sm text-slate-800 border-b border-slate-100 pb-2">Danh sách tập khách hàng</h3>
+        <h3 className="font-bold text-sm text-slate-800 border-b border-slate-100 pb-2">{t('customers.segments.list_title', 'Danh sách tập khách hàng')}</h3>
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Đang tải tập khách hàng...</div>
+          <div className="py-12 text-center text-xs text-slate-400">{t('customers.segments.loading_segments', 'Đang tải tập khách hàng...')}</div>
         ) : segments.length === 0 ? (
-          <div className="py-12 text-center text-xs text-slate-400 font-sans">Chưa có tập khách hàng nào</div>
+          <div className="py-12 text-center text-xs text-slate-400 font-sans">{t('customers.segments.empty_segments', 'Chưa có tập khách hàng nào')}</div>
         ) : (
           <div className="space-y-2">
             {segments.map((s) => {
@@ -337,9 +339,9 @@ export default function CustomerSegmentsTab({ createTrigger }) {
       <div className="col-span-12 md:col-span-6 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col min-h-[400px]">
         <div className="border-b border-slate-100 pb-2 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-sm text-slate-800">Khách hàng thuộc tập</h3>
+            <h3 className="font-bold text-sm text-slate-800">{t('customers.segments.customers_in_segment', 'Khách hàng thuộc tập')}</h3>
             <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full font-sans">
-              {matchedCustomers.length} khách
+              {matchedCustomers.length} {t('customers.segments.customers', 'khách')}
             </span>
           </div>
           {activeSegment && matchedCustomers.length > 0 && (
@@ -353,9 +355,9 @@ export default function CustomerSegmentsTab({ createTrigger }) {
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex-1 flex items-center justify-center">Đang tải khách hàng...</div>
+          <div className="py-12 text-center text-xs text-slate-400 flex-1 flex items-center justify-center">{t('customers.segments.loading_customers', 'Đang tải khách hàng...')}</div>
         ) : matchedCustomers.length === 0 ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex-1 flex items-center justify-center font-sans">Không có khách hàng nào đạt điều kiện</div>
+          <div className="py-12 text-center text-xs text-slate-400 flex-1 flex items-center justify-center font-sans">{t('customers.segments.empty', 'Không có khách hàng nào đạt điều kiện')}</div>
         ) : (
           <div className="overflow-y-auto flex-grow max-h-[350px] space-y-3 pt-2">
             {matchedCustomers.map((c) => (
@@ -382,8 +384,8 @@ export default function CustomerSegmentsTab({ createTrigger }) {
             {/* Header */}
             <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
               <div>
-                <h3 className="text-base font-bold text-slate-800 font-sans">{editingId ? 'Chỉnh sửa tập khách' : 'Tạo tập khách hàng mới'}</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">Thiết lập các điều kiện lọc khách hàng</p>
+                <h3 className="text-base font-bold text-slate-800 font-sans">{editingId ? t('customers.segments.edit', 'Chỉnh sửa tập khách') : t('customers.segments.create_new', 'Tạo tập khách hàng mới')}</h3>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 font-sans">{t('customers.segments.form_subtitle', 'Thiết lập các điều kiện lọc khách hàng')}</p>
               </div>
               <button 
                 onClick={resetFormAndClose} 
@@ -407,7 +409,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
             {/* config inputs */}
             <div className="space-y-4 font-sans text-xs flex-grow">
               <div>
-                <label className="block font-bold text-slate-500 mb-1">Tên tập khách hàng</label>
+                <label className="block font-bold text-slate-500 mb-1">{t('customers.segments.form_name', 'Tên tập khách hàng')}</label>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Khách sinh nhật tháng 7..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-amber-500 text-slate-700 bg-white" />
               </div>
 
@@ -465,7 +467,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
             <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
               <button type="button" onClick={resetFormAndClose} className="flex-1 py-2.5 rounded-xl bg-slate-250 hover:bg-slate-300 transition-colors font-bold text-xs text-slate-600 font-sans">Hủy</button>
               <button type="button" onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 transition-colors font-sans">
-                {editingId ? 'Cập nhật' : 'Tạo tập khách'}
+                {editingId ? t('common.update', 'Cập nhật') : t('customers.segments.create', 'Tạo tập khách')}
               </button>
             </div>
           </div>
@@ -475,12 +477,12 @@ export default function CustomerSegmentsTab({ createTrigger }) {
       {activeSegment && (
         <div className="col-span-12 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-6 text-left">
           <div className="border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-sm text-slate-800 font-sans">Báo cáo hiệu quả CTKM đã tặng</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5 font-semibold font-sans">Thống kê chi phí, doanh thu và tình trạng sử dụng của các chương trình khuyến mãi đã áp dụng cho tập khách hàng này.</p>
+            <h3 className="font-bold text-sm text-slate-800 font-sans">{t('customers.segments.report_title', 'Báo cáo hiệu quả CTKM đã tặng')}</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5 font-semibold font-sans">{t('customers.segments.report_desc', 'Thống kê chi phí, doanh thu và tình trạng sử dụng của các chương trình khuyến mãi đã áp dụng cho tập khách hàng này.')}</p>
           </div>
 
           {awardStats.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-400 font-sans">Chưa có chiến dịch khuyến mãi nào được tặng cho tập này.</div>
+            <div className="py-8 text-center text-xs text-slate-400 font-sans">{t('customers.segments.no_promos', 'Chưa có chiến dịch khuyến mãi nào được tặng cho tập này.')}</div>
           ) : (
             <div className="space-y-6">
               {/* Campaign summary table */}
@@ -516,18 +518,18 @@ export default function CustomerSegmentsTab({ createTrigger }) {
               {/* Detailed usages list */}
               <div className="space-y-3">
                 <h4 className="font-bold text-xs text-slate-700 border-b border-slate-100 pb-1.5 flex items-center justify-between">
-                  <span>Chi tiết khách hàng đã sử dụng</span>
+                  <span>{t('customers.segments.usage_details', 'Chi tiết khách hàng đã sử dụng')}</span>
                   <span className="text-[10px] font-normal text-slate-400 font-sans">Tổng cộng: {segmentUsages.length} lượt sử dụng</span>
                 </h4>
 
                 {segmentUsages.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-slate-400 font-sans">Chưa có khách hàng nào sử dụng ưu đãi.</div>
+                  <div className="py-4 text-center text-xs text-slate-400 font-sans">{t('customers.segments.no_usage', 'Chưa có khách hàng nào sử dụng ưu đãi.')}</div>
                 ) : (
                   <div className="overflow-x-auto rounded-2xl border border-slate-100">
                     <table className="w-full text-xs font-sans text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 text-slate-450 font-bold border-b border-slate-100">
-                          <th className="p-3">Khách hàng</th>
+                          <th className="p-3">{t('customers.title', 'Khách hàng')}</th>
                           <th className="p-3">Chương trình khuyến mãi</th>
                           <th className="p-3">Mã hóa đơn</th>
                           <th className="p-3 text-right">Giá trị đơn</th>
@@ -562,7 +564,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
           <div className="bg-slate-50 rounded-3xl p-6 max-w-md w-full border border-slate-105 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in scale-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-slate-150/50 pb-4 mb-4 shrink-0">
               <div>
-                <h3 className="text-base font-bold text-slate-800 font-sans">Tặng khuyến mãi cho tập khách hàng</h3>
+                <h3 className="text-base font-bold text-slate-800 font-sans">{t('customers.segments.gift_promo', 'Tặng khuyến mãi cho tập khách hàng')}</h3>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5 font-sans">Tập: {activeSegment?.name}</p>
               </div>
               <button 

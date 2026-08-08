@@ -1,8 +1,10 @@
 'use client';
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 export default function KPICard({ title, value, growth, compareText, icon: Icon, color = 'blue', onClick }) {
+  const t = useT();
   const isPositive = growth > 0;
   const isNegative = growth < 0;
 
@@ -47,7 +49,7 @@ export default function KPICard({ title, value, growth, compareText, icon: Icon,
               {Math.abs(growth)}%
             </span>
           )}
-          <span className="text-slate-400 text-[11px] font-normal truncate">{compareText || 'so với kỳ trước'}</span>
+          <span className="text-slate-400 text-[11px] font-normal truncate">{compareText || t('reports.vs_prev_period', 'vs previous period')}</span>
         </div>
       </div>
     </div>

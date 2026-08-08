@@ -11,12 +11,12 @@ export default function ProvidersInner({ children }) {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <LanguageProvider>
           <BranchProvider>
-            {children}
-            <Toaster />
+            <LanguageProvider>
+              {children}
+              <Toaster />
+            </LanguageProvider>
           </BranchProvider>
-        </LanguageProvider>
       </QueryClientProvider>
     </AuthProvider>
   );

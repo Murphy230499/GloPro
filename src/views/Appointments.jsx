@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useT } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
@@ -56,17 +57,17 @@ const STATUS_COLORS = {
   no_show: '#F97316'
 };
 
-const STATUS_LABEL = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  checked_in: 'Đã check-in',
-  in_progress: 'Đang làm',
-  completed: 'Hoàn thành',
-  cancelled: 'Đã hủy',
-  no_show: 'Không đến'
-};
-
 export default function Appointments() {
+  const { t } = useT();
+  const STATUS_LABEL = useMemo(() => ({
+    pending: t('dashboard.status.pending', 'Chờ xác nhận'),
+    confirmed: t('dashboard.status.confirmed', 'Đã xác nhận'),
+    checked_in: t('dashboard.status.checked_in', 'Đã check-in'),
+    in_progress: t('dashboard.status.in_progress', 'Đang làm'),
+    completed: t('dashboard.status.completed', 'Hoàn thành'),
+    cancelled: t('dashboard.status.cancelled', 'Đã hủy'),
+    no_show: t('dashboard.status.no_show', 'Không đến')
+  }), [t]);
   const router = useRouter();
   const { currentBranchId } = useBranch();
   const [date, setDate] = useState(todayStr());
@@ -186,7 +187,7 @@ export default function Appointments() {
                 service_id: sItem.service_id || '',
                 service_name: sItem.service_name || sItem.name || a.service_name,
                 staff_id: staffId,
-                staff_name: stObj?.full_name || stObj?.name || sItem.staff_name || (staffId === '__unassigned' ? 'Chưa phân công' : 'Nhân viên'),
+                staff_name: stObj?.full_name || stObj?.name || sItem.staff_name || (staffId === '__unassigned' ? t('appointments.unassigned', 'Chưa phân công') : 'Nhân viên'),
                 staff_avatar_url: stObj?.avatar_url || sItem.staff_avatar_url,
                 facility_id: facId,
                 facility_name: facObj?.name || sItem.facility_name || a.facility_name || defaultFac.name,
@@ -210,7 +211,7 @@ export default function Appointments() {
               facility_id: a.facility_id || defaultFac.id,
               facility_name: a.facility_name || defaultFac.name,
               price: finalPrice,
-              staff_name: a.staff_name || stObj?.full_name || stObj?.name || (staffId === '__unassigned' ? 'Chưa phân công' : 'Nhân viên'),
+              staff_name: a.staff_name || stObj?.full_name || stObj?.name || (staffId === '__unassigned' ? t('appointments.unassigned', 'Chưa phân công') : 'Nhân viên'),
               staff_avatar_url: stObj?.avatar_url || a.staff_avatar_url,
               customer_avatar_url: cusAvatar
             });
@@ -243,13 +244,9 @@ export default function Appointments() {
       })
       .subscribe();
 
-    // Polling Fallback: Refresh data every 15 seconds in case Realtime is off
-    const intervalId = setInterval(load, 15000);
-
     return () => {
       window.removeEventListener('reload-data', load);
       supabase.removeChannel(channel);
-      clearInterval(intervalId);
     };
   }, [date, currentBranchId]);
 
@@ -343,11 +340,11 @@ export default function Appointments() {
       try {
         await base44.entities.Appointment.update(targetId, { status });
       } catch (e) {
-        toast.error('Lỗi khi cập nhật trạng thái trên server: ' + (e.message || e));
+        toast.error(t('appointments.err_update_status', 'Lỗi khi cập nhật trạng thái trên server:') + ' ' + (e.message || e));
       }
     }
 
-    toast.success(`Đã chuyển sang: ${STATUS_LABEL[status] || status}`);
+    toast.success(`${t('appointments.status_changed_to', 'Đã chuyển sang:')} ${STATUS_LABEL[status] || status}`);
 
     if (status === 'checked_in') {
       await createUnpaidInvoiceFromAppointment(targetAppt);
@@ -398,15 +395,15 @@ export default function Appointments() {
     // If clicking from a specific staff's column, we unassign them. 
     // Full delete only happens from Unassigned column (currentStaffId is null) or List View (forceDelete is true)
     if (currentStaffId && !forceDelete) {
-      if (!window.confirm(`Bạn có muốn gỡ nhân viên ${appt.staff_name || ''} khỏi lịch hẹn này (chuyển về Chưa phân công) không?`)) return;
+      if (!window.confirm(t('appointments.confirm_unassign_staff', 'Bạn có muốn gỡ nhân viên {staffName} khỏi lịch hẹn này (chuyển về Chưa phân công) không?').replace('{staffName}', appt.staff_name || ''))) return;
       
       try {
         const updatedServices = services.map((s, idx) => {
           if (appt._serviceIndex !== undefined && idx === appt._serviceIndex) {
-            return { ...s, staff_id: '', staff_name: 'Chưa phân công' };
+            return { ...s, staff_id: '', staff_name: t('appointments.unassigned', t('appointments.unassigned', 'Chưa phân công')) };
           } else if (appt._serviceIndex === undefined) {
             // fallback if it's a single service without index: just unassign it!
-            return { ...s, staff_id: '', staff_name: 'Chưa phân công' };
+            return { ...s, staff_id: '', staff_name: t('appointments.unassigned', t('appointments.unassigned', 'Chưa phân công')) };
           }
           return s;
         });
@@ -414,7 +411,7 @@ export default function Appointments() {
         const payload = { 
           services: updatedServices,
           staff_id: updatedServices[0]?.staff_id || null,
-          staff_name: updatedServices[0]?.staff_name || 'Chưa phân công'
+          staff_name: updatedServices[0]?.staff_name || t('appointments.unassigned', t('appointments.unassigned', 'Chưa phân công'))
         };
         if (!String(targetId).startsWith('demo_')) {
           await base44.entities.Appointment.update(targetId, payload);
@@ -423,15 +420,15 @@ export default function Appointments() {
         }
         
         load(); // reload to reflect changes
-        toast.success('Đã gỡ nhân viên khỏi lịch hẹn');
+        toast.success(t('appointments.unassigned_staff_success', 'Đã gỡ nhân viên khỏi lịch hẹn'));
         return;
       } catch (e) {
-        toast.error('Lỗi khi gỡ nhân viên: ' + (e.message || e));
+        toast.error(t('appointments.err_unassign_staff', 'Lỗi khi gỡ nhân viên:') + ' ' + (e.message || e));
         return;
       }
     }
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa toàn bộ lịch hẹn của ${targetAppt.customer_name || 'khách hàng'}?`)) return;
+    if (!window.confirm(t('appointments.confirm_delete_appt', 'Bạn có chắc chắn muốn xóa toàn bộ lịch hẹn của {customerName}?').replace('{customerName}', targetAppt.customer_name || t('appointments.customer_fallback', 'khách hàng')))) return;
 
     try {
       if (!String(targetId).startsWith('demo_')) {
@@ -441,9 +438,9 @@ export default function Appointments() {
       }
 
       setAppointments((prev) => prev.filter((a) => a.id !== targetId && a.parent_appointment_id !== targetId && a.id !== appt.id));
-      toast.success('Đã xóa lịch hẹn thành công');
+      toast.success(t('appointments.delete_appt_success', 'Đã xóa lịch hẹn thành công'));
     } catch (e) {
-      toast.error('Lỗi khi xóa lịch hẹn: ' + (e.message || e));
+      toast.error(t('appointments.err_delete_appt', 'Lỗi khi xóa lịch hẹn:') + ' ' + (e.message || e));
     }
   };
 
@@ -568,7 +565,7 @@ export default function Appointments() {
   return (
     <div className="flex-1 flex flex-col min-h-0 space-y-3 font-body overflow-hidden">
       {/* Header Bar */}
-      <div className="shrink-0 bg-slate-50 pb-2 pt-1 border-b border-slate-200/60 shadow-2xs relative z-40">
+      <div className="shrink-0 bg-slate-50 pb-2 pt-1 border-b border-slate-200/60 shadow-2xs relative z-50">
         <AppointmentHeader
           targetEntity={targetEntity}
           setTargetEntity={setTargetEntity}
@@ -644,11 +641,11 @@ export default function Appointments() {
               onClick={() => setListStatusFilter('all')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                 listStatusFilter === 'all'
-                  ? 'bg-slate-800 text-white shadow-xs'
+                  ? 'bg-slate-800 text-white shadow-xs border border-transparent'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>Tất cả</span>
+              <span>{t('common.all', 'Tất cả')}</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${listStatusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {uniqueRawAppointments.length}
               </span>
@@ -695,14 +692,14 @@ export default function Appointments() {
                         <span className="w-3 h-3 rounded-full" style={{ background: STATUS_COLORS[status] }} />
                         <h3 className="font-bold text-sm text-slate-800">{STATUS_LABEL[status]}</h3>
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
-                          {list.length} lịch hẹn
+                          {list.length} {t('appointments.count_label', 'lịch hẹn')}
                         </span>
                       </div>
                     </div>
 
                     {list.length === 0 ? (
                       <div className="py-6 text-center text-xs text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-                        Chưa có lịch hẹn nào ở trạng thái {STATUS_LABEL[status]}
+                        {t('appointments.no_appt_in_status', 'Chưa có lịch hẹn nào ở trạng thái')} {STATUS_LABEL[status]}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
@@ -730,7 +727,7 @@ export default function Appointments() {
                                   handleDeleteAppt(a, true);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1.5 rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all absolute top-2 right-2 shrink-0 z-10 bg-white/80 shadow-xs border border-red-100 backdrop-blur-sm"
-                                title="Xóa toàn bộ lịch hẹn này"
+                                title={t('appointments.delete_this_appt', 'Xóa toàn bộ lịch hẹn này')}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -755,7 +752,7 @@ export default function Appointments() {
                                 </div>
 
                                 <div className="text-[12px] font-semibold text-slate-800 truncate mb-1.5" title={a.service_name}>
-                                  {a.service_name || 'Chưa chọn dịch vụ'}
+                                  {a.service_name || t('dashboard.chua_chon_dich_vu', 'Chưa chọn dịch vụ')}
                                 </div>
 
                                 <div className="flex items-center gap-2 my-1.5 bg-white/80 p-1.5 rounded-lg border border-slate-100/80">
@@ -768,7 +765,7 @@ export default function Appointments() {
                                       e.stopPropagation();
                                       router.push(a.customer_id ? `/customers?id=${a.customer_id}` : `/customers?name=${encodeURIComponent(a.customer_name)}`);
                                     }}
-                                    title="Click để xem chi tiết khách hàng"
+                                    title={t('appointments.view_cust_details', 'Click để xem chi tiết khách hàng')}
                                   />
                                   <div className="min-w-0 flex-1">
                                     <button
@@ -778,7 +775,7 @@ export default function Appointments() {
                                         router.push(a.customer_id ? `/customers?id=${a.customer_id}` : `/customers?name=${encodeURIComponent(a.customer_name)}`);
                                       }}
                                       className="font-semibold text-slate-700 hover:text-orange-600 hover:underline cursor-pointer text-xs truncate text-left block"
-                                      title="Click để xem chi tiết khách hàng"
+                                      title={t('appointments.view_cust_details', 'Click để xem chi tiết khách hàng')}
                                     >
                                       {a.customer_name}
                                     </button>
@@ -805,7 +802,7 @@ export default function Appointments() {
                                         a.services.forEach(s => {
                                           const sId = s.staff_id || a.staff_id;
                                           const stObj = staff.find(st => st.id === sId);
-                                          const name = stObj?.full_name || stObj?.name || s.staff_name || a.staff_name || 'Nhân viên';
+                                          const name = stObj?.full_name || stObj?.name || s.staff_name || a.staff_name || t('nav.staff', 'Nhân viên');
                                           const avatar = stObj?.avatar_url || s.staff_avatar_url || a.staff_avatar_url;
                                           if (sId && !map.has(sId)) {
                                             map.set(sId, { id: sId, name, avatar });
@@ -858,7 +855,7 @@ export default function Appointments() {
                                       className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 transition cursor-pointer"
                                     >
                                       <CheckCircle2 className="w-3 h-3" />
-                                      Xác nhận
+                                      {t('appointments.btn_confirm', 'Xác nhận')}
                                     </button>
                                   )}
                                   {(status === 'pending' || status === 'confirmed') && (
@@ -874,7 +871,7 @@ export default function Appointments() {
                                       onClick={(e) => { e.stopPropagation(); updateStatus(a, 'in_progress'); }}
                                       className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-semibold hover:bg-purple-100 transition cursor-pointer"
                                     >
-                                      Bắt đầu
+                                      {t('appointments.btn_start', 'Bắt đầu')}
                                     </button>
                                   )}
                                   {(status === 'checked_in' || status === 'in_progress' || status === 'confirmed') && (
@@ -883,7 +880,7 @@ export default function Appointments() {
                                       className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold hover:emerald-100 transition cursor-pointer"
                                     >
                                       <UserCheck className="w-3 h-3" />
-                                      Thanh toán
+                                      {t('appointments.btn_checkout', 'Thanh toán')}
                                     </button>
                                   )}
                                   {status === 'completed' && (
@@ -891,7 +888,7 @@ export default function Appointments() {
                                       onClick={(e) => { e.stopPropagation(); updateStatus(a, 'view_invoice'); }}
                                       className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-white font-semibold hover:bg-slate-900 transition cursor-pointer"
                                     >
-                                      Xem hóa đơn
+                                      {t('appointments.btn_view_invoice', 'Xem hóa đơn')}
                                     </button>
                                   )}
                                   {(status === 'cancelled' || status === 'no_show') && (
@@ -899,7 +896,7 @@ export default function Appointments() {
                                       onClick={(e) => { e.stopPropagation(); updateStatus(a, 'pending'); }}
                                       className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 transition cursor-pointer"
                                     >
-                                      Đặt lại
+                                      {t('appointments.btn_reset', 'Đặt lại')}
                                     </button>
                                   )}
                                   {status !== 'cancelled' && status !== 'completed' && status !== 'no_show' && (
@@ -908,7 +905,7 @@ export default function Appointments() {
                                       className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 font-semibold hover:bg-rose-100 transition cursor-pointer"
                                     >
                                       <XCircle className="w-3 h-3" />
-                                      Hủy
+                                      {t('common.cancel', 'Hủy')}
                                     </button>
                                   )}
                                 </div>
@@ -921,7 +918,7 @@ export default function Appointments() {
                                       setModalOpen(true);
                                     }}
                                     className="text-[10px] p-1.5 rounded-full bg-white text-slate-600 border border-slate-200 font-semibold hover:bg-slate-100 transition cursor-pointer"
-                                    title="Chỉnh sửa"
+                                    title={t('common.edit', 'Chỉnh sửa')}
                                   >
                                     <Edit3 className="w-3 h-3" />
                                   </button>
@@ -931,7 +928,7 @@ export default function Appointments() {
                                       handleDeleteAppt(a);
                                     }}
                                     className="text-[10px] p-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 font-semibold hover:bg-rose-100 transition cursor-pointer"
-                                    title="Xóa lịch hẹn"
+                                    title={t('appointments.delete_appt', 'Xóa lịch hẹn')}
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </button>
@@ -1015,7 +1012,7 @@ export default function Appointments() {
           }}
           onSave={(data) => {
             console.log('Saved Time Block:', data);
-            toast.success('Đã lưu Time Block');
+            toast.success(t('appointments.success_save_timeblock', 'Đã lưu Time Block'));
             setTimeBlockModalOpen(false);
           }}
         />

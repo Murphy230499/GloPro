@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Search, Plus, ArrowDownLeft, Calendar, FileText, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatVND } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import StockInModal from './StockInModal';
 
 export default function StockInTab({ stockReceipts, suppliers, products, onCreateReceipt }) {
+  const { t } = useT();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -29,18 +31,18 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Tổng Số Phiếu Nhập Kho</div>
-          <div className="text-xl font-bold text-slate-800 mt-1">{inReceipts.length} phiếu</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.total_receipts', 'Tổng Số Phiếu Nhập Kho')}</div>
+          <div className="text-xl font-bold text-slate-800 mt-1">{inReceipts.length} {t('inventory.receipts_unit', 'phiếu')}</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Tổng Giá Trị Nhập Hàng</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.total_import_value', 'Tổng Giá Trị Nhập Hàng')}</div>
           <div className="text-xl font-bold text-emerald-600 mt-1">{formatVND(totalValue)}</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Trạng Thái</div>
-          <div className="text-xl font-bold text-purple-600 mt-1">Đã cập nhật tồn kho</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.status_label', 'Trạng Thái')}</div>
+          <div className="text-xl font-bold text-purple-600 mt-1">{t('inventory.status_updated_stock', 'Đã cập nhật tồn kho')}</div>
         </div>
       </div>
 
@@ -52,7 +54,7 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm mã phiếu, nhà cung cấp, lý do..."
+            placeholder={t('inventory.search_receipt_placeholder', 'Tìm mã phiếu, nhà cung cấp, lý do...')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-800"
           />
         </div>
@@ -61,7 +63,7 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
           onClick={() => setShowModal(true)}
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Tạo Phiếu Nhập Kho
+          <Plus className="w-4 h-4" /> {t('inventory.btn_create_stock_in', 'Tạo Phiếu Nhập Kho')}
         </button>
       </div>
 
@@ -71,19 +73,19 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
           <table className="w-full text-left text-xs font-sans">
             <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-600">
               <tr>
-                <th className="py-3.5 px-4">Mã Phiếu</th>
-                <th className="py-3.5 px-4">Thời gian</th>
-                <th className="py-3.5 px-4">Nhà cung cấp</th>
-                <th className="py-3.5 px-4">Lý do nhập</th>
-                <th className="py-3.5 px-4 text-right">Tổng tiền (VNĐ)</th>
-                <th className="py-3.5 px-4 text-right">Thanh toán</th>
-                <th className="py-3.5 px-4 text-center">Chi tiết</th>
+                <th className="py-3.5 px-4">{t('inventory.col_receipt_code', 'Mã Phiếu')}</th>
+                <th className="py-3.5 px-4">{t('inventory.col_time', 'Thời gian')}</th>
+                <th className="py-3.5 px-4">{t('inventory.col_supplier', 'Nhà cung cấp')}</th>
+                <th className="py-3.5 px-4">{t('inventory.col_reason', 'Lý do nhập')}</th>
+                <th className="py-3.5 px-4 text-right">{t('inventory.col_total_amount', 'Tổng tiền (VNĐ)')}</th>
+                <th className="py-3.5 px-4 text-right">{t('inventory.col_payment', 'Thanh toán')}</th>
+                <th className="py-3.5 px-4 text-center">{t('inventory.col_details', 'Chi tiết')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">Không tìm thấy phiếu nhập kho nào</td>
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">{t('inventory.no_receipts_found', 'Không tìm thấy phiếu nhập kho nào')}</td>
                 </tr>
               ) : (
                 filtered.map((r) => {
@@ -103,7 +105,7 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
                             {formatVND(r.paid_amount)}
                           </span>
                           {r.debt_amount > 0 && (
-                            <div className="text-[10px] text-red-500 font-normal">Nợ: {formatVND(r.debt_amount)}</div>
+                            <div className="text-[10px] text-red-500 font-normal">{t('inventory.debt_label', 'Nợ:')} {formatVND(r.debt_amount)}</div>
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-center">
@@ -111,7 +113,7 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
                             onClick={() => setExpandedId(isExpanded ? null : r.id)}
                             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 font-semibold text-[11px]"
                           >
-                            <span>{(r.items || []).length} SP</span>
+                            <span>{(r.items || []).length} {t('inventory.items_summary', 'SP')}</span>
                             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
                         </td>
@@ -122,16 +124,16 @@ export default function StockInTab({ stockReceipts, suppliers, products, onCreat
                         <tr className="bg-slate-50/80">
                           <td colSpan={7} className="p-4">
                             <div className="bg-white rounded-xl p-3 border border-slate-200/80 space-y-2">
-                              <div className="text-xs font-bold text-slate-800">Chi tiết sản phẩm nhập ({r.code}):</div>
+                              <div className="text-xs font-bold text-slate-800">{t('inventory.receipt_detail_title', 'Chi tiết sản phẩm nhập')} ({r.code}):</div>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left text-[11px]">
                                   <thead className="bg-slate-100 font-bold text-slate-600 border-b border-slate-200">
                                     <tr>
-                                      <th className="p-2">Tên sản phẩm</th>
-                                      <th className="p-2 text-center">ĐVT</th>
-                                      <th className="p-2 text-center">Số lượng</th>
-                                      <th className="p-2 text-right">Đơn giá nhập</th>
-                                      <th className="p-2 text-right">Thành tiền</th>
+                                      <th className="p-2">{t('inventory.col_product_name', 'Tên sản phẩm')}</th>
+                                      <th className="p-2 text-center">{t('inventory.col_unit', 'ĐVT')}</th>
+                                      <th className="p-2 text-center">{t('inventory.col_quantity', 'Số lượng')}</th>
+                                      <th className="p-2 text-right">{t('inventory.col_unit_price', 'Đơn giá nhập')}</th>
+                                      <th className="p-2 text-right">{t('inventory.col_amount', 'Thành tiền')}</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100">

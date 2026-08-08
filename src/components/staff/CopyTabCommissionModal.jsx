@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import Avatar from '@/components/Avatar';
@@ -12,6 +13,7 @@ export default function CopyTabCommissionModal({
   activeTab,
   onSave
 }) {
+  const { t } = useT();
   const [sourceStaffId, setSourceStaffId] = useState('');
   const [targetStaffIds, setTargetStaffIds] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -147,14 +149,14 @@ export default function CopyTabCommissionModal({
   const groupedTargetStaff = getGroupedStaff(availableTargets);
 
   const tabLabels = {
-    service: 'dịch vụ',
-    product: 'sản phẩm',
-    package: 'gói dịch vụ',
-    treatment: 'liệu trình',
-    service_combo: 'combo dịch vụ',
-    product_combo: 'combo sản phẩm',
-    prepaid_card: 'thẻ tiền mặt',
-    customer_req: 'theo yêu cầu khách'
+    service: t('staff.commission.item_service', 'dịch vụ').toLowerCase(),
+    product: t('staff.commission.item_product', 'sản phẩm').toLowerCase(),
+    package: t('staff.commission.item_package', 'gói dịch vụ').toLowerCase(),
+    treatment: t('staff.commission.item_treatment', 'liệu trình').toLowerCase(),
+    service_combo: t('staff.commission.item_service_combo', 'combo dịch vụ').toLowerCase(),
+    product_combo: t('staff.commission.item_product_combo', 'combo sản phẩm').toLowerCase(),
+    prepaid_card: t('staff.commission.item_prepaid_card', 'thẻ tiền mặt').toLowerCase(),
+    customer_req: t('staff.commission.item_customer_req', 'theo yêu cầu khách').toLowerCase()
   };
 
   const currentTabName = tabLabels[activeTab] || 'dịch vụ';
@@ -166,8 +168,8 @@ export default function CopyTabCommissionModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-800 font-sans">Sao chép hoa hồng</h2>
-            <p className="text-[10px] text-slate-450 font-medium mt-0.5">Sao chép hoa hồng ({currentTabName}) cho nhiều nhân viên</p>
+            <h2 className="text-base font-bold text-slate-800 font-sans">{t('staff.commission.copy_tab_title', 'Sao chép hoa hồng')}</h2>
+            <p className="text-[10px] text-slate-450 font-medium mt-0.5">{t('staff.commission.copy_tab_subtitle', 'Sao chép hoa hồng ({tab}) cho nhiều nhân viên').replace('{tab}', currentTabName)}</p>
           </div>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
             <X className="w-4 h-4" />
@@ -178,7 +180,7 @@ export default function CopyTabCommissionModal({
         <form onSubmit={handleSubmit} className="flex-1 overflow-visible space-y-4">
           {/* Source Staff Single-Select Dropdown */}
           <div className="space-y-1.5 source-dropdown-container relative">
-            <label className="text-[11px] font-normal text-slate-500 block">1. Nhân viên nguồn (Sao chép từ)</label>
+            <label className="text-[11px] font-normal text-slate-500 block">{t('staff.commission.step_1_source', '1. Nhân viên nguồn (Sao chép từ)')}</label>
             <button
               type="button"
               onClick={() => { setIsSourceDropdownOpen(!isSourceDropdownOpen); setIsTargetDropdownOpen(false); }}
@@ -191,7 +193,7 @@ export default function CopyTabCommissionModal({
                     <span className="font-normal text-slate-700 truncate">{sourceStaffObj.full_name}</span>
                   </>
                 ) : (
-                  <span className="font-normal text-slate-400">Chọn nhân viên nguồn...</span>
+                  <span className="font-normal text-slate-400">{t('staff.commission.select_source', 'Chọn nhân viên nguồn...')}</span>
                 )}
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
@@ -244,7 +246,7 @@ export default function CopyTabCommissionModal({
 
           {/* Target Staff Multi-Select Dropdown */}
           <div className="space-y-1.5 target-dropdown-container relative animate-in fade-in duration-200">
-            <label className="text-[11px] font-normal text-slate-500 block">2. Nhân viên nhận (Sao chép cho)</label>
+            <label className="text-[11px] font-normal text-slate-500 block">{t('staff.commission.step_2_target', '2. Nhân viên nhận (Sao chép cho)')}</label>
             <button
               type="button"
               onClick={() => { setIsTargetDropdownOpen(!isTargetDropdownOpen); setIsSourceDropdownOpen(false); }}

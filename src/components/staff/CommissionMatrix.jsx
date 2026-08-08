@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { Save, Loader2, Search, Plus, Trash2, ChevronDown, Copy, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -9,33 +10,34 @@ import RevenueConfigTab from '@/components/staff/RevenueConfigTab';
 import GroupCommissionModal from './GroupCommissionModal';
 import CopyTabCommissionModal from './CopyTabCommissionModal';
 
-const TABS = [
-  { id: 'service', label: 'Dịch vụ' },
-  { id: 'product', label: 'Sản phẩm' },
-  { id: 'package', label: 'Gói dịch vụ' },
-  { id: 'treatment', label: 'Liệu trình' },
-  { id: 'service_combo', label: 'Combo dịch vụ' },
-  { id: 'product_combo', label: 'Combo sản phẩm' },
-  { id: 'prepaid_card', label: 'Thẻ tiền mặt' },
-  { id: 'customer_req', label: 'Khách yêu cầu' },
-  { id: 'overtime', label: 'Theo khung giờ' },
-  { id: 'revenue', label: 'Doanh thu' }
-];
-
-const translateRole = (role) => {
-  const map = {
-    'main_technician': 'Thợ chính',
-    'assistant_technician': 'Thợ phụ',
-    'technician': 'Kỹ thuật viên',
-    'cashier': 'Thu ngân',
-    'manager': 'Quản lý',
-    'partner': 'Đối tác',
-    'staff': 'Nhân viên'
-  };
-  return map[role.toLowerCase()] || role;
-};
-
 export default function CommissionMatrix({ branchId }) {
+  const { t } = useT();
+
+  const TABS = [
+    { id: 'service', label: t('staff.commission.tabs.service', 'Dịch vụ') },
+    { id: 'product', label: t('staff.commission.tabs.product', 'Sản phẩm') },
+    { id: 'package', label: t('staff.commission.tabs.package', 'Gói dịch vụ') },
+    { id: 'treatment', label: t('staff.commission.tabs.treatment', 'Liệu trình') },
+    { id: 'service_combo', label: t('staff.commission.tabs.service_combo', 'Combo dịch vụ') },
+    { id: 'product_combo', label: t('staff.commission.tabs.product_combo', 'Combo sản phẩm') },
+    { id: 'prepaid_card', label: t('staff.commission.tabs.prepaid_card', 'Thẻ tiền mặt') },
+    { id: 'customer_req', label: t('staff.commission.tabs.customer_req', 'Khách yêu cầu') },
+    { id: 'overtime', label: t('staff.commission.tabs.overtime', 'Theo khung giờ') },
+    { id: 'revenue', label: t('staff.commission.tabs.revenue', 'Doanh thu') }
+  ];
+
+  const translateRole = (role) => {
+    switch (role) {
+      case 'primary': return 'Thợ chính';
+      case 'assistant': return 'Thợ phụ';
+      case 'technician': return 'Kỹ thuật viên';
+      case 'cashier': return 'Thu ngân';
+      case 'manager': return 'Quản lý';
+      case 'partner': return 'Đối tác';
+      default: return 'Nhân viên';
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('service');
   const [staff, setStaff] = useState([]);
   
@@ -110,7 +112,7 @@ export default function CommissionMatrix({ branchId }) {
       }
       setGroups(groupList || []);
     } catch (e) {
-      console.error('Lỗi tải danh mục cấu hình hoa hồng:', e);
+      console.error(t('staff.commission.load_error', 'Lỗi tải danh mục cấu hình hoa hồng:'), e);
       const localRules = localStorage.getItem('glopro_staff_commission_rules');
       setRules(localRules ? JSON.parse(localRules) : []);
     }
@@ -200,10 +202,10 @@ export default function CommissionMatrix({ branchId }) {
       }
       const updatedRules = await base44.entities.StaffCommissionRule.list();
       setRules(updatedRules);
-      toast.success('Đã lưu cấu hình khung giờ thành công!');
+      toast.success(t('staff.commission.save_time_success', 'Đã lưu cấu hình khung giờ thành công!'));
     } catch (e) {
       console.error('Error saving overtime rules:', e);
-      toast.error('Lỗi khi lưu cấu hình: ' + (e.message || e));
+      toast.error(t('staff.commission.save_error', 'Lỗi khi lưu cấu hình: ') + (e.message || e));
     }
     setSavingOvertime(false);
   };
@@ -374,7 +376,7 @@ export default function CommissionMatrix({ branchId }) {
       localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
     }
 
-    toast.success('Cập nhật hoa hồng nhóm thành công!');
+    toast.success(t('staff.commission.group_update_success', 'Cập nhật hoa hồng nhóm thành công!'));
   };
 
   const handleSaveCopyTabCommission = async ({
@@ -436,7 +438,7 @@ export default function CommissionMatrix({ branchId }) {
       localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
     }
 
-    toast.success('Sao chép hoa hồng thành công!');
+    toast.success(t('staff.commission.copy_success', 'Sao chép hoa hồng thành công!'));
   };
 
   const getDisplayItems = () => {
@@ -485,10 +487,10 @@ export default function CommissionMatrix({ branchId }) {
               type="text"
               placeholder={
                 activeTab === 'customer_req'
-                  ? 'tìm kiếm dịch vụ...'
+                  ? t('staff.commission.search_service', 'tìm kiếm dịch vụ...')
                   : TABS.find(t => t.id === activeTab)
-                    ? `tìm kiếm ${TABS.find(t => t.id === activeTab).label.toLowerCase()}...`
-                    : 'tìm kiếm...'
+                    ? t('staff.commission.search_dynamic', 'tìm kiếm {tab}...').replace('{tab}', TABS.find(t => t.id === activeTab).label.toLowerCase())
+                    : t('staff.commission.search_generic', 'tìm kiếm...')
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -502,14 +504,14 @@ export default function CommissionMatrix({ branchId }) {
               className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold text-xs rounded-xl shadow-xs transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
-              Cài đặt nhóm
+              {t('staff.commission.group_settings', 'Cài đặt nhóm')}
             </button>
             <button
               onClick={() => setShowCopyTabModal(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold text-xs rounded-xl shadow-xs transition-colors"
             >
               <Copy className="w-3.5 h-3.5" />
-              Sao chép
+              {t('staff.commission.copy', 'Sao chép')}
             </button>
           </div>
         </div>
@@ -616,7 +618,7 @@ export default function CommissionMatrix({ branchId }) {
         <div className="grid grid-cols-12 gap-5 items-start font-sans">
           {/* Column 1: Staff list (grouped by role) */}
           <div className="col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm p-4 h-[550px] flex flex-col">
-            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">Nhân viên</h3>
+            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">{t("staff.commission.staff_col", "Nhân viên")}</h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               {Object.entries(
                 staff.reduce((acc, s) => {
@@ -648,7 +650,7 @@ export default function CommissionMatrix({ branchId }) {
 
           {/* Column 2: Services list */}
           <div className="col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm p-4 h-[550px] flex flex-col">
-            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">Dịch vụ</h3>
+            <h3 className="font-bold text-slate-800 text-xs px-2 mb-3">{t("staff.commission.service_col", "Dịch vụ")}</h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               {Object.entries(
                 services.reduce((acc, s) => {
@@ -682,8 +684,8 @@ export default function CommissionMatrix({ branchId }) {
           <div className="col-span-6 bg-white rounded-3xl border border-slate-100 shadow-sm p-5 h-[550px] flex flex-col">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
               <div>
-                <h3 className="font-bold text-slate-800 text-xs">Hoa hồng theo khung giờ</h3>
-                <p className="text-[9px] text-slate-400 font-medium mt-0.5">Thiết lập hoa hồng tăng ca cộng thêm</p>
+                <h3 className="font-bold text-slate-800 text-xs">{t("staff.commission.overtime_title", "Hoa hồng theo khung giờ")}</h3>
+                <p className="text-[9px] text-slate-400 font-medium mt-0.5">{t("staff.commission.overtime_subtitle", "Thiết lập hoa hồng tăng ca cộng thêm")}</p>
               </div>
               <button 
                 onClick={handleSaveOvertimeSlots}
@@ -691,27 +693,27 @@ export default function CommissionMatrix({ branchId }) {
                 className="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white font-bold text-[11px] rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-sm shrink-0"
               >
                 {savingOvertime ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                Lưu
+                {t('staff.scheduler.save', 'Lưu')}
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
               {tempSlots.length === 0 ? (
                 <div className="text-center py-20 text-xs text-slate-400 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  Chưa cấu hình khung giờ nào. Bấm "+ Thêm mới" để thiết lập.
+                  {t("staff.commission.overtime_empty", 'Chưa cấu hình khung giờ nào. Bấm "+ Thêm mới" để thiết lập.')}
                 </div>
               ) : (
                 tempSlots.map((slot, index) => (
                   <div key={slot.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-xs">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400 font-bold shrink-0">Từ</span>
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">{t("staff.commission.from", "Từ")}</span>
                       <input 
                         type="time" 
                         value={slot.from}
                         onChange={(e) => setTempSlots(tempSlots.map((s, j) => j === index ? { ...s, from: e.target.value } : s))}
                         className="px-2 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white outline-none focus:border-orange-500 w-24 shrink-0"
                       />
-                      <span className="text-[10px] text-slate-400 font-bold shrink-0">Đến</span>
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">{t("staff.commission.to", "Đến")}</span>
                       <input 
                         type="time" 
                         value={slot.to}
@@ -759,7 +761,7 @@ export default function CommissionMatrix({ branchId }) {
                 className="flex items-center justify-center gap-1 w-full py-2.5 rounded-2xl border border-dashed border-slate-200 hover:border-orange-500 text-slate-450 hover:text-orange-600 font-bold text-xs transition-colors bg-slate-50/50"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Thêm mới
+                {t("staff.commission.add_new", "Thêm mới")}
               </button>
             </div>
           </div>

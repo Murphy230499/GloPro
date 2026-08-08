@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { MessageCircle, Mail, Settings, CheckCircle2, XCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 const INTEGRATION_APPS = [
   // Nhóm Thanh toán
@@ -208,6 +209,7 @@ const INTEGRATION_APPS = [
 ];
 
 export default function IntegrationsTab() {
+  const t = useT();
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingApp, setEditingApp] = useState(null);
@@ -255,27 +257,27 @@ export default function IntegrationsTab() {
         await base44.entities.Integration.create(payload);
       }
       
-      toast.success(`Đã lưu cấu hình ${editingApp.name}`);
+      toast.success(t('settings.msg_saved_config', 'Đã lưu cấu hình {name}', { name: editingApp.name }));
       setEditingApp(null);
       fetchIntegrations();
     } catch (error) {
-      toast.error('Lỗi khi lưu cấu hình: ' + error.message);
+      toast.error(t('settings.msg_save_config_error', 'Lỗi khi lưu cấu hình: {msg}', { msg: error.message }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDisconnect = async (appId) => {
-    if (!confirm('Bạn có chắc muốn ngắt kết nối ứng dụng này?')) return;
+    if (!confirm(t('settings.confirm_disconnect', 'Bạn có chắc muốn ngắt kết nối ứng dụng này?'))) return;
     try {
       const existing = integrations.find(i => i.provider === appId);
       if (existing) {
         await base44.entities.Integration.delete(existing.id);
-        toast.success('Đã ngắt kết nối');
+        toast.success(t('settings.msg_disconnected', 'Đã ngắt kết nối'));
         fetchIntegrations();
       }
     } catch (error) {
-      toast.error('Lỗi khi ngắt kết nối: ' + error.message);
+      toast.error(t('settings.msg_disconnect_error', 'Lỗi khi ngắt kết nối: {msg}', { msg: error.message }));
     }
   };
 
@@ -303,16 +305,16 @@ export default function IntegrationsTab() {
                   </div>
                   {isConnected ? (
                     <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Đã kết nối
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {t('settings.integration_status_connected', 'Đã kết nối')}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                      <XCircle className="w-3.5 h-3.5" /> Chưa kết nối
+                      <XCircle className="w-3.5 h-3.5" /> {t('settings.integration_status_not_connected', 'Chưa kết nối')}
                     </span>
                   )}
                 </div>
                 <h3 className="font-bold text-lg text-slate-800">{app.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{app.description}</p>
+                <p className="text-sm text-slate-500 mt-1">{t('settings.integration_desc_' + app.id, app.description)}</p>
               </div>
               
               <div className="mt-5 flex gap-2">
@@ -320,14 +322,14 @@ export default function IntegrationsTab() {
                   onClick={() => handleOpenConfig(app)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors"
                 >
-                  <Settings className="w-4 h-4" /> Cấu hình
+                  <Settings className="w-4 h-4" /> {t('settings.integration_btn_configure', 'Cấu hình')}
                 </button>
                 {isConnected && (
                   <button 
                     onClick={() => handleDisconnect(app.id)}
                     className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm transition-colors"
                   >
-                    Ngắt kết nối
+                    {t('settings.integration_btn_disconnect', 'Ngắt kết nối')}
                   </button>
                 )}
               </div>
@@ -341,23 +343,26 @@ export default function IntegrationsTab() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-100">
-              <h3 className="text-xl font-bold text-slate-800">Cấu hình {editingApp.name}</h3>
-              <p className="text-sm text-slate-500 mt-1">Nhập thông tin kết nối API được cung cấp bởi nền tảng.</p>
+              <h3 className="text-xl font-bold text-slate-800">{t('settings.integration_config_title', 'Cấu hình {name}', { name: editingApp.name })}</h3>
+              <p className="text-sm text-slate-500 mt-1">{t('settings.integration_config_desc', 'Nhập thông tin kết nối API được cung cấp bởi nền tảng.')}</p>
             </div>
             
             <form onSubmit={handleSaveConfig} className="p-6 space-y-4">
-              {editingApp.fields.map(field => (
-                <div key={field.key}>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">{field.label}</label>
-                  <input
-                    type={field.type}
-                    value={formData[field.key] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm outline-none"
-                    placeholder={`Nhập ${field.label}...`}
-                  />
-                </div>
-              ))}
+              {editingApp.fields.map(field => {
+                const fieldLabel = t('settings.integration_field_' + field.key, field.label);
+                return (
+                  <div key={field.key}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">{fieldLabel}</label>
+                    <input
+                      type={field.type}
+                      value={formData[field.key] || ''}
+                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm outline-none"
+                      placeholder={t('settings.integration_input_ph', 'Nhập {label}...', { label: fieldLabel })}
+                    />
+                  </div>
+                );
+              })}
               
               <div className="flex justify-end gap-2 pt-4">
                 <button
@@ -365,14 +370,14 @@ export default function IntegrationsTab() {
                   onClick={() => setEditingApp(null)}
                   className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors text-sm"
                 >
-                  Hủy
+                  {t('settings.btn_cancel', 'Hủy')}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-5 py-2.5 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50"
                 >
-                  {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
+                  {saving ? t('settings.btn_saving', 'Đang lưu...') : t('settings.integration_btn_save', 'Lưu cấu hình')}
                 </button>
               </div>
             </form>

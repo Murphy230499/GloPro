@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import { Search, Plus, Building2, Phone, Mail, MapPin, Edit3, Trash2, DollarSign, FileText } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 import { toast } from '@/components/Layout';
+import { useT } from '@/lib/i18n';
 import SupplierModal from './SupplierModal';
 
 export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSupplier }) {
+  const { t } = useT();
   const [search, setSearch] = useState('');
   const [modalSupplier, setModalSupplier] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -38,17 +40,17 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Tổng Nhà Cung Cấp</div>
-          <div className="text-xl font-bold text-slate-800 mt-1">{suppliers.length} đối tác</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.total_suppliers', 'Tổng Nhà Cung Cấp')}</div>
+          <div className="text-xl font-bold text-slate-800 mt-1">{suppliers.length} {t('inventory.partners_unit', 'đối tác')}</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Tổng Tiền Đã Nhập Hàng</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.total_imported_amount', 'Tổng Tiền Đã Nhập Hàng')}</div>
           <div className="text-xl font-bold text-purple-600 mt-1">{formatVND(totalImported)}</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-2xs">
-          <div className="text-xs text-slate-400 font-medium">Tổng Công Nợ Phải Trả</div>
+          <div className="text-xs text-slate-400 font-medium">{t('inventory.total_debt_payable', 'Tổng Công Nợ Phải Trả')}</div>
           <div className="text-xl font-bold text-red-500 mt-1">{formatVND(totalDebt)}</div>
         </div>
       </div>
@@ -61,7 +63,7 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên, mã NCC, số điện thoại..."
+            placeholder={t('inventory.search_supplier_placeholder', 'Tìm theo tên, mã NCC, số điện thoại...')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-purple-500 text-slate-800"
           />
         </div>
@@ -70,7 +72,7 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
           onClick={handleOpenAdd}
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Thêm Nhà Cung Cấp
+          <Plus className="w-4 h-4" /> {t('inventory.btn_add_supplier', 'Thêm Nhà Cung Cấp')}
         </button>
       </div>
 
@@ -78,7 +80,7 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {filtered.length === 0 ? (
           <div className="col-span-full bg-white rounded-2xl p-12 text-center border border-slate-100">
-            <p className="text-slate-400 text-sm font-medium">Không tìm thấy Nhà cung cấp nào phù hợp</p>
+            <p className="text-slate-400 text-sm font-medium">{t('inventory.no_suppliers_found', 'Không tìm thấy Nhà cung cấp nào phù hợp')}</p>
           </div>
         ) : (
           filtered.map((s) => (
@@ -90,11 +92,11 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
                   </span>
                   {s.debt > 0 ? (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
-                      Còn nợ: {formatVND(s.debt)}
+                      {t('inventory.debt_amount_label', 'Còn nợ:')} {formatVND(s.debt)}
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                      Hết nợ
+                      {t('inventory.no_debt', 'Hết nợ')}
                     </span>
                   )}
                 </div>
@@ -103,7 +105,7 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
 
                 {s.contact_person && (
                   <div className="text-xs text-slate-500 font-medium">
-                    Liên hệ: <span className="font-semibold text-slate-700">{s.contact_person}</span>
+                    {t('inventory.contact_label', 'Liên hệ:')} <span className="font-semibold text-slate-700">{s.contact_person}</span>
                   </div>
                 )}
 
@@ -132,7 +134,7 @@ export default function SuppliersTab({ suppliers, onSaveSupplier, onDeleteSuppli
               {/* Toolbar Actions */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                 <div className="text-[11px] text-slate-400 font-medium">
-                  Đã nhập: <span className="font-bold text-purple-700">{formatVND(s.total_imported || 0)}</span>
+                  {t('inventory.total_imported_label', 'Đã nhập:')} <span className="font-bold text-purple-700">{formatVND(s.total_imported || 0)}</span>
                 </div>
 
                 <div className="flex items-center gap-1">

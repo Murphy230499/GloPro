@@ -9,10 +9,12 @@ import AIInsightBox from '../AIInsightBox';
 import DataTable from '../DataTable';
 import { formatVND } from '@/lib/format';
 import { generateAIInsights } from '@/lib/reportsEngine';
+import { useT } from '@/lib/i18n';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
 
 export default function RevenueTab({ invoices = [], onDrillDown }) {
+  const t = useT();
   const totalRevenue = invoices.reduce((s, i) => s + (i.total || 0), 0);
   const totalDiscount = invoices.reduce((s, i) => s + (i.discount || 0), 0);
   const totalSubtotal = invoices.reduce((s, i) => s + (i.subtotal || 0), 0);
@@ -30,15 +32,15 @@ export default function RevenueTab({ invoices = [], onDrillDown }) {
     .slice(0, 6)
     .map(([name, value]) => ({ name, value }));
 
-  const insights = generateAIInsights('revenue', { aov, topCategory: catData[0]?.name });
+  const insights = generateAIInsights('revenue', { aov, topCategory: catData[0]?.name }, t);
 
   const columns = [
-    { key: 'invoice_code', label: 'Mã Hóa đơn' },
-    { key: 'customer_name', label: 'Khách hàng' },
-    { key: 'date', label: 'Ngày' },
-    { key: 'subtotal', label: 'Tạm tính', align: 'right', render: (v) => formatVND(v) },
-    { key: 'discount', label: 'Giảm giá', align: 'right', render: (v) => <span className="text-rose-500 font-semibold">-{formatVND(v)}</span> },
-    { key: 'total', label: 'Thành tiền', align: 'right', render: (v) => <span className="font-bold text-emerald-600">{formatVND(v)}</span> }
+    { key: 'invoice_code', label: t('reports.col_invoice_code', 'Invoice Code') },
+    { key: 'customer_name', label: t('reports.col_customer', 'Customer') },
+    { key: 'date', label: t('reports.col_date', 'Date') },
+    { key: 'subtotal', label: t('reports.col_subtotal', 'Subtotal'), align: 'right', render: (v) => formatVND(v) },
+    { key: 'discount', label: t('reports.col_discount', 'Discount'), align: 'right', render: (v) => <span className="text-rose-500 font-semibold">-{formatVND(v)}</span> },
+    { key: 'total', label: t('reports.col_total', 'Total'), align: 'right', render: (v) => <span className="font-bold text-emerald-600">{formatVND(v)}</span> }
   ];
 
   return (
@@ -46,28 +48,28 @@ export default function RevenueTab({ invoices = [], onDrillDown }) {
       <AIInsightBox insights={insights} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <KPICard title="Tổng Doanh Thu Thuần" value={formatVND(totalRevenue)} growth={15} compareText="so với kỳ trước" icon={TrendingUp} color="emerald" />
-        <KPICard title="Tổng Giá Trị Tạm Tính" value={formatVND(totalSubtotal)} growth={14} compareText="so với kỳ trước" icon={DollarSign} color="blue" />
-        <KPICard title="Tổng Khấu Trừ / Giảm Giá" value={formatVND(totalDiscount)} growth={-4} compareText="so với kỳ trước" icon={PieIcon} color="rose" />
-        <KPICard title="Giá Trị TB / Đơn (AOV)" value={formatVND(aov)} growth={6} compareText="so với kỳ trước" icon={ArrowUpRight} color="purple" />
+        <KPICard title={t('reports.kpi_total_net_revenue', 'Total Net Revenue')} value={formatVND(totalRevenue)} growth={15} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={TrendingUp} color="emerald" />
+        <KPICard title={t('reports.kpi_total_subtotal', 'Total Subtotal')} value={formatVND(totalSubtotal)} growth={14} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={DollarSign} color="blue" />
+        <KPICard title={t('reports.kpi_total_discount', 'Total Discount')} value={formatVND(totalDiscount)} growth={-4} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={PieIcon} color="rose" />
+        <KPICard title={t('reports.kpi_aov', 'Avg Order Value (AOV)')} value={formatVND(aov)} growth={6} compareText={t('reports.vs_prev_period', 'vs previous period')} icon={ArrowUpRight} color="purple" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3 min-w-0">
-          <h3 className="text-sm font-bold text-slate-800">Top 6 Dịch vụ & Sản phẩm Đóng góp Doanh thu</h3>
+          <h3 className="text-sm font-bold text-slate-800">{t('reports.top_6_revenue_contrib', 'Top 6 Revenue Contributing Services & Products')}</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={catData.length ? catData : [{ name: 'Không có', value: 1 }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50}>
+              <Pie data={catData.length ? catData : [{ name: t('reports.none', 'None'), value: 1 }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50}>
                 {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v) => [formatVND(v), 'Doanh số']} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
+              <Tooltip formatter={(v) => [formatVND(v), t('reports.sales_label', 'Sales')]} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }} />
               <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3 min-w-0">
-          <h3 className="text-sm font-bold text-slate-800">Cơ cấu Chi tiết Doanh số</h3>
+          <h3 className="text-sm font-bold text-slate-800">{t('reports.detailed_revenue_breakdown', 'Detailed Revenue Breakdown')}</h3>
           <div className="space-y-3 pt-2">
             {catData.map((c, i) => (
               <div key={c.name} className="flex items-center justify-between text-xs">
@@ -82,7 +84,7 @@ export default function RevenueTab({ invoices = [], onDrillDown }) {
         </div>
       </div>
 
-      <DataTable columns={columns} data={invoices} emptyText="Không có hóa đơn trong kỳ" />
+      <DataTable columns={columns} data={invoices} emptyText={t('reports.no_invoices_in_period', 'No invoices in period')} />
     </div>
   );
 }

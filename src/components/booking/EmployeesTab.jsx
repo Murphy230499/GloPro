@@ -3,25 +3,27 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Toggle } from './PreferencesTab';
+import { useT } from '@/lib/i18n';
 
 const PAGE_SIZE = 10;
 
-const ROLES = {
-  manager: { label: 'Quản lý', color: '#FF6B9D' },
-  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
-  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
-  barber: { label: 'Barber', color: '#34D399' },
-  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
-  nail_tech: { label: 'Nail tech', color: '#F472B6' },
-  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
-  cashier: { label: 'Thu ngân', color: '#94A3B8' },
-};
-
 export default function EmployeesTab({ setting, onChange, branchId }) {
+  const t = useT();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  const ROLES = {
+    manager: { label: t('booking.role_manager', 'Manager'), color: '#FF6B9D' },
+    receptionist: { label: t('booking.role_receptionist', 'Receptionist'), color: '#60A5FA' },
+    stylist: { label: t('booking.role_stylist', 'Hair Stylist'), color: '#A78BFA' },
+    barber: { label: t('booking.role_barber', 'Barber'), color: '#34D399' },
+    therapist: { label: t('booking.role_therapist', 'Spa Therapist'), color: '#FBBF24' },
+    nail_tech: { label: t('booking.role_nail_tech', 'Nail Tech'), color: '#F472B6' },
+    technician: { label: t('booking.role_technician', 'Technician'), color: '#F97316' },
+    cashier: { label: t('booking.role_cashier', 'Cashier'), color: '#94A3B8' },
+  };
 
   useEffect(() => {
     base44.entities.Staff.list().then(data => {
@@ -64,9 +66,9 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-slate-800">Danh sách nhân viên</h2>
+          <h2 className="text-sm font-semibold text-slate-800">{t('booking.staff_list_title', 'Staff List')}</h2>
           <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
-            {filtered.length} nhân viên
+            {t('booking.staff_count_unit', '{count} staff members', { count: filtered.length })}
           </span>
         </div>
         <div className="relative">
@@ -74,7 +76,7 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Tìm theo mã NV, tên nhân viên"
+            placeholder={t('booking.search_staff_placeholder', 'Search by staff code, name...')}
             className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400 w-64"
           />
         </div>
@@ -84,17 +86,17 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
       <table className="w-full">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-100">
-            <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 w-28 whitespace-nowrap">Mã NV</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 whitespace-nowrap">Họ và tên</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 whitespace-nowrap">Vai trò</th>
-            <th className="text-right px-5 py-3 text-xs font-semibold text-slate-500 w-20 whitespace-nowrap">Hiển thị</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 w-28 whitespace-nowrap">{t('booking.col_code', 'Staff Code')}</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 whitespace-nowrap">{t('booking.col_name', 'Full Name')}</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 whitespace-nowrap">{t('booking.col_role', 'Role')}</th>
+            <th className="text-right px-5 py-3 text-xs font-semibold text-slate-500 w-20 whitespace-nowrap">{t('booking.col_visible', 'Visibility')}</th>
           </tr>
         </thead>
         <tbody>
           {paginated.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-12 text-sm text-slate-400">
-                {search ? 'Không tìm thấy nhân viên nào' : 'Chưa có nhân viên. Thêm trong module Nhân viên.'}
+                {search ? t('booking.no_staff_search', 'No staff members found') : t('booking.no_staff_empty', 'No staff members yet. Add staff in Staff module.')}
               </td>
             </tr>
           ) : paginated.map((s, i) => (

@@ -1,14 +1,17 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 export default function DataTable({
   columns = [],
   data = [],
   searchQuery = '',
-  emptyText = 'Không tìm thấy dữ liệu báo cáo',
+  emptyText,
   onRowClick
 }) {
+  const t = useT();
+  const actualEmptyText = emptyText || t('reports.empty_table_text', 'No report data found');
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,7 +76,7 @@ export default function DataTable({
       {/* Top Toolbar: Column Visibility Toggle */}
       <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between text-xs">
         <div className="text-slate-500 font-medium">
-          Hiển thị <span className="font-bold text-slate-800">{paginatedData.length}</span> trên tổng <span className="font-bold text-slate-800">{sortedData.length}</span> bản ghi
+          {t('reports.table_showing_count', 'Showing {count} of {total} records', { count: paginatedData.length, total: sortedData.length })}
         </div>
 
         <div className="relative">
@@ -82,12 +85,12 @@ export default function DataTable({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Tùy chỉnh cột ({activeCols.length}/{columns.length})</span>
+            <span>{t('reports.customize_cols', 'Customize columns')} ({activeCols.length}/{columns.length})</span>
           </button>
 
           {showColToggle && (
             <div className="absolute right-0 top-9 z-20 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 w-56 space-y-1.5 animate-in fade-in zoom-in-95 duration-100">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"> Ẩn / Hiện cột</div>
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">{t('reports.toggle_cols', 'Toggle columns')}</div>
               {columns.map(col => (
                 <label key={col.key} className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:bg-slate-50 p-1.5 rounded-lg cursor-pointer select-none">
                   <input
@@ -136,7 +139,7 @@ export default function DataTable({
             {paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={activeCols.length} className="py-12 text-center text-slate-400 font-medium">
-                  {emptyText}
+                  {actualEmptyText}
                 </td>
               </tr>
             ) : (
@@ -163,18 +166,18 @@ export default function DataTable({
         
         {/* Page Size Picker */}
         <div className="flex items-center gap-2">
-          <span>Hiển thị</span>
+          <span>{t('reports.show', 'Show')}</span>
           <select
             value={pageSize}
             onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
             className="px-2 py-1 rounded-lg border border-slate-200 bg-white font-semibold text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
           >
-            <option value={10}>10 dòng</option>
-            <option value={25}>25 dòng</option>
-            <option value={50}>50 dòng</option>
-            <option value={100}>100 dòng</option>
+            <option value={10}>10 {t('reports.rows', 'rows')}</option>
+            <option value={25}>25 {t('reports.rows', 'rows')}</option>
+            <option value={50}>50 {t('reports.rows', 'rows')}</option>
+            <option value={100}>100 {t('reports.rows', 'rows')}</option>
           </select>
-          <span>mỗi trang</span>
+          <span>{t('reports.per_page', 'per page')}</span>
         </div>
 
         {/* Page Stepper Buttons */}
@@ -188,7 +191,7 @@ export default function DataTable({
           </button>
 
           <span className="px-3 py-1 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold">
-            Trang {currentPage} / {totalPages}
+            {t('reports.page_of', 'Page {current} of {total}', { current: currentPage, total: totalPages })}
           </span>
 
           <button

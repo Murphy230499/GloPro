@@ -9,18 +9,20 @@ import EmptyCart from '@/components/pos/EmptyCart';
 import PackageUsageModal from '@/components/pos/PackageUsageModal';
 import { PROMOTIONS, VOUCHERS, applyDiscountsToCart } from '@/utils/promos';
 import { toast } from '@/components/Layout';
+import { useT } from '@/lib/i18n';
 
 import { base44 } from '@/api/base44Client';
 import { getNormalizedLogs } from '@/lib/logHelper';
 
-const TYPE_LABELS = {
-  service: 'Dịch vụ',
-  product: 'Sản phẩm',
-  package: 'Gói dịch vụ',
-  treatment: 'Liệu trình',
-  service_combo: 'Combo dịch vụ',
-  product_combo: 'Combo sản phẩm',
-  prepaid_card: 'Thẻ tiền mặt',
+// TYPE_LABELS are now translated dynamically via getTypeLabel(type, t)
+const TYPE_LABEL_KEYS = {
+  service: ['pos.ticket.type_service', 'Dịch vụ'],
+  product: ['pos.ticket.type_product', 'Sản phẩm'],
+  package: ['pos.ticket.type_package', 'Gói dịch vụ'],
+  treatment: ['pos.ticket.type_treatment', 'Liệu trình'],
+  service_combo: ['pos.ticket.type_service_combo', 'Combo dịch vụ'],
+  product_combo: ['pos.ticket.type_product_combo', 'Combo sản phẩm'],
+  prepaid_card: ['pos.ticket.type_prepaid_card', 'Thẻ tiền mặt'],
 };
 
 const TYPE_ICONS = {
@@ -80,6 +82,11 @@ const groupCartItems = (cart) => {
 };
 
 export default function TicketColumn({ session, staff, customers, onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled }) {
+  const { t } = useT();
+  const getTypeLabel = (type) => {
+    const keys = TYPE_LABEL_KEYS[type];
+    return keys ? t(keys[0], keys[1]) : t('common.other', 'Khác');
+  };
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [clientQ, setClientQ] = useState('');
   const [voucherInput, setVoucherInput] = useState('');
@@ -382,7 +389,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
     const code = voucherInput.trim().toUpperCase();
     const voucher = VOUCHERS.find((v) => v.code === code);
     if (!voucher) {
-      toast.error('Mã voucher không hợp lệ');
+      toast.error(t('pos.ticket.invalid_voucher', 'Mã voucher không hợp lệ'));
       return;
     }
 
@@ -390,7 +397,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
     if (voucher.expiryDate) {
       const today = new Date().toISOString().split('T')[0];
       if (voucher.expiryDate < today) {
-        toast.error('Voucher này đã hết hạn sử dụng');
+        toast.error(t('pos.ticket.voucher_expired', 'Voucher này đã hết hạn sử dụng'));
         return;
       }
     }
@@ -401,7 +408,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       const usages = usagesStr ? JSON.parse(usagesStr) : [];
       const usedCount = usages.filter(u => u.promo_id === voucher.code || u.code === voucher.code).length;
       if (usedCount >= voucher.quantity) {
-        toast.error('Voucher này đã hết lượt sử dụng');
+        toast.error(t('pos.ticket.voucher_exhausted', 'Voucher này đã hết lượt sử dụng'));
         return;
       }
     }
@@ -427,7 +434,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       discountType,
       discountValue
     });
-    toast.success('Áp dụng voucher thành công');
+    toast.success(t('pos.ticket.voucher_applied', 'Áp dụng voucher thành công'));
   };
 
   const handleRemoveVoucher = () => {
@@ -564,12 +571,12 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
         <div>
           <div className="text-xs text-slate-400 flex items-center gap-1">
-            <span>Mã đơn:</span>
+            <span>{t('pos.ticket.order_code', 'Mã đơn:')}</span>
             {session.id && !String(session.id).startsWith('direct_pos_') ? (
               <Link 
                 href={`/invoices/${session.id}`}
                 className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-0.5 cursor-pointer"
-                title="Xem chi tiết hoá đơn"
+                title={t('pos.ticket.view_invoice_detail', 'Xem chi tiết hoá đơn')}
               >
                 #{session.saleCode || session.id}
                 <ExternalLink className="w-3 h-3 text-emerald-500 inline-block" />
@@ -583,9 +590,9 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         <button
           onClick={() => setHistoryOpen(true)}
           className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center gap-1 shrink-0"
-          title="Xem lịch sử thao tác đơn"
+          title={t('pos.ticket.history_title', 'Lịch sử thao tác đơn')}
         >
-          <History className="w-3.5 h-3.5 text-slate-400" /> Lịch sử
+          <History className="w-3.5 h-3.5 text-slate-400" /> {t('pos.ticket.history', 'Lịch sử')}
         </button>
       </div>
 
@@ -598,14 +605,14 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                 <Avatar src={customer.avatar_url} name={customer.name} size={36} color="#34D399" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate text-emerald-800 hover:underline">{customer.name}</div>
-                  <div className="text-xs text-slate-500">{customer.points || 0} điểm • {formatVND(customer.total_spent || 0)}</div>
+                  <div className="text-xs text-slate-500">{customer.points || 0} {t('common.points', 'điểm')} • {t('pos.ticket.total_spent', 'Tổng chi tiêu:')} {formatVND(customer.total_spent || 0)}</div>
                 </div>
               </Link>
               <button onClick={onClearCustomer} className="text-slate-400 hover:text-red-500 shrink-0 ml-1"><UserX className="w-4 h-4" /></button>
             </div>
             {hasPackages && (
               <button onClick={() => setShowPackageModal(true)} className="flex items-center justify-center gap-2 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 bg-white hover:bg-emerald-50 text-xs font-semibold shadow-sm transition-colors">
-                <Package className="w-3.5 h-3.5" /> Gói & Liệu trình đã mua
+                <Package className="w-3.5 h-3.5" /> {t('pos.ticket.view_packages', 'Gói & Liệu trình đã mua')}
               </button>
             )}
           </div>
@@ -614,7 +621,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 mb-2">
               <Search className="w-4 h-4 text-slate-400" />
               <input autoFocus value={clientQ} onChange={(e) => setClientQ(e.target.value)}
-                placeholder="Nhập tên, email hoặc SĐT..."
+                placeholder={t('pos.ticket.search_cust_input_placeholder', 'Nhập tên, email hoặc SĐT...')}
                 className="bg-transparent outline-none text-sm flex-1" />
               <button onClick={() => { setShowClientSearch(false); setClientQ(''); }} className="text-slate-400"><X className="w-4 h-4" /></button>
             </div>
@@ -622,7 +629,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
               <button onClick={() => { onPickCustomer({ name: 'Khách vãng lai', phone: '', points: 0, total_spent: 0 }); setShowClientSearch(false); }}
                 className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 text-left text-sm text-slate-500">
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs">VL</div>
-                Khách vãng lai
+                {t('pos.ticket.walk_in', 'Khách vãng lai')}
               </button>
               {clientResults.map((c) => (
                 <button key={c.id} onClick={() => { onPickCustomer(c); setShowClientSearch(false); setClientQ(''); }}
@@ -630,19 +637,19 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                   <Avatar src={c.avatar_url} name={c.name} size={32} color="#34D399" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{c.name}</div>
-                    <div className="text-xs text-slate-400">{c.phone} • {c.points || 0} điểm</div>
+                    <div className="text-xs text-slate-400">{c.phone} • {c.points || 0} {t('common.points', 'điểm')}</div>
                   </div>
                 </button>
               ))}
             </div>
             <button onClick={() => onNewCustomer?.(clientQ)} className="text-sm text-emerald-600 font-semibold flex items-center gap-1 mt-2 hover:underline">
-              <Plus className="w-4 h-4" /> Thêm khách hàng mới
+              <Plus className="w-4 h-4" /> {t('pos.ticket.add_new_customer', 'Thêm khách hàng mới')}
             </button>
           </div>
         ) : (
           <button onClick={() => setShowClientSearch(true)}
             className="w-full flex items-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-sm hover:border-emerald-300 hover:text-emerald-600 transition-colors">
-            <Search className="w-4 h-4" /> Nhập tên, email hoặc SĐT khách hàng
+            <Search className="w-4 h-4" /> {t('pos.ticket.search_cust_input_placeholder', 'Nhập tên, email hoặc SĐT khách hàng')}
           </button>
         )}
       </div>
@@ -650,21 +657,21 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {cart.length === 0 ? (
-          <EmptyCart subtitle="Chọn dịch vụ, sản phẩm hoặc gói để thanh toán" />
+          <EmptyCart subtitle={t('pos.ticket.empty_cart_subtitle', 'Chọn dịch vụ, sản phẩm hoặc gói để thanh toán')} />
         ) : (
           Object.entries(groupCartItems(cart)).map(([type, entries]) => {
-            let label = TYPE_LABELS[type] || 'Khác';
+            let label = getTypeLabel(type);
             if (type.startsWith('packageGroup_')) {
-              label = `Dùng gói: ${type.replace('packageGroup_', '')}`;
+              label = `${t('pos.ticket.use_package', 'Dùng gói:')} ${type.replace('packageGroup_', '')}`;
             } else if (type.startsWith('treatmentGroup_')) {
-              label = `Dùng liệu trình: ${type.replace('treatmentGroup_', '')}`;
+              label = `${t('pos.ticket.use_treatment', 'Dùng liệu trình:')} ${type.replace('treatmentGroup_', '')}`;
             }
             const totalQty = entries.reduce((s, e) => s + (e.item.qty || 1), 0);
             
             if (type.startsWith('packageGroup_') || type.startsWith('treatmentGroup_')) {
               const isTreatment = type.startsWith('treatmentGroup_');
               const packageName = isTreatment ? type.replace('treatmentGroup_', '') : type.replace('packageGroup_', '');
-              const sectionHeader = isTreatment ? 'DÙNG LIỆU TRÌNH' : 'DÙNG GÓI';
+              const sectionHeader = isTreatment ? t('pos.ticket.use_treatment_caps', 'DÙNG LIỆU TRÌNH') : t('pos.ticket.use_package_caps', 'DÙNG GÓI');
               return (
                 <div key={type} className="space-y-2 mb-4">
                   <div className="flex items-center justify-between px-1">
@@ -689,7 +696,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                       
                       <div className="flex items-center justify-between pl-1">
                         <div className="text-[14px] text-slate-500">
-                          11:00 AM &rarr; 11:30 AM ({totalQty * 30} phút)
+                          11:00 AM &rarr; 11:30 AM ({totalQty * 30} {t('common.minutes', 'phút')})
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <button onClick={() => {
@@ -702,7 +709,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                             } else {
                               setEditPackageType(type);
                             }
-                          }} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-50 transition-colors" title="Chỉnh sửa số lượng">
+                          }} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-50 transition-colors" title={t('pos.ticket.edit_quantity', 'Chỉnh sửa số lượng')}>
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => {
@@ -710,7 +717,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                             let newCart = [...cart];
                             indicesToRemove.forEach(idx => newCart.splice(idx, 1));
                             onUpdate({ cart: newCart });
-                          }} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-slate-50 transition-colors" title={isTreatment ? "Xoá liệu trình này" : "Xoá gói này"}>
+                          }} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-slate-50 transition-colors" title={isTreatment ? t('pos.ticket.delete_treatment_tooltip', 'Xoá liệu trình này') : t('pos.ticket.delete_package_tooltip', 'Xoá gói này')}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -724,7 +731,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                         <div className="flex-1 pr-4 flex flex-col gap-3">
                           <div className="font-medium text-[16px] text-slate-800">{x.name}</div>
                           <div className="flex items-center gap-2.5">
-                            <span className="text-slate-500 text-[14px] shrink-0">{x.qty * 30} phút &bull;</span>
+                            <span className="text-slate-500 text-[14px] shrink-0">{x.qty * 30} {t('common.minutes', 'phút')} &bull;</span>
                             <div className="w-[190px] -mt-1.5">
                               <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} color="slate-600" hideRequestedCheckbox={true} />
                             </div>
@@ -796,10 +803,10 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
                         {/* Top Right Action Buttons */}
                         <div className="flex items-center gap-1 shrink-0">
-                          <button onClick={() => handleOpenEdit(i)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-white transition-colors" title="Chỉnh sửa chi tiết">
+                          <button onClick={() => handleOpenEdit(i)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-white transition-colors" title={t('pos.ticket.edit_details', 'Chỉnh sửa chi tiết')}>
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => removeItem(i)} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-white transition-colors" title="Xoá mục">
+                          <button onClick={() => removeItem(i)} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-white transition-colors" title={t('pos.ticket.delete_item_tooltip', 'Xoá mục')}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -812,7 +819,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                           <button 
                             onClick={() => updateCart(i, { qty: Math.max(1, (x.qty || 1) - 1) })} 
                             className="w-6 h-6 rounded-lg bg-slate-50 hover:bg-slate-100 active:scale-95 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all cursor-pointer"
-                            title="Giảm số lượng"
+                            title={t('pos.ticket.decrease_qty', 'Giảm số lượng')}
                           >
                             <Minus className="w-3 h-3" />
                           </button>
@@ -822,7 +829,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                           <button 
                             onClick={() => updateCart(i, { qty: (x.qty || 1) + 1 })} 
                             className="w-6 h-6 rounded-lg bg-slate-50 hover:bg-slate-100 active:scale-95 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all cursor-pointer"
-                            title="Tăng số lượng"
+                            title={t('pos.ticket.increase_qty', 'Tăng số lượng')}
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -845,12 +852,12 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                             <span className="text-slate-700 font-bold truncate">{x.staff_name}</span>
                             {x.is_customer_requested && (
                               <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200/60 px-1.5 py-0.2 rounded font-semibold shrink-0">
-                                Yêu cầu
+                                {t('pos.ticket.requested', 'Yêu cầu')}
                               </span>
                             )}
                           </span>
                           <button onClick={() => handleOpenEdit(i)} className="text-slate-400 hover:text-emerald-600 text-[10px] font-semibold underline shrink-0 ml-1">
-                            Đổi
+                            {t('pos.ticket.change', 'Đổi')}
                           </button>
                         </div>
                       )}
@@ -865,10 +872,10 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
       {/* Summary */}
       <div className="border-t border-slate-100 px-3.5 py-2 space-y-1.5">
-        <div className="flex justify-between text-sm"><span className="text-slate-500">Tạm tính</span><span className="font-semibold">{formatVND(subtotal)}</span></div>
+        <div className="flex justify-between text-sm"><span className="text-slate-500">{t('pos.ticket.subtotal', 'Tạm tính')}</span><span className="font-semibold">{formatVND(subtotal)}</span></div>
         <div className="flex items-center justify-between text-sm">
           <div className="flex flex-col">
-            <span className="text-slate-500">Giảm giá</span>
+            <span className="text-slate-500">{t('pos.ticket.discount', 'Giảm giá')}</span>
             {(session.promo?.type === 'invoice' || session.voucher?.type === 'invoice') && (
               <span className="text-[10px] text-green-600 font-semibold flex items-center gap-0.5 mt-0.5 max-w-[150px] truncate animate-fade-in" title={`${session.promo?.type === 'invoice' ? session.promo.name : ''} ${session.voucher?.type === 'invoice' ? session.voucher.name : ''}`}>
                 🏷️ {session.promo?.type === 'invoice' ? session.promo.name : ''} {session.voucher?.type === 'invoice' ? session.voucher.name : ''}
@@ -893,7 +900,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
           </div>
         </div>
         <div className="flex justify-between items-center pt-1 border-t border-slate-100">
-          <span className="font-bold">Tổng tiền</span>
+          <span className="font-bold">{t('pos.ticket.total', 'Tổng tiền')}</span>
           <span className="text-xl font-bold text-emerald-600">{formatVND(total)}</span>
         </div>
       </div>
@@ -904,7 +911,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
           onClick={handlePrintDraft}
           disabled={cart.length === 0}
           className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 flex items-center justify-center transition-all shrink-0 disabled:opacity-40"
-          title="In hoá đơn tạm tính"
+          title={t('pos.ticket.print_draft_tooltip', 'In hoá đơn tạm tính')}
         >
           <Printer className="w-4 h-4" />
         </button>
@@ -915,21 +922,21 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
               ? 'bg-emerald-50 border-emerald-250 text-emerald-600 shadow-sm'
               : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
           }`}
-          title="Khuyến mãi & Voucher"
+          title={t('pos.ticket.promo_voucher_tooltip', 'Khuyến mãi & Voucher')}
         >
           <Gift className={`w-4 h-4 ${session.promo || session.voucher ? 'animate-pulse' : ''}`} />
         </button>
         <button
           onClick={() => setStaffModalOpen(true)}
           className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 flex items-center justify-center transition-all shrink-0"
-          title="Phân công nhân viên nhanh"
+          title={t('pos.ticket.quick_staff_tooltip', 'Phân công nhân viên nhanh')}
         >
           <Users className="w-4 h-4" />
         </button>
         <button 
           onClick={onCancel}
           className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all shrink-0 cursor-pointer"
-          title="Hủy / Xoá hoá đơn"
+          title={t('pos.ticket.delete_invoice_tooltip', 'Hủy / Xoá hoá đơn')}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -943,7 +950,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         </button>
         <button onClick={onCheckout} disabled={cart.length === 0}
           className="flex-1 min-w-[130px] px-4 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 shadow-sm hover:bg-emerald-600 transition-colors shrink-0 whitespace-nowrap">
-          <CreditCard className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Thanh toán</span>
+          <CreditCard className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">{t('appointments.btn_checkout', 'Thanh toán')}</span>
         </button>
       </div>
 
@@ -952,7 +959,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
           <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 shadow-2xl transition-all select-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-bold text-slate-800 text-base">Chỉnh sửa chi tiết</h3>
+                <h3 className="font-bold text-slate-800 text-base">{t('pos.ticket.edit_details', 'Chỉnh sửa chi tiết')}</h3>
                 <p className="text-xs text-slate-400 mt-0.5">{cart[editingItemIdx]?.name}</p>
               </div>
               <button onClick={() => setEditingItemIdx(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
@@ -962,7 +969,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Số lượng</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('pos.ticket.quantity', 'Số lượng')}</label>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleQtyChange(Math.max(1, (Number(editQty) || 1) - 1))} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors text-slate-650 text-sm font-semibold">
                     <Minus className="w-4 h-4" />
@@ -976,11 +983,11 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Đơn giá bán (VND)</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('pos.ticket.unit_selling_price', 'Đơn giá bán (VND)')}</label>
                   <input type="number" value={editPrice} onChange={(e) => handlePriceChange(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Giảm giá</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('pos.ticket.discount', 'Giảm giá')}</label>
                   <div className="flex items-center border border-slate-200 rounded-xl bg-white px-3 py-1 w-full h-10 shadow-sm focus-within:border-emerald-500 transition-all">
                     <input type="number" value={editDiscount} onChange={(e) => handleDiscountChange(e.target.value)} className="bg-transparent border-none outline-none text-sm font-medium text-emerald-600 w-full text-right focus:ring-0 focus:outline-none pr-1.5 placeholder:text-slate-400" />
                     <div className="relative flex items-center shrink-0 pr-1 pl-1.5 border-l border-slate-100">
@@ -1000,18 +1007,18 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Nhân viên thực hiện / KTV</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('pos.ticket.assign_staff', 'Nhân viên thực hiện / KTV')}</label>
                 <StaffAssignPicker staff={staff} value={editStaffId} isRequested={editIsRequested} onChange={(sid, name, req) => {
                   setEditStaffId(sid);
                   setEditStaffName(name);
                   setEditIsRequested(req);
-                }} placeholder="Chọn nhân viên phục vụ..." color="emerald-500" />
+                }} placeholder={t('pos.ticket.select_staff_placeholder', 'Chọn nhân viên phục vụ...')} color="emerald-500" />
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button type="button" onClick={() => setEditingItemIdx(null)} className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors font-semibold text-sm text-slate-600">Huỷ</button>
-              <button type="button" onClick={handleSaveEdit} className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors">Xác nhận</button>
+              <button type="button" onClick={() => setEditingItemIdx(null)} className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors font-semibold text-sm text-slate-600">{t('common.cancel', 'Hủy')}</button>
+              <button type="button" onClick={handleSaveEdit} className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors">{t('appointments.btn_confirm', 'Xác nhận')}</button>
             </div>
           </div>
         </div>
@@ -1024,7 +1031,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-bold text-slate-800 font-sans flex items-center gap-2">
                 <Gift className="w-5 h-5 text-emerald-500" />
-                Khuyến mãi &amp; Voucher
+                {t('pos.ticket.promo_voucher_title', 'Khuyến mãi & Voucher')}
               </h2>
               <button onClick={() => setPromoModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
                 <X className="w-4 h-4" />
@@ -1033,24 +1040,24 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
             <div className="space-y-4">
               <div>
-                <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">CHƯƠNG TRÌNH KHUYẾN MÃI (CTKM)</label>
+                <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">{t('pos.ticket.promotions_label', 'CHƯƠNG TRÌNH KHUYẾN MÃI (CTKM)')}</label>
                 <select value={session.promo?.id || ''} onChange={(e) => handlePromoChange(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-emerald-500 text-slate-700 bg-white">
-                  <option value="">— Chọn khuyến mãi —</option>
+                  <option value="">{t('pos.ticket.select_promo_placeholder', '— Chọn khuyến mãi —')}</option>
                   {getCustomerEligiblePromotions().map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">MÃ VOUCHER GIẢM GIÁ</label>
+                <label className="block font-bold text-slate-500 mb-1.5 text-[11px]">{t('pos.ticket.voucher_code_label', 'MÃ VOUCHER GIẢM GIÁ')}</label>
                 <div className="flex gap-2">
                   <input type="text" value={voucherInput} onChange={(e) => setVoucherInput(e.target.value)}
-                    placeholder="Nhập mã voucher..."
+                    placeholder={t('appointments.voucher_input_placeholder', 'Nhập mã voucher...')}
                     className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none uppercase font-semibold text-slate-700 w-full focus:border-emerald-500" />
                   {session.voucher ? (
-                    <button onClick={handleRemoveVoucher} className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors shrink-0">Hủy</button>
+                    <button onClick={handleRemoveVoucher} className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors shrink-0">{t('common.cancel', 'Hủy')}</button>
                   ) : (
-                    <button onClick={handleApplyVoucher} className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors shrink-0">Áp dụng</button>
+                    <button onClick={handleApplyVoucher} className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors shrink-0">{t('common.apply', 'Áp dụng')}</button>
                   )}
                 </div>
                 {session.voucher && (
@@ -1063,7 +1070,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
             <div className="mt-6 pt-4 border-t border-slate-100">
               <button onClick={() => setPromoModalOpen(false)} className="w-full py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors">
-                Hoàn tất
+                {t('common.done', 'Hoàn tất')}
               </button>
             </div>
           </div>
@@ -1077,7 +1084,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <History className="w-5 h-5 text-emerald-500" />
-                Lịch sử thao tác đơn
+                {t('pos.ticket.history_title', 'Lịch sử thao tác đơn')}
               </h3>
               <button onClick={() => setHistoryOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -1088,7 +1095,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
               {(() => {
                 const logs = getNormalizedLogs(session).reverse();
                 if (logs.length === 0) {
-                  return <div className="text-center py-12 text-slate-400 text-sm">Chưa có thao tác nào được thực hiện</div>;
+                  return <div className="text-center py-12 text-slate-400 text-sm">{t('pos.ticket.no_actions_performed', 'Chưa có thao tác nào được thực hiện')}</div>;
                 }
                 return (
                   <div className="relative pl-4 border-l border-slate-100 space-y-4">
@@ -1108,8 +1115,8 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                             </div>
                             {log.details && <div className="text-xs text-slate-500 mt-0.5">{log.details}</div>}
                             <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                              <span>Người thực hiện:</span>
-                              <span className="font-semibold text-slate-500">{log.user || 'Lễ tân'}</span>
+                              <span>{t('pos.ticket.performed_by_prefix', 'Người thực hiện:')}</span>
+                              <span className="font-semibold text-slate-500">{log.user || t('nav.receptionist', 'Lễ tân')}</span>
                             </div>
                           </div>
                         </div>
@@ -1121,7 +1128,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             </div>
 
             <button onClick={() => setHistoryOpen(false)} className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 font-bold text-sm shrink-0">
-              Đóng
+              {t('common.close', 'Đóng')}
             </button>
           </div>
         </div>
@@ -1134,7 +1141,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <Users className="w-5 h-5 text-emerald-500" />
-                Xếp nhân viên hàng loạt
+                {t('pos.ticket.bulk_staff_assign', 'Xếp nhân viên hàng loạt')}
               </h3>
               <button onClick={() => setStaffModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -1143,14 +1150,14 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
             <div className="flex-1 overflow-y-auto pr-1 space-y-4 mb-4">
               {cart.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm">Giỏ hàng trống</div>
+                <div className="text-center py-12 text-slate-400 text-sm">{t('pos.ticket.empty_cart', 'Giỏ hàng trống')}</div>
               ) : (
                 Object.entries(groupCartItems(cart)).map(([type, entries]) => {
-                  let label = TYPE_LABELS[type] || 'Khác';
+                  let label = TYPE_LABELS[type] || t('common.other', 'Khác');
                   if (type.startsWith('packageGroup_')) {
-                    label = `Dùng gói: ${type.replace('packageGroup_', '')}`;
+                    label = `${t('pos.ticket.use_package', 'Dùng gói:')} ${type.replace('packageGroup_', '')}`;
                   } else if (type.startsWith('treatmentGroup_')) {
-                    label = `Dùng liệu trình: ${type.replace('treatmentGroup_', '')}`;
+                    label = `${t('pos.ticket.use_treatment', 'Dùng liệu trình:')} ${type.replace('treatmentGroup_', '')}`;
                   }
                   const totalQty = entries.reduce((s, e) => s + (e.item.qty || 1), 0);
                   return (
@@ -1177,7 +1184,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             </div>
 
             <button onClick={() => setStaffModalOpen(false)} className="w-full py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors shrink-0">
-              Hoàn tất
+              {t('common.done', 'Hoàn tất')}
             </button>
           </div>
         </div>
@@ -1209,7 +1216,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
           <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 shadow-2xl transition-all select-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-bold text-slate-800 text-base">Chỉnh sửa chi tiết</h3>
+                <h3 className="font-bold text-slate-800 text-base">{t('pos.ticket.edit_details', 'Chỉnh sửa chi tiết')}</h3>
                 <p className="text-xs text-slate-400 mt-0.5">{editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', '')}</p>
               </div>
               <button onClick={() => setEditPackageType(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
@@ -1219,7 +1226,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
             
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Số lượng</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('pos.ticket.quantity', 'Số lượng')}</label>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => {
                     const pName = editPackageType.replace('packageGroup_', '').replace('treatmentGroup_', '');
@@ -1246,10 +1253,10 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
 
             <div className="flex items-center gap-3 pt-5 mt-5 border-t border-slate-100">
               <button onClick={() => setEditPackageType(null)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-colors">
-                Huỷ
+                {t('common.cancel', 'Hủy')}
               </button>
               <button onClick={() => setEditPackageType(null)} className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-sm hover:bg-emerald-600 transition-colors">
-                Xác nhận
+                {t('appointments.btn_confirm', 'Xác nhận')}
               </button>
             </div>
           </div>

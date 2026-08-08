@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Download, Printer, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 const pad = n => String(n).padStart(2, '0');
 const toISO = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -8,21 +9,21 @@ const todayDate = () => { const d = new Date(); d.setHours(0,0,0,0); return d; }
 function addMonths(d, n) { const x = new Date(d); x.setDate(1); x.setMonth(x.getMonth() + n); return x; }
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDOW(y, m) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
-const VI_MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const VI_DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 function formatDisplay(d) { if (!d) return ''; return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; }
 function isSameDay(a,b) { return a && b && a.toDateString() === b.toDateString(); }
 
 const PRESETS = [
-  { id:'today', label:'Hôm nay' },
-  { id:'yesterday', label:'Hôm qua' },
-  { id:'this_week', label:'Tuần này' },
-  { id:'last_week', label:'Tuần trước' },
-  { id:'this_month', label:'Tháng này' },
-  { id:'last_month', label:'Tháng trước' },
-  { id:'this_year', label:'Năm nay' },
-  { id:'last_year', label:'Năm ngoái' },
-  { id:'all', label:'Tất cả thời gian' },
+  { id:'today', key:'preset_today', defaultLabel:'Today' },
+  { id:'yesterday', key:'preset_yesterday', defaultLabel:'Yesterday' },
+  { id:'this_week', key:'preset_this_week', defaultLabel:'This Week' },
+  { id:'last_week', key:'preset_last_week', defaultLabel:'Last Week' },
+  { id:'this_month', key:'preset_this_month', defaultLabel:'This Month' },
+  { id:'last_month', key:'preset_last_month', defaultLabel:'Last Month' },
+  { id:'this_year', key:'preset_this_year', defaultLabel:'This Year' },
+  { id:'last_year', key:'preset_last_year', defaultLabel:'Last Year' },
+  { id:'all', key:'preset_all', defaultLabel:'All Time' },
 ];
 
 function resolvePreset(id) {
@@ -91,6 +92,7 @@ function CalGrid({ year, month, startDay, endDay, hoverDay, onHover, onClick, se
 }
 
 function DateRangePicker({ value, onChange }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [activePreset, setActivePreset] = useState('this_month');
   const [leftMonth, setLeftMonth] = useState(() => { const t=todayDate(); return new Date(t.getFullYear(),t.getMonth()-1,1); });
@@ -128,10 +130,10 @@ function DateRangePicker({ value, onChange }) {
 
   const label = () => {
     const p=PRESETS.find(x=>x.id===activePreset);
-    if(p&&!selecting) return p.label;
+    if(p&&!selecting) return t(`reports.${p.key}`, p.defaultLabel);
     if(startDay&&endDay) return `${formatDisplay(startDay)} – ${formatDisplay(endDay)}`;
     if(startDay) return `${formatDisplay(startDay)} – ...`;
-    return 'Chọn khoảng thời gian';
+    return t('reports.select_date_range', 'Select date range');
   };
 
   return (
@@ -151,7 +153,7 @@ function DateRangePicker({ value, onChange }) {
                 <button key={p.id} onClick={()=>applyPreset(p.id)}
                   className={`w-full text-left px-4 py-2.5 text-xs font-medium transition cursor-pointer
                     ${activePreset===p.id?'bg-blue-50 text-blue-700 font-semibold':'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
-                  {p.label}
+                  {t(`reports.${p.key}`, p.defaultLabel)}
                 </button>
               ))}
             </div>
@@ -165,11 +167,11 @@ function DateRangePicker({ value, onChange }) {
                     <button onClick={()=>setLeftMonth(m=>addMonths(m,-1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
                       <ChevronLeft className="w-4 h-4 text-slate-500"/>
                     </button>
-                    <span className="text-sm font-bold text-slate-800">{VI_MONTHS[leftMonth.getMonth()]} {leftMonth.getFullYear()}</span>
+                    <span className="text-sm font-bold text-slate-800">{MONTHS[leftMonth.getMonth()]} {leftMonth.getFullYear()}</span>
                     <div className="w-6"/>
                   </div>
                   <div className="grid grid-cols-7 mb-1">
-                    {VI_DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
+                    {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
                   </div>
                   <CalGrid year={leftMonth.getFullYear()} month={leftMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
                 </div>
@@ -180,32 +182,32 @@ function DateRangePicker({ value, onChange }) {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-6"/>
-                    <span className="text-sm font-bold text-slate-800">{VI_MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}</span>
+                    <span className="text-sm font-bold text-slate-800">{MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}</span>
                     <button onClick={()=>setLeftMonth(m=>addMonths(m,1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
                       <ChevronRight className="w-4 h-4 text-slate-500"/>
                     </button>
                   </div>
                   <div className="grid grid-cols-7 mb-1">
-                    {VI_DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
+                    {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
                   </div>
                   <CalGrid year={rightMonth.getFullYear()} month={rightMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
                 </div>
               </div>
 
               <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-2">
-                <input readOnly value={startDay?formatDisplay(startDay):''} placeholder="Từ ngày"
+                <input readOnly value={startDay?formatDisplay(startDay):''} placeholder={t('reports.from_date', 'From date')}
                   className="w-28 px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
                 <span className="text-slate-400 shrink-0">–</span>
-                <input readOnly value={endDay?formatDisplay(endDay):''} placeholder="Đến ngày"
+                <input readOnly value={endDay?formatDisplay(endDay):''} placeholder={t('reports.to_date', 'To date')}
                   className="w-28 px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
                 <div className="flex items-center gap-2 ml-auto shrink-0">
                   <button onClick={()=>{setOpen(false);setSelecting(false);}}
                     className="px-4 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer whitespace-nowrap">
-                    Huỷ
+                    {t('reports.btn_cancel', 'Cancel')}
                   </button>
                   <button onClick={handleApply} disabled={!startDay||!endDay}
                     className="px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
-                    Áp dụng
+                    {t('reports.btn_apply', 'Apply')}
                   </button>
                 </div>
               </div>
@@ -218,6 +220,7 @@ function DateRangePicker({ value, onChange }) {
 }
 
 export default function FilterBar({ datePreset, setDatePreset, customRange, setCustomRange, searchQuery, setSearchQuery, onExportCSV, onExportPDF, extraFilters }) {
+  const t = useT();
   const handleDateChange = ({ startDate, endDate, preset }) => {
     setCustomRange({ startDate, endDate });
     setDatePreset(preset || 'custom');
@@ -231,19 +234,19 @@ export default function FilterBar({ datePreset, setDatePreset, customRange, setC
           {setSearchQuery && (
             <div className="relative w-full sm:w-52">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"/>
-              <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Tìm kiếm..."
+              <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder={t('reports.search_ph', 'Search...')}
                 className="w-full pl-8 pr-7 py-1.5 rounded-xl border border-slate-200/90 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 bg-white"/>
               {searchQuery&&<button onClick={()=>setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3 h-3"/></button>}
             </div>
           )}
           {onExportCSV&&(
             <button onClick={onExportCSV} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-semibold transition shadow-2xs cursor-pointer shrink-0">
-              <Download className="w-3.5 h-3.5 text-emerald-600"/><span>Xuất Excel</span>
+              <Download className="w-3.5 h-3.5 text-emerald-600"/><span>{t('reports.btn_export_csv', 'Export CSV')}</span>
             </button>
           )}
           {onExportPDF&&(
             <button onClick={onExportPDF} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-semibold transition shadow-2xs cursor-pointer shrink-0">
-              <Printer className="w-3.5 h-3.5 text-blue-600"/><span>In PDF</span>
+              <Printer className="w-3.5 h-3.5 text-blue-600"/><span>{t('reports.btn_export_pdf', 'Print PDF')}</span>
             </button>
           )}
         </div>

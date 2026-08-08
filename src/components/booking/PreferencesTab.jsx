@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Minus, ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 // ─── Màu chủ đạo Booking ──────────────────────────────────────────────────────
 const P = {
@@ -71,10 +72,10 @@ export function SettingCard({ title, description, toggle, onToggle, children }) 
 }
 
 // ─── Mini Calendar Popover ──────────────────────────────────────────────────
-const MONTH_NAMES_VI = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const DAY_LABELS = ['CN','T2','T3','T4','T5','T6','T7'];
 
 function MiniCalendar({ selectedDate, onSelectDate, onClose, disabledDates = [] }) {
+  const t = useT();
   const todayISO = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
@@ -89,6 +90,8 @@ function MiniCalendar({ selectedDate, onSelectDate, onClose, disabledDates = [] 
   const firstDow = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
+
+  const monthName = viewDate.toLocaleDateString(t('locale', 'vi-VN'), { month: 'long' });
 
   const cells = [];
   for (let i = firstDow - 1; i >= 0; i--) {
@@ -111,7 +114,7 @@ function MiniCalendar({ selectedDate, onSelectDate, onClose, disabledDates = [] 
           className="w-8 h-8 rounded-xl border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-sm font-bold text-slate-800">{MONTH_NAMES_VI[month]} {year}</span>
+        <span className="text-sm font-bold text-slate-800 capitalize">{monthName} {year}</span>
         <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))}
           className="w-8 h-8 rounded-xl border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all">
           <ChevronRight className="w-4 h-4" />
@@ -154,19 +157,20 @@ function MiniCalendar({ selectedDate, onSelectDate, onClose, disabledDates = [] 
 }
 
 // ─── Slot duration ────────────────────────────────────────────────────────────
-const SLOT_MARKS = [
-  { value: 5, label: '5 phút' },
-  { value: 10, label: '10 phút' },
-  { value: 15, label: '15 phút' },
-  { value: 30, label: '30 phút' },
-  { value: 60, label: '60 phút' },
-];
-
 function SlotDurationCard({ value, onChange }) {
+  const t = useT();
+  const SLOT_MARKS = [
+    { value: 5, label: t('booking.unit_mins', '{count} mins', { count: 5 }) },
+    { value: 10, label: t('booking.unit_mins', '{count} mins', { count: 10 }) },
+    { value: 15, label: t('booking.unit_mins', '{count} mins', { count: 15 }) },
+    { value: 30, label: t('booking.unit_mins', '{count} mins', { count: 30 }) },
+    { value: 60, label: t('booking.unit_mins', '{count} mins', { count: 60 }) },
+  ];
+
   return (
     <SettingCard
-      title="Thời lượng mỗi slot"
-      description="Chọn khoảng thời gian cho từng khung giờ hiển thị trên trang đặt lịch"
+      title={t('booking.slot_duration_title', 'Slot Duration')}
+      description={t('booking.slot_duration_desc', 'Select interval for time slots displayed on booking page')}
     >
       <div className="flex gap-2 flex-wrap">
         {SLOT_MARKS.map(m => (
@@ -185,6 +189,7 @@ function SlotDurationCard({ value, onChange }) {
 
 // ─── Blocked dates ────────────────────────────────────────────────────────────
 function BlockedDatesCard({ blocked, onChange }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const blockedSet = blocked.map(b => b.date);
@@ -197,15 +202,15 @@ function BlockedDatesCard({ blocked, onChange }) {
 
   const handleSelect = (iso) => {
     if (blockedSet.includes(iso)) return;
-    onChange([...blocked, { date: iso, label: 'Ngày nghỉ' }]);
+    onChange([...blocked, { date: iso, label: t('booking.default_day_off_label', 'Day off') }]);
   };
 
   const remove = (date) => onChange(blocked.filter(b => b.date !== date));
 
   return (
     <SettingCard
-      title="Ngày không nhận đặt lịch"
-      description="Những ngày khách hàng không thể đặt lịch online"
+      title={t('booking.blocked_dates_title', 'Blackout Dates / Days Off')}
+      description={t('booking.blocked_dates_desc', 'Dates when customers cannot book online')}
     >
       <div className="relative mb-3 w-48" ref={ref}>
         <button
@@ -217,7 +222,7 @@ function BlockedDatesCard({ blocked, onChange }) {
         >
           <div className="flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-slate-400" />
-            <span>Thêm ngày nghỉ</span>
+            <span>{t('booking.add_day_off', 'Add Day Off')}</span>
           </div>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180 text-pink-500' : 'text-slate-400'}`} />
         </button>
@@ -236,7 +241,7 @@ function BlockedDatesCard({ blocked, onChange }) {
         <div className="flex flex-wrap gap-2">
           {[...blocked].sort((a, b) => a.date.localeCompare(b.date)).map(b => (
             <span key={b.date} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${P.chip}`}>
-              {new Date(b.date + 'T00:00:00').toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {new Date(b.date + 'T00:00:00').toLocaleDateString(t('locale', 'vi-VN'), { day: 'numeric', month: 'short', year: 'numeric' })}
               <button onClick={() => remove(b.date)} className={P.chipX}>
                 <X className="w-3 h-3" />
               </button>
@@ -250,21 +255,22 @@ function BlockedDatesCard({ blocked, onChange }) {
 
 // ─── Main Preferences Tab ─────────────────────────────────────────────────────
 export default function PreferencesTab({ setting, onChange }) {
+  const t = useT();
   const up = (f, v) => onChange({ ...setting, [f]: v });
 
   const FUTURE_OPTIONS = [
-    { value: 7, label: '1 tuần' },
-    { value: 14, label: '2 tuần' },
-    { value: 30, label: '1 tháng' },
-    { value: 60, label: '2 tháng' },
-    { value: 90, label: '3 tháng' },
-    { value: 180, label: '6 tháng' },
+    { value: 7, label: t('booking.opt_1_week', '1 week') },
+    { value: 14, label: t('booking.opt_2_weeks', '2 weeks') },
+    { value: 30, label: t('booking.opt_1_month', '1 month') },
+    { value: 60, label: t('booking.opt_2_months', '2 months') },
+    { value: 90, label: t('booking.opt_3_months', '3 months') },
+    { value: 180, label: t('booking.opt_6_months', '6 months') },
   ];
 
   const IDENTIFIER_OPTIONS = [
-    { value: 'email', label: 'Email' },
-    { value: 'phone', label: 'Số điện thoại' },
-    { value: 'name', label: 'Tên khách hàng' },
+    { value: 'email', label: t('booking.identifier_email', 'Email') },
+    { value: 'phone', label: t('booking.identifier_phone', 'Phone Number') },
+    { value: 'name', label: t('booking.identifier_name', 'Customer Name') },
   ];
 
   return (
@@ -280,22 +286,22 @@ export default function PreferencesTab({ setting, onChange }) {
       />
 
       <SettingCard
-        title="Cho phép đặt trùng lịch"
-        description="Nhiều khách có thể đặt cùng nhân viên trong cùng một khung giờ"
+        title={t('booking.allow_double_booking_title', 'Allow Double Booking')}
+        description={t('booking.allow_double_booking_desc', 'Multiple customers can book the same staff in the same slot')}
         toggle={!!setting?.allow_double_booking}
         onToggle={() => up('allow_double_booking', !setting?.allow_double_booking)}
       >
         {setting?.allow_double_booking && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Số lượng tối đa mỗi slot</p>
+            <p className="text-xs text-slate-500 mb-2">{t('booking.max_per_slot', 'Maximum capacity per slot')}</p>
             <Counter value={setting?.max_double_bookings || 1} onChange={v => up('max_double_bookings', v)} />
           </div>
         )}
       </SettingCard>
 
       <SettingCard
-        title="Giới hạn đặt lịch trước"
-        description="Khách hàng có thể đặt lịch trước tối đa bao lâu"
+        title={t('booking.advance_limit_title', 'Advance Booking Limit')}
+        description={t('booking.advance_limit_desc', 'How far in advance customers can book')}
         toggle={!!setting?.enable_advance_limit}
         onToggle={() => up('enable_advance_limit', !setting?.enable_advance_limit)}
       >
@@ -314,36 +320,36 @@ export default function PreferencesTab({ setting, onChange }) {
       </SettingCard>
 
       <SettingCard
-        title="Khách tự hủy lịch"
-        description="Cho phép khách tự hủy lịch online trước một số giờ nhất định"
+        title={t('booking.self_cancel_title', 'Customer Self-Cancellation')}
+        description={t('booking.self_cancel_desc', 'Allow customers to cancel online up to X hours before appointment')}
         toggle={!!setting?.allow_self_cancel}
         onToggle={() => up('allow_self_cancel', !setting?.allow_self_cancel)}
       >
         {setting?.allow_self_cancel && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Trước tối thiểu (giờ)</p>
+            <p className="text-xs text-slate-500 mb-2">{t('booking.min_hours_before', 'Minimum hours before')}</p>
             <Counter value={setting?.self_cancel_hours || 2} onChange={v => up('self_cancel_hours', v)} />
           </div>
         )}
       </SettingCard>
 
       <SettingCard
-        title="Giới hạn số lượt đặt mỗi slot"
-        description="Giới hạn số lượng lịch hẹn trong mỗi khung giờ"
+        title={t('booking.slot_capacity_title', 'Slot Capacity Limit')}
+        description={t('booking.slot_capacity_desc', 'Limit total appointments per time slot')}
         toggle={!!setting?.limit_booking_slots}
         onToggle={() => up('limit_booking_slots', !setting?.limit_booking_slots)}
       >
         {setting?.limit_booking_slots && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Số lượt tối đa mỗi giờ</p>
+            <p className="text-xs text-slate-500 mb-2">{t('booking.max_per_hour', 'Maximum bookings per hour')}</p>
             <Counter value={setting?.max_slots_per_hour || 3} onChange={v => up('max_slots_per_hour', v)} />
           </div>
         )}
       </SettingCard>
 
       <SettingCard
-        title="Trường định danh khách hàng"
-        description="Trường chính để nhận diện và liên hệ khách hàng"
+        title={t('booking.primary_identifier_title', 'Customer Primary Identifier')}
+        description={t('booking.primary_identifier_desc', 'Main field used to identify and contact customers')}
       >
         <div className="relative w-52">
           <select
@@ -358,29 +364,29 @@ export default function PreferencesTab({ setting, onChange }) {
       </SettingCard>
 
       <SettingCard
-        title="Đặt lịch theo nhóm"
-        description="Cho phép khách đặt lịch cho nhiều người cùng lúc"
+        title={t('booking.group_booking_title', 'Group Booking')}
+        description={t('booking.group_booking_desc', 'Allow customers to book appointments for multiple people')}
         toggle={!!setting?.allow_group_appointments}
         onToggle={() => up('allow_group_appointments', !setting?.allow_group_appointments)}
       />
 
       <SettingCard
-        title="Bắt buộc chọn nhân viên"
-        description="Khách hàng bắt buộc phải chọn 1 nhân viên cụ thể khi đặt lịch"
+        title={t('booking.require_staff_title', 'Require Staff Selection')}
+        description={t('booking.require_staff_desc', 'Customers must select a specific staff member when booking')}
         toggle={!!setting?.require_staff_selection}
         onToggle={() => up('require_staff_selection', !setting?.require_staff_selection)}
       />
 
       <SettingCard
-        title="Hiển thị giá dịch vụ"
-        description="Giá tiền của từng dịch vụ sẽ được hiển thị khi khách chọn dịch vụ"
+        title={t('booking.show_prices_title', 'Display Service Prices')}
+        description={t('booking.show_prices_desc', 'Show price for each service during selection')}
         toggle={!!setting?.show_service_prices}
         onToggle={() => up('show_service_prices', !setting?.show_service_prices)}
       />
 
       <SettingCard
-        title="Tự động xác nhận lịch hẹn"
-        description="Hệ thống tự động xác nhận lịch hẹn khi khách đặt từ link booking"
+        title={t('booking.auto_confirm_title', 'Auto-Confirm Appointments')}
+        description={t('booking.auto_confirm_desc', 'Automatically confirm appointment when customer books online')}
         toggle={!!setting?.auto_confirm}
         onToggle={() => up('auto_confirm', !setting?.auto_confirm)}
       />
