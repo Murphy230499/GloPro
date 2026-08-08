@@ -484,6 +484,13 @@ export default function Appointments() {
 
   const [presetSlot, setPresetSlot] = useState(null);
 
+  const handleApptClick = (appt) => {
+    // If it's a child appointment (multi-service), we want to edit the parent
+    const targetId = appt.parent_appointment_id || appt.id;
+    setEditingAppt({ ...appt, id: targetId });
+    setPosModalOpen(true);
+  };
+
   const handleSlotClick = (row, slotTime) => {
     setEditing(null);
     if (row && slotTime) {
