@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
 
-      // 1. Get freshet user data from server
+      // 1. Check Supabase OAuth Session
       const { data: { session } } = await supabase.auth.getSession();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = session?.user;
       
       if (user) {
         const sbUser = {
