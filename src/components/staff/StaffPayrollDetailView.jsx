@@ -2,54 +2,57 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, CalendarDays, DollarSign, Award, Clock, Users, Gift, 
-  Receipt, ShoppingBag, Sparkles, AlertCircle, FileText, CheckCircle2, ShieldAlert,
-  Printer, Download, Search, CheckCircle, TrendingUp, UserCheck, CreditCard, ChevronRight,
-  BadgeCheck, Table, FileCheck, Layers, FileSpreadsheet, HeartHandshake, Tag, Filter,
+  ArrowLeft, DollarSign, Clock, Gift, AlertCircle,
+  Printer, Search, TrendingUp, ChevronRight,
+  BadgeCheck, Filter,
   Pencil, Trash2, Plus, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n';
 import { formatVND } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 
+
+export default function StaffPayrollDetailView({ staffData, dateRange, onBack }) {
+  const { t } = useT();
 const ROLES = {
-  manager: { label: 'Quản lý', color: '#FF6B9D' },
-  receptionist: { label: 'Lễ tân', color: '#60A5FA' },
-  stylist: { label: 'Kỹ thuật viên tóc', color: '#A78BFA' },
-  barber: { label: 'Barber', color: '#34D399' },
-  therapist: { label: 'Chuyên viên Spa', color: '#FBBF24' },
-  nail_tech: { label: 'Nail tech', color: '#F472B6' },
-  technician: { label: 'Kỹ thuật viên', color: '#F97316' },
-  cashier: { label: 'Thu ngân', color: '#94A3B8' },
+  manager: { label: t('roles.manager', 'Quản lý'), color: '#FF6B9D' },
+  receptionist: { label: t('roles.receptionist', 'Lễ tân'), color: '#60A5FA' },
+  stylist: { label: t('roles.stylist', 'Kỹ thuật viên tóc'), color: '#A78BFA' },
+  barber: { label: t('roles.barber', 'Barber'), color: '#34D399' },
+  therapist: { label: t('roles.therapist', 'Chuyên viên Spa'), color: '#FBBF24' },
+  nail_tech: { label: t('roles.nail_tech', 'Nail tech'), color: '#F472B6' },
+  technician: { label: t('roles.technician', 'Kỹ thuật viên'), color: '#F97316' },
+  cashier: { label: t('roles.cashier', 'Thu ngân'), color: '#94A3B8' },
 };
 
 const DETAIL_TABS = [
-  { id: 'all_metrics', label: 'Bảng tổng hợp hạch toán' },
-  { id: 'commission', label: 'Hoa hồng phát sinh' },
-  { id: 'revenue', label: 'Doanh thu đóng góp' },
-  { id: 'tip', label: 'Tiền Tip khách hàng' },
-  { id: 'shifts', label: 'Ca làm & Chấm công' },
-  { id: 'adjustments', label: 'Thưởng & Phạt' },
+  { id: 'all_metrics', label: t('payroll.all_metrics', 'Bảng tổng hợp hạch toán') },
+  { id: 'commission', label: t('payroll.commission', 'Hoa hồng phát sinh') },
+  { id: 'revenue', label: t('payroll.revenue', 'Doanh thu đóng góp') },
+  { id: 'tip', label: t('payroll.tip', 'Tiền Tip khách hàng') },
+  { id: 'shifts', label: t('payroll.shifts', 'Ca làm & Chấm công') },
+  { id: 'adjustments', label: t('payroll.adjustments', 'Thưởng & Phạt') },
 ];
 
 const CATEGORY_FILTERS = [
-  { id: 'ALL', label: 'Tất cả 10 hạng mục' },
-  { id: 'DV', label: '1. Dịch vụ' },
-  { id: 'LT', label: '2. Liệu trình' },
-  { id: 'GDV', label: '3. Gói dịch vụ' },
-  { id: 'CBDV', label: '4. Combo dịch vụ' },
-  { id: 'SP', label: '5. Sản phẩm' },
-  { id: 'CMSP', label: '6. Combo sản phẩm' },
-  { id: 'TTM', label: '7. Thẻ tiền mặt' },
-  { id: 'HHKYC', label: '8. Hoa hồng khách yêu cầu' },
-  { id: 'HHTC', label: '9. Hoa hồng tăng ca' },
-  { id: 'HHDT', label: '10. Hoa hồng theo doanh thu' },
+  { id: 'ALL', label: t('payroll.cat_all_10', 'Tất cả 10 hạng mục') },
+  { id: 'DV', label: t('payroll.cat_1', '1. Dịch vụ') },
+  { id: 'LT', label: t('payroll.cat_2', '2. Liệu trình') },
+  { id: 'GDV', label: t('payroll.cat_3', '3. Gói dịch vụ') },
+  { id: 'CBDV', label: t('payroll.cat_4', '4. Combo dịch vụ') },
+  { id: 'SP', label: t('payroll.cat_5', '5. Sản phẩm') },
+  { id: 'CMSP', label: t('payroll.cat_6', '6. Combo sản phẩm') },
+  { id: 'TTM', label: t('payroll.cat_7', '7. Thẻ tiền mặt') },
+  { id: 'HHKYC', label: t('payroll.cat_8', '8. Hoa hồng khách yêu cầu') },
+  { id: 'HHTC', label: t('payroll.cat_9', '9. Hoa hồng tăng ca') },
+  { id: 'HHDT', label: t('payroll.cat_10', '10. Hoa hồng theo doanh thu') },
 ];
 
 const REVENUE_CATEGORY_FILTERS = [
-  { id: 'ALL', label: 'Tất cả 7 hạng mục doanh thu' },
+  { id: 'ALL', label: t('payroll.cat_all_7', 'Tất cả 7 hạng mục doanh thu') },
   { id: 'DV', label: '1. Dịch vụ' },
   { id: 'LT', label: '2. Liệu trình' },
   { id: 'GDV', label: '3. Gói dịch vụ' },
@@ -87,7 +90,6 @@ const ATTENDANCE_STATUS_STYLES = {
   'Nghỉ phép': 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
-export default function StaffPayrollDetailView({ staffData, dateRange, onBack }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('all_metrics');
   const [loading, setLoading] = useState(false);
@@ -384,15 +386,15 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             onClick={onBack}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Quay lại danh sách
+            <ArrowLeft className="w-3.5 h-3.5" /> {t('payroll.auto_quay_lai_danh_sach', 'Quay lại danh sách')}
           </button>
 
           <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
 
           <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            <span>Bảng tính lương</span>
+            <span>{t('payroll.auto_bang_tinh_luong', 'Bảng tính lương')}</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-            <span>Bảng lương nhân viên</span>
+            <span>{t('payroll.auto_bang_luong_nhan_vien', 'Bảng lương nhân viên')}</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
             <span className="text-slate-900 font-bold">{staffData.name}</span>
           </div>
@@ -402,7 +404,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
           onClick={handlePrint}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
         >
-          <Printer className="w-3.5 h-3.5" /> In phiếu lương
+          <Printer className="w-3.5 h-3.5" /> {t('payroll.auto_in_phieu_luong', 'In phiếu lương')}
         </button>
       </div>
 
@@ -434,17 +436,17 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
         {/* Card 1: Lương CB */}
         <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-xs font-semibold text-slate-500">Lương cơ bản</span>
+            <span className="text-xs font-semibold text-slate-500">{t('payroll.auto_luong_co_ban', 'Lương cơ bản')}</span>
             <DollarSign className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-base font-bold text-slate-900">{formatVND(staffData.salary || 0)}</div>
-          <span className="text-xs font-normal text-slate-500 mt-0.5 block">Hợp đồng chính</span>
+          <span className="text-xs font-normal text-slate-500 mt-0.5 block">{t('payroll.auto_hop_ong_chinh', 'Hợp đồng chính')}</span>
         </div>
 
         {/* Card 2: Ca & Giờ làm */}
         <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-xs font-semibold text-slate-500">Ca / Giờ làm</span>
+            <span className="text-xs font-semibold text-slate-500">{t('payroll.auto_ca_gio_lam', 'Ca / Giờ làm')}</span>
             <Clock className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-base font-bold text-slate-900">{staffData.shifts || '0 Ca'}</div>
@@ -454,17 +456,17 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
         {/* Card 3: Tổng hoa hồng */}
         <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-xs font-semibold text-orange-600">Tổng hoa hồng</span>
+            <span className="text-xs font-semibold text-orange-600">{t('payroll.auto_tong_hoa_hong', 'Tổng hoa hồng')}</span>
             <TrendingUp className="w-4 h-4 text-orange-500" />
           </div>
           <div className="text-base font-bold text-orange-600">+{formatVND(totalCommissionSum)}</div>
-          <span className="text-xs font-normal text-slate-500 mt-0.5 block">10 hạng mục phát sinh</span>
+          <span className="text-xs font-normal text-slate-500 mt-0.5 block">{t('payroll.auto_10_hang_muc_phat_sinh', '10 hạng mục phát sinh')}</span>
         </div>
 
         {/* Card 4: Thưởng & Tip */}
         <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-xs font-semibold text-emerald-600">Thưởng & Tip</span>
+            <span className="text-xs font-semibold text-emerald-600">{t('payroll.auto_thuong_tip', 'Thưởng & Tip')}</span>
             <Gift className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-base font-bold text-emerald-600">+{formatVND((staffData.bonus || 0) + (staffData.tip || 0))}</div>
@@ -474,21 +476,21 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
         {/* Card 5: Phạt & Khấu trừ */}
         <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-xs font-semibold text-red-500">Khấu trừ phạt</span>
+            <span className="text-xs font-semibold text-red-500">{t('payroll.auto_khau_tru_phat', 'Khấu trừ phạt')}</span>
             <AlertCircle className="w-4 h-4 text-red-500" />
           </div>
           <div className="text-base font-bold text-red-600">-{formatVND(staffData.penalty || 0)}</div>
-          <span className="text-xs font-normal text-slate-500 mt-0.5 block">Vi phạm quy định</span>
+          <span className="text-xs font-normal text-slate-500 mt-0.5 block">{t('payroll.auto_vi_pham_quy_inh', 'Vi phạm quy định')}</span>
         </div>
 
         {/* Card 6: Lương Thực Nhận (Net Total) */}
         <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white p-4 sm:p-4.5 rounded-2xl shadow-2xs">
           <div className="flex items-center justify-between text-orange-100 mb-1.5">
-            <span className="text-xs font-bold">Thực nhận (Net)</span>
+            <span className="text-xs font-bold">{t('payroll.auto_thuc_nhan_net', 'Thực nhận (Net)')}</span>
             <BadgeCheck className="w-4 h-4 text-white" />
           </div>
           <div className="text-base font-bold text-white">{formatVND(staffData.total || 0)}</div>
-          <span className="text-xs font-medium text-orange-100 mt-0.5 block">Đã chốt sổ</span>
+          <span className="text-xs font-medium text-orange-100 mt-0.5 block">{t('payroll.auto_a_chot_so', 'Đã chốt sổ')}</span>
         </div>
       </div>
 
@@ -532,7 +534,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input 
               type="text"
-              placeholder="Tìm hóa đơn, khách..."
+              placeholder={t('payroll.auto_tim_hoa_on_khach', 'Tìm hóa đơn, khách...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full text-xs font-medium text-slate-700 bg-transparent focus:outline-none placeholder:text-slate-400"
@@ -546,10 +548,10 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             <table className="w-full text-left text-xs font-sans">
               <thead className="bg-slate-50 font-semibold text-xs text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4 w-1/3">Hạng mục hạch toán lương</th>
-                  <th className="py-3 px-4 text-center">Số lượng / Ghi chú</th>
-                  <th className="py-3 px-4 text-right">Doanh số / Doanh thu</th>
-                  <th className="py-3 px-4 text-right">Số tiền hạch toán (VNĐ)</th>
+                  <th className="py-3 px-4 w-1/3">{t('payroll.auto_hang_muc_hach_toan_luong', 'Hạng mục hạch toán lương')}</th>
+                  <th className="py-3 px-4 text-center">{t('payroll.auto_so_luong_ghi_chu', 'Số lượng / Ghi chú')}</th>
+                  <th className="py-3 px-4 text-right">{t('payroll.auto_doanh_so_doanh_thu', 'Doanh số / Doanh thu')}</th>
+                  <th className="py-3 px-4 text-right">{t('payroll.auto_so_tien_hach_toan_vn', 'Số tiền hạch toán (VNĐ)')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
@@ -557,119 +559,119 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                 {/* SECTION 1: LƯƠNG CƠ BẢN & CHẤM CÔNG */}
                 <tr className="bg-slate-50/70">
                   <td colSpan={4} className="py-3 px-4 font-bold text-slate-900 text-xs">
-                    I. Lương cơ bản & Chấm công
+                    {t('payroll.auto_i_luong_co_ban_cham_cong', 'I. Lương cơ bản & Chấm công')}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">Lương cơ bản hợp đồng</td>
-                  <td className="py-3 px-4 text-center text-slate-600 font-medium">Hợp đồng chính thức</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">{t('payroll.auto_luong_co_ban_hop_ong', 'Lương cơ bản hợp đồng')}</td>
+                  <td className="py-3 px-4 text-center text-slate-600 font-medium">{t('payroll.auto_hop_ong_chinh_thuc', 'Hợp đồng chính thức')}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.salary || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">Tổng số ca làm việc</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">{t('payroll.auto_tong_so_ca_lam_viec', 'Tổng số ca làm việc')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-bold">{staffData.shifts || '0 Ca'}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
-                  <td className="py-3 px-4 text-right text-slate-500 font-medium">Theo ca quy định</td>
+                  <td className="py-3 px-4 text-right text-slate-500 font-medium">{t('payroll.auto_theo_ca_quy_inh', 'Theo ca quy định')}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">Số ngày nghỉ phép</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800 pl-8">{t('payroll.auto_so_ngay_nghi_phep', 'Số ngày nghỉ phép')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-bold">{staffData.daysOff || 0} ngày</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
-                  <td className="py-3 px-4 text-right text-slate-500 font-medium">Không trừ lương</td>
+                  <td className="py-3 px-4 text-right text-slate-500 font-medium">{t('payroll.auto_khong_tru_luong', 'Không trừ lương')}</td>
                 </tr>
 
                 {/* SECTION 2: TỔNG HOA HỒNG PHÁT SINH */}
                 <tr className="bg-slate-50/70">
                   <td colSpan={3} className="py-3 px-4 font-bold text-slate-900 text-xs">
-                    II. Tổng hoa hồng phát sinh
+                    {t('payroll.auto_ii_tong_hoa_hong_phat_sinh', 'II. Tổng hoa hồng phát sinh')}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-orange-600">
                     +{formatVND(totalCommissionSum)}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">1. Hoa hồng Dịch vụ</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_1_hoa_hong_dich_vu', '1. Hoa hồng Dịch vụ')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noServices || 0} lượt</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.serviceSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.serviceCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">2. Hoa hồng Liệu trình</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_2_hoa_hong_lieu_trinh', '2. Hoa hồng Liệu trình')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noTreatment || 0} ca</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.treatmentSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.treatmentCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">3. Hoa hồng Gói dịch vụ</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_3_hoa_hong_goi_dich_vu', '3. Hoa hồng Gói dịch vụ')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noPackage || 0} gói</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.packageSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.packageCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">4. Hoa hồng Combo dịch vụ</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_4_hoa_hong_combo_dich_vu', '4. Hoa hồng Combo dịch vụ')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noServiceCombo || 0} combo</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.serviceComboSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.serviceComboCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">5. Hoa hồng Sản phẩm</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_5_hoa_hong_san_pham', '5. Hoa hồng Sản phẩm')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noProduct || 0} món</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.productSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.productCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">6. Hoa hồng Combo sản phẩm</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_6_hoa_hong_combo_san_pham', '6. Hoa hồng Combo sản phẩm')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noProductCombo || 0} combo</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.productComboSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.productComboCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">7. Hoa hồng Thẻ tiền mặt</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_7_hoa_hong_the_tien_mat', '7. Hoa hồng Thẻ tiền mặt')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noPrepaidCard || 0} thẻ</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.prepaidCardSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.prepaidCardCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">8. Hoa hồng khách yêu cầu</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-medium">Yêu cầu KTV</td>
-                  <td className="py-3 px-4 text-right text-slate-400">Phụ thu chọn KTV</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_8_hoa_hong_khach_yeu_cau', '8. Hoa hồng khách yêu cầu')}</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{t('payroll.auto_yeu_cau_ktv', 'Yêu cầu KTV')}</td>
+                  <td className="py-3 px-4 text-right text-slate-400">{t('payroll.auto_phu_thu_chon_ktv', 'Phụ thu chọn KTV')}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.requestedCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">9. Hoa hồng tăng ca</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-medium">Tăng ca</td>
-                  <td className="py-3 px-4 text-right text-slate-400">Ngoài giờ quy định</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_9_hoa_hong_tang_ca', '9. Hoa hồng tăng ca')}</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{t('payroll.auto_tang_ca', 'Tăng ca')}</td>
+                  <td className="py-3 px-4 text-right text-slate-400">{t('payroll.auto_ngoai_gio_quy_inh', 'Ngoài giờ quy định')}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.overtimeCom || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">10. Hoa hồng theo doanh thu</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_10_hoa_hong_theo_doanh_thu', '10. Hoa hồng theo doanh thu')}</td>
                   <td className="py-3 px-4 text-center text-slate-700 font-medium">Theo doanh thu</td>
-                  <td className="py-3 px-4 text-right text-slate-400">Thưởng chỉ tiêu DS</td>
+                  <td className="py-3 px-4 text-right text-slate-400">{t('payroll.auto_thuong_chi_tieu_ds', 'Thưởng chỉ tiêu DS')}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.revenueCom || 0)}</td>
                 </tr>
 
                 {/* SECTION 3: THƯỞNG, TIP & KHẤU TRỪ */}
                 <tr className="bg-slate-50/70">
                   <td colSpan={4} className="py-3 px-4 font-bold text-slate-900 text-xs">
-                    III. Thưởng, Tip & Khấu trừ phạt
+                    {t('payroll.auto_iii_thuong_tip_khau_tru_phat', 'III. Thưởng, Tip & Khấu trừ phạt')}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">1. Tiền Tip trực tiếp từ khách hàng</td>
-                  <td className="py-3 px-4 text-center text-slate-500 font-medium">Tiền Tip</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_1_tien_tip_truc_tiep_tu_khach', '1. Tiền Tip trực tiếp từ khách hàng')}</td>
+                  <td className="py-3 px-4 text-center text-slate-500 font-medium">{t('payroll.auto_tien_tip', 'Tiền Tip')}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
                   <td className="py-3 px-4 text-right font-bold text-emerald-600">+{formatVND(staffData.tip || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">2. Thưởng khen thưởng xuất sắc</td>
-                  <td className="py-3 px-4 text-center text-slate-500 font-medium">Khen thưởng</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_2_thuong_khen_thuong_xuat_sac', '2. Thưởng khen thưởng xuất sắc')}</td>
+                  <td className="py-3 px-4 text-center text-slate-500 font-medium">{t('payroll.auto_khen_thuong', 'Khen thưởng')}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
                   <td className="py-3 px-4 text-right font-bold text-emerald-600">+{formatVND(staffData.bonus || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-slate-800 pl-8">3. Tiền phạt vi phạm / Khấu trừ</td>
-                  <td className="py-3 px-4 text-center text-slate-500 font-medium">Khấu trừ</td>
+                  <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_3_tien_phat_vi_pham_khau_tru', '3. Tiền phạt vi phạm / Khấu trừ')}</td>
+                  <td className="py-3 px-4 text-center text-slate-500 font-medium">{t('payroll.auto_khau_tru', 'Khấu trừ')}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
                   <td className="py-3 px-4 text-right font-bold text-red-600">-{formatVND(staffData.penalty || 0)}</td>
                 </tr>
@@ -677,7 +679,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                 {/* GRAND TOTAL NET SALARY */}
                 <tr className="bg-orange-50/80 border-t-2 border-orange-200 text-slate-900 font-bold text-xs">
                   <td colSpan={2} className="py-3.5 px-4 text-slate-900 font-bold">
-                    Tổng lương thực nhận kỳ này (Net Total)
+                    {t('payroll.auto_tong_luong_thuc_nhan_ky_nay_ne', 'Tổng lương thực nhận kỳ này (Net Total)')}
                   </td>
                   <td className="py-3.5 px-4 text-right font-medium text-slate-500">
                     = (I) + (II) + (III)
@@ -699,7 +701,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* 10 Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 mr-1 shrink-0">
-                <Filter className="w-3.5 h-3.5 text-slate-400" /> Lọc hạng mục:
+                <Filter className="w-3.5 h-3.5 text-slate-400" /> {t('payroll.auto_loc_hang_muc', 'Lọc hạng mục:')}
               </span>
               {CATEGORY_FILTERS.map(cat => (
                 <button
@@ -720,15 +722,15 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* Tab Summary Stat Bar */}
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng số lượt/đơn hoa hồng:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_luot_on_hoa_hong', 'Tổng số lượt/đơn hoa hồng:')}</span>
                 <span className="font-bold text-slate-900">{filteredComms.length} lượt</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng doanh số hạch toán:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_doanh_so_hach_toan', 'Tổng doanh số hạch toán:')}</span>
                 <span className="font-bold text-slate-900">{formatVND(commTotalSales)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-orange-600 font-semibold">Tổng hoa hồng nhận:</span>
+                <span className="text-orange-600 font-semibold">{t('payroll.auto_tong_hoa_hong_nhan', 'Tổng hoa hồng nhận:')}</span>
                 <span className="font-bold text-orange-600">+{formatVND(commTotalComms)}</span>
               </div>
             </div>
@@ -738,19 +740,19 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Mã hóa đơn</th>
-                    <th className="py-3 px-4">Ngày tạo hóa đơn</th>
-                    <th className="py-3 px-4">Khách hàng</th>
-                    <th className="py-3 px-4">Tên sản phẩm / dịch vụ</th>
-                    <th className="py-3 px-4 text-right">Doanh số (VNĐ)</th>
-                    <th className="py-3 px-4 text-center">% Hoa hồng</th>
-                    <th className="py-3 px-4 text-right">Số tiền hoa hồng (VNĐ)</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ma_hoa_on', 'Mã hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ngay_tao_hoa_on', 'Ngày tạo hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_khach_hang', 'Khách hàng')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ten_san_pham_dich_vu', 'Tên sản phẩm / dịch vụ')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_doanh_so_vn', 'Doanh số (VNĐ)')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_hoa_hong', '% Hoa hồng')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_so_tien_hoa_hong_vn', 'Số tiền hoa hồng (VNĐ)')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
                   {filteredComms.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-slate-400 text-xs font-medium">Không tìm thấy khoản hoa hồng phù hợp</td>
+                      <td colSpan={7} className="py-10 text-center text-slate-400 text-xs font-medium">{t('payroll.auto_khong_tim_thay_khoan_hoa_hong', 'Không tìm thấy khoản hoa hồng phù hợp')}</td>
                     </tr>
                   ) : filteredComms.map((row) => (
                     <tr key={row.id} className="hover:bg-orange-50/30 transition-colors">
@@ -759,7 +761,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                           type="button"
                           onClick={() => handleNavigateInvoice(row.invoiceId)}
                           className="text-orange-600 hover:text-orange-700 hover:underline font-bold transition-colors cursor-pointer text-left"
-                          title="Click để xem chi tiết hóa đơn"
+                          title={t('payroll.auto_click_e_xem_chi_tiet_hoa_on', 'Click để xem chi tiết hóa đơn')}
                         >
                           {row.invoiceCode}
                         </button>
@@ -772,14 +774,14 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                             src={row.customerAvatar} 
                             size={30} 
                             onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
-                            title="Click để xem chi tiết khách hàng"
+                            title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                           />
                           <div>
                             <button
                               type="button"
                               onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
                               className="font-bold text-slate-800 leading-tight hover:text-orange-600 hover:underline cursor-pointer text-left block"
-                              title="Click để xem chi tiết khách hàng"
+                              title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                             >
                               {row.customerName}
                             </button>
@@ -821,7 +823,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* 7 Revenue Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 mr-1 shrink-0">
-                <Filter className="w-3.5 h-3.5 text-slate-400" /> Lọc hạng mục:
+                <Filter className="w-3.5 h-3.5 text-slate-400" /> {t('payroll.auto_loc_hang_muc', 'Lọc hạng mục:')}
               </span>
               {REVENUE_CATEGORY_FILTERS.map(cat => (
                 <button
@@ -842,15 +844,15 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* Tab Summary Stat Bar */}
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng số lượng / đơn:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_luong_on', 'Tổng số lượng / đơn:')}</span>
                 <span className="font-bold text-slate-900">{revTotalQty} đơn</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng doanh thu mang về:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_doanh_thu_mang_ve', 'Tổng doanh thu mang về:')}</span>
                 <span className="font-bold text-slate-900">{formatVND(revTotalSales)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Hoa hồng tương ứng:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_hoa_hong_tuong_ung', 'Hoa hồng tương ứng:')}</span>
                 <span className="font-bold text-orange-600">+{formatVND(commTotalComms)}</span>
               </div>
             </div>
@@ -860,19 +862,19 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Mã hóa đơn</th>
-                    <th className="py-3 px-4">Ngày tạo hóa đơn</th>
-                    <th className="py-3 px-4">Khách hàng</th>
-                    <th className="py-3 px-4">Hạng mục doanh thu</th>
-                    <th className="py-3 px-4 text-center">Số lượng</th>
-                    <th className="py-3 px-4 text-right">Đơn giá (VNĐ)</th>
-                    <th className="py-3 px-4 text-right">Số tiền doanh thu (VNĐ)</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ma_hoa_on', 'Mã hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ngay_tao_hoa_on', 'Ngày tạo hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_khach_hang', 'Khách hàng')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_hang_muc_doanh_thu', 'Hạng mục doanh thu')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_so_luong', 'Số lượng')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_on_gia_vn', 'Đơn giá (VNĐ)')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_so_tien_doanh_thu_vn', 'Số tiền doanh thu (VNĐ)')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
                   {filteredRevenues.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-slate-400 text-xs font-medium">Không tìm thấy khoản doanh thu phù hợp</td>
+                      <td colSpan={7} className="py-10 text-center text-slate-400 text-xs font-medium">{t('payroll.auto_khong_tim_thay_khoan_doanh_thu', 'Không tìm thấy khoản doanh thu phù hợp')}</td>
                     </tr>
                   ) : filteredRevenues.map((row) => (
                     <tr key={row.id} className="hover:bg-orange-50/30 transition-colors">
@@ -881,7 +883,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                           type="button"
                           onClick={() => handleNavigateInvoice(row.invoiceId)}
                           className="text-orange-600 hover:text-orange-700 hover:underline font-bold transition-colors cursor-pointer text-left"
-                          title="Click để xem chi tiết hóa đơn"
+                          title={t('payroll.auto_click_e_xem_chi_tiet_hoa_on', 'Click để xem chi tiết hóa đơn')}
                         >
                           {row.invoiceCode}
                         </button>
@@ -894,14 +896,14 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                             src={row.customerAvatar} 
                             size={30} 
                             onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
-                            title="Click để xem chi tiết khách hàng"
+                            title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                           />
                           <div>
                             <button
                               type="button"
                               onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
                               className="font-bold text-slate-800 leading-tight hover:text-orange-600 hover:underline cursor-pointer text-left block"
-                              title="Click để xem chi tiết khách hàng"
+                              title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                             >
                               {row.customerName}
                             </button>
@@ -943,11 +945,11 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* Tab Summary Stat Bar */}
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng số lượt nhận Tip:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_luot_nhan_tip', 'Tổng số lượt nhận Tip:')}</span>
                 <span className="font-bold text-slate-900">{filteredTips.length} lượt</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-emerald-600 font-semibold">Tổng tiền Tip thực nhận:</span>
+                <span className="text-emerald-600 font-semibold">{t('payroll.auto_tong_tien_tip_thuc_nhan', 'Tổng tiền Tip thực nhận:')}</span>
                 <span className="font-bold text-emerald-600">+{formatVND(tipTotalSum)}</span>
               </div>
             </div>
@@ -957,17 +959,17 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Mã hóa đơn</th>
-                    <th className="py-3 px-4">Ngày tạo hóa đơn</th>
-                    <th className="py-3 px-4">Khách hàng</th>
-                    <th className="py-3 px-4">Dịch vụ / Sản phẩm phục vụ</th>
-                    <th className="py-3 px-4 text-right">Số tiền Tip (VNĐ)</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ma_hoa_on', 'Mã hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ngay_tao_hoa_on', 'Ngày tạo hóa đơn')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_khach_hang', 'Khách hàng')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_dich_vu_san_pham_phuc_vu', 'Dịch vụ / Sản phẩm phục vụ')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_so_tien_tip_vn', 'Số tiền Tip (VNĐ)')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
                   {filteredTips.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-slate-400 text-xs font-medium">Chưa có khoản tiền Tip nào trong kỳ này</td>
+                      <td colSpan={5} className="py-10 text-center text-slate-400 text-xs font-medium">{t('payroll.auto_chua_co_khoan_tien_tip_nao_tro', 'Chưa có khoản tiền Tip nào trong kỳ này')}</td>
                     </tr>
                   ) : filteredTips.map((row) => (
                     <tr key={row.id} className="hover:bg-orange-50/30 transition-colors">
@@ -976,7 +978,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                           type="button"
                           onClick={() => handleNavigateInvoice(row.invoiceId)}
                           className="text-orange-600 hover:text-orange-700 hover:underline font-bold transition-colors cursor-pointer text-left"
-                          title="Click để xem chi tiết hóa đơn"
+                          title={t('payroll.auto_click_e_xem_chi_tiet_hoa_on', 'Click để xem chi tiết hóa đơn')}
                         >
                           {row.invoiceCode}
                         </button>
@@ -989,14 +991,14 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                             src={row.customerAvatar} 
                             size={30} 
                             onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
-                            title="Click để xem chi tiết khách hàng"
+                            title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                           />
                           <div>
                             <button
                               type="button"
                               onClick={() => router.push(`/customers?name=${encodeURIComponent(row.customerName)}`)}
                               className="font-bold text-slate-800 leading-tight hover:text-orange-600 hover:underline cursor-pointer text-left block"
-                              title="Click để xem chi tiết khách hàng"
+                              title={t('payroll.auto_click_e_xem_chi_tiet_khach_han', 'Click để xem chi tiết khách hàng')}
                             >
                               {row.customerName}
                             </button>
@@ -1029,15 +1031,15 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             {/* Tab Summary Stat Bar */}
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng số ca đăng ký:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_ca_ang_ky', 'Tổng số ca đăng ký:')}</span>
                 <span className="font-bold text-slate-900">{filteredShifts.length} ca</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Tổng số giờ tích lũy:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_gio_tich_luy', 'Tổng số giờ tích lũy:')}</span>
                 <span className="font-bold text-slate-900">{shiftTotalHours} giờ</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Số ngày nghỉ phép:</span>
+                <span className="text-slate-500 font-medium">{t('payroll.auto_so_ngay_nghi_phep', 'Số ngày nghỉ phép:')}</span>
                 <span className="font-bold text-slate-900">{shiftOffCount} ngày</span>
               </div>
             </div>
@@ -1047,18 +1049,18 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Ngày</th>
-                    <th className="py-3 px-4">Tên ca làm việc</th>
-                    <th className="py-3 px-4 text-center">Giờ vào</th>
-                    <th className="py-3 px-4 text-center">Giờ ra</th>
-                    <th className="py-3 px-4 text-center">Số giờ tích lũy</th>
-                    <th className="py-3 px-4 text-center">Trạng thái chấm công</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ngay', 'Ngày')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ten_ca_lam_viec', 'Tên ca làm việc')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_gio_vao', 'Giờ vào')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_gio_ra', 'Giờ ra')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_so_gio_tich_luy', 'Số giờ tích lũy')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_trang_thai_cham_cong', 'Trạng thái chấm công')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
                   {filteredShifts.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400 text-xs font-medium">Không tìm thấy ca làm việc phù hợp</td>
+                      <td colSpan={6} className="py-10 text-center text-slate-400 text-xs font-medium">{t('payroll.auto_khong_tim_thay_ca_lam_viec_phu', 'Không tìm thấy ca làm việc phù hợp')}</td>
                     </tr>
                   ) : filteredShifts.map((row, idx) => (
                     <tr key={idx} className="hover:bg-orange-50/30 transition-colors">
@@ -1092,7 +1094,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 mr-1 shrink-0">
-                  <Filter className="w-3.5 h-3.5 text-slate-400" /> Phân loại:
+                  <Filter className="w-3.5 h-3.5 text-slate-400" /> {t('payroll.auto_phan_loai', 'Phân loại:')}
                 </span>
                 <button
                   type="button"
@@ -1134,22 +1136,22 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                 onClick={handleOpenAddAdj}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs shadow-2xs transition-colors cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Thêm khoản điều chỉnh
+                <Plus className="w-4 h-4" /> {t('payroll.auto_them_khoan_ieu_chinh', 'Thêm khoản điều chỉnh')}
               </button>
             </div>
 
             {/* Tab Summary Stat Bar */}
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-emerald-600 font-medium">Tổng tiền thưởng:</span>
+                <span className="text-emerald-600 font-medium">{t('payroll.auto_tong_tien_thuong', 'Tổng tiền thưởng:')}</span>
                 <span className="font-bold text-emerald-600">+{formatVND(adjTotalBonus)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-red-500 font-medium">Tổng khấu trừ phạt:</span>
+                <span className="text-red-500 font-medium">{t('payroll.auto_tong_khau_tru_phat', 'Tổng khấu trừ phạt:')}</span>
                 <span className="font-bold text-red-600">-{formatVND(adjTotalPenalty)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-700 font-semibold">Chênh lệch điều chỉnh:</span>
+                <span className="text-slate-700 font-semibold">{t('payroll.auto_chenh_lech_ieu_chinh', 'Chênh lệch điều chỉnh:')}</span>
                 <span className={`font-bold ${adjTotalBonus - adjTotalPenalty >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {formatVND(adjTotalBonus - adjTotalPenalty)}
                 </span>
@@ -1161,18 +1163,18 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Ngày ghi nhận</th>
-                    <th className="py-3 px-4">Loại điều chỉnh</th>
-                    <th className="py-3 px-4">Lý do / Nội dung</th>
-                    <th className="py-3 px-4">Người khởi tạo</th>
-                    <th className="py-3 px-4 text-right">Số tiền</th>
-                    <th className="py-3 px-4 text-center">Hành động</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ngay_ghi_nhan', 'Ngày ghi nhận')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_loai_ieu_chinh', 'Loại điều chỉnh')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_ly_do_noi_dung', 'Lý do / Nội dung')}</th>
+                    <th className="py-3 px-4">{t('payroll.auto_nguoi_khoi_tao', 'Người khởi tạo')}</th>
+                    <th className="py-3 px-4 text-right">{t('payroll.auto_so_tien', 'Số tiền')}</th>
+                    <th className="py-3 px-4 text-center">{t('payroll.auto_hanh_ong', 'Hành động')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium bg-white text-slate-700">
                   {filteredAdjustments.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400 text-xs font-medium">Không tìm thấy khoản điều chỉnh nào</td>
+                      <td colSpan={6} className="py-10 text-center text-slate-400 text-xs font-medium">{t('payroll.auto_khong_tim_thay_khoan_ieu_chinh', 'Không tìm thấy khoản điều chỉnh nào')}</td>
                     </tr>
                   ) : filteredAdjustments.map((row) => (
                     <tr key={row.id} className="hover:bg-orange-50/30 transition-colors">
@@ -1180,11 +1182,11 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                       <td className="py-3.5 px-4 align-middle">
                         {row.type === 'bonus' ? (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 inline-block">
-                            🎁 Khen thưởng
+                            {t('payroll.auto_khen_thuong', '🎁 Khen thưởng')}
                           </span>
                         ) : (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100 inline-block">
-                            ⚠️ Khấu trừ / Phạt
+                            {t('payroll.auto_khau_tru_phat', '⚠️ Khấu trừ / Phạt')}
                           </span>
                         )}
                       </td>
@@ -1199,7 +1201,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                             type="button"
                             onClick={() => handleEditAdj(row)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                            title="Chỉnh sửa khoản này"
+                            title={t('payroll.auto_chinh_sua_khoan_nay', 'Chỉnh sửa khoản này')}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -1207,7 +1209,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                             type="button"
                             onClick={() => handleDeleteAdj(row.id)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                            title="Xóa khoản này"
+                            title={t('payroll.auto_xoa_khoan_nay', 'Xóa khoản này')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1243,7 +1245,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
             <form onSubmit={handleSaveAdj} className="space-y-4 text-xs font-sans">
               {/* Type selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Loại điều chỉnh</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t('payroll.auto_loai_ieu_chinh', 'Loại điều chỉnh')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -1272,11 +1274,11 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
 
               {/* Reason */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Lý do / Nội dung ghi nhận</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t('payroll.auto_ly_do_noi_dung_ghi_nhan', 'Lý do / Nội dung ghi nhận')}</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: Thưởng KTV xuất sắc tuần 2..."
+                  placeholder={t('payroll.auto_vi_du_thuong_ktv_xuat_sac_tuan', 'Ví dụ: Thưởng KTV xuất sắc tuần 2...')}
                   value={adjFormData.reason}
                   onChange={(e) => setAdjFormData(prev => ({ ...prev, reason: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
@@ -1285,12 +1287,12 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
 
               {/* Amount */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Số tiền (VNĐ)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t('payroll.auto_so_tien_vn', 'Số tiền (VNĐ)')}</label>
                 <input
                   type="number"
                   required
                   min="1"
-                  placeholder="Nhập số tiền..."
+                  placeholder={t('payroll.auto_nhap_so_tien', 'Nhập số tiền...')}
                   value={adjFormData.amount}
                   onChange={(e) => setAdjFormData(prev => ({ ...prev, amount: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
@@ -1300,7 +1302,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
               {/* Date & Creator */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ngày ghi nhận</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('payroll.auto_ngay_ghi_nhan', 'Ngày ghi nhận')}</label>
                   <input
                     type="text"
                     value={adjFormData.date}
@@ -1309,7 +1311,7 @@ export default function StaffPayrollDetailView({ staffData, dateRange, onBack })
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Người khởi tạo</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('payroll.auto_nguoi_khoi_tao', 'Người khởi tạo')}</label>
                   <input
                     type="text"
                     value={adjFormData.creator}

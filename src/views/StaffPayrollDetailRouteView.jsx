@@ -5,9 +5,11 @@ import { base44 } from '@/api/base44Client';
 import StaffPayrollDetailView from '@/components/staff/StaffPayrollDetailView';
 import { Loader2 } from 'lucide-react';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { useT } from '@/lib/i18n';
 
 export default function StaffPayrollDetailRouteView({ staffId }) {
   const router = useRouter();
+  const { t } = useT();
   const [staffData, setStaffData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +42,7 @@ export default function StaffPayrollDetailRouteView({ staffId }) {
           // Ensure default payroll calculation attributes exist for complete display
           const normalized = {
             id: found.id,
-            name: found.full_name || found.name || 'Nhân viên',
+            name: found.full_name || found.name || t('staff.employee', 'Nhân viên'),
             role: found.role || 'technician',
             avatar_url: found.avatar_url || '',
             avatar_color: found.avatar_color || '#F97316',
@@ -85,11 +87,11 @@ export default function StaffPayrollDetailRouteView({ staffId }) {
 
           setStaffData(normalized);
         } else {
-          setError('Không tìm thấy thông tin nhân viên');
+          setError(t('staff.not_found', 'Không tìm thấy thông tin nhân viên'));
         }
       } catch (err) {
         console.error('Lỗi tải dữ liệu chi tiết lương nhân viên:', err);
-        setError('Có lỗi xảy ra khi tải dữ liệu');
+        setError(t('common.error_occurred', 'Có lỗi xảy ra khi tải dữ liệu'));
       } finally {
         setLoading(false);
       }
@@ -102,7 +104,7 @@ export default function StaffPayrollDetailRouteView({ staffId }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-        <span className="text-sm font-semibold text-slate-500">Đang tải bảng lương chi tiết...</span>
+        <span className="text-sm font-semibold text-slate-500">{t('staff.loading_payroll', 'Đang tải bảng lương chi tiết...')}</span>
       </div>
     );
   }
@@ -110,12 +112,12 @@ export default function StaffPayrollDetailRouteView({ staffId }) {
   if (error || !staffData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="text-base font-bold text-slate-700">{error || 'Không tìm thấy dữ liệu'}</div>
+        <div className="text-base font-bold text-slate-700">{error || t('common.no_data', 'Không tìm thấy dữ liệu')}</div>
         <button
           onClick={() => router.push('/staff?tab=payroll')}
           className="px-4 py-2 rounded-xl bg-orange-500 text-white font-bold text-xs hover:bg-orange-600 transition-colors"
         >
-          Quay lại trang nhân sự
+          {t('staff.back_to_staff', 'Quay lại trang nhân sự')}
         </button>
       </div>
     );
