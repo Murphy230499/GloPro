@@ -116,6 +116,13 @@ const createEntityAdapter = (tableName) => {
       // Remove id if present to allow UUID generation
       if (p.id && String(p.id).includes('temp')) delete p.id;
       
+      // Inject tenant_id if user is logged in
+      try {
+        const sessionRes = await supabase.auth.getSession();
+        const userId = sessionRes.data?.session?.user?.id;
+        if (userId) p.tenant_id = userId;
+      } catch (e) {}
+
       // Sanitize fields for Supabase
       for (let k in p) {
         if (k === 'id' || k.endsWith('_id')) {

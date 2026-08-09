@@ -572,7 +572,7 @@ export default function Services() {
           seeding={seeding}
           seedProgress={seedProgress}
           onAdd={() => setEditing({ type: tab })}
-          addLabel={`{t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+          addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
           seedLabel="Tạo dữ liệu mẫu"
         />
       ) : (

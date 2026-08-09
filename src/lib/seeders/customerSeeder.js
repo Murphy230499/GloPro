@@ -32,12 +32,17 @@ const CUSTOMERS = [
 
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
+    const sessionRes = await base44.auth.getSession();
+    const userId = sessionRes.data?.session?.user?.id;
+    if (userId) payload.tenant_id = userId;
+
+    const existing = await entity.filter({ [filterKey]: filterVal, branch_ids: branchId ? [branchId] : undefined });
     if (existing.length > 0) return existing[0].id;
     const created = await entity.create(payload);
     return created.id;
-  } catch (_e) {
-    return null;
+  } catch (e) {
+    console.error(`Error in upsertEntity for ${filterVal}:`, e);
+    throw e;
   }
 }
 
@@ -47,15 +52,22 @@ export async function seedCustomerData(branchId, onProgress) {
   const b = branchId === 'all' ? '' : branchId;
   let created = { groups: 0, customers: 0 };
 
+  // Get tenant_id from session
+  const sessionRes = await base44.auth.getSession();
+  const userId = sessionRes.data?.session?.user?.id;
+
   // 1. Create customer groups
   onProgress?.('Đang tạo nhóm khách hàng...');
   const groupIdMap = {};
   for (const g of CUSTOMER_GROUPS) {
-    const id = await upsertEntity(base44.entities.CustomerGroup, 'name', g.name, b, {
+    const payload = {
       name: g.name,
       color: g.color,
       branch_id: b,
-    });
+    };
+    if (userId) payload.tenant_id = userId;
+    
+    const id = await upsertEntity(base44.entities.CustomerGroup, 'name', g.name, b, payload);
     if (id) { groupIdMap[g.name] = id; created.groups++; }
   }
 
@@ -63,13 +75,16 @@ export async function seedCustomerData(branchId, onProgress) {
   onProgress?.('Đang tạo dữ liệu khách hàng...');
   for (const c of CUSTOMERS) {
     const { group, ...rest } = c;
-    await upsertEntity(base44.entities.Customer, 'phone', c.phone, b, {
+    const payload = {
       ...rest,
       branch_id: b,
       group_id: groupIdMap[group] || '',
       is_active: true,
       join_date: new Date().toISOString().slice(0, 10),
-    });
+    };
+    if (userId) payload.tenant_id = userId;
+
+    await upsertEntity(base44.entities.Customer, 'phone', c.phone, b, payload);
     created.customers++;
   }
 

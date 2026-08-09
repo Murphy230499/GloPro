@@ -105,12 +105,17 @@ const PREPAID_CARDS = [
 
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
+    const sessionRes = await base44.auth.getSession();
+    const userId = sessionRes.data?.session?.user?.id;
+    if (userId) payload.tenant_id = userId;
+
+    const existing = await entity.filter({ [filterKey]: filterVal, branch_ids: branchId ? [branchId] : undefined });
     if (existing.length > 0) return existing[0].id;
     const created = await entity.create(payload);
     return created.id;
-  } catch (_e) {
-    return null;
+  } catch (e) {
+    console.error(`Error in upsertEntity for ${filterVal}:`, e);
+    throw e;
   }
 }
 
@@ -120,11 +125,17 @@ export async function seedServiceData(branchId, onProgress) {
   const b = branchId === 'all' ? '' : branchId;
   let created = { groups: 0, services: 0, products: 0, packages: 0, treatments: 0, serviceCombos: 0, productCombos: 0, prepaidCards: 0 };
 
+  // Get tenant_id from session
+  const sessionRes = await base44.auth.getSession();
+  const userId = sessionRes.data?.session?.user?.id;
+
   // 1. Create service groups
   onProgress?.('Đang tạo nhóm dịch vụ...');
   const groupIdMap = {};
   for (const g of SERVICE_GROUPS) {
-    const id = await upsertEntity(base44.entities.ServiceGroup, 'name', g.name, b, { ...g, branch_id: b });
+    const payload = { ...g, branch_id: b };
+    if (userId) payload.tenant_id = userId;
+    const id = await upsertEntity(base44.entities.ServiceGroup, 'name', g.name, b, payload);
     if (id) { groupIdMap[g.name] = id; created.groups++; }
   }
 

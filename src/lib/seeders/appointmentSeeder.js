@@ -2,6 +2,23 @@ import { base44 } from '@/api/base44Client';
 
 // ─── Seeder ───────────────────────────────────────────────────────────────────
 
+export async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
+  try {
+    const sessionRes = await base44.auth.getSession();
+    const userId = sessionRes.data?.session?.user?.id;
+    if (userId) payload.tenant_id = userId;
+
+    const existing = await entity.filter({ [filterKey]: filterVal, branch_ids: branchId ? [branchId] : undefined });
+    if (existing && existing.length > 0) {
+      return await entity.update(existing[0].id, payload);
+    }
+    return await entity.create({ ...payload, branch_id: branchId });
+  } catch (e) {
+    console.error('upsertEntity failed', e);
+    return null;
+  }
+}
+
 export async function seedAppointmentData(branchId, onProgress) {
   let b = branchId;
   if (!b || b === 'all') {

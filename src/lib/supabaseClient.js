@@ -10,6 +10,12 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'implicit',
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      options.cache = 'no-store';
+      return fetch(url, options);
+    }
   }
 });
 
