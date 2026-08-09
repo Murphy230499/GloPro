@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/supabaseAuth";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      router.push("/");
     } catch (err) {
       setError(err.message || "Email hoặc mật khẩu không chính xác.");
     } finally {

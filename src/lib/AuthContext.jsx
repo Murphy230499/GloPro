@@ -70,6 +70,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
 
+      // Prevent race condition during OAuth redirect
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        const search = window.location.search;
+        if (search.includes('code=') || hash.includes('access_token=')) {
+          // Do not call getSession() yet, let Supabase internally exchange the token
+          // and emit the SIGNED_IN event to our onAuthStateChange listener.
+          return;
+        }
+      }
+
       // 1. Check Supabase OAuth Session
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
