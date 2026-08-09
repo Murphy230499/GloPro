@@ -915,7 +915,7 @@ export default function Discounts() {
 
                 <div>
                   <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('discounts.discount_value_label', 'Mức giảm')}</label>
-                  <input type="number" value={promoValue} onChange={(e) => setPromoValue(e.target.value)} placeholder={promoValueType === 'percent' ? 'Ví dụ: 10 (%)' : 'Ví dụ: 50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                  <input type="number" value={promoValue} onChange={(e) => setPromoValue(e.target.value)} placeholder={promoValueType === 'percent' ? t('discounts.value_percent_ph', 'Ví dụ: 10 (%)') : t('discounts.value_vnd_ph', 'Ví dụ: 50,000 (đ)')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
                 </div>
               </div>
 
@@ -995,7 +995,7 @@ export default function Discounts() {
                   {promoTimeType === 'monthly' && (
                     <div>
                       <label className="block font-bold text-slate-500 mb-1 text-[10px]">{t('discounts.days_of_month_label', 'Các ngày trong tháng (cách nhau bởi dấu phẩy)')}</label>
-                      <input type="text" value={promoDaysOfMonth} onChange={(e) => setPromoDaysOfMonth(e.target.value)} placeholder="Ví dụ: 1, 15, 30" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                      <input type="text" value={promoDaysOfMonth} onChange={(e) => setPromoDaysOfMonth(e.target.value)} placeholder={t("discounts.days_of_month_ph", "Ví dụ: 1, 15, 30")} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
                     </div>
                   )}
                 </div>
@@ -1092,7 +1092,7 @@ export default function Discounts() {
 
                 <div>
                   <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('discounts.discount_value_label', 'Mức giảm')}</label>
-                  <input type="number" value={voucherValue} onChange={(e) => setVoucherValue(e.target.value)} placeholder={voucherValueType === 'percent' ? '10 (%)' : '50,000 (đ)'} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                  <input type="number" value={voucherValue} onChange={(e) => setVoucherValue(e.target.value)} placeholder={voucherValueType === 'percent' ? t('discounts.value_percent_ph_short', '10 (%)') : t('discounts.value_vnd_ph_short', '50,000 (đ)')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
                 </div>
               </div>
 
@@ -1172,7 +1172,7 @@ export default function Discounts() {
                   {voucherTimeType === 'monthly' && (
                     <div>
                       <label className="block font-bold text-slate-500 mb-1 text-[10px]">{t('discounts.days_of_month_label', 'Các ngày trong tháng (cách nhau bởi dấu phẩy)')}</label>
-                      <input type="text" value={voucherDaysOfMonth} onChange={(e) => setVoucherDaysOfMonth(e.target.value)} placeholder="Ví dụ: 1, 15, 30" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
+                      <input type="text" value={voucherDaysOfMonth} onChange={(e) => setVoucherDaysOfMonth(e.target.value)} placeholder={t("discounts.days_of_month_ph", "Ví dụ: 1, 15, 30")} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-pink-400 text-slate-700 bg-white" />
                     </div>
                   )}
                 </div>
