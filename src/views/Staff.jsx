@@ -15,19 +15,20 @@ import Avatar from '@/components/Avatar';
 import { seedStaffData } from '@/lib/seeders/staffSeeder';
 import EmptyStateSeeder from '@/components/EmptyStateSeeder';
 
-// --- Sub-components (imported) ---
-import StaffGroupManager from '@/components/staff/StaffGroupManager';
-import StaffForm from '@/components/staff/StaffForm';
-import StaffDetail from '@/components/staff/StaffDetail';
-import ShiftTemplateManager from '@/components/staff/ShiftTemplateManager';
-import SchedulerGrid from '@/components/staff/SchedulerGrid';
-import AttendanceLog from '@/components/staff/AttendanceLog';
-import CommissionMatrix from '@/components/staff/CommissionMatrix';
-import AdvancedConfigModal from '@/components/staff/AdvancedConfigModal';
-import CopyCommissionModal from '@/components/staff/CopyCommissionModal';
-import AuditLogModal from '@/components/staff/AuditLogModal';
-import PayrollManager from '@/components/staff/PayrollManager';
-import StaffPayrollDetailView from '@/components/staff/StaffPayrollDetailView';
+import dynamic from 'next/dynamic';
+
+const StaffGroupManager = dynamic(() => import('@/components/staff/StaffGroupManager'));
+const StaffForm = dynamic(() => import('@/components/staff/StaffForm'));
+const StaffDetail = dynamic(() => import('@/components/staff/StaffDetail'));
+const ShiftTemplateManager = dynamic(() => import('@/components/staff/ShiftTemplateManager'));
+const SchedulerGrid = dynamic(() => import('@/components/staff/SchedulerGrid'));
+const AttendanceLog = dynamic(() => import('@/components/staff/AttendanceLog'));
+const CommissionMatrix = dynamic(() => import('@/components/staff/CommissionMatrix'));
+const AdvancedConfigModal = dynamic(() => import('@/components/staff/AdvancedConfigModal'));
+const CopyCommissionModal = dynamic(() => import('@/components/staff/CopyCommissionModal'));
+const AuditLogModal = dynamic(() => import('@/components/staff/AuditLogModal'));
+const PayrollManager = dynamic(() => import('@/components/staff/PayrollManager'));
+const StaffPayrollDetailView = dynamic(() => import('@/components/staff/StaffPayrollDetailView'));
 
 export default function StaffPage() {
   const { t } = useT();
