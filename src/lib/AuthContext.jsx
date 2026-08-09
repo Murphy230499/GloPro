@@ -29,7 +29,9 @@ export const AuthProvider = ({ children }) => {
 
     // Listen to Supabase OAuth events (Google / Facebook)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[AuthContext] onAuthStateChange event:', event, 'session exists:', !!session);
       if (session?.user) {
+        console.log('[AuthContext] Setting user from onAuthStateChange');
         const sbUser = {
           id: session.user.id,
           email: session.user.email,
@@ -39,6 +41,12 @@ export const AuthProvider = ({ children }) => {
         };
         setUser(sbUser);
         setIsAuthenticated(true);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] SIGNED_OUT event received, clearing session');
+        setUser(null);
+        setIsAuthenticated(false);
         setIsLoadingAuth(false);
         setAuthChecked(true);
       }
@@ -90,13 +98,35 @@ export const AuthProvider = ({ children }) => {
           setAuthChecked(true);
           return;
         }
+
+        // Wait for onAuthStateChange to parse the URL hash for OAuth
+        if (search.includes('code=') || hash.includes('access_token=')) {
+          console.log('[AuthContext] OAuth tokens detected in URL. Waiting for onAuthStateChange...');
+          // Fallback timeout just in case onAuthStateChange fails or hangs
+          setTimeout(() => {
+            console.log('[AuthContext] Timeout waiting for onAuthStateChange. Proceeding with unauthenticated state...');
+            // Clean up the URL to prevent permanent hanging on refresh
+            if (window.location.hash || window.location.search) {
+              const url = new URL(window.location.href);
+              url.hash = '';
+              url.searchParams.delete('code');
+              window.history.replaceState({}, '', url.toString());
+            }
+            setIsLoadingAuth(false);
+            setAuthChecked(true);
+          }, 3000);
+          return;
+        }
       }
 
       // 1. Check Supabase OAuth Session
+      console.log('[AuthContext] checkUserAuth calling getSession...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[AuthContext] getSession returned, session exists:', !!session);
       const user = session?.user;
       
       if (user) {
+        console.log('[AuthContext] Valid user found in getSession, setting authenticated');
         const sbUser = {
           id: user.id,
           email: user.email,
@@ -113,6 +143,7 @@ export const AuthProvider = ({ children }) => {
 
 
       // If no valid session exists
+      console.log('[AuthContext] No valid session, setting unauthenticated');
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
