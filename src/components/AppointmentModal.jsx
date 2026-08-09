@@ -697,6 +697,7 @@ export default function AppointmentModal({
         }
       }
       onSaved?.();
+      onClose?.();
     }
 
     if (newStatus === 'completed') {
@@ -2136,7 +2137,7 @@ export default function AppointmentModal({
             </button>
             <button
               type="button"
-              onClick={() => handleSave('confirmed')}
+              onClick={() => handleSave(editing ? (form.status || 'confirmed') : 'confirmed')}
               disabled={saving}
               className="px-9 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50"
             >
