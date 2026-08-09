@@ -246,7 +246,7 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <Gift className="w-4 h-4" /> Danh sách khách hàng đã tặng ({giftedList.length})
+                <Gift className="w-4 h-4" /> {t('discounts.gifted_list', 'Danh sách khách hàng đã tặng')} ({giftedList.length})
               </button>
               <button
                 onClick={() => setActiveSubTab('usages')}

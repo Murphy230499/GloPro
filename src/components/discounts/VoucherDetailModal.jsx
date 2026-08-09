@@ -203,7 +203,7 @@ export default function VoucherDetailModal({ voucher, usages, onClose }) {
           {/* Section 2: Usage History */}
           <div className="space-y-4">
             <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-2">
-              <ShoppingCart className="w-4 h-4 text-pink-500" /> Lịch sử sử dụng
+              <ShoppingCart className="w-4 h-4 text-pink-500" /> {t('discounts.voucher_usage', 'Lịch sử sử dụng voucher tại POS')}
             </h3>
 
             {voucherUsages.length === 0 ? (
