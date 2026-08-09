@@ -48,25 +48,25 @@ export default function VoucherDetailModal({ voucher, usages, onClose }) {
 
   let statusBadge = (
     <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-      Đang diễn ra
+      {t('discounts.status_ongoing', 'Đang diễn ra')}
     </span>
   );
   if (isUpcoming) {
     statusBadge = (
       <span className="bg-blue-50 text-blue-600 border border-blue-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Sắp diễn ra
+        {t('discounts.status_upcoming', 'Sắp diễn ra')}
       </span>
     );
   } else if (isPast) {
     statusBadge = (
       <span className="bg-slate-100 text-slate-500 border border-slate-200 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Đã hoàn thành
+        {t('discounts.status_completed', 'Đã hoàn thành')}
       </span>
     );
   } else if (isSoldOut) {
     statusBadge = (
       <span className="bg-amber-50 text-amber-600 border border-amber-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Hết lượt
+        {t('discounts.status_sold_out', 'Hết lượt')}
       </span>
     );
   }
@@ -215,12 +215,12 @@ export default function VoucherDetailModal({ voucher, usages, onClose }) {
                 <table className="w-full text-left text-sm font-normal">
                   <thead className="bg-slate-50 text-slate-500 font-medium text-xs border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Khách hàng</th>
-                      <th className="px-4 py-3 font-medium">Mã hóa đơn</th>
-                      <th className="px-4 py-3 font-medium">Ngày sử dụng</th>
-                      <th className="px-4 py-3 text-right font-medium">Chi phí (Giảm)</th>
-                      <th className="px-4 py-3 text-right font-medium">Doanh thu</th>
-                      <th className="px-4 py-3 font-medium">Chi nhánh</th>
+                      <th className="px-4 py-3 font-medium">{t('discounts.customer', 'Khách hàng')}</th>
+                      <th className="px-4 py-3 font-medium">{t('discounts.invoice_code', 'Mã hóa đơn')}</th>
+                      <th className="px-4 py-3 font-medium">{t('discounts.date_used', 'Ngày sử dụng')}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t('discounts.cost_discount', 'Chi phí (Giảm)')}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t('discounts.revenue', 'Doanh thu')}</th>
+                      <th className="px-4 py-3 font-medium">{t('discounts.branch', 'Chi nhánh')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">

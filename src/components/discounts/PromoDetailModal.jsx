@@ -79,25 +79,25 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
 
   let statusBadge = (
     <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-      Đang diễn ra
+      {t('discounts.status_ongoing', 'Đang diễn ra')}
     </span>
   );
   if (isUpcoming) {
     statusBadge = (
       <span className="bg-blue-50 text-blue-600 border border-blue-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Sắp diễn ra
+        {t('discounts.status_upcoming', 'Sắp diễn ra')}
       </span>
     );
   } else if (isPast) {
     statusBadge = (
       <span className="bg-slate-100 text-slate-500 border border-slate-200 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Đã hoàn thành
+        {t('discounts.status_completed', 'Đã hoàn thành')}
       </span>
     );
   } else if (isSoldOut) {
     statusBadge = (
       <span className="bg-amber-50 text-amber-600 border border-amber-100 text-xs px-2.5 py-1 rounded-full font-medium uppercase">
-        Hết lượt
+        {t('discounts.status_sold_out', 'Hết lượt')}
       </span>
     );
   }
@@ -256,7 +256,7 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <ShoppingCart className="w-4 h-4" /> Lượt sử dụng đơn hàng tại POS ({promoUsages.length})
+                <ShoppingCart className="w-4 h-4" /> {t('discounts.pos_usage', 'Lượt sử dụng đơn hàng tại POS')} ({promoUsages.length})
               </button>
             </div>
 
@@ -264,17 +264,17 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
             {activeSubTab === 'gifted' && (
               giftedList.length === 0 ? (
                 <div className="text-center py-10 text-sm text-slate-400 font-normal">
-                  Chưa tặng khuyến mãi này cho khách hàng nào.
+                  {t('discounts.no_gifted', 'Chưa tặng khuyến mãi này cho khách hàng nào.')}
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left text-sm font-normal">
                     <thead className="bg-slate-50 text-slate-500 font-normal text-xs border-b border-slate-200">
                       <tr>
-                        <th className="px-4 py-3 font-medium">Khách hàng</th>
-                        <th className="px-4 py-3 font-medium">Số điện thoại</th>
-                        <th className="px-4 py-3 font-medium">Ngày tặng</th>
-                        <th className="px-4 py-3 text-center font-medium">Trạng thái sử dụng</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.customer', 'Khách hàng')}</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.phone', 'Số điện thoại')}</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.date_gifted', 'Ngày tặng')}</th>
+                        <th className="px-4 py-3 text-center font-medium">{t('discounts.usage_status', 'Trạng thái sử dụng')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -291,11 +291,11 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
                           <td className="px-4 py-3 text-center">
                             {item.used ? (
                               <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 border border-slate-200 text-xs px-2.5 py-0.5 rounded-full font-normal">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Đã sử dụng {item.invoice_code && `(${item.invoice_code})`}
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {t('discounts.used', 'Đã sử dụng')} {item.invoice_code && `(${item.invoice_code})`}
                               </span>
                             ) : (
                               <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs px-2.5 py-0.5 rounded-full font-normal">
-                                Chưa sử dụng
+                                {t('discounts.unused', 'Chưa sử dụng')}
                               </span>
                             )}
                           </td>
@@ -311,19 +311,19 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
             {activeSubTab === 'usages' && (
               promoUsages.length === 0 ? (
                 <div className="text-center py-10 text-sm text-slate-400 font-normal">
-                  Chưa có lượt sử dụng nào tại POS cho CTKM này.
+                  {t('discounts.no_pos_usage', 'Chưa có lượt sử dụng nào tại POS cho CTKM này.')}
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left text-sm font-normal">
                     <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 font-medium">
                       <tr>
-                        <th className="px-4 py-3 font-medium">Khách hàng</th>
-                        <th className="px-4 py-3 font-medium">Mã hóa đơn</th>
-                        <th className="px-4 py-3 font-medium">Ngày sử dụng</th>
-                        <th className="px-4 py-3 text-right font-medium">Chi phí (Giảm)</th>
-                        <th className="px-4 py-3 text-right font-medium">Doanh thu</th>
-                        <th className="px-4 py-3 font-medium">Chi nhánh</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.customer', 'Khách hàng')}</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.invoice_code', 'Mã hóa đơn')}</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.date_used', 'Ngày sử dụng')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('discounts.cost_discount', 'Chi phí (Giảm)')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('discounts.revenue', 'Doanh thu')}</th>
+                        <th className="px-4 py-3 font-medium">{t('discounts.branch', 'Chi nhánh')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
