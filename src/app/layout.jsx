@@ -2,9 +2,7 @@ import './globals.css';
 import { CopilotProvider } from '@/ai-copilot';
 import dynamic from 'next/dynamic';
 
-const CopilotDrawer = dynamic(() => import('@/ai-copilot').then(mod => mod.CopilotDrawer), {
-  ssr: false,
-});
+const CopilotDrawer = dynamic(() => import('@/ai-copilot').then(mod => mod.CopilotDrawer));
 import GlobalNotificationProvider from '@/components/GlobalNotificationProvider';
 
 export const metadata = {
