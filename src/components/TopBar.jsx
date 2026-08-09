@@ -34,7 +34,7 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-100">
+    <header className="sticky top-0 z-[99] bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="h-16 flex items-center gap-3 px-3 sm:px-5">
         {/* Left: logo + branch */}
         <div className="flex items-center gap-2 shrink-0">
