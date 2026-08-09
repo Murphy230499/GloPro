@@ -70,15 +70,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
 
-      // 1. Check Supabase OAuth Session
+      // 1. Get freshet user data from server
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
         const sbUser = {
-          id: session.user.id,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
-          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-          provider: session.user.app_metadata?.provider
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+          provider: user.app_metadata?.provider
         };
         setUser(sbUser);
         setIsAuthenticated(true);
