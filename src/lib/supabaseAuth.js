@@ -53,6 +53,25 @@ export async function updateMe(fields) {
   });
   if (error) throw error;
   
+  // Also update the public user_profile table if it exists
+  if (data?.user?.email) {
+    const { data: profiles } = await supabase
+      .from('user_profile')
+      .select('*')
+      .eq('email', data.user.email);
+      
+    if (profiles && profiles.length > 0) {
+      await supabase
+        .from('user_profile')
+        .update({
+          full_name: fields.full_name,
+          phone: fields.phone,
+          avatar_url: fields.avatar_url
+        })
+        .eq('id', profiles[0].id);
+    }
+  }
+  
   // Force a session refresh to update the local JWT with the new user_metadata
   await supabase.auth.refreshSession();
   
