@@ -52,6 +52,10 @@ export async function updateMe(fields) {
     },
   });
   if (error) throw error;
+  
+  // Force a session refresh to update the local JWT with the new user_metadata
+  await supabase.auth.refreshSession();
+  
   return data?.user;
 }
 
