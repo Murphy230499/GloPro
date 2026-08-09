@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useCopilot } from './CopilotContext';
 import { Bot, Send, Mic, Sparkles, X, User, Calendar, Receipt, ShieldCheck, ChevronRight } from 'lucide-react';
 
@@ -53,7 +54,11 @@ export function CopilotDrawer() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <motion.div 
+      drag 
+      dragMomentum={false}
+      className="fixed bottom-6 right-6 z-[9999] font-sans"
+    >
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -188,6 +193,6 @@ export function CopilotDrawer() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

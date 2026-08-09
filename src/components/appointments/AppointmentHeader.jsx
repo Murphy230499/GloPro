@@ -300,17 +300,17 @@ export default function AppointmentHeader({
   return (
     <div className="relative z-50 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-4 overflow-visible">
       {/* Responsive Horizontal Container without Overflow Clipping */}
-      <div className="flex items-center justify-between flex-wrap xl:flex-nowrap gap-3 overflow-visible">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 overflow-visible">
         {/* Left Side: Switcher + View Mode + Dropdown Filters + Date Navigator */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap md:flex-nowrap">
+        <div className="flex flex-col md:flex-row md:items-center gap-2.5 shrink-0 w-full xl:w-auto">
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1 border border-slate-200/60 shrink-0">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1 border border-slate-200/60 shrink-0 w-full md:w-auto">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
                 setSelectedStaff?.('all');
               }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`flex-1 md:flex-none justify-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'staff'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -323,7 +323,7 @@ export default function AppointmentHeader({
                 setTargetEntity?.('facility');
                 setSelectedStaff?.('all');
               }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`flex-1 md:flex-none justify-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'facility'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -334,7 +334,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1 border border-slate-200/60 shrink-0">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 w-full md:w-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -373,7 +373,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Services Dropdown */}
-          <div className="relative shrink-0 service-dropdown-container">
+          <div className="relative shrink-0 service-dropdown-container w-full md:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -381,7 +381,7 @@ export default function AppointmentHeader({
                 setIsStaffOpen(false);
                 setIsDatePickerOpen(false);
               }}
-              className={`flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs min-w-[200px] cursor-pointer ${
+              className={`w-full md:w-auto flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs min-w-0 md:min-w-[180px] cursor-pointer ${
                 isServiceOpen || selectedService !== 'all'
                   ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white text-slate-800 font-semibold'
                   : 'border-slate-300 bg-white text-slate-500 font-normal hover:border-slate-400'
@@ -471,7 +471,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Staffs / Facilities Dropdown */}
-          <div className="relative shrink-0 staff-dropdown-container">
+          <div className="relative shrink-0 staff-dropdown-container w-full md:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -479,7 +479,7 @@ export default function AppointmentHeader({
                 setIsServiceOpen(false);
                 setIsDatePickerOpen(false);
               }}
-              className={`flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs min-w-[210px] cursor-pointer ${
+              className={`w-full md:w-auto flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs min-w-0 md:min-w-[210px] cursor-pointer ${
                 isStaffOpen || selectedStaff !== 'all'
                   ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white text-slate-800 font-semibold'
                   : 'border-slate-300 bg-white text-slate-500 font-normal hover:border-slate-400'
@@ -588,30 +588,31 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative inline-flex items-center bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container">
+          <div className="relative flex items-center bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container w-full md:w-auto">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
               onClick={() => handleDateShift(-1)}
               title={t('appointments.prev_day', 'Ngày trước')}
-              className="px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="flex-1 md:flex-none px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4 stroke-[1.5]" />
             </button>
 
-            {/* Middle Button: Date Display & Custom Popover Trigger */}
+            {/* Center Label: Date Display */}
             <button
               type="button"
               onClick={() => {
                 setIsDatePickerOpen(!isDatePickerOpen);
-                setIsServiceOpen(false);
                 setIsStaffOpen(false);
+                setIsServiceOpen(false);
               }}
-              className={`px-4 py-2 text-xs transition-colors flex items-center justify-center cursor-pointer min-w-[100px] select-none ${
-                (!selectedDate || selectedDate === todayISO) ? 'font-normal text-slate-500 hover:bg-slate-50' : 'font-semibold text-slate-800 hover:bg-slate-50'
+              className={`flex-[3] md:flex-none flex items-center justify-center gap-2 px-4 py-2 hover:bg-slate-50 transition-colors cursor-pointer ${
+                isDatePickerOpen ? 'bg-slate-50 text-blue-600 font-semibold' : 'text-slate-700 font-medium'
               }`}
             >
-              <span>{formatDateDisplay(selectedDate)}</span>
+              <CalendarDays className={`w-4 h-4 ${isDatePickerOpen ? 'text-blue-500' : 'text-slate-400'}`} />
+              <span className="text-xs">{formatDateDisplay(selectedDate)}</span>
             </button>
 
             {/* Right Arrow Button: Next Day */}
@@ -619,11 +620,12 @@ export default function AppointmentHeader({
               type="button"
               onClick={() => handleDateShift(1)}
               title={t('appointments.next_day', 'Ngày sau')}
-              className="px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="flex-1 md:flex-none px-3 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
               <ChevronRight className="w-4 h-4 stroke-[1.5]" />
             </button>
-                  {/* Custom DatePicker Popover Popup matching design */}
+
+            {/* Custom DatePicker Popover Popup matching design */}
             {isDatePickerOpen && (
               <CustomDatePickerPopover
                 selectedDate={selectedDate}
@@ -635,24 +637,26 @@ export default function AppointmentHeader({
         </div>
 
         {/* Right Side: Quick Add Appointment Button */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onFacilityManagementClick}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
-            title={t('appointments.facility_mgmt', 'Quản lý vị trí (ghế/giường)')}
-          >
-            <Armchair className="w-5 h-5 stroke-[2]" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={onSettingsClick}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
-            title={t('appointments.settings_title', 'Cài đặt lịch hẹn')}
-          >
-            <Settings className="w-5 h-5 stroke-[2]" />
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 w-full xl:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={onFacilityManagementClick}
+              className="flex-1 sm:flex-none w-auto sm:w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+              title={t('appointments.facility_mgmt', 'Quản lý vị trí (ghế/giường)')}
+            >
+              <Armchair className="w-5 h-5 stroke-[2]" />
+            </button>
+            
+            <button
+              type="button"
+              onClick={onSettingsClick}
+              className="flex-1 sm:flex-none w-auto sm:w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+              title={t('appointments.settings_title', 'Cài đặt lịch hẹn')}
+            >
+              <Settings className="w-5 h-5 stroke-[2]" />
+            </button>
+          </div>
           
           <div className="relative add-menu-container">
             <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-2xs transition-all active:scale-95 group">
