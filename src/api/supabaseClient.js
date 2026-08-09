@@ -5,6 +5,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    flowType: 'implicit',
+  },
   global: {
     fetch: (url, options = {}) => {
       options.cache = 'no-store';
