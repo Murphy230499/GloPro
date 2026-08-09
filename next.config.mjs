@@ -2,7 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
-
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion', 'lodash', 'react-day-picker'],
+  },
 
   // API proxy to Base44 backend
   async rewrites() {
