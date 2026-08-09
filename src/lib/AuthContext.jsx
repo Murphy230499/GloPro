@@ -74,6 +74,23 @@ export const AuthProvider = ({ children }) => {
       if (typeof window !== 'undefined') {
         const hash = window.location.hash;
         const search = window.location.search;
+        
+        // Handle OAuth error in URL to prevent getSession from hanging
+        if (search.includes('error=') || hash.includes('error=')) {
+          console.error('OAuth error detected in URL');
+          // Clear the error from URL
+          const url = new URL(window.location.href);
+          url.searchParams.delete('error');
+          url.searchParams.delete('error_code');
+          url.searchParams.delete('error_description');
+          window.history.replaceState({}, '', url.toString());
+          
+          setIsLoadingAuth(false);
+          setIsAuthenticated(false);
+          setAuthChecked(true);
+          return;
+        }
+
         if (search.includes('code=') || hash.includes('access_token=')) {
           // Do not call getSession() yet, let Supabase internally exchange the token
           // and emit the SIGNED_IN event to our onAuthStateChange listener.
