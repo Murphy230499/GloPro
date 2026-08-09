@@ -689,10 +689,8 @@ export default function AppointmentModal({
             status: newStatus,
             logs: updatedLogs
           });
-          toast.success(`DEBUG: Gọi API thành công (${newStatus}) - ID: ${editing.id}`);
         } catch (e) {
           console.error('Lỗi cập nhật server:', e);
-          alert('LỖI CỰC KỲ QUAN TRỌNG: ' + (e.message || e));
           toast.error('Lỗi cập nhật server: ' + (e.message || e));
         }
       }
