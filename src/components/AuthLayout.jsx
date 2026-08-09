@@ -5,11 +5,11 @@ import BoomerangVideoBg from "./BoomerangVideoBg";
 import Link from 'next/link';
 
 const HD_BG_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4';
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4';
 
 export default function AuthLayout({ title, subtitle, footer, children }) {
   return (
-    <div className="relative w-full min-h-screen overflow-hidden flex items-center justify-center font-sans bg-[#05040a]">
+    <div className="relative w-full min-h-screen overflow-hidden flex items-center justify-center font-sans bg-[#F5F5F5]">
       {/* High-Definition JS Fade-Loop Video Background */}
       <BoomerangVideoBg src={HD_BG_VIDEO} className="absolute inset-0 w-full h-full" />
 
