@@ -90,12 +90,6 @@ export const AuthProvider = ({ children }) => {
           setAuthChecked(true);
           return;
         }
-
-        if (search.includes('code=') || hash.includes('access_token=')) {
-          // Do not call getSession() yet, let Supabase internally exchange the token
-          // and emit the SIGNED_IN event to our onAuthStateChange listener.
-          return;
-        }
       }
 
       // 1. Check Supabase OAuth Session
