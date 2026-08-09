@@ -685,12 +685,14 @@ export default function AppointmentModal({
         toast.info("Lịch hẹn mẫu (Demo) chỉ có thể cập nhật trạng thái bằng cách kéo thả bên ngoài.");
       } else {
         try {
-          await base44.entities.Appointment.update(editing.id, { 
+          const res = await base44.entities.Appointment.update(editing.id, { 
             status: newStatus,
             logs: updatedLogs
           });
+          toast.success(`DEBUG: Gọi API thành công (${newStatus}) - ID: ${editing.id}`);
         } catch (e) {
           console.error('Lỗi cập nhật server:', e);
+          alert('LỖI CỰC KỲ QUAN TRỌNG: ' + (e.message || e));
           toast.error('Lỗi cập nhật server: ' + (e.message || e));
         }
       }
