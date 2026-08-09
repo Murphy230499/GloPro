@@ -6,6 +6,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
+    storage: typeof window !== 'undefined' ? window.localStorage : null,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
     flowType: 'implicit',
   },
   global: {
