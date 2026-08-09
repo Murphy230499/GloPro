@@ -80,14 +80,14 @@ const SHIFT_BADGE_STYLES = {
   'Ca chiều': 'bg-purple-50 text-purple-700 border-purple-200',
   'Ca tối': 'bg-amber-50 text-amber-700 border-amber-200',
   'Tăng ca': 'bg-orange-50 text-orange-700 border-orange-200',
-  'Nghỉ phép': 'bg-slate-100 text-slate-600 border-slate-200',
+  [(t('payroll.leave', 'Nghỉ phép'))]: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
 const ATTENDANCE_STATUS_STYLES = {
   'Đủ công': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Đi muộn': 'bg-amber-50 text-amber-700 border-amber-200',
   'Về sớm': 'bg-orange-50 text-orange-700 border-orange-200',
-  'Nghỉ phép': 'bg-slate-100 text-slate-600 border-slate-200',
+  [(t('payroll.leave', 'Nghỉ phép'))]: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
   const router = useRouter();
@@ -423,9 +423,9 @@ const ATTENDANCE_STATUS_STYLES = {
               </span>
             </div>
             <p className="text-xs text-slate-500 font-normal mt-1 flex items-center gap-2">
-              <span>Mã NV: NV-{(staffData.id || '').substring(0, 4).toUpperCase()}</span>
+              <span>{t("payroll.staff_id_prefix", "Mã NV:")} NV-{(staffData.id || "").substring(0, 4).toUpperCase()}</span>
               <span>•</span>
-              <span>Kỳ đối soát: {dateFromStr} - {dateToStr}</span>
+              <span>{t("payroll.reconciliation_period", "Kỳ đối soát:")} {dateFromStr} - {dateToStr}</span>
             </p>
           </div>
         </div>
@@ -450,7 +450,7 @@ const ATTENDANCE_STATUS_STYLES = {
             <Clock className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-base font-bold text-slate-900">{staffData.shifts || '0 Ca'}</div>
-          <span className="text-xs font-normal text-slate-500 mt-0.5 block">Nghỉ {staffData.daysOff || 0} ngày</span>
+          <span className="text-xs font-normal text-slate-500 mt-0.5 block">{t("payroll.off", "Nghỉ")} {staffData.daysOff || 0} {t("payroll.days", "ngày")}</span>
         </div>
 
         {/* Card 3: Tổng hoa hồng */}
@@ -576,7 +576,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-semibold text-slate-800 pl-8">{t('payroll.auto_so_ngay_nghi_phep', 'Số ngày nghỉ phép')}</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-bold">{staffData.daysOff || 0} ngày</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-bold">{staffData.daysOff || 0} {t("payroll.days", "ngày")}</td>
                   <td className="py-3 px-4 text-right text-slate-400">--</td>
                   <td className="py-3 px-4 text-right text-slate-500 font-medium">{t('payroll.auto_khong_tru_luong', 'Không trừ lương')}</td>
                 </tr>
@@ -592,7 +592,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_1_hoa_hong_dich_vu', '1. Hoa hồng Dịch vụ')}</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noServices || 0} lượt</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noServices || 0} {t("payroll.turns", "lượt")}</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.serviceSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.serviceCom || 0)}</td>
                 </tr>
@@ -604,7 +604,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_3_hoa_hong_goi_dich_vu', '3. Hoa hồng Gói dịch vụ')}</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noPackage || 0} gói</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noPackage || 0} {t("payroll.packages", "gói")}</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.packageSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.packageCom || 0)}</td>
                 </tr>
@@ -616,7 +616,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 text-slate-800 pl-8">{t('payroll.auto_5_hoa_hong_san_pham', '5. Hoa hồng Sản phẩm')}</td>
-                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noProduct || 0} món</td>
+                  <td className="py-3 px-4 text-center text-slate-700 font-medium">{staffData.noProduct || 0} {t("payroll.items", "món")}</td>
                   <td className="py-3 px-4 text-right text-slate-700">{formatVND(staffData.productSales || 0)}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-900">{formatVND(staffData.productCom || 0)}</td>
                 </tr>
@@ -723,7 +723,7 @@ const ATTENDANCE_STATUS_STYLES = {
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_luot_on_hoa_hong', 'Tổng số lượt/đơn hoa hồng:')}</span>
-                <span className="font-bold text-slate-900">{filteredComms.length} lượt</span>
+                <span className="font-bold text-slate-900">{filteredComms.length} {t("payroll.turns", "lượt")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium">{t('payroll.auto_tong_doanh_so_hach_toan', 'Tổng doanh số hạch toán:')}</span>
@@ -804,7 +804,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 {filteredComms.length > 0 && (
                   <tfoot className="bg-slate-50/90 border-t border-slate-200 font-bold text-xs">
                     <tr>
-                      <td colSpan={4} className="py-3.5 px-4 text-slate-900 font-bold">Tổng cộng hoa hồng ({filteredComms.length} lượt)</td>
+                      <td colSpan={4} className="py-3.5 px-4 text-slate-900 font-bold">Tổng cộng hoa hồng ({filteredComms.length} {t("payroll.turns", "lượt")})</td>
                       <td className="py-3.5 px-4 text-right text-slate-900">{formatVND(commTotalSales)}</td>
                       <td className="py-3.5 px-4 text-center text-slate-400">--</td>
                       <td className="py-3.5 px-4 text-right text-orange-600">+{formatVND(commTotalComms)}</td>
@@ -946,7 +946,7 @@ const ATTENDANCE_STATUS_STYLES = {
             <div className="flex flex-wrap items-center gap-6 bg-slate-50/80 px-4 py-3 rounded-2xl border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium">{t('payroll.auto_tong_so_luot_nhan_tip', 'Tổng số lượt nhận Tip:')}</span>
-                <span className="font-bold text-slate-900">{filteredTips.length} lượt</span>
+                <span className="font-bold text-slate-900">{filteredTips.length} {t("payroll.turns", "lượt")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-emerald-600 font-semibold">{t('payroll.auto_tong_tien_tip_thuc_nhan', 'Tổng tiền Tip thực nhận:')}</span>
@@ -1014,7 +1014,7 @@ const ATTENDANCE_STATUS_STYLES = {
                 {filteredTips.length > 0 && (
                   <tfoot className="bg-slate-50/90 border-t border-slate-200 font-bold text-xs">
                     <tr>
-                      <td colSpan={4} className="py-3.5 px-4 text-slate-900 font-bold">Tổng cộng tiền tip ({filteredTips.length} lượt)</td>
+                      <td colSpan={4} className="py-3.5 px-4 text-slate-900 font-bold">Tổng cộng tiền tip ({filteredTips.length} {t("payroll.turns", "lượt")})</td>
                       <td className="py-3.5 px-4 text-right text-emerald-600">+{formatVND(tipTotalSum)}</td>
                     </tr>
                   </tfoot>
@@ -1040,7 +1040,7 @@ const ATTENDANCE_STATUS_STYLES = {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium">{t('payroll.auto_so_ngay_nghi_phep', 'Số ngày nghỉ phép:')}</span>
-                <span className="font-bold text-slate-900">{shiftOffCount} ngày</span>
+                <span className="font-bold text-slate-900">{shiftOffCount} {t("payroll.days", "ngày")}</span>
               </div>
             </div>
 
