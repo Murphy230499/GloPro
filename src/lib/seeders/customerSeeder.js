@@ -32,7 +32,7 @@ const CUSTOMERS = [
 
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const existing = await entity.filter({ [filterKey]: filterVal, branch_ids: branchId ? [branchId] : undefined });
+    const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
     if (existing.length > 0) return existing[0].id;
     const created = await entity.create(payload);
     return created.id;
