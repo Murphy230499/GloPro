@@ -3,6 +3,7 @@ import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit3, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabaseClient';
 import { toast } from '@/components/Layout';
 
 const COLORS = ['#A78BFA', '#FF6B9D', '#34D399', '#60A5FA', '#FBBF24', '#F97316', '#FB7185', '#06B6D4', '#94A3B8'];
@@ -19,25 +20,25 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
     try {
       let data = await base44.entities.StaffGroup.list();
 
-      // One-time migration: if staff_group is empty, try to copy from old 'staffgroup' table
+      // One-time migration: if staff_group is empty, try reading from old table names
       if (data.length === 0) {
-        try {
-          const { supabase } = await import('@/api/supabaseClient');
-          const { data: oldData } = await supabase.from('staffgroup').select('*');
-          if (oldData && oldData.length > 0) {
-            for (const g of oldData) {
-              const { id, created_at, updated_at, ...payload } = g;
-              try {
-                await base44.entities.StaffGroup.create(payload);
-              } catch (e) { /* skip duplicates */ }
+        const oldTableNames = ['staffgroup', 'staff_groups', 'StaffGroup'];
+        for (const tbl of oldTableNames) {
+          try {
+            const { data: oldData, error } = await supabase.from(tbl).select('*');
+            if (!error && oldData && oldData.length > 0) {
+              console.log(`Found ${oldData.length} groups in old table: ${tbl}, migrating...`);
+              for (const g of oldData) {
+                const { id, created_at, updated_at, ...payload } = g;
+                try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
+              }
+              data = await base44.entities.StaffGroup.list();
+              if (data.length > 0) {
+                toast.success(`Đã khôi phục ${data.length} nhóm nhân viên`);
+                break;
+              }
             }
-            data = await base44.entities.StaffGroup.list();
-            if (data.length > 0) {
-              toast.success(`Đã khôi phục ${data.length} nhóm nhân viên từ dữ liệu cũ`);
-            }
-          }
-        } catch (e) {
-          console.warn('Migration staffgroup→staff_group skipped:', e.message);
+          } catch (e) { /* try next table name */ }
         }
       }
 

@@ -166,20 +166,21 @@ export default function StaffPage() {
     try {
       gpList = await base44.entities.StaffGroup.list();
 
-      // One-time migration from old 'staffgroup' table
+      // One-time migration from old table names
       if (gpList.length === 0) {
-        try {
-          const { supabase } = await import('@/api/supabaseClient');
-          const { data: oldData } = await supabase.from('staffgroup').select('*');
-          if (oldData && oldData.length > 0) {
-            for (const g of oldData) {
-              const { id, created_at, updated_at, ...payload } = g;
-              try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
+        const oldTableNames = ['staffgroup', 'staff_groups', 'StaffGroup'];
+        for (const tbl of oldTableNames) {
+          try {
+            const { data: oldData, error } = await supabase.from(tbl).select('*');
+            if (!error && oldData && oldData.length > 0) {
+              for (const g of oldData) {
+                const { id, created_at, updated_at, ...payload } = g;
+                try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
+              }
+              gpList = await base44.entities.StaffGroup.list();
+              if (gpList.length > 0) break;
             }
-            gpList = await base44.entities.StaffGroup.list();
-          }
-        } catch (e) {
-          console.warn('Migration staffgroup→staff_group skipped:', e.message);
+          } catch (e) { /* try next */ }
         }
       }
 
