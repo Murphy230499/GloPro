@@ -35,7 +35,13 @@ export const BranchProvider = ({ children }) => {
     (async () => {
       try {
         const list = await base44.entities.Branch.list();
-        setBranches(list.filter(b => b.id !== '00000000-0000-0000-0000-000000000000'));
+        const filtered = list.filter(b => b.id !== '00000000-0000-0000-0000-000000000000');
+        setBranches(filtered);
+        // Auto-select first branch if still on 'all'
+        if ((currentBranchId === 'all' || !currentBranchId) && filtered.length > 0) {
+          setCurrentBranchId(filtered[0].id);
+          if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', filtered[0].id);
+        }
       } catch (e) {
         setBranches([]);
       }

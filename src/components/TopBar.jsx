@@ -54,10 +54,6 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
           </button>
           {branchMenu &&
           <div className="absolute left-0 mt-2 w-60 bg-white rounded-2xl border border-slate-100 shadow-xl py-1 z-50">
-              <button onClick={() => {setBranch('all');setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
-                <span>{t('top.all_branches')}</span>
-                {currentBranchId === 'all' && <Check className="w-4 h-4 text-pink-500" />}
-              </button>
               {branches.map((b) =>
             <button key={b.id} onClick={() => {setBranch(b.id);setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
                   <span className="truncate">{b.name}</span>
