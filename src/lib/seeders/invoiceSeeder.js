@@ -46,8 +46,8 @@ export async function seedInvoiceData(branchId, onProgress) {
 
   try {
     const [c, s, st] = await Promise.all([
-      base44.entities.Customer.filter(filter),
-      base44.entities.Service.filter({ ...filter, is_active: true }),
+      base44.entities.Customer.filter({}),
+      base44.entities.Service.filter(b ? { branch_ids: b, is_active: true } : { is_active: true }),
       base44.entities.Staff.filter(filter),
     ]);
     customerList = c;

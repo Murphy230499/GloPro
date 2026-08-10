@@ -47,8 +47,8 @@ export async function seedAppointmentData(branchId, onProgress) {
   try {
     const [s, sv, c] = await Promise.all([
       base44.entities.Staff.filter(filter),
-      base44.entities.Service.filter({ ...filter, is_active: true }),
-      base44.entities.Customer.filter(filter),
+      base44.entities.Service.filter(b ? { branch_ids: b, is_active: true } : { is_active: true }),
+      base44.entities.Customer.filter({}),
     ]);
     staffList = s.filter(x => x.can_be_booked !== false && x.is_active !== false);
     serviceList = sv;
