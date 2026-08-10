@@ -226,6 +226,19 @@ export default function StaffPage() {
   const handleDeleteStaff = async (s) => {
     if (!window.confirm(`Xoá nhân viên ${s.full_name}? Hành động này không thể hoàn tác.`)) return;
     try {
+      // Kiểm tra lịch hẹn
+      const appointments = await base44.entities.Appointment.filter({ staff_id: s.id });
+      if (appointments.length > 0) {
+        toast.error('Nhân viên này đang có lịch hẹn. Không thể xoá!');
+        return;
+      }
+
+      // Xoá lịch làm việc trước (để tránh lỗi khoá ngoại)
+      const schedules = await base44.entities.StaffSchedule.filter({ staff_id: s.id });
+      for (const sch of schedules) {
+        await base44.entities.StaffSchedule.delete(sch.id);
+      }
+
       await base44.entities.Staff.delete(s.id);
       toast.success('Đã xoá nhân viên');
       loadData();
