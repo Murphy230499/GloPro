@@ -98,7 +98,7 @@ export async function seedCustomerData(branchId = 'all', onProgress = null, lang
   }
 
   // 2. Create customers
-  onProgress?.('Đang tạo dữ liệu khách hàng...');
+  onProgress?.(l === 'en' ? 'Seeding customers...' : 'Đang tạo dữ liệu khách hàng...');
   for (const c of customers) {
     const { group, full_name, birth_date, notes, loyalty_points, join_date, ...rest } = c;
     const payload = {
@@ -109,7 +109,7 @@ export async function seedCustomerData(branchId = 'all', onProgress = null, lang
       points: loyalty_points,
       group_id: groupIdMap[group] || null,
       is_active: true,
-      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(full_name)}&background=random&color=fff&size=150`,
+      avatar_url: `https://i.pravatar.cc/150?u=${c.phone}`,
     };
 
     await upsertEntity(base44.entities.Customer, 'phone', c.phone, b, payload);
