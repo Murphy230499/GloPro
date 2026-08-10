@@ -4,16 +4,16 @@ import { base44 } from '@/api/base44Client';
 
 const SERVICE_GROUPS_LANG = {
   vi: [
-    { name: 'Chăm sóc tóc', color: '#A78BFA' },
-    { name: 'Nail & Móng', color: '#F472B6' },
-    { name: 'Spa & Massage', color: '#34D399' },
-    { name: 'Bán lẻ sản phẩm', color: '#60A5FA' },
+    { name: 'Chăm sóc tóc', color: '#A78BFA', type: 'service' },
+    { name: 'Nail & Móng', color: '#F472B6', type: 'service' },
+    { name: 'Spa & Massage', color: '#34D399', type: 'service' },
+    { name: 'Bán lẻ sản phẩm', color: '#60A5FA', type: 'product' },
   ],
   en: [
-    { name: 'Hair Care', color: '#A78BFA' },
-    { name: 'Nail & Spa', color: '#F472B6' },
-    { name: 'Massage', color: '#34D399' },
-    { name: 'Retail Products', color: '#60A5FA' },
+    { name: 'Hair Care', color: '#A78BFA', type: 'service' },
+    { name: 'Nail & Spa', color: '#F472B6', type: 'service' },
+    { name: 'Massage', color: '#34D399', type: 'service' },
+    { name: 'Retail Products', color: '#60A5FA', type: 'product' },
   ]
 };
 
