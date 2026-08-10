@@ -155,7 +155,7 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
                   className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
                 >
                   <option value="">{t('staff.form.select_group', '— Không chọn —')}</option>
-                  {staffGroups.filter(g => !f.branch_id || g.branch_id === f.branch_id || !g.branch_id).map((g) => (
+                  {staffGroups.map((g) => (
                     <option key={g.id} value={g.id}>{g.name}</option>
                   ))}
                 </select>
