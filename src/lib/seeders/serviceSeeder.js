@@ -119,8 +119,8 @@ const PREPAID_CARDS_LANG = {
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
     const filter = { [filterKey]: filterVal };
-    if ('branch_id' in payload) filter.branch_id = branchId;
-    if ('branch_ids' in payload) filter.branch_ids = branchId ? [branchId] : undefined;
+    if ('branch_id' in payload && branchId) filter.branch_id = branchId;
+    if ('branch_ids' in payload && branchId) filter.branch_ids = [branchId];
     
     const existing = await entity.filter(filter);
     if (existing && existing.length > 0) {
