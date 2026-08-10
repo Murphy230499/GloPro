@@ -19,100 +19,100 @@ const SERVICE_GROUPS_LANG = {
 
 const SERVICES_LANG = {
   vi: [
-    { name: 'Cắt tóc nữ', price: 150000, duration: 45, type: 'service', group: 'Chăm sóc tóc', description: 'Cắt tạo kiểu phù hợp khuôn mặt' },
-    { name: 'Uốn tóc cơ bản', price: 400000, duration: 120, type: 'service', group: 'Chăm sóc tóc', description: 'Uốn xoăn/sóng tự nhiên bền đẹp' },
-    { name: 'Nhuộm màu thời trang', price: 350000, duration: 90, type: 'service', group: 'Chăm sóc tóc', description: 'Nhuộm màu theo xu hướng hiện đại' },
-    { name: 'Gội đầu dưỡng sinh', price: 80000, duration: 30, type: 'service', group: 'Chăm sóc tóc', description: 'Gội + massage đầu thư giãn' },
-    { name: 'Cắt tóc nam', price: 100000, duration: 30, type: 'service', group: 'Chăm sóc tóc', description: 'Cắt + tạo kiểu + beard trim' },
-    { name: 'Sơn gel móng tay', price: 120000, duration: 60, type: 'service', group: 'Nail & Móng', description: 'Sơn gel màu kéo dài 2-3 tuần' },
-    { name: 'Tháo sơn gel & dưỡng móng', price: 50000, duration: 30, type: 'service', group: 'Nail & Móng', description: 'Tháo gel an toàn, dưỡng móng mềm mịn' },
-    { name: 'Massage body 60 phút', price: 300000, duration: 60, type: 'service', group: 'Spa & Massage', description: 'Massage thư giãn toàn thân với tinh dầu' },
-    { name: 'Facial cơ bản', price: 250000, duration: 60, type: 'service', group: 'Spa & Massage', description: 'Làm sạch da, cấp ẩm, massage mặt' },
-    { name: 'Tắm trắng toàn thân', price: 450000, duration: 90, type: 'service', group: 'Spa & Massage', description: 'Tẩy tế bào chết + ủ dưỡng trắng da' },
+    { name: 'Cắt tóc nữ', price: 150000, duration: 45, type: 'service', group: 'Chăm sóc tóc', description: 'Cắt tạo kiểu phù hợp khuôn mặt', image_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop' },
+    { name: 'Uốn tóc cơ bản', price: 400000, duration: 120, type: 'service', group: 'Chăm sóc tóc', description: 'Uốn xoăn/sóng tự nhiên bền đẹp', image_url: 'https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=400&h=400&fit=crop' },
+    { name: 'Nhuộm màu thời trang', price: 350000, duration: 90, type: 'service', group: 'Chăm sóc tóc', description: 'Nhuộm màu theo xu hướng hiện đại', image_url: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&h=400&fit=crop' },
+    { name: 'Gội đầu dưỡng sinh', price: 80000, duration: 30, type: 'service', group: 'Chăm sóc tóc', description: 'Gội + massage đầu thư giãn', image_url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=400&fit=crop' },
+    { name: 'Cắt tóc nam', price: 100000, duration: 30, type: 'service', group: 'Chăm sóc tóc', description: 'Cắt + tạo kiểu + beard trim', image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=400&fit=crop' },
+    { name: 'Sơn gel móng tay', price: 120000, duration: 60, type: 'service', group: 'Nail & Móng', description: 'Sơn gel màu kéo dài 2-3 tuần', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' },
+    { name: 'Tháo sơn gel & dưỡng móng', price: 50000, duration: 30, type: 'service', group: 'Nail & Móng', description: 'Tháo gel an toàn, dưỡng móng mềm mịn', image_url: 'https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?w=400&h=400&fit=crop' },
+    { name: 'Massage body 60 phút', price: 300000, duration: 60, type: 'service', group: 'Spa & Massage', description: 'Massage thư giãn toàn thân với tinh dầu', image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop' },
+    { name: 'Facial cơ bản', price: 250000, duration: 60, type: 'service', group: 'Spa & Massage', description: 'Làm sạch da, cấp ẩm, massage mặt', image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=400&fit=crop' },
+    { name: 'Tắm trắng toàn thân', price: 450000, duration: 90, type: 'service', group: 'Spa & Massage', description: 'Tẩy tế bào chết + ủ dưỡng trắng da', image_url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=400&fit=crop' },
   ],
   en: [
-    { name: 'Women Haircut', price: 150000, duration: 45, type: 'service', group: 'Hair Care', description: 'Custom styled haircut' },
-    { name: 'Basic Perm', price: 400000, duration: 120, type: 'service', group: 'Hair Care', description: 'Natural waves and curls' },
-    { name: 'Fashion Hair Color', price: 350000, duration: 90, type: 'service', group: 'Hair Care', description: 'Modern trending colors' },
-    { name: 'Nourishing Shampoo', price: 80000, duration: 30, type: 'service', group: 'Hair Care', description: 'Shampoo + relaxing head massage' },
-    { name: 'Men Haircut', price: 100000, duration: 30, type: 'service', group: 'Hair Care', description: 'Haircut + styling + beard trim' },
-    { name: 'Gel Manicure', price: 120000, duration: 60, type: 'service', group: 'Nail & Spa', description: 'Gel polish lasts 2-3 weeks' },
-    { name: 'Gel Removal & Care', price: 50000, duration: 30, type: 'service', group: 'Nail & Spa', description: 'Safe removal and nail care' },
-    { name: 'Body Massage 60m', price: 300000, duration: 60, type: 'service', group: 'Massage', description: 'Relaxing full body massage with oils' },
-    { name: 'Basic Facial', price: 250000, duration: 60, type: 'service', group: 'Massage', description: 'Cleansing, hydrating, facial massage' },
-    { name: 'Full Body Whitening', price: 450000, duration: 90, type: 'service', group: 'Massage', description: 'Body scrub + whitening mask' },
+    { name: 'Women Haircut', price: 150000, duration: 45, type: 'service', group: 'Hair Care', description: 'Custom styled haircut', image_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop' },
+    { name: 'Basic Perm', price: 400000, duration: 120, type: 'service', group: 'Hair Care', description: 'Natural waves and curls', image_url: 'https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=400&h=400&fit=crop' },
+    { name: 'Fashion Hair Color', price: 350000, duration: 90, type: 'service', group: 'Hair Care', description: 'Modern trending colors', image_url: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&h=400&fit=crop' },
+    { name: 'Nourishing Shampoo', price: 80000, duration: 30, type: 'service', group: 'Hair Care', description: 'Shampoo + relaxing head massage', image_url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=400&fit=crop' },
+    { name: 'Men Haircut', price: 100000, duration: 30, type: 'service', group: 'Hair Care', description: 'Haircut + styling + beard trim', image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=400&fit=crop' },
+    { name: 'Gel Manicure', price: 120000, duration: 60, type: 'service', group: 'Nail & Spa', description: 'Gel polish lasts 2-3 weeks', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' },
+    { name: 'Gel Removal & Care', price: 50000, duration: 30, type: 'service', group: 'Nail & Spa', description: 'Safe removal and nail care', image_url: 'https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?w=400&h=400&fit=crop' },
+    { name: 'Body Massage 60m', price: 300000, duration: 60, type: 'service', group: 'Massage', description: 'Relaxing full body massage with oils', image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop' },
+    { name: 'Basic Facial', price: 250000, duration: 60, type: 'service', group: 'Massage', description: 'Cleansing, hydrating, facial massage', image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=400&fit=crop' },
+    { name: 'Full Body Whitening', price: 450000, duration: 90, type: 'service', group: 'Massage', description: 'Body scrub + whitening mask', image_url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=400&fit=crop' },
   ]
 };
 
 const PRODUCTS_LANG = {
   vi: [
-    { name: 'Dầu gội Argan Oil', price: 180000, category: 'product', group: 'Chăm sóc tóc', stock: 30, unit: 'chai' },
-    { name: 'Kem dưỡng tóc phục hồi', price: 220000, category: 'product', group: 'Chăm sóc tóc', stock: 20, unit: 'hũ' },
-    { name: 'Gel nail UV cao cấp', price: 75000, category: 'product', group: 'Nail & Móng', stock: 50, unit: 'lọ' },
-    { name: 'Kem dưỡng da body', price: 350000, category: 'product', group: 'Spa & Massage', stock: 25, unit: 'hộp' },
-    { name: 'Serum vitamin C làm trắng', price: 480000, category: 'product', group: 'Spa & Massage', stock: 15, unit: 'lọ' },
-    { name: 'Mặt nạ collagen dưỡng ẩm', price: 95000, category: 'product', group: 'Spa & Massage', stock: 100, unit: 'miếng' },
+    { name: 'Dầu gội Argan Oil', price: 180000, category: 'product', group: 'Chăm sóc tóc', stock: 30, unit: 'chai', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' },
+    { name: 'Kem dưỡng tóc phục hồi', price: 220000, category: 'product', group: 'Chăm sóc tóc', stock: 20, unit: 'hũ', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop' },
+    { name: 'Gel nail UV cao cấp', price: 75000, category: 'product', group: 'Nail & Móng', stock: 50, unit: 'lọ', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' },
+    { name: 'Kem dưỡng da body', price: 350000, category: 'product', group: 'Spa & Massage', stock: 25, unit: 'hộp', image_url: 'https://images.unsplash.com/photo-1608248593875-e8d1a49806c5?w=400&h=400&fit=crop' },
+    { name: 'Serum vitamin C làm trắng', price: 480000, category: 'product', group: 'Spa & Massage', stock: 15, unit: 'lọ', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop' },
+    { name: 'Mặt nạ collagen dưỡng ẩm', price: 95000, category: 'product', group: 'Spa & Massage', stock: 100, unit: 'miếng', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' },
   ],
   en: [
-    { name: 'Argan Oil Shampoo', price: 180000, category: 'product', group: 'Hair Care', stock: 30, unit: 'bottle' },
-    { name: 'Recovery Hair Cream', price: 220000, category: 'product', group: 'Hair Care', stock: 20, unit: 'jar' },
-    { name: 'Premium UV Nail Gel', price: 75000, category: 'product', group: 'Nail & Spa', stock: 50, unit: 'bottle' },
-    { name: 'Body Lotion', price: 350000, category: 'product', group: 'Massage', stock: 25, unit: 'box' },
-    { name: 'Vitamin C Whitening Serum', price: 480000, category: 'product', group: 'Massage', stock: 15, unit: 'bottle' },
-    { name: 'Hydrating Collagen Mask', price: 95000, category: 'product', group: 'Massage', stock: 100, unit: 'piece' },
+    { name: 'Argan Oil Shampoo', price: 180000, category: 'product', group: 'Hair Care', stock: 30, unit: 'bottle', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' },
+    { name: 'Recovery Hair Cream', price: 220000, category: 'product', group: 'Hair Care', stock: 20, unit: 'jar', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop' },
+    { name: 'Premium UV Nail Gel', price: 75000, category: 'product', group: 'Nail & Spa', stock: 50, unit: 'bottle', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' },
+    { name: 'Body Lotion', price: 350000, category: 'product', group: 'Massage', stock: 25, unit: 'box', image_url: 'https://images.unsplash.com/photo-1608248593875-e8d1a49806c5?w=400&h=400&fit=crop' },
+    { name: 'Vitamin C Whitening Serum', price: 480000, category: 'product', group: 'Massage', stock: 15, unit: 'bottle', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop' },
+    { name: 'Hydrating Collagen Mask', price: 95000, category: 'product', group: 'Massage', stock: 100, unit: 'piece', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' },
   ]
 };
 
 const PACKAGES_LANG = {
   vi: [
-    { name: 'Gói chăm sóc tóc VIP (5 buổi)', price: 800000, sessions: 5, description: 'Gồm 5 lần cắt tóc + gội dưỡng + tư vấn phong cách', group: 'Chăm sóc tóc' },
-    { name: 'Gói Spa cơ thể (4 buổi)', price: 1200000, sessions: 4, description: 'Massage body 60p + facial cơ bản, 4 lần trọn gói', group: 'Spa & Massage' },
+    { name: 'Gói chăm sóc tóc VIP (5 buổi)', price: 800000, sessions: 5, description: 'Gồm 5 lần cắt tóc + gội dưỡng + tư vấn phong cách', group: 'Chăm sóc tóc', image_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop' },
+    { name: 'Gói Spa cơ thể (4 buổi)', price: 1200000, sessions: 4, description: 'Massage body 60p + facial cơ bản, 4 lần trọn gói', group: 'Spa & Massage', image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop' },
   ],
   en: [
-    { name: 'VIP Hair Care Package (5 sessions)', price: 800000, sessions: 5, description: 'Includes 5 haircuts + spa shampoo + styling', group: 'Hair Care' },
-    { name: 'Body Spa Package (4 sessions)', price: 1200000, sessions: 4, description: 'Body massage 60m + basic facial, 4 sessions', group: 'Massage' },
+    { name: 'VIP Hair Care Package (5 sessions)', price: 800000, sessions: 5, description: 'Includes 5 haircuts + spa shampoo + styling', group: 'Hair Care', image_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop' },
+    { name: 'Body Spa Package (4 sessions)', price: 1200000, sessions: 4, description: 'Body massage 60m + basic facial, 4 sessions', group: 'Massage', image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop' },
   ]
 };
 
 const TREATMENTS_LANG = {
   vi: [
-    { name: 'Liệu trình Chăm sóc da chuyên sâu (10 buổi)', price: 2500000, total_sessions: 10, group: 'Spa & Massage', description: 'Liệu trình chăm sóc da mụn & dưỡng sáng da VIP' },
-    { name: 'Liệu trình Phục hồi tóc cháy/hư tổn (5 buổi)', price: 1800000, total_sessions: 5, group: 'Chăm sóc tóc', description: 'Phục hồi Keratin + Hấp dầu Nano 5 buổi' }
+    { name: 'Liệu trình Chăm sóc da chuyên sâu (10 buổi)', price: 2500000, total_sessions: 10, group: 'Spa & Massage', description: 'Liệu trình chăm sóc da mụn & dưỡng sáng da VIP', image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=400&fit=crop' },
+    { name: 'Liệu trình Phục hồi tóc cháy/hư tổn (5 buổi)', price: 1800000, total_sessions: 5, group: 'Chăm sóc tóc', description: 'Phục hồi Keratin + Hấp dầu Nano 5 buổi', image_url: 'https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=400&h=400&fit=crop' }
   ],
   en: [
-    { name: 'Intensive Skin Care Treatment (10 sessions)', price: 2500000, total_sessions: 10, group: 'Massage', description: 'Acne skin care & VIP skin brightening' },
-    { name: 'Damaged Hair Recovery Treatment (5 sessions)', price: 1800000, total_sessions: 5, group: 'Hair Care', description: 'Keratin recovery + Nano steaming 5 sessions' }
+    { name: 'Intensive Skin Care Treatment (10 sessions)', price: 2500000, total_sessions: 10, group: 'Massage', description: 'Acne skin care & VIP skin brightening', image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=400&fit=crop' },
+    { name: 'Damaged Hair Recovery Treatment (5 sessions)', price: 1800000, total_sessions: 5, group: 'Hair Care', description: 'Keratin recovery + Nano steaming 5 sessions', image_url: 'https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=400&h=400&fit=crop' }
   ]
 };
 
 const SERVICE_COMBOS_LANG = {
   vi: [
-    { name: 'Combo Cắt tóc + Gội dưỡng sinh + Nhuộm', price: 490000, items_count: 3, description: 'Gói combo tiết kiệm 20% cho quý khách làm trọn bộ tóc' },
-    { name: 'Combo Sơn gel + Tháo gel + Dưỡng móng', price: 150000, items_count: 3, description: 'Trọn gói móng xinh cuốn hút' }
+    { name: 'Combo Cắt tóc + Gội dưỡng sinh + Nhuộm', price: 490000, items_count: 3, description: 'Gói combo tiết kiệm 20% cho quý khách làm trọn bộ tóc', image_url: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&h=400&fit=crop' },
+    { name: 'Combo Sơn gel + Tháo gel + Dưỡng móng', price: 150000, items_count: 3, description: 'Trọn gói móng xinh cuốn hút', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' }
   ],
   en: [
-    { name: 'Combo Haircut + Spa Shampoo + Color', price: 490000, items_count: 3, description: 'Save 20% on full hair package' },
-    { name: 'Combo Gel Manicure + Removal + Care', price: 150000, items_count: 3, description: 'Beautiful nails package' }
+    { name: 'Combo Haircut + Spa Shampoo + Color', price: 490000, items_count: 3, description: 'Save 20% on full hair package', image_url: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&h=400&fit=crop' },
+    { name: 'Combo Gel Manicure + Removal + Care', price: 150000, items_count: 3, description: 'Beautiful nails package', image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop' }
   ]
 };
 
 const PRODUCT_COMBOS_LANG = {
   vi: [
-    { name: 'Bộ đôi Dầu gội Argan + Kem dưỡng tóc', price: 360000, description: 'Combo dưỡng tóc chuyên sâu tại nhà' }
+    { name: 'Bộ đôi Dầu gội Argan + Kem dưỡng tóc', price: 360000, description: 'Combo dưỡng tóc chuyên sâu tại nhà', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' }
   ],
   en: [
-    { name: 'Argan Shampoo + Hair Cream Duo', price: 360000, description: 'Intensive home hair care combo' }
+    { name: 'Argan Shampoo + Hair Cream Duo', price: 360000, description: 'Intensive home hair care combo', image_url: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop' }
   ]
 };
 
 const PREPAID_CARDS_LANG = {
   vi: [
-    { name: 'Thẻ Tiền Mặt Membership Silver (Nạp 2Tr tặng 300k)', value: 2300000, price: 2000000, card_code: 'CARD-SILVER-01' },
-    { name: 'Thẻ Tiền Mặt Membership Gold (Nạp 5Tr tặng 1Tr)', value: 6000000, price: 5000000, card_code: 'CARD-GOLD-01' },
+    { name: 'Thẻ Tiền Mặt Membership Silver (Nạp 2Tr tặng 300k)', value: 2300000, price: 2000000, card_code: 'CARD-SILVER-01', image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop' },
+    { name: 'Thẻ Tiền Mặt Membership Gold (Nạp 5Tr tặng 1Tr)', value: 6000000, price: 5000000, card_code: 'CARD-GOLD-01', image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop' },
   ],
   en: [
-    { name: 'Silver Membership Cash Card (Deposit 2M get 300k)', value: 2300000, price: 2000000, card_code: 'CARD-SILVER-01' },
-    { name: 'Gold Membership Cash Card (Deposit 5M get 1M)', value: 6000000, price: 5000000, card_code: 'CARD-GOLD-01' },
+    { name: 'Silver Membership Cash Card (Deposit 2M get 300k)', value: 2300000, price: 2000000, card_code: 'CARD-SILVER-01', image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop' },
+    { name: 'Gold Membership Cash Card (Deposit 5M get 1M)', value: 6000000, price: 5000000, card_code: 'CARD-GOLD-01', image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop' },
   ]
 };
 
