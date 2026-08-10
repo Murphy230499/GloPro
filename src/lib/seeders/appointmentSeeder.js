@@ -4,11 +4,15 @@ import { base44 } from '@/api/base44Client';
 
 export async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
+    const filter = { [filterKey]: filterVal };
+    if ('branch_id' in payload) filter.branch_id = branchId;
+    if ('branch_ids' in payload) filter.branch_ids = branchId ? [branchId] : undefined;
+
+    const existing = await entity.filter(filter);
     if (existing && existing.length > 0) {
       return await entity.update(existing[0].id, payload);
     }
-    return await entity.create({ ...payload, branch_id: branchId });
+    return await entity.create(payload);
   } catch (e) {
     console.error('upsertEntity failed', e);
     return null;

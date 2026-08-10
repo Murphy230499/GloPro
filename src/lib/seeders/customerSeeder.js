@@ -32,10 +32,14 @@ const CUSTOMERS = [
 
 async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const existing = await entity.filter({ [filterKey]: filterVal, branch_id: branchId });
-    if (existing.length > 0) return existing[0].id;
+    const filter = { [filterKey]: filterVal };
+    if ('branch_id' in payload) filter.branch_id = branchId;
+    if ('branch_ids' in payload) filter.branch_ids = branchId ? [branchId] : undefined;
+    
+    const existing = await entity.filter(filter);
+    if (existing && existing.length > 0) return existing[0].id;
     const created = await entity.create(payload);
-    return created.id;
+    return created ? created.id : null;
   } catch (e) {
     console.error(`Error in upsertEntity for ${filterVal}:`, e);
     throw e;
@@ -68,8 +72,7 @@ export async function seedCustomerData(branchId, onProgress) {
     const { group, ...rest } = c;
     const payload = {
       ...rest,
-      branch_id: b,
-      group_id: groupIdMap[group] || '',
+      group_id: groupIdMap[group] || null,
       is_active: true,
       join_date: new Date().toISOString().slice(0, 10),
     };
