@@ -408,7 +408,6 @@ export default function StaffPage() {
           ) : (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {filteredStaff.map((s) => {
-                const role = ROLES[s.role] || { label: s.role, color: '#94A3B8' };
                 const group = staffGroups.find(g => g.id === s.group_id);
                 
                 return (
@@ -431,18 +430,16 @@ export default function StaffPage() {
 
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: role.color + '20', color: role.color }}
-                        >
-                          {role.label}
-                        </span>
-                        {group && (
+                        {group ? (
                           <span
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                             style={{ background: group.color + '20', color: group.color }}
                           >
                             {group.name}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                            {t('staff.no_group', 'Chưa có nhóm')}
                           </span>
                         )}
                       </div>

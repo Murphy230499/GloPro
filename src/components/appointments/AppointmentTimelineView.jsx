@@ -80,36 +80,25 @@ export default function AppointmentTimelineView({
   };
 
   const sampleStaffRows = [
-    { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, role: t('appointments.free_slot', 'Lịch tự do') },
-    { id: 'st_1', name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', role: 'KTV Chuyên nghiệp' },
-    { id: 'st_2', name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', role: 'Nail Specialist' },
-    { id: 'st_3', name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100', role: 'Chuyên gia Tóc' },
-    { id: 'st_4', name: 'Ethan O.', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', role: 'Barber & Stylist' },
-    { id: 'st_5', name: 'Rose H.', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100', role: 'Spa Specialist' },
-    { id: 'st_6', name: 'Jenie K.', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100', role: 'Colorist' },
-    { id: 'st_7', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' },
+    { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, group_name: t('appointments.free_slot', 'Lịch tự do'), group_color: '#94A3B8' },
+    { id: 'st_1', name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', group_name: 'KTV Chuyên nghiệp', group_color: '#8b5cf6' },
+    { id: 'st_2', name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', group_name: 'Nail Specialist', group_color: '#f472b6' },
+    { id: 'st_3', name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100', group_name: 'Chuyên gia Tóc', group_color: '#8b5cf6' },
+    { id: 'st_4', name: 'Ethan O.', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', group_name: 'Barber & Stylist', group_color: '#10b981' },
+    { id: 'st_5', name: 'Rose H.', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100', group_name: 'Spa Specialist', group_color: '#f59e0b' },
+    { id: 'st_6', name: 'Jenie K.', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100', group_name: 'Colorist', group_color: '#8b5cf6' },
+    { id: 'st_7', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', group_name: 'Stylist', group_color: '#8b5cf6' },
   ];
-
-  
-  const ROLE_MAP = {
-    manager: t('roles.manager', 'Quản lý'),
-    receptionist: t('roles.receptionist', 'Lễ tân'),
-    stylist: t('roles.stylist', 'Kỹ thuật viên tóc'),
-    barber: t('roles.barber', 'Barber'),
-    therapist: t('roles.therapist', 'Chuyên viên Spa'),
-    nail_tech: t('roles.nail_tech', 'Nail tech'),
-    technician: t('roles.technician', 'Kỹ thuật viên'),
-    cashier: t('roles.cashier', 'Thu ngân')
-  };
 
   let rawRows = targetEntity === 'staff'
     ? (staffList.length ? [
-        { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, role: t('appointments.free_slot', 'Lịch tự do') },
+        { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, group_name: t('appointments.free_slot', 'Lịch tự do'), group_color: '#94A3B8' },
         ...staffList.map(s => ({
           id: s.id,
           name: s.full_name || s.name,
           avatar_url: s.avatar_url,
-          role: ROLE_MAP[s.role] || s.role || 'KTV Salon',
+          group_name: s.group_name || t('staff.no_group', 'Chưa có nhóm'),
+          group_color: s.group_color || '#3B82F6',
           color: s.avatar_color || '#3B82F6'
         }))
       ] : sampleStaffRows)
@@ -144,16 +133,9 @@ export default function AppointmentTimelineView({
 
   const currentLineLeftPx = Math.max(0, ((currentMinutes - START_MINS) / 30) * SLOT_WIDTH_PX);
 
-  const getRoleBadgeStyle = (role) => {
-    if (!role) return 'bg-slate-50 text-slate-500';
-    const lowerRole = role.toLowerCase();
-    if (lowerRole.includes('quản lý')) return 'bg-pink-50 text-pink-500';
-    if (lowerRole.includes('kỹ thuật viên tóc') || lowerRole.includes('stylist') || lowerRole.includes('chuyên gia tóc') || lowerRole.includes('colorist')) return 'bg-purple-50 text-purple-500';
-    if (lowerRole.includes('spa')) return 'bg-amber-50 text-amber-500';
-    if (lowerRole.includes('barber')) return 'bg-emerald-50 text-emerald-500';
-    if (lowerRole.includes('nail')) return 'bg-pink-50 text-pink-500';
-    if (lowerRole.includes('lễ tân')) return 'bg-blue-50 text-blue-500';
-    return 'bg-blue-50 text-blue-500';
+  const getRoleBadgeStyle = (color) => {
+    if (!color) return { background: '#f8fafc', color: '#64748b' };
+    return { background: color + '20', color: color };
   };
 
   const getCardStyleByStatus = (status, isBreak) => {
@@ -300,8 +282,8 @@ export default function AppointmentTimelineView({
                         {row.name}
                       </h4>
                       {targetEntity === 'staff' ? (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getRoleBadgeStyle(row.role || 'KTV Salon')}`}>
-                          {row.role || 'KTV Salon'}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold`} style={getRoleBadgeStyle(row.group_color)}>
+                          {row.group_name}
                         </span>
                       ) : (
                         <p className="text-xs text-slate-400 truncate">

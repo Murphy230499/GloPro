@@ -146,36 +146,20 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.form.role', 'Vai trò')}</label>
-                <div className="relative">
-                  <select 
-                    value={f.role} 
-                    onChange={(e) => setF({ ...f, role: e.target.value })} 
-                    className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
-                  >
-                    {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.form.group', 'Nhóm nhân viên')}</label>
-                <div className="relative">
-                  <select 
-                    value={f.group_id} 
-                    onChange={(e) => setF({ ...f, group_id: e.target.value })} 
-                    className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
-                  >
-                    <option value="">{t('staff.form.select_group', '— Không chọn —')}</option>
-                    {staffGroups.filter(g => !f.branch_id || g.branch_id === f.branch_id || !g.branch_id).map((g) => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
+            <div>
+              <label className="block font-bold text-slate-500 mb-1 text-[11px]">{t('staff.form.group', 'Nhóm nhân viên')}</label>
+              <div className="relative">
+                <select 
+                  value={f.group_id} 
+                  onChange={(e) => setF({ ...f, group_id: e.target.value })} 
+                  className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-orange-500 text-slate-700 bg-white appearance-none"
+                >
+                  <option value="">{t('staff.form.select_group', '— Không chọn —')}</option>
+                  {staffGroups.filter(g => !f.branch_id || g.branch_id === f.branch_id || !g.branch_id).map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 

@@ -133,9 +133,10 @@ export default function Appointments() {
       base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
       base44.entities.Customer.list(),
       base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([]),
-      base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => [])
+      base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => []),
+      base44.entities.StaffGroup.list().catch(() => [])
     ])
-      .then(([allAppts, st, cus, srv, facData]) => {
+      .then(([allAppts, st, cus, srv, facData, staffGroups]) => {
         const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
         const stMap = Object.fromEntries(st.map((s) => [s.id, s]));
         const srvMap = Object.fromEntries(srv.map((s) => [s.id || s.name, s]));
@@ -143,7 +144,14 @@ export default function Appointments() {
 
         
         // Filter out inactive staff for scheduling
-        const activeStaffList = st.filter(s => s.is_active !== false);
+        const activeStaffList = st.filter(s => s.is_active !== false).map(s => {
+          const group = staffGroups?.find(g => g.id === s.group_id);
+          return {
+            ...s,
+            group_name: group?.name || '',
+            group_color: group?.color || '#94A3B8'
+          };
+        });
 
         // Filter real appointments by date & branch
         const realApptsForDate = (allAppts || []).filter((a) => {
