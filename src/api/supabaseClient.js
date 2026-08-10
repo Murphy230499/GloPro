@@ -17,9 +17,12 @@ const createEntityAdapter = (tableName) => {
           if (key === 'updated_date') key = 'updated_at';
           let val = queryObj[key];
           if (typeof val === 'string' && val.length === 24) val = objectIdToUuid(val);
+          if ((key === 'id' || key.endsWith('_id')) && val === '') val = null;
           
           if (key === 'branch_ids') {
             request = request.or(`branch_ids.cs.{${val}},branch_ids.is.null,branch_ids.eq.{}`);
+          } else if (val === null) {
+            request = request.is(key, null);
           } else {
             request = request.eq(key, val);
           }
@@ -59,9 +62,12 @@ const createEntityAdapter = (tableName) => {
             if (col === 'updated_date') col = 'updated_at';
             let val = filterObj[key];
             if (typeof val === 'string' && val.length === 24) val = objectIdToUuid(val);
+            if ((col === 'id' || col.endsWith('_id')) && val === '') val = null;
             
             if (col === 'branch_ids') {
               request = request.or(`branch_ids.cs.{${val}},branch_ids.is.null,branch_ids.eq.{}`);
+            } else if (val === null) {
+              request = request.is(col, null);
             } else {
               request = request.eq(col, val);
             }
