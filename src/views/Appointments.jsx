@@ -130,10 +130,10 @@ export default function Appointments() {
           branch_id: currentBranchId 
         }
       }),
-      staff.length > 0 ? Promise.resolve(staff) : base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
-      customers.length > 0 ? Promise.resolve(customers) : base44.entities.Customer.list(),
-      services.length > 0 ? Promise.resolve(services) : (base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([])),
-      facilities.length > 0 ? Promise.resolve(facilities) : base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => [])
+      base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
+      base44.entities.Customer.list(),
+      base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([]),
+      base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => [])
     ])
       .then(([allAppts, st, cus, srv, facData]) => {
         const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
