@@ -62,7 +62,10 @@ async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
     if ('branch_ids' in payload) filter.branch_ids = branchId ? [branchId] : undefined;
     
     const existing = await entity.filter(filter);
-    if (existing && existing.length > 0) return existing[0].id;
+    if (existing && existing.length > 0) {
+      const updated = await entity.update(existing[0].id, payload);
+      return updated ? updated.id : existing[0].id;
+    }
     const created = await entity.create(payload);
     return created ? created.id : null;
   } catch (e) {
