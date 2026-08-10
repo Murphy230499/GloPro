@@ -4,10 +4,6 @@ import { base44 } from '@/api/base44Client';
 
 export async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
   try {
-    const sessionRes = await base44.auth.getSession();
-    const userId = sessionRes.data?.session?.user?.id;
-    if (userId) payload.tenant_id = userId;
-
     const existing = await entity.filter({ [filterKey]: filterVal, branch_ids: branchId ? [branchId] : undefined });
     if (existing && existing.length > 0) {
       return await entity.update(existing[0].id, payload);
