@@ -237,7 +237,7 @@ const createEntityAdapter = (tableName) => {
       // Fallback if column doesn't exist in Supabase schema cache
       if (error && error.code === 'PGRST204') {
         const match = error.message?.match(/Could not find the '([^']+)' column/i);
-        const missingCol = match ? match[1] : (error.message?.includes('logs') ? 'logs' : (error.message?.includes('group') ? 'group' : null));
+        const missingCol = match ? match[1] : null;
         if (missingCol && p[missingCol] !== undefined) {
           console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Retrying without '${missingCol}'...`);
           delete p[missingCol];
@@ -247,14 +247,11 @@ const createEntityAdapter = (tableName) => {
         }
       }
 
-      // Fallback if foreign key constraint (e.g. group_id) is violated
-      if (error && (error.code === '23503' || error.message?.includes('foreign key constraint') || error.message?.includes('fk_service_group_id'))) {
-        if ('group_id' in p) {
-          console.warn(`Foreign key constraint on ${tableName}. Retrying with group_id = null...`);
-          p.group_id = null;
-          const retryResult = await supabase.from(tableName).update(p).eq('id', id).select().single();
-          data = retryResult.data;
-          error = retryResult.error;
+      // Fallback if foreign key constraint on group_id — raise to user instead of silently nullifying
+      if (error && (error.code === '23503' || error.message?.includes('foreign key constraint'))) {
+        if ('group_id' in p && p.group_id) {
+          console.warn(`FK constraint on ${tableName} for group_id=${p.group_id}. The group may not exist.`);
+          // Do NOT silently null group_id — let the error propagate so the UI can notify the user
         }
       }
       if (error) {
