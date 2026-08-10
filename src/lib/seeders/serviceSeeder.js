@@ -193,9 +193,10 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 4. Create service packages
   onProgress?.('Đang tạo gói dịch vụ...');
   for (const pkg of PACKAGES) {
-    const { group, ...rest } = pkg;
+    const { group, sessions, ...rest } = pkg;
     await upsertEntity(base44.entities.ServicePackage, 'name', pkg.name, b, {
       ...rest,
+      usage_count: sessions || 1,
       branch_ids: b ? [b] : [],
       group_id: groupIdMap[group] || '',
       is_active: true,
@@ -206,7 +207,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 5. Create treatments
   onProgress?.('Đang tạo liệu trình...');
   for (const trt of TREATMENTS) {
-    const { group, ...rest } = trt;
+    const { group, total_sessions, ...rest } = trt;
     await upsertEntity(base44.entities.Treatment, 'name', trt.name, b, {
       ...rest,
       branch_ids: b ? [b] : [],
@@ -219,8 +220,10 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 6. Create service combos
   onProgress?.('Đang tạo combo dịch vụ...');
   for (const sc of SERVICE_COMBOS) {
+    const { price, items_count, ...rest } = sc;
     await upsertEntity(base44.entities.ServiceCombo, 'name', sc.name, b, {
-      ...sc,
+      ...rest,
+      combo_price: price,
       branch_ids: b ? [b] : [],
       is_active: true,
     });
@@ -230,8 +233,10 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 7. Create product combos
   onProgress?.('Đang tạo combo sản phẩm...');
   for (const pc of PRODUCT_COMBOS) {
+    const { price, items_count, ...rest } = pc;
     await upsertEntity(base44.entities.ProductCombo, 'name', pc.name, b, {
-      ...pc,
+      ...rest,
+      combo_price: price,
       branch_ids: b ? [b] : [],
       is_active: true,
     });
@@ -241,8 +246,11 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 8. Create prepaid cards
   onProgress?.('Đang tạo thẻ tiền mặt...');
   for (const card of PREPAID_CARDS) {
+    const { value, price, ...rest } = card;
     await upsertEntity(base44.entities.PrepaidCard, 'name', card.name, b, {
-      ...card,
+      ...rest,
+      face_value: value,
+      selling_price: price,
       branch_ids: b ? [b] : [],
       is_active: true,
     });
