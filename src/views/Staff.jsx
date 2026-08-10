@@ -171,6 +171,8 @@ export default function StaffPage() {
       gpList = localGps ? JSON.parse(localGps) : [];
     }
 
+    // Sort by creation time so order stays stable
+    stList.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
     setStaff(stList);
     setStaffGroups(gpList);
     setLoading(false);
@@ -186,14 +188,17 @@ export default function StaffPage() {
     };
     try {
       if (editingStaff?.id) {
-        await base44.entities.Staff.update(editingStaff.id, payload);
+        const updated = await base44.entities.Staff.update(editingStaff.id, payload);
+        // Update in-place to prevent card reordering
+        setStaff(prev => prev.map(s => s.id === editingStaff.id ? { ...s, ...updated } : s));
         toast.success('Đã cập nhật nhân viên');
       } else {
-        await base44.entities.Staff.create(payload);
+        const created = await base44.entities.Staff.create(payload);
+        // Append new staff to end
+        setStaff(prev => [...prev, created]);
         toast.success('Đã thêm nhân viên mới');
       }
       setEditingStaff(null);
-      loadData();
     } catch (e) {
       toast.error('Lỗi lưu nhân viên: ' + (e.message || e));
     }
