@@ -213,8 +213,10 @@ export async function seedStaffData(branchId, onProgress) {
     const groupId = createdGroups[_group_name] || '';
     const payload = {
       ...staffPayload,
-      group_id: groupId,
       branch_id: b,
+      group_id: groupId,
+      is_active: true,
+      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(staffPayload.full_name)}&background=${staffPayload.avatar_color?.replace('#', '') || 'random'}&color=fff&size=150`,
       service_ids: [],
     };
 

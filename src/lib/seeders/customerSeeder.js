@@ -78,6 +78,7 @@ export async function seedCustomerData(branchId, onProgress) {
       points: loyalty_points,
       group_id: groupIdMap[group] || null,
       is_active: true,
+      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(full_name)}&background=random&color=fff&size=150`,
     };
 
     await upsertEntity(base44.entities.Customer, 'phone', c.phone, b, payload);
