@@ -169,7 +169,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     const { group, ...rest } = svc;
     await upsertEntity(base44.entities.Service, 'name', svc.name, b, {
       ...rest,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       group_id: groupIdMap[group] || '',
       is_active: true,
       commission_rate: 30,
@@ -183,7 +183,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     const { group, category, ...rest } = prod;
     await upsertEntity(base44.entities.Product, 'name', prod.name, b, {
       ...rest,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       group_id: groupIdMap[group] || '',
       is_active: true,
     });
@@ -196,7 +196,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     const { group, ...rest } = pkg;
     await upsertEntity(base44.entities.ServicePackage, 'name', pkg.name, b, {
       ...rest,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       group_id: groupIdMap[group] || '',
       is_active: true,
     });
@@ -209,7 +209,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     const { group, ...rest } = trt;
     await upsertEntity(base44.entities.Treatment, 'name', trt.name, b, {
       ...rest,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       group_id: groupIdMap[group] || '',
       is_active: true,
     });
@@ -221,7 +221,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   for (const sc of SERVICE_COMBOS) {
     await upsertEntity(base44.entities.ServiceCombo, 'name', sc.name, b, {
       ...sc,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       is_active: true,
     });
     created.serviceCombos++;
@@ -232,7 +232,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   for (const pc of PRODUCT_COMBOS) {
     await upsertEntity(base44.entities.ProductCombo, 'name', pc.name, b, {
       ...pc,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       is_active: true,
     });
     created.productCombos++;
@@ -243,7 +243,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   for (const card of PREPAID_CARDS) {
     await upsertEntity(base44.entities.PrepaidCard, 'name', card.name, b, {
       ...card,
-      branch_id: b,
+      branch_ids: b ? [b] : [],
       is_active: true,
     });
     created.prepaidCards++;
