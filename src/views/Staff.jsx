@@ -233,10 +233,17 @@ export default function StaffPage() {
         return;
       }
 
-      // Xoá lịch làm việc trước (để tránh lỗi khoá ngoại)
+      // Cố gắng xoá lịch làm việc tự động trước (để tránh lỗi khoá ngoại)
       const schedules = await base44.entities.StaffSchedule.filter({ staff_id: s.id });
       for (const sch of schedules) {
-        await base44.entities.StaffSchedule.delete(sch.id);
+        try { await base44.entities.StaffSchedule.delete(sch.id); } catch (e) {}
+      }
+
+      // Kiểm tra lại xem đã xoá hết chưa (vì Supabase RLS có thể chặn xoá ngầm mà không báo lỗi)
+      const checkSchedules = await base44.entities.StaffSchedule.filter({ staff_id: s.id });
+      if (checkSchedules.length > 0) {
+        toast.error(`Không thể tự động xoá! Nhân viên này vẫn còn ${checkSchedules.length} ca làm việc chưa được xoá (có thể do lỗi phân quyền RLS Database). Vui lòng sang tab "Lịch làm việc" xoá thủ công trước.`);
+        return;
       }
 
       await base44.entities.Staff.delete(s.id);
