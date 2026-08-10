@@ -165,6 +165,24 @@ export default function StaffPage() {
     let gpList = [];
     try {
       gpList = await base44.entities.StaffGroup.list();
+
+      // One-time migration from old 'staffgroup' table
+      if (gpList.length === 0) {
+        try {
+          const { supabase } = await import('@/api/supabaseClient');
+          const { data: oldData } = await supabase.from('staffgroup').select('*');
+          if (oldData && oldData.length > 0) {
+            for (const g of oldData) {
+              const { id, created_at, updated_at, ...payload } = g;
+              try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
+            }
+            gpList = await base44.entities.StaffGroup.list();
+          }
+        } catch (e) {
+          console.warn('Migration staffgroup→staff_group skipped:', e.message);
+        }
+      }
+
       const localGps = localStorage.getItem('glopro_staff_groups');
       if (gpList.length === 0 && localGps) {
         const parsed = JSON.parse(localGps);
