@@ -166,7 +166,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 2. Create services
   onProgress?.('Đang tạo danh mục dịch vụ...');
   for (const svc of SERVICES) {
-    const { group, ...rest } = svc;
+    const { group, type, ...rest } = svc;
     await upsertEntity(base44.entities.Service, 'name', svc.name, b, {
       ...rest,
       branch_ids: b ? [b] : [],
