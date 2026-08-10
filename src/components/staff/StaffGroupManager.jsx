@@ -18,30 +18,7 @@ export default function StaffGroupManager({ branchId, onClose, onChanged }) {
 
   const load = async () => {
     try {
-      let data = await base44.entities.StaffGroup.list();
-
-      // One-time migration: if staff_group is empty, try reading from old table names
-      if (data.length === 0) {
-        const oldTableNames = ['staffgroup', 'staff_groups', 'StaffGroup'];
-        for (const tbl of oldTableNames) {
-          try {
-            const { data: oldData, error } = await supabase.from(tbl).select('*');
-            if (!error && oldData && oldData.length > 0) {
-              console.log(`Found ${oldData.length} groups in old table: ${tbl}, migrating...`);
-              for (const g of oldData) {
-                const { id, created_at, updated_at, ...payload } = g;
-                try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
-              }
-              data = await base44.entities.StaffGroup.list();
-              if (data.length > 0) {
-                toast.success(`Đã khôi phục ${data.length} nhóm nhân viên`);
-                break;
-              }
-            }
-          } catch (e) { /* try next table name */ }
-        }
-      }
-
+      const data = await base44.entities.StaffGroup.list();
       setGroups(data);
     } catch (e) {
       const local = localStorage.getItem('glopro_staff_groups');

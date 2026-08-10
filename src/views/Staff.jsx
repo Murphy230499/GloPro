@@ -165,49 +165,6 @@ export default function StaffPage() {
     let gpList = [];
     try {
       gpList = await base44.entities.StaffGroup.list();
-
-      // One-time migration from old table names
-      if (gpList.length === 0) {
-        const oldTableNames = ['staffgroup', 'staff_groups', 'StaffGroup'];
-        for (const tbl of oldTableNames) {
-          try {
-            const { data: oldData, error } = await supabase.from(tbl).select('*');
-            if (!error && oldData && oldData.length > 0) {
-              for (const g of oldData) {
-                const { id, created_at, updated_at, ...payload } = g;
-                try { await base44.entities.StaffGroup.create(payload); } catch (e) {}
-              }
-              gpList = await base44.entities.StaffGroup.list();
-              if (gpList.length > 0) break;
-            }
-          } catch (e) { /* try next */ }
-        }
-      }
-
-      const localGps = localStorage.getItem('glopro_staff_groups');
-      if (gpList.length === 0 && localGps) {
-        const parsed = JSON.parse(localGps);
-        const idMap = {};
-        for (const g of parsed) {
-          const { id, ...data } = g;
-          const created = await base44.entities.StaffGroup.create(data);
-          if (created && created.id) {
-            idMap[id] = created.id;
-          }
-        }
-        localStorage.setItem('glopro_group_id_map', JSON.stringify(idMap));
-        gpList = await base44.entities.StaffGroup.list();
-      } else if (localGps) {
-        const parsed = JSON.parse(localGps);
-        const idMap = {};
-        for (const g of parsed) {
-          const matched = gpList.find(x => x.name === g.name);
-          if (matched) {
-            idMap[g.id] = matched.id;
-          }
-        }
-        localStorage.setItem('glopro_group_id_map', JSON.stringify(idMap));
-      }
     } catch (e) {
       console.error('Lỗi tải nhóm nhân viên từ API:', e);
       const localGps = localStorage.getItem('glopro_staff_groups');

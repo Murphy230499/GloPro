@@ -322,7 +322,7 @@ export const supabaseClient = {
     StaffCommissionConfig: createEntityAdapter('staffcommissionconfig'),
     StaffCommissionLog: createEntityAdapter('staffcommissionlog'),
     StaffCommissionRule: createEntityAdapter('staffcommissionrule'),
-    StaffGroup: createEntityAdapter('staff_group'),
+    StaffGroup: createEntityAdapter('staffgroup'),
     StaffSchedule: createEntityAdapter('staffschedule'),
     Voucher: createEntityAdapter('voucher'),
     RevenueBonusRule: createEntityAdapter('revenuebonusrule'),
