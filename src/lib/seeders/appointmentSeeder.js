@@ -19,9 +19,13 @@ export async function upsertEntity(entity, filterKey, filterVal, branchId, paylo
   }
 }
 
-export async function seedAppointmentData(branchId, onProgress) {
-  let b = branchId;
-  if (!b || b === 'all') {
+export async function seedAppointmentData(branchId = 'all', onProgress = null, lang = 'vi') {
+  let b = branchId === 'all' ? '' : branchId;
+
+  // Fallback to vi if language is not supported
+  const l = (lang === 'en') ? 'en' : 'vi';
+
+  if (!b) {
     try {
       const branches = await base44.entities.Branch.list();
       if (branches && branches.length > 0) {
@@ -37,7 +41,7 @@ export async function seedAppointmentData(branchId, onProgress) {
   }
   const filter = b ? { branch_id: b } : {};
 
-  onProgress?.('Đang tải danh sách nhân viên & dịch vụ...');
+  onProgress?.(l === 'en' ? 'Loading staff & services...' : 'Đang tải danh sách nhân viên & dịch vụ...');
 
   // Load existing staff and services
   let staffList = [];
@@ -59,7 +63,7 @@ export async function seedAppointmentData(branchId, onProgress) {
 
   if (staffList.length === 0 || serviceList.length === 0) {
     onProgress?.(null);
-    return { appointments: 0, note: 'Cần có Nhân viên + Dịch vụ trước khi tạo lịch hẹn mẫu' };
+    return { appointments: 0, note: l === 'en' ? 'Need Staff + Services before seeding appointments' : 'Cần có Nhân viên + Dịch vụ trước khi tạo lịch hẹn mẫu' };
   }
 
   // Build appointments spanning today → +6 days
@@ -67,18 +71,32 @@ export async function seedAppointmentData(branchId, onProgress) {
   const STATUSES = ['confirmed', 'confirmed', 'confirmed', 'pending', 'pending', 'completed', 'completed', 'cancelled'];
   const TIME_SLOTS = ['09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'];
 
-  const SAMPLE_CUSTOMERS = [
-    { name: 'Nguyễn Thị Thanh Hương', phone: '0901111001' },
-    { name: 'Lê Thị Bích Ngọc', phone: '0912222001' },
-    { name: 'Võ Thị Thu Lan', phone: '0912222003' },
-    { name: 'Trần Minh Quân', phone: '0901111002' },
-    { name: 'Đinh Thị Kim Anh', phone: '0923333005' },
-    { name: 'Bùi Thị Ngân', phone: '0923333001' },
-    { name: 'Hoàng Văn Tuấn', phone: '0912222005' },
-    { name: 'Ngô Thành Đạt', phone: '0923333002' },
-  ];
+  const SAMPLE_CUSTOMERS_LANG = {
+    vi: [
+      { name: 'Nguyễn Thị Thanh Hương', phone: '0901111001' },
+      { name: 'Lê Thị Bích Ngọc', phone: '0912222001' },
+      { name: 'Võ Thị Thu Lan', phone: '0912222003' },
+      { name: 'Trần Minh Quân', phone: '0901111002' },
+      { name: 'Đinh Thị Kim Anh', phone: '0923333005' },
+      { name: 'Bùi Thị Ngân', phone: '0923333001' },
+      { name: 'Hoàng Văn Tuấn', phone: '0912222005' },
+      { name: 'Ngô Thành Đạt', phone: '0923333002' },
+    ],
+    en: [
+      { name: 'Sarah Connor', phone: '0901111001' },
+      { name: 'Emily Davis', phone: '0912222001' },
+      { name: 'Jessica Brown', phone: '0912222003' },
+      { name: 'John Smith', phone: '0901111002' },
+      { name: 'Sophia Clark', phone: '0923333005' },
+      { name: 'Amanda Taylor', phone: '0923333001' },
+      { name: 'David Lee', phone: '0912222005' },
+      { name: 'Daniel White', phone: '0923333002' },
+    ]
+  };
 
-  onProgress?.('Đang tạo lịch hẹn mẫu...');
+  const SAMPLE_CUSTOMERS = SAMPLE_CUSTOMERS_LANG[l];
+
+  onProgress?.(l === 'en' ? 'Seeding appointments...' : 'Đang tạo lịch hẹn mẫu...');
   let created = 0;
 
   for (let i = 0; i < 8; i++) {
@@ -94,6 +112,7 @@ export async function seedAppointmentData(branchId, onProgress) {
     // Try to find a matching customer from seeded customers
     const custSample = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
     const matchedCustomer = customerList.find(c => c.phone === custSample.phone);
+
 
     const payload = {
       branch_id: b,

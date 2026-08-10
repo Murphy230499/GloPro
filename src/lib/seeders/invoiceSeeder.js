@@ -20,9 +20,13 @@ function generateInvoiceCode(index) {
 
 // ─── Seeder ───────────────────────────────────────────────────────────────────
 
-export async function seedInvoiceData(branchId, onProgress) {
-  let b = branchId;
-  if (!b || b === 'all') {
+export async function seedInvoiceData(branchId = 'all', onProgress = null, lang = 'vi') {
+  let b = branchId === 'all' ? '' : branchId;
+
+  // Fallback to vi if language is not supported
+  const l = (lang === 'en') ? 'en' : 'vi';
+
+  if (!b) {
     try {
       const branches = await base44.entities.Branch.list();
       if (branches && branches.length > 0) {
@@ -38,7 +42,7 @@ export async function seedInvoiceData(branchId, onProgress) {
   }
   const filter = b ? { branch_id: b } : {};
 
-  onProgress?.('Đang tải dữ liệu phụ thuộc...');
+  onProgress?.(l === 'en' ? 'Loading dependencies...' : 'Đang tải dữ liệu phụ thuộc...');
 
   let customerList = [];
   let serviceList = [];
@@ -59,10 +63,10 @@ export async function seedInvoiceData(branchId, onProgress) {
 
   if (customerList.length === 0 || serviceList.length === 0) {
     onProgress?.(null);
-    return { invoices: 0, note: 'Cần có Khách hàng + Dịch vụ trước khi tạo hóa đơn mẫu' };
+    return { invoices: 0, note: l === 'en' ? 'Need Customers + Services before seeding invoices' : 'Cần có Khách hàng + Dịch vụ trước khi tạo hóa đơn mẫu' };
   }
 
-  onProgress?.('Đang tạo hoá đơn mẫu...');
+  onProgress?.(l === 'en' ? 'Seeding invoices...' : 'Đang tạo hoá đơn mẫu...');
 
   // 6 sample invoices
   const INVOICE_TEMPLATES = [
@@ -121,7 +125,7 @@ export async function seedInvoiceData(branchId, onProgress) {
       paid_amount: tmpl.status === 'paid' ? total : 0,
       payment_method: tmpl.status === 'paid' ? (idx % 2 === 0 ? 'cash' : 'transfer') : '',
       status: tmpl.status,
-      notes: tmpl.status === 'unpaid' ? 'Khách hẹn thanh toán sau' : '',
+      notes: tmpl.status === 'unpaid' ? (l === 'en' ? 'Customer will pay later' : 'Khách hẹn thanh toán sau') : '',
       loyalty_points_earned: tmpl.status === 'paid' ? Math.floor(total / 10000) : 0,
     };
 
