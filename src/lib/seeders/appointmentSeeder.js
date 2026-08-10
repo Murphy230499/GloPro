@@ -102,7 +102,7 @@ export async function seedAppointmentData(branchId, onProgress) {
       service_id: service.id,
       service_name: service.name,
       customer_id: matchedCustomer?.id || '',
-      customer_name: matchedCustomer?.full_name || custSample.name,
+      customer_name: matchedCustomer?.name || custSample.name,
       customer_phone: matchedCustomer?.phone || custSample.phone,
       date: dateStr,
       time: timeStr,

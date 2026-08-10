@@ -109,7 +109,7 @@ export async function seedInvoiceData(branchId, onProgress) {
       branch_id: b,
       invoice_code: generateInvoiceCode(idx + 1),
       customer_id: customer.id,
-      customer_name: customer.full_name,
+      customer_name: customer.name,
       customer_phone: customer.phone || '',
       date: dateStr,
       items,

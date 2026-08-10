@@ -69,12 +69,15 @@ export async function seedCustomerData(branchId, onProgress) {
   // 2. Create customers
   onProgress?.('Đang tạo dữ liệu khách hàng...');
   for (const c of CUSTOMERS) {
-    const { group, ...rest } = c;
+    const { group, full_name, birth_date, notes, loyalty_points, join_date, ...rest } = c;
     const payload = {
       ...rest,
+      name: full_name,
+      birthday: birth_date,
+      note: notes,
+      points: loyalty_points,
       group_id: groupIdMap[group] || null,
       is_active: true,
-      join_date: new Date().toISOString().slice(0, 10),
     };
 
     await upsertEntity(base44.entities.Customer, 'phone', c.phone, b, payload);
