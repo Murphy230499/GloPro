@@ -563,23 +563,25 @@ export default function Services() {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" /></div>
-      ) : services.length === 0 && products.length === 0 && packages.length === 0 && treatments.length === 0 && serviceCombos.length === 0 && productCombos.length === 0 && prepaidCards.length === 0 ? (
-        <EmptyStateSeeder
-          icon={<Scissors className="w-8 h-8 text-pink-400" />}
-          title="Chưa có dịch vụ & sản phẩm nào"
-          description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
-          onSeed={handleSeedServices}
-          seeding={seeding}
-          seedProgress={seedProgress}
-          onAdd={() => setEditing({ type: tab })}
-          addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
-          seedLabel="Tạo dữ liệu mẫu"
-        />
       ) : (
         /* Flat non-grouped lists (service, product, package, treatment, combos, prepaid card) */
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {tab === 'service' && (
-            services.length === 0 ? <EmptyState text="Chưa có dịch vụ nào" /> : (
+            services.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có dịch vụ nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               services
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -590,7 +592,21 @@ export default function Services() {
           )}
 
           {tab === 'product' && (
-            products.length === 0 ? <EmptyState text="Chưa có sản phẩm nào" /> : (
+            products.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có sản phẩm nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               products
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -601,7 +617,21 @@ export default function Services() {
           )}
 
           {tab === 'package' && (
-            packages.length === 0 ? <EmptyState text="Chưa có gói dịch vụ nào" /> : (
+            packages.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có gói dịch vụ nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               packages
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -612,7 +642,21 @@ export default function Services() {
           )}
 
           {tab === 'treatment' && (
-            treatments.length === 0 ? <EmptyState text="Chưa có liệu trình nào" /> : (
+            treatments.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có liệu trình nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               treatments
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -623,7 +667,21 @@ export default function Services() {
           )}
 
           {tab === 'service_combo' && (
-            serviceCombos.length === 0 ? <EmptyState text="Chưa có combo dịch vụ nào" /> : (
+            serviceCombos.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có combo dịch vụ nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               serviceCombos
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -662,7 +720,21 @@ export default function Services() {
           )}
 
           {tab === 'product_combo' && (
-            productCombos.length === 0 ? <EmptyState text="Chưa có combo sản phẩm nào" /> : (
+            productCombos.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có combo sản phẩm nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               productCombos
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
@@ -701,7 +773,21 @@ export default function Services() {
           )}
 
           {tab === 'prepaid_card' && (
-            prepaidCards.length === 0 ? <EmptyState text="Chưa có thẻ tiền mặt nào" /> : (
+            prepaidCards.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyStateSeeder
+                  icon={<Scissors className="w-8 h-8 text-pink-400" />}
+                  title="Chưa có thẻ tiền mặt nào"
+                  description="Tạo dữ liệu mẫu gồm 10 dịch vụ, 6 sản phẩm, 2 gói dịch vụ để trải nghiệm hệ thống."
+                  onSeed={handleSeedServices}
+                  seeding={seeding}
+                  seedProgress={seedProgress}
+                  onAdd={() => setEditing({ type: tab })}
+                  addLabel={`${t('catalog.add_new', 'Thêm')} ${ADD_LABEL[tab] || 'mới'}`}
+                  seedLabel="Tạo dữ liệu mẫu"
+                />
+              </div>
+            ) : (
               prepaidCards
                 .sort((a, b) => {
                   if ((a.sort_order || 0) !== (b.sort_order || 0)) return (a.sort_order || 0) - (b.sort_order || 0);
