@@ -91,8 +91,8 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
       <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-xs" />
-      {/* Mobile: cao tối đa 85vh cách viền, Desktop: giữ nguyên */}
-      <div className="relative bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl text-left flex flex-col max-h-[85vh] md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+      {/* Mobile: có margin 2 bên + khoảng cách bottom nav, Desktop: giữ nguyên */}
+      <div className="relative bg-white w-full mx-3 md:mx-0 md:max-w-2xl rounded-3xl shadow-2xl text-left flex flex-col max-h-[82vh] md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         
         {/* Header — sticky, không cuộn */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100 shrink-0">
@@ -366,8 +366,8 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
 
         </div>
 
-        {/* Footer — sticky, không cuộn */}
-        <div className="flex gap-2 px-6 py-4 border-t border-slate-150/50 shrink-0">
+        {/* Footer — sticky, padding extra ở mobile để tránh thanh điều hướng */}
+        <div className="flex gap-2 px-6 pt-4 pb-6 md:py-4 border-t border-slate-150/50 shrink-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">{t('common.cancel', 'Hủy')}</button>
           <button onClick={handleSubmit} className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans">{t('common.save', 'Lưu')}</button>
         </div>
