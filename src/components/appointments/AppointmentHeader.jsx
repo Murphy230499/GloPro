@@ -298,19 +298,19 @@ export default function AppointmentHeader({
   }, {});
 
   return (
-    <div className="relative z-50 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-4 overflow-visible">
+    <div className="relative z-50 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-2 sm:mb-4 overflow-visible">
       {/* Responsive Horizontal Container without Overflow Clipping */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 overflow-visible">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2 sm:gap-3 overflow-visible">
         {/* Left Side: Switcher + View Mode + Dropdown Filters + Date Navigator */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full xl:w-auto">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full xl:w-auto">
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1 border border-slate-200/60 shrink-0">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-[calc(50%-4px)] sm:w-auto order-1">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
                 setSelectedStaff?.('all');
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'staff'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -323,7 +323,7 @@ export default function AppointmentHeader({
                 setTargetEntity?.('facility');
                 setSelectedStaff?.('all');
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'facility'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -334,7 +334,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 hidden sm:flex">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 hidden sm:flex order-5">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -373,7 +373,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Services Dropdown */}
-          <div className="relative shrink-0 service-dropdown-container">
+          <div className="relative shrink-0 service-dropdown-container w-[calc(50%-4px)] sm:w-auto order-4 sm:order-3">
             <button
               type="button"
               onClick={() => {
@@ -471,7 +471,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Staffs / Facilities Dropdown */}
-          <div className="relative shrink-0 staff-dropdown-container">
+          <div className="relative shrink-0 staff-dropdown-container w-[calc(50%-4px)] sm:w-auto order-3 sm:order-4">
             <button
               type="button"
               onClick={() => {
@@ -588,7 +588,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container">
+          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container w-[calc(50%-4px)] sm:w-auto order-2 sm:order-5">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
@@ -637,7 +637,7 @@ export default function AppointmentHeader({
         </div>
 
         {/* Right Side: Quick Add Appointment Button */}
-        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full xl:w-auto mt-2 xl:mt-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full xl:w-auto mt-1 xl:mt-0">
           <div className="flex items-center gap-2">
             <button
               type="button"
