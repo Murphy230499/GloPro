@@ -27,6 +27,7 @@ export default function POSInvoiceModal({
   }, []);
 
   const [catalogTab, setCatalogTab] = useState('service');
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [custModal, setCustModal] = useState(false);
@@ -608,30 +609,43 @@ export default function POSInvoiceModal({
         </div>
 
         {/* Unified POS Content Area */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
-          {/* Left panel: CatalogColumn */}
-          <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0">
-            <CatalogColumn
-              tab={catalogTab}
-              setTab={setCatalogTab}
-              search={search}
-              setSearch={setSearch}
-              services={services}
-              products={products}
-              packages={packages}
-              treatments={treatments}
-              serviceCombos={serviceCombos}
-              productCombos={productCombos}
-              prepaidCards={prepaidCards}
-              groups={groups}
-              onAddItem={handleAddItem}
-              onReload={loadData}
-              activeSession={session}
-            />
+        <div className="flex-1 flex overflow-hidden min-h-0 relative">
+          {/* Left panel: CatalogColumn (Slide-over on mobile) */}
+          <div className={`absolute lg:static inset-0 z-50 lg:z-auto bg-white lg:flex-1 flex flex-col min-w-0 transition-transform duration-300 ${mobileCatalogOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+            <div className="lg:hidden flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0">
+              <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Chọn Dịch vụ / Sản phẩm')}</h3>
+              <button onClick={() => setMobileCatalogOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0 relative">
+              <CatalogColumn
+                tab={catalogTab}
+                setTab={setCatalogTab}
+                search={search}
+                setSearch={setSearch}
+                services={services}
+                products={products}
+                packages={packages}
+                treatments={treatments}
+                serviceCombos={serviceCombos}
+                productCombos={productCombos}
+                prepaidCards={prepaidCards}
+                groups={groups}
+                onAddItem={(item) => {
+                  handleAddItem(item);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setMobileCatalogOpen(false);
+                  }
+                }}
+                onReload={loadData}
+                activeSession={session}
+              />
+            </div>
           </div>
 
           {/* Right panel: TicketColumn */}
-          <div className="w-[450px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100 shrink-0">
+          <div className="w-full lg:w-[450px] bg-slate-50/50 flex flex-col overflow-hidden lg:border-l border-slate-100 shrink-0">
             <TicketColumn
               session={session}
               staff={staff}
@@ -643,6 +657,7 @@ export default function POSInvoiceModal({
               onCheckout={() => setCheckoutOpen(true)}
               onCancel={onClose}
               onReview={() => {}}
+              onMobileAddClick={() => setMobileCatalogOpen(true)}
             />
           </div>
         </div>
