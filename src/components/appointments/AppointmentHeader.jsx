@@ -300,11 +300,11 @@ export default function AppointmentHeader({
   return (
     <div className="relative z-50 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-2 sm:mb-4 overflow-visible">
       {/* Responsive Horizontal Container without Overflow Clipping */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2 sm:gap-3 overflow-visible">
+      <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-2 sm:gap-3 overflow-visible w-full">
         {/* Left Side: Switcher + View Mode + Dropdown Filters + Date Navigator */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full xl:w-auto">
+        <div className="contents xl:flex xl:flex-wrap xl:items-center xl:gap-2">
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-[calc(50%-4px)] sm:w-auto order-1">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-2 xl:order-1">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
@@ -551,7 +551,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container w-[calc(50%-4px)] sm:w-auto order-2 sm:order-5">
+          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container w-full xl:w-auto order-1 xl:order-5">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
@@ -600,9 +600,9 @@ export default function AppointmentHeader({
         </div>
 
         {/* Right Side: Quick Add Appointment Button */}
-        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0 w-full xl:w-auto mt-1 xl:mt-0">
+        <div className="contents xl:flex xl:flex-wrap xl:items-center xl:justify-end xl:gap-2">
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-6">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -640,7 +640,7 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-2 ml-auto sm:ml-0">
+          <div className="flex items-center justify-end gap-2 ml-auto xl:ml-0 order-4 xl:order-7">
             <div className="flex items-center gap-2">
             <button
               type="button"
