@@ -1429,11 +1429,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
           <span className="text-slate-800 font-semibold">{t('customers.detail.title', 'Chi tiết khách hàng')}</span>
         </div>
 
-        {/* Actions & Book Appointment Buttons */}
-        
-        {/* DESKTOP: thứ tự gốc Actions → Book Now → New Sale */}
-        <div className="hidden md:flex items-center gap-2">
-          <div className="relative">
+        {/* Buttons — Desktop: Actions→Book→Sale, Mobile: Book→Sale→Actions (flex-row-reverse so Actions is rightmost) */}
+        <div className="flex items-center gap-2">
+          {/* Desktop only: Actions đứng đầu */}
+          <div className="relative hidden md:block">
             <button 
               onClick={() => setActionsOpen(!actionsOpen)} 
               className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
@@ -1444,39 +1443,33 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setActionsOpen(false)} />
                 <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-100 shadow-xl rounded-2xl py-1 z-40 text-left">
-                  <button 
-                    onClick={() => { onEdit(); setActionsOpen(false); }} 
-                    className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-2"
-                  >
+                  <button onClick={() => { onEdit(); setActionsOpen(false); }} className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-2">
                     <Edit3 className="w-3.5 h-3.5 text-slate-400" /> {t('customers.detail.edit_info', 'Sửa thông tin khách')}
                   </button>
-                  <button 
-                    onClick={() => { onDelete(customer.id); setActionsOpen(false); }} 
-                    className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-red-650 flex items-center gap-2 border-t border-slate-50"
-                  >
+                  <button onClick={() => { onDelete(customer.id); setActionsOpen(false); }} className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-red-500 flex items-center gap-2 border-t border-slate-50">
                     <Trash2 className="w-3.5 h-3.5 text-red-400" /> {t('customers.detail.delete_customer', 'Xóa khách hàng')}
                   </button>
                 </div>
               </>
             )}
           </div>
-          <button onClick={handleBookNow} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <CalendarDays className="w-3.5 h-3.5" /> {t('customers.detail.book_now', 'Đặt lịch ngay')}
-          </button>
-          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <Plus className="w-3.5 h-3.5" /> {t('topbar.to_n', 'New Sale')}
-          </button>
-        </div>
 
-        {/* MOBILE: thứ tự Đặt lịch → Hoá đơn → Actions */}
-        <div className="flex md:hidden items-center justify-end gap-2 w-full">
-          <button onClick={handleBookNow} className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <CalendarDays className="w-3.5 h-3.5" /> {t('customers.detail.book_now_short', 'Đặt lịch')}
+          {/* Book Now — desktop: text dài, mobile: text ngắn */}
+          <button onClick={handleBookNow} className="px-3 md:px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{t('customers.detail.book_now', 'Đặt lịch ngay')}</span>
+            <span className="md:hidden">{t('customers.detail.book_now_short', 'Đặt lịch')}</span>
           </button>
-          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-3 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <Plus className="w-3.5 h-3.5" /> {t('topbar.to_n_short', 'Hoá đơn')}
+
+          {/* New Sale — desktop: text dài, mobile: text ngắn */}
+          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-3 md:px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5">
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{t('topbar.to_n', 'New Sale')}</span>
+            <span className="md:hidden">{t('topbar.to_n_short', 'Hoá đơn')}</span>
           </button>
-          <div className="relative">
+
+          {/* Actions — mobile only: đặt cuối cùng bên phải, dropdown mở sang trái */}
+          <div className="relative md:hidden">
             <button 
               onClick={() => setActionsOpen(!actionsOpen)} 
               className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
@@ -1487,16 +1480,10 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setActionsOpen(false)} />
                 <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-100 shadow-xl rounded-2xl py-1 z-40 text-left">
-                  <button 
-                    onClick={() => { onEdit(); setActionsOpen(false); }} 
-                    className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-2"
-                  >
+                  <button onClick={() => { onEdit(); setActionsOpen(false); }} className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-2">
                     <Edit3 className="w-3.5 h-3.5 text-slate-400" /> {t('customers.detail.edit_info', 'Sửa thông tin khách')}
                   </button>
-                  <button 
-                    onClick={() => { onDelete(customer.id); setActionsOpen(false); }} 
-                    className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-red-650 flex items-center gap-2 border-t border-slate-50"
-                  >
+                  <button onClick={() => { onDelete(customer.id); setActionsOpen(false); }} className="w-full px-4 py-2.5 hover:bg-slate-50 text-xs font-medium text-red-500 flex items-center gap-2 border-t border-slate-50">
                     <Trash2 className="w-3.5 h-3.5 text-red-400" /> {t('customers.detail.delete_customer', 'Xóa khách hàng')}
                   </button>
                 </div>
@@ -1548,7 +1535,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             </div>
 
             {/* Micro Stats Columns */}
-            <div className="grid grid-cols-3 gap-6 md:gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-8 w-full md:w-auto text-center md:text-left">
+            <div className="grid grid-cols-3 gap-2 md:gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-8 w-full md:w-auto text-center md:text-left">
               {/* Desktop: text-2xl như cũ. Mobile: text nhỏ hơn + truncate để tránh vỡ layout */}
               <div className="min-w-0">
                 <div className="text-base md:text-2xl font-semibold text-slate-700 truncate md:truncate-none">{customer.visit_count || 0}</div>
@@ -1558,8 +1545,8 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 <div className="text-base md:text-2xl font-semibold text-slate-700 truncate md:truncate-none">{customer.points || 0}</div>
                 <div className="text-[10px] md:text-xs text-slate-400 mt-1">{t('customers.detail.stats_points', 'Tích điểm')}</div>
               </div>
-              <div className="min-w-0">
-                <div className="text-base md:text-2xl font-semibold text-amber-600 truncate" title={formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}>
+              <div className="min-w-0 overflow-hidden">
+                <div className="text-[10px] md:text-2xl font-semibold text-amber-600 truncate leading-tight" title={formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}>
                   {formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}
                 </div>
                 <div className="text-[10px] md:text-xs text-slate-400 mt-1">{t('customers.detail.stats_spend', 'Chi tiêu (đ)')}</div>
