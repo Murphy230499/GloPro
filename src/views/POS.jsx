@@ -1047,8 +1047,48 @@ export default function POS() {
         </div>
       }
 
-      {/* Unified POS Content Area */}
-      <div className="flex-1 flex overflow-hidden min-h-0 relative max-w-4xl mx-auto w-full">
+      {/* POS Content Area — Desktop: split 2 cols, Mobile: ticket main + catalog slide-up overlay */}
+
+      {/* DESKTOP layout (lg+): side-by-side catalog + ticket */}
+      <div className="hidden lg:grid lg:grid-cols-2 gap-4 flex-1 min-h-0">
+        <CatalogColumn tab={catalogTab} setTab={setCatalogTab} search={search} setSearch={setSearch}
+        services={services} products={products} packages={packages} treatments={treatments}
+        serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
+        groups={groups} onAddItem={addToCart} onReload={() => loadData(true)} activeSession={activeSession} isLoading={isLoadingCatalog} />
+        {activeSession ?
+        <TicketColumn session={activeSession} staff={staff} customers={customers}
+        onUpdate={patchSession}
+        onPickCustomer={(c) => patchSession({ customer: c })}
+        onClearCustomer={() => patchSession({ customer: null })}
+        onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
+        onCheckout={() => setCheckoutOpen(true)}
+        onCancel={async () => {
+          const session = activeSession;
+          if (!session) return;
+          if (!confirm(t('pos.confirm_cancel_invoice', 'Bạn có chắc chắn muốn huỷ hoá đơn tạm tính này? Hoá đơn sẽ được đưa vào danh sách đã huỷ.'))) return;
+          try {
+            const updatedLogs = [
+              ...getNormalizedLogs(session),
+              createLogEntry(t('pos.log_cancel_invoice', 'Huỷ hoá đơn'), t('pos.log_cancel_invoice_detail', 'Huỷ hoá đơn khỏi hệ thống'), getCurrentUser())
+            ];
+            await base44.entities.Invoice.update(session.id, { status: 'cancelled', previous_status: 'unpaid', logs: JSON.stringify(updatedLogs) });
+            toast.success(t('pos.toast_invoice_cancelled', 'Đã huỷ hoá đơn tạm tính'));
+            closeSession(session.id);
+          } catch (e) {
+            toast.error(t('pos.err_generic', 'Lỗi: ') + (e.message || e));
+          }
+        }}
+        onReview={() => setReviewModalOpen(true)}
+        disabled={currentBranchId === 'all'} /> :
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+            <EmptyCart />
+          </div>
+        }
+      </div>
+
+      {/* MOBILE layout (< lg): Ticket as main view + Catalog as slide-up overlay */}
+      <div className="flex lg:hidden flex-1 overflow-hidden min-h-0 relative w-full">
         {/* Main panel: TicketColumn */}
         <div className="absolute inset-0 flex flex-col overflow-hidden bg-white rounded-2xl border border-slate-100 shadow-sm">
           {activeSession ?
@@ -1085,7 +1125,7 @@ export default function POS() {
           }
         </div>
 
-        {/* Overlay panel: CatalogColumn (Slide-over on both mobile and desktop) */}
+        {/* Slide-up overlay: CatalogColumn (mobile only) */}
         <div className={`absolute inset-0 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl flex flex-col min-w-0 transition-transform duration-300 ${catalogOpen ? 'translate-y-0' : 'translate-y-[120%]'}`}>
           <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0 shadow-sm rounded-t-2xl">
             <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Thêm Dịch vụ / Sản phẩm')}</h3>
