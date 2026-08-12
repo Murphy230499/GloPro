@@ -1336,9 +1336,9 @@ export default function AppointmentModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
       <div 
-        className={`relative bg-white w-full ${isFullScreen ? 'h-full max-w-full rounded-none' : 'max-w-5xl rounded-2xl max-h-[90dvh] md:max-h-[92vh]'} shadow-2xl flex flex-col overflow-hidden text-left border border-slate-200/80`}
+        className={`relative bg-white w-full ${isFullScreen ? 'h-full max-w-full rounded-none' : 'max-w-5xl rounded-2xl max-h-[80vh] md:max-h-[85vh]'} shadow-2xl flex flex-col overflow-hidden text-left border border-slate-200/80`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
