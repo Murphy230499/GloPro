@@ -1673,9 +1673,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                             </div>
                                           )}
                                         </div>
-                                        <span className="font-normal text-slate-700 truncate max-w-[120px]" title={uniqueStaff.map(s => s.name).join(', ')}>
-                                          {uniqueStaff.map(s => s.name).join(', ')}
-                                        </span>
+                                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+                                          {uniqueStaff.map((s, idx) => (
+                                            <span key={idx} className="px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] whitespace-nowrap text-slate-600 font-normal">
+                                              {s.name}
+                                            </span>
+                                          ))}
+                                        </div>
                                       </>
                                     ) : (
                                       <span className="text-slate-400 font-normal">Chưa phân KTV</span>
@@ -1921,8 +1925,14 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   {inv.invoice_code || '—'}
                                 </button>
                               </td>
-                              <td className="px-4 py-3.5 max-w-[200px] truncate font-normal">
-                                {(inv.items || []).map(i => i.name).join(', ')}
+                              <td className="px-4 py-3.5 max-w-[300px] font-normal">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {(inv.items || []).map((i, idx) => (
+                                    <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[11px] whitespace-nowrap" title={i.name}>
+                                      {i.name}
+                                    </span>
+                                  ))}
+                                </div>
                               </td>
                               <td className="px-4 py-3.5 font-normal">
                                 {formatDate(inv.date)}
@@ -1932,7 +1942,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   {invoiceStaff.slice(0, 3).map((s, idx) => {
                                     const stf = (staffList || []).find(x => x && x.id === s.id);
                                     return (
-                                      <div key={idx} className="rounded-full ring-2 ring-white" style={{ marginLeft: idx > 0 ? '-6px' : 0 }}>
+                                      <div key={idx} className="rounded-full ring-2 ring-white">
                                         <Avatar src={stf?.avatar_url} name={s.name} size={20} color={stf?.avatar_color || '#FF6B9D'} />
                                       </div>
                                     );
