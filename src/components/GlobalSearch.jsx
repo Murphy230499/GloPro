@@ -82,14 +82,14 @@ export default function GlobalSearch() {
 
   return (
     <div ref={ref} className="relative w-full max-w-xl">
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200 mx-6 rounded-lg bg-slate-100">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-pink-200 md:mx-6 rounded-lg bg-slate-100">
         <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
-          placeholder={t('globalsearch.placeholder', 'Tìm khách, lịch hẹn, dịch vụ, nhân viên...')}
-          className="bg-transparent outline-none text-sm w-full" />
+          placeholder={t('globalsearch.placeholder', 'Tìm kiếm...')}
+          className="bg-transparent outline-none text-sm w-full min-w-0" />
         
         {loading && <div className="w-4 h-4 border-2 border-pink-200 border-t-pink-500 rounded-full animate-spin shrink-0" />}
       </div>
