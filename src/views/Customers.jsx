@@ -1430,12 +1430,20 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
         </div>
 
         {/* Actions & Book Appointment Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto">
+          <button onClick={handleBookNow} className="px-3 sm:px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
+            <CalendarDays className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('customers.detail.book_now', 'Đặt lịch ngay')}</span><span className="sm:hidden">{t('customers.detail.book_now_short', 'Đặt lịch')}</span>
+          </button>
+
+          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
+            <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t('topbar.to_n', 'New Sale')}</span><span className="sm:hidden">{t('topbar.to_n_short', 'Hoá đơn')}</span>
+          </button>
+          
           {/* Actions Dropdown */}
           <div className="relative">
             <button 
               onClick={() => setActionsOpen(!actionsOpen)} 
-              className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 sm:px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
             >
               {t('common.actions', 'Thao tác')} <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
@@ -1459,14 +1467,6 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
               </>
             )}
           </div>
-
-          <button onClick={handleBookNow} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <CalendarDays className="w-3.5 h-3.5" /> {t('customers.detail.book_now', 'Đặt lịch ngay')}
-          </button>
-
-          <button onClick={() => { setPosModalInitialCart([]); setPosModalOpen(true); }} className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-emerald-600 transition-all flex items-center gap-1.5 animate-in fade-in duration-200">
-            <Plus className="w-3.5 h-3.5" /> {t('topbar.to_n', 'New Sale')}
-          </button>
         </div>
       </div>
 
@@ -1512,20 +1512,20 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
             </div>
 
             {/* Micro Stats Columns */}
-            <div className="grid grid-cols-3 gap-6 md:gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-8 w-full md:w-auto text-center md:text-left">
-              <div>
-                <div className="text-2xl font-semibold text-slate-700">{customer.visit_count || 0}</div>
-                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_appointments', 'Lịch hẹn')}</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-8 w-full md:w-auto text-center md:text-left">
+              <div className="min-w-0">
+                <div className="text-lg sm:text-2xl font-semibold text-slate-700 truncate">{customer.visit_count || 0}</div>
+                <div className="text-[10px] sm:text-xs text-slate-400 mt-1">{t('customers.detail.stats_appointments', 'Lịch hẹn')}</div>
               </div>
-              <div>
-                <div className="text-2xl font-semibold text-slate-700">{customer.points || 0}</div>
-                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_points', 'Tích điểm')}</div>
+              <div className="min-w-0">
+                <div className="text-lg sm:text-2xl font-semibold text-slate-700 truncate">{customer.points || 0}</div>
+                <div className="text-[10px] sm:text-xs text-slate-400 mt-1">{t('customers.detail.stats_points', 'Tích điểm')}</div>
               </div>
-              <div>
-                <div className="text-2xl font-semibold text-amber-600">
+              <div className="min-w-0">
+                <div className="text-lg sm:text-2xl font-semibold text-amber-600 truncate" title={formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}>
                   {formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}
                 </div>
-                <div className="text-xs text-slate-400 mt-1">{t('customers.detail.stats_spend', 'Chi tiêu (đ)')}</div>
+                <div className="text-[10px] sm:text-xs text-slate-400 mt-1">{t('customers.detail.stats_spend', 'Chi tiêu (đ)')}</div>
               </div>
             </div>
           </div>
