@@ -368,7 +368,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               </button>
               <button 
                 onClick={restoreInvoice} 
-                className="px-4 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                className="px-6 min-w-[140px] h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" /> Khôi phục
               </button>
@@ -409,14 +409,14 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           {isUnpaid && !isCancelled ? (
             <button 
               onClick={() => setShowPosModal(true)} 
-              className="px-5 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+              className="px-8 min-w-[140px] h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
             >
               <CreditCard className="w-4 h-4" /> {t('invoice_detail.pay', 'Thanh toán')}
             </button>
           ) : isPaid && !isCancelled ? (
             <button 
               onClick={unpayInvoice} 
-              className="px-4 h-9 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="px-6 min-w-[140px] h-9 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" /> {t('invoices.action.cancel_payment', 'Huỷ thanh toán')}
             </button>
