@@ -1655,25 +1655,33 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   #{formatAppointmentId(appt.id)}
                                 </td>
                                 <td className="py-3">
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center">
                                     {uniqueStaff.length > 0 ? (
                                       <>
-                                        <div className="flex -space-x-1.5 overflow-hidden">
-                                          {uniqueStaff.slice(0, 3).map((stf, sIdx) => {
-                                            const dbStaff = (staffList || []).find(s => s && (s.name === stf.name || s.id === stf.id));
-                                            return (
-                                              <div key={sIdx} className="inline-block ring-2 ring-white rounded-full">
-                                                <Avatar src={dbStaff?.avatar_url} name={stf.name || 'Nhân viên'} size={22} color="#FBBF24" />
+                                        {/* Desktop View: Avatars + Text */}
+                                        <div className="hidden md:flex items-center gap-1.5">
+                                          <div className="flex -space-x-1.5 overflow-hidden">
+                                            {uniqueStaff.slice(0, 3).map((stf, sIdx) => {
+                                              const dbStaff = (staffList || []).find(s => s && (s.name === stf.name || s.id === stf.id));
+                                              return (
+                                                <div key={sIdx} className="inline-block ring-2 ring-white rounded-full">
+                                                  <Avatar src={dbStaff?.avatar_url} name={stf.name || 'Nhân viên'} size={22} color="#FBBF24" />
+                                                </div>
+                                              );
+                                            })}
+                                            {uniqueStaff.length > 3 && (
+                                              <div className="flex items-center justify-center w-5.5 h-5.5 rounded-full bg-slate-100 text-[9px] text-slate-500 font-semibold ring-2 ring-white pr-0.5">
+                                                +{uniqueStaff.length - 3}
                                               </div>
-                                            );
-                                          })}
-                                          {uniqueStaff.length > 3 && (
-                                            <div className="flex items-center justify-center w-5.5 h-5.5 rounded-full bg-slate-100 text-[9px] text-slate-500 font-semibold ring-2 ring-white pr-0.5">
-                                              +{uniqueStaff.length - 3}
-                                            </div>
-                                          )}
+                                            )}
+                                          </div>
+                                          <span className="font-normal text-slate-700 truncate max-w-[120px]" title={uniqueStaff.map(s => s.name).join(', ')}>
+                                            {uniqueStaff.map(s => s.name).join(', ')}
+                                          </span>
                                         </div>
-                                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+
+                                        {/* Mobile View: Tags only */}
+                                        <div className="flex md:hidden flex-wrap gap-1 max-w-[150px]">
                                           {uniqueStaff.map((s, idx) => (
                                             <span key={idx} className="px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] whitespace-nowrap text-slate-600 font-normal">
                                               {s.name}
