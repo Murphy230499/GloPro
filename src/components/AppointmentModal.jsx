@@ -1338,7 +1338,7 @@ export default function AppointmentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
       <div 
-        className={`relative bg-white w-full ${isFullScreen ? 'h-full max-w-full rounded-none' : 'max-w-5xl rounded-2xl max-h-[92vh]'} shadow-2xl flex flex-col overflow-hidden text-left border border-slate-200/80`}
+        className={`relative bg-white w-full ${isFullScreen ? 'h-full max-w-full rounded-none' : 'max-w-5xl rounded-2xl max-h-[90dvh] md:max-h-[92vh]'} shadow-2xl flex flex-col overflow-hidden text-left border border-slate-200/80`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
@@ -2106,8 +2106,8 @@ export default function AppointmentModal({
         </div>
 
         {/* Footer Summary & Action Bar */}
-        <div className="flex items-center justify-between px-8 py-4 border-t border-slate-200/80 bg-white shrink-0">
-          <div className="flex items-baseline gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-8 py-3 sm:py-4 border-t border-slate-200/80 bg-white shrink-0">
+          <div className="flex flex-wrap items-baseline gap-2">
             <span className="text-sm font-semibold text-slate-900">{t('appt.modal.total', 'Tổng cộng')}</span>
             <span className="text-xl font-bold text-slate-900">{formatVND(finalTotalPrice)}</span>
             {discountAmt > 0 && (
@@ -2124,12 +2124,12 @@ export default function AppointmentModal({
             <span className="text-xs font-normal text-slate-500 ml-1">{totalMinutes} {t('appointments.settings.minutes', 'phút')}</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => handleSave('checked_in')}
               disabled={saving}
-              className="px-7 py-3 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-600 font-medium text-xs transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50"
+              className="flex-1 sm:flex-none px-2 sm:px-7 py-2.5 sm:py-3 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-600 font-medium text-[11px] sm:text-xs transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap text-center"
             >
               {editing ? t('appointments.update_checkin', 'Cập nhật & check-in') : t('appointments.create_checkin', 'Tạo & check-in')}
             </button>
@@ -2137,7 +2137,7 @@ export default function AppointmentModal({
               type="button"
               onClick={() => handleSave(editing ? (form.status || 'confirmed') : 'confirmed')}
               disabled={saving}
-              className="px-9 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="flex-1 sm:flex-none px-2 sm:px-9 py-2.5 sm:py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[11px] sm:text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 whitespace-nowrap text-center"
             >
               {saving 
                 ? (editing ? t('common.saving', 'Đang lưu...') : t('common.creating', 'Đang tạo...')) 
