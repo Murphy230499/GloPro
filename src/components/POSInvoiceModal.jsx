@@ -608,8 +608,50 @@ export default function POSInvoiceModal({
           </button>
         </div>
 
-        {/* Unified POS Content Area */}
-        <div className="flex-1 flex overflow-hidden min-h-0 relative bg-white">
+        {/* POS Content Area — Desktop: 2 cột, Mobile: Ticket chính + Catalog slide-up */}
+
+        {/* DESKTOP (lg+): Catalog bên trái, Ticket bên phải */}
+        <div className="hidden lg:flex flex-1 overflow-hidden min-h-0">
+          {/* Left panel: CatalogColumn */}
+          <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0">
+            <CatalogColumn
+              tab={catalogTab}
+              setTab={setCatalogTab}
+              search={search}
+              setSearch={setSearch}
+              services={services}
+              products={products}
+              packages={packages}
+              treatments={treatments}
+              serviceCombos={serviceCombos}
+              productCombos={productCombos}
+              prepaidCards={prepaidCards}
+              groups={groups}
+              onAddItem={handleAddItem}
+              onReload={loadData}
+              activeSession={session}
+            />
+          </div>
+
+          {/* Right panel: TicketColumn */}
+          <div className="w-[450px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100 shrink-0">
+            <TicketColumn
+              session={session}
+              staff={staff}
+              customers={customers}
+              onUpdate={handleUpdateSession}
+              onPickCustomer={(c) => handleUpdateSession({ customer: c })}
+              onClearCustomer={() => handleUpdateSession({ customer: null })}
+              onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
+              onCheckout={() => setCheckoutOpen(true)}
+              onCancel={onClose}
+              onReview={() => {}}
+            />
+          </div>
+        </div>
+
+        {/* MOBILE (< lg): Ticket chính + Catalog slide-up overlay */}
+        <div className="flex lg:hidden flex-1 overflow-hidden min-h-0 relative bg-white">
           
           {/* Main panel: TicketColumn */}
           <div className="absolute inset-0 flex flex-col overflow-hidden bg-slate-50/50">
@@ -628,7 +670,7 @@ export default function POSInvoiceModal({
             />
           </div>
 
-          {/* Overlay panel: CatalogColumn (Slide-over on both mobile and desktop) */}
+          {/* Slide-up overlay: CatalogColumn (mobile only) */}
           <div className={`absolute inset-0 z-50 bg-white flex flex-col min-w-0 transition-transform duration-300 shadow-xl ${catalogOpen ? 'translate-y-0' : 'translate-y-full'}`}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0 shadow-sm">
               <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Thêm Dịch vụ / Sản phẩm')}</h3>
