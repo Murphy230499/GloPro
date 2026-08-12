@@ -170,7 +170,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
   const groupedTargetStaff = getGroupedStaff(availableTargets);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" onClick={onClose} />
       <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl text-left flex flex-col max-h-[90vh] overflow-visible">
         

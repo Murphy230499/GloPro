@@ -128,8 +128,8 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
   const giftedUnusedCount = giftedList.length - giftedUsedCount;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
-      <div className="bg-white rounded-3xl w-full mx-3 md:mx-0 md:max-w-5xl max-h-[82vh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-sans">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full md:max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-sans">
         
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-slate-100 shrink-0">

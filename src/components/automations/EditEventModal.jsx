@@ -270,7 +270,7 @@ export default function EditEventModal({ open, onClose, item, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center font-body" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body" onClick={onClose}>
       {/* Backdrop matching Service Modal */}
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
 

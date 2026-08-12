@@ -156,9 +156,9 @@ export default function GiftPromoModal({ promo, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" />
-      <div className="bg-white rounded-3xl w-full mx-3 md:mx-0 md:max-w-4xl shadow-2xl relative flex flex-col max-h-[82vh] md:max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl w-full md:max-w-4xl shadow-2xl relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-slate-100 shrink-0">

@@ -847,9 +847,9 @@ export default function Discounts() {
 
       {/* FORM MODAL 1: CTKM */}
       {showPromoModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center z-50" onClick={() => setShowPromoModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 z-50" onClick={() => setShowPromoModal(false)}>
           <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" />
-          <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h2 className="text-base font-bold text-slate-800 font-sans">{editingPromoId ? t('discounts.modal_edit_promo', 'Sửa Khuyến mãi') : t('discounts.modal_create_promo', 'Thêm Khuyến mãi')}</h2>
               <button 
@@ -1020,9 +1020,9 @@ export default function Discounts() {
 
       {/* FORM MODAL 2: VOUCHER */}
       {showVoucherModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={() => setShowVoucherModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowVoucherModal(false)}>
           <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs animate-in fade-in duration-200" />
-          <div className="relative bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h2 className="text-base font-bold text-slate-800 font-sans">{editingVoucherId ? t('discounts.modal_edit_voucher', 'Sửa Voucher') : t('discounts.modal_create_voucher', 'Tạo Voucher mới')}</h2>
               <button onClick={() => setShowVoucherModal(false)} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">

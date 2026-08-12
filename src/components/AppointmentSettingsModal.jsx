@@ -43,7 +43,7 @@ export default function AppointmentSettingsModal({ open, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center font-body">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 font-body">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
       
       <div className="bg-slate-50 w-[550px] max-w-[95vw] h-[90vh] md:max-h-[85vh] rounded-2xl shadow-xl flex flex-col relative z-10 overflow-hidden">

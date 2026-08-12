@@ -571,7 +571,7 @@ function EditTemplateModal({ open, template, channel, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center font-body" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
 
       <div

@@ -62,9 +62,9 @@ export default function TreatmentForm({ item,  groups, services, branches, onClo
   const totalRetail = f.services.reduce((s, x) => s + (x.unit_price_retail || 0) * (x.sessions || 0), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
-      <div className="relative bg-white w-full mx-3 md:mx-0 md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[82vh] md:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-slate-800 font-sans">{item.id ? t('catalog.title_edit_treatment', 'Sửa liệu trình') : t('catalog.title_add_treatment', 'Thêm liệu trình')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"><X className="w-4 h-4" /></button>
