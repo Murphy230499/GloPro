@@ -74,19 +74,19 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
 
           <button
             onClick={onNewAppointment}
-            className="flex items-center gap-1.5 p-1.5 md:px-3 md:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
             title={t('topbar.to_lch_hn', 'Tạo lịch hẹn')}
           >
-            <CalendarDays className="w-4 h-4 text-blue-500" />
+            <CalendarDays className="w-5 h-5 md:w-4 md:h-4 text-blue-500" />
             <span className="text-xs font-semibold hidden md:inline">{t('topbar.t_lch', 'Đặt lịch')}</span>
           </button>
           
           <button
             onClick={onNewInvoice}
-            className="flex items-center gap-1.5 p-1.5 md:px-3 md:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
             title={t('topbar.to_ha_n', 'Tạo hóa đơn')}
           >
-            <Receipt className="w-4 h-4 text-emerald-500" />
+            <Receipt className="w-5 h-5 md:w-4 md:h-4 text-emerald-500" />
             <span className="text-xs font-semibold hidden md:inline">{t('topbar.to_n', 'Tạo đơn')}</span>
           </button>
 
