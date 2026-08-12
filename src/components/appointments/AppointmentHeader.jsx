@@ -303,13 +303,13 @@ export default function AppointmentHeader({
       <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 sm:gap-3 overflow-visible w-full">
         {/* Left Side Items */}
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-4 xl:order-1">
+          <div className="bg-slate-100 p-0.5 rounded-lg flex items-center justify-between gap-0.5 border border-slate-200/60 shrink-0 w-auto order-2 xl:order-1">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'staff'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -322,7 +322,7 @@ export default function AppointmentHeader({
                 setTargetEntity?.('facility');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'facility'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -550,7 +550,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-1 xl:order-4">
+          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container w-full xl:w-auto order-1 xl:order-4">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
@@ -596,11 +596,8 @@ export default function AppointmentHeader({
               />
             )}
         {/* Right Side Items */}
-          {/* Force Line Break on Mobile */}
-          <div className="basis-full h-0 xl:hidden order-3" />
-
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-2 xl:order-5 xl:ml-auto">
+          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-5 xl:ml-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -638,7 +635,7 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2 ml-auto xl:ml-0 order-5 xl:order-6 shrink-0">
+          <div className="flex items-center justify-end gap-1 sm:gap-2 ml-auto xl:ml-0 order-4 xl:order-6 shrink-0">
             <div className="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
@@ -662,15 +659,14 @@ export default function AppointmentHeader({
             <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-lg sm:rounded-xl shadow-2xs transition-all active:scale-95 group">
               <button
                 onClick={onAddClick}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
                 <span className="hidden sm:inline">{t('appointments.create_appt', 'Tạo Lịch Hẹn')}</span>
-                <span className="sm:hidden">{t('common.add', 'Thêm')}</span>
               </button>
               <button
                 onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                className="px-1.5 sm:px-2 py-1.5 sm:py-2 flex items-center justify-center rounded-r-lg sm:rounded-r-xl"
+                className="px-1 sm:px-2 py-1.5 sm:py-2 flex items-center justify-center rounded-r-lg sm:rounded-r-xl"
               >
                 <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
