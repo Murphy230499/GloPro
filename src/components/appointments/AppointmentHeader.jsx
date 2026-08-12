@@ -300,9 +300,8 @@ export default function AppointmentHeader({
   return (
     <div className="relative z-50 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-2 sm:mb-4 overflow-visible">
       {/* Responsive Horizontal Container without Overflow Clipping */}
-      <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-2 sm:gap-3 overflow-visible w-full">
-        {/* Left Side: Switcher + View Mode + Dropdown Filters + Date Navigator */}
-        <div className="contents xl:flex xl:flex-wrap xl:items-center xl:gap-2">
+      <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 sm:gap-3 overflow-visible w-full">
+        {/* Left Side Items */}
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
           <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-2 xl:order-1">
             <button
@@ -596,13 +595,9 @@ export default function AppointmentHeader({
                 onClose={() => setIsDatePickerOpen(false)}
               />
             )}
-          </div>
-        </div>
-
-        {/* Right Side: Quick Add Appointment Button */}
-        <div className="contents xl:flex xl:flex-wrap xl:items-center xl:justify-end xl:gap-2">
+        {/* Right Side Items */}
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-6">
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-5 xl:ml-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -640,7 +635,7 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-2 ml-auto xl:ml-0 order-4 xl:order-7">
+          <div className="flex items-center justify-end gap-2 ml-auto xl:ml-0 order-4 xl:order-6">
             <div className="flex items-center gap-2">
             <button
               type="button"
@@ -701,7 +696,6 @@ export default function AppointmentHeader({
               </div>
             )}
           </div>
-        </div>
         </div>
       </div>
     </div>
