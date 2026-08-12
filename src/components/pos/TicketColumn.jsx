@@ -873,7 +873,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         {onMobileAddClick && (
           <button 
             onClick={onMobileAddClick}
-            className="lg:hidden w-full flex items-center justify-center gap-2 p-3 mt-4 rounded-xl border border-dashed border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors font-semibold shadow-sm cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 p-3 mt-4 rounded-xl border border-dashed border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors font-semibold shadow-sm cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[2]" /> {t('pos.ticket.add_items_mobile', 'Thêm dịch vụ / sản phẩm')}
           </button>

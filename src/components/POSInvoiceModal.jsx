@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Menu } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { todayStr } from '@/lib/format';
 import { toast } from '@/components/Layout';
@@ -27,7 +27,7 @@ export default function POSInvoiceModal({
   }, []);
 
   const [catalogTab, setCatalogTab] = useState('service');
-  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [custModal, setCustModal] = useState(false);
@@ -590,15 +590,18 @@ export default function POSInvoiceModal({
       }}
     >
       <div 
-        className="bg-slate-50 rounded-3xl w-full max-w-[1360px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto"
+        className={`bg-slate-50 rounded-3xl w-full h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto transition-all ${catalogOpen ? 'max-w-[1360px]' : 'max-w-[500px]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Top Header Row */}
         <div className="bg-white px-5 py-2.5 flex justify-between items-center border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="text-sm font-bold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn Trực Tiếp')}</h2>
+            <button onClick={() => setCatalogOpen(!catalogOpen)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors hidden lg:flex items-center justify-center">
+              <Menu className="w-5 h-5" />
+            </button>
+            <Sparkles className="w-5 h-5 text-primary lg:hidden" />
+            <h2 className="text-sm font-bold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn')}</h2>
           </div>
           <button 
             onClick={onClose} 
@@ -610,11 +613,11 @@ export default function POSInvoiceModal({
 
         {/* Unified POS Content Area */}
         <div className="flex-1 flex overflow-hidden min-h-0 relative">
-          {/* Left panel: CatalogColumn (Slide-over on mobile) */}
-          <div className={`absolute lg:static inset-0 z-50 lg:z-auto bg-white lg:flex-1 flex flex-col min-w-0 transition-transform duration-300 ${mobileCatalogOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          {/* Left panel: CatalogColumn (Slide-over on mobile, conditional flex on desktop) */}
+          <div className={`absolute lg:static inset-0 z-50 lg:z-auto bg-white lg:flex-1 flex flex-col min-w-0 transition-all duration-300 ${catalogOpen ? 'translate-x-0 lg:flex' : '-translate-x-full lg:hidden lg:w-0'}`}>
             <div className="lg:hidden flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0">
               <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Chọn Dịch vụ / Sản phẩm')}</h3>
-              <button onClick={() => setMobileCatalogOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+              <button onClick={() => setCatalogOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -635,7 +638,7 @@ export default function POSInvoiceModal({
                 onAddItem={(item) => {
                   handleAddItem(item);
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                    setMobileCatalogOpen(false);
+                    setCatalogOpen(false);
                   }
                 }}
                 onReload={loadData}
@@ -645,7 +648,7 @@ export default function POSInvoiceModal({
           </div>
 
           {/* Right panel: TicketColumn */}
-          <div className="w-full lg:w-[450px] bg-slate-50/50 flex flex-col overflow-hidden lg:border-l border-slate-100 shrink-0">
+          <div className={`w-full bg-slate-50/50 flex flex-col overflow-hidden shrink-0 transition-all duration-300 ${catalogOpen ? 'lg:w-[450px] lg:border-l border-slate-100' : ''}`}>
             <TicketColumn
               session={session}
               staff={staff}
@@ -657,7 +660,7 @@ export default function POSInvoiceModal({
               onCheckout={() => setCheckoutOpen(true)}
               onCancel={onClose}
               onReview={() => {}}
-              onMobileAddClick={() => setMobileCatalogOpen(true)}
+              onMobileAddClick={!catalogOpen ? () => setCatalogOpen(true) : undefined}
             />
           </div>
         </div>
