@@ -1243,11 +1243,11 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
       if (typeFilter === 'product') {
         return item.type === 'product';
       }
-      if (typeFilter === 'package') {
-        if (item.type !== 'package') return false;
-        const nameLower = (item.name || '').toLowerCase();
-        const matchesProductWords = nameLower.includes('sản phẩm') || nameLower.includes('mỹ phẩm') || nameLower.includes('kem') || nameLower.includes('chai') || nameLower.includes('hộp');
-        return isComboProduct ? matchesProductWords : !matchesProductWords;
+      if (typeFilter === 'service_combo') {
+        return item.type === 'service_combo';
+      }
+      if (typeFilter === 'product_combo') {
+        return item.type === 'product_combo';
       }
       return true;
     });
@@ -2262,8 +2262,8 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
             {activeTab === 'purchased_services' && renderPurchasedTable(getFilteredItems('service'), t('customers.purchases.services_bought', 'Dịch vụ đã mua'), t('customers.purchases.no_services', 'Chưa mua dịch vụ nào'))}
             {activeTab === 'purchased_products' && renderPurchasedTable(getFilteredItems('product'), t('customers.purchases.products_bought', 'Sản phẩm đã mua'), t('customers.purchases.no_products', 'Chưa mua sản phẩm nào'))}
-            {activeTab === 'purchased_service_combos' && renderPurchasedTable(getFilteredItems('package', false), t('customers.purchases.service_combos_bought', 'Combo dịch vụ đã mua'), t('customers.purchases.no_service_combos', 'Chưa mua combo dịch vụ nào'))}
-            {activeTab === 'purchased_product_combos' && renderPurchasedTable(getFilteredItems('package', true), t('customers.purchases.product_combos_bought', 'Combo sản phẩm đã mua'), t('customers.purchases.no_product_combos', 'Chưa mua combo sản phẩm nào'))}
+            {activeTab === 'purchased_service_combos' && renderPurchasedTable(getFilteredItems('service_combo'), t('customers.purchases.service_combos_bought', 'Combo dịch vụ đã mua'), t('customers.purchases.no_service_combos', 'Chưa mua combo dịch vụ nào'))}
+            {activeTab === 'purchased_product_combos' && renderPurchasedTable(getFilteredItems('product_combo'), t('customers.purchases.product_combos_bought', 'Combo sản phẩm đã mua'), t('customers.purchases.no_product_combos', 'Chưa mua combo sản phẩm nào'))}
 
             {activeTab === 'deposits' && (
               <div className="space-y-4 text-left">
