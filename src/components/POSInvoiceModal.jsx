@@ -590,7 +590,7 @@ export default function POSInvoiceModal({
       }}
     >
       <div 
-        className="bg-slate-50 rounded-3xl w-full max-w-[500px] lg:max-w-[550px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto relative"
+        className="bg-slate-50 rounded-3xl w-full max-w-[500px] lg:max-w-[1100px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         
