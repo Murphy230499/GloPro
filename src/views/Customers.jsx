@@ -1699,9 +1699,9 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                                   <div className="text-[10px] text-slate-400 font-normal">{appt.time}</div>
                                 </td>
                                 <td className="py-3">
-                                  <div className="flex items-center gap-1 flex-wrap max-w-xs">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
                                     {String(appt.service_name || '').split(',').filter(Boolean).map((serv, idx) => (
-                                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-650 font-normal">
+                                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-650 font-normal whitespace-nowrap">
                                         {serv.trim()}
                                       </span>
                                     ))}
