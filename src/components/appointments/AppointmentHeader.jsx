@@ -550,7 +550,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-4">
+          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-5 xl:order-4">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
@@ -598,7 +598,7 @@ export default function AppointmentHeader({
           </div>
         {/* Right Side Items */}
           {/* Force Line Break on Mobile */}
-          <div className="basis-full h-0 xl:hidden order-3" />
+          <div className="basis-full h-0 xl:hidden order-4" />
 
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
           <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-2 ml-auto xl:order-5">
@@ -639,8 +639,8 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2 ml-auto xl:ml-0 order-5 xl:order-6 shrink-0">
-            <div className="flex items-center gap-1 sm:gap-2">
+          {/* Settings Buttons: Sofa + Cog */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0 order-3 ml-auto xl:order-6 xl:ml-0">
             <button
               type="button"
               onClick={onFacilityManagementClick}
@@ -659,7 +659,9 @@ export default function AppointmentHeader({
               <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
             </button>
           </div>
-          <div className="relative add-menu-container ml-auto sm:ml-0">
+
+          {/* Create Appointment Button */}
+          <div className="relative add-menu-container shrink-0 order-6 ml-auto xl:order-7 xl:ml-0">
             <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-lg sm:rounded-xl shadow-2xs transition-all active:scale-95 group">
               <button
                 onClick={onAddClick}
@@ -700,7 +702,6 @@ export default function AppointmentHeader({
               </div>
             )}
           </div>
-        </div>
       </div>
     </div>
   );
