@@ -1276,7 +1276,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
           <p className="text-slate-400 text-xs text-center py-10 font-normal font-sans">{noDataText}</p>
         ) : (
           <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white">
-            <table className="w-full text-xs text-left">
+            <table className="w-full text-xs text-left whitespace-nowrap">
               <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100 font-sans font-bold">
                 <tr>
                   <th className="px-4 py-3">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
@@ -1611,7 +1611,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 ) : (
                   <div className="space-y-3">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
+                      <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-slate-100 text-slate-400 font-medium">
                             <th className="pb-2 font-medium">{t('customers.detail.booking_code', 'Mã lịch')}</th>
@@ -1889,7 +1889,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                   <p className="text-slate-400 text-xs text-center py-10">{t('customers.detail.no_invoice_found', 'Không tìm thấy hóa đơn nào phù hợp')}</p>
                 ) : (
                   <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-xs text-left whitespace-nowrap">
                       <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100">
                         <tr>
                           <th className="px-4 py-3 font-bold">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
@@ -1991,7 +1991,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-xs text-left whitespace-nowrap">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                         <tr>
                           <th className="px-4 py-3 font-semibold">{t('customers.detail.deposit_code', 'Mã ĐC')}</th>
