@@ -89,8 +89,13 @@ export default function GlobalSearch() {
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
           placeholder={t('globalsearch.placeholder', 'Tìm kiếm...')}
-          className="bg-transparent outline-none text-sm w-full min-w-0" />
-        
+          className="bg-transparent outline-none text-sm w-full min-w-0 hidden md:block" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => setOpen(true)}
+          placeholder={t('globalsearch.placeholder_full', 'Tìm khách, lịch hẹn, dịch vụ, nhân viên...')}
+          className="bg-transparent outline-none text-sm w-full min-w-0 md:hidden" />
         {loading && <div className="w-4 h-4 border-2 border-pink-200 border-t-pink-500 rounded-full animate-spin shrink-0" />}
       </div>
       {open && q.trim().length >= 2 &&
