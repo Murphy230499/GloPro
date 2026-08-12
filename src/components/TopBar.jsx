@@ -65,7 +65,7 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
         </div>
 
         {/* Center: global search */}
-        <div className="flex-1 flex justify-center px-2">
+        <div className="flex-1 flex justify-end md:justify-center px-2">
           <GlobalSearch />
         </div>
 
