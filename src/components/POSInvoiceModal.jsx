@@ -590,18 +590,15 @@ export default function POSInvoiceModal({
       }}
     >
       <div 
-        className={`bg-slate-50 rounded-3xl w-full h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto transition-all ${catalogOpen ? 'max-w-[1360px]' : 'max-w-[500px]'}`}
+        className="bg-slate-50 rounded-3xl w-full max-w-[500px] lg:max-w-[550px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Top Header Row */}
         <div className="bg-white px-5 py-2.5 flex justify-between items-center border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
-            <button onClick={() => setCatalogOpen(!catalogOpen)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors hidden lg:flex items-center justify-center">
-              <Menu className="w-5 h-5" />
-            </button>
-            <Sparkles className="w-5 h-5 text-primary lg:hidden" />
-            <h2 className="text-sm font-bold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn')}</h2>
+            <Sparkles className="w-5 h-5 text-emerald-500" />
+            <h2 className="text-[15px] font-extrabold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn')}</h2>
           </div>
           <button 
             onClick={onClose} 
@@ -612,16 +609,34 @@ export default function POSInvoiceModal({
         </div>
 
         {/* Unified POS Content Area */}
-        <div className="flex-1 flex overflow-hidden min-h-0 relative">
-          {/* Left panel: CatalogColumn (Slide-over on mobile, conditional flex on desktop) */}
-          <div className={`absolute lg:static inset-0 z-50 lg:z-auto bg-white lg:flex-1 flex flex-col min-w-0 transition-all duration-300 ${catalogOpen ? 'translate-x-0 lg:flex' : '-translate-x-full lg:hidden lg:w-0'}`}>
-            <div className="lg:hidden flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0">
-              <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Chọn Dịch vụ / Sản phẩm')}</h3>
-              <button onClick={() => setCatalogOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+        <div className="flex-1 flex overflow-hidden min-h-0 relative bg-white">
+          
+          {/* Main panel: TicketColumn */}
+          <div className="absolute inset-0 flex flex-col overflow-hidden bg-slate-50/50">
+            <TicketColumn
+              session={session}
+              staff={staff}
+              customers={customers}
+              onUpdate={handleUpdateSession}
+              onPickCustomer={(c) => handleUpdateSession({ customer: c })}
+              onClearCustomer={() => handleUpdateSession({ customer: null })}
+              onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
+              onCheckout={() => setCheckoutOpen(true)}
+              onCancel={onClose}
+              onReview={() => {}}
+              onMobileAddClick={() => setCatalogOpen(true)}
+            />
+          </div>
+
+          {/* Overlay panel: CatalogColumn (Slide-over on both mobile and desktop) */}
+          <div className={`absolute inset-0 z-50 bg-white flex flex-col min-w-0 transition-transform duration-300 shadow-xl ${catalogOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0 shadow-sm">
+              <h3 className="font-bold text-slate-800">{t('pos.invoice.select_items', 'Thêm Dịch vụ / Sản phẩm')}</h3>
+              <button onClick={() => setCatalogOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0 relative">
+            <div className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 min-w-0 relative">
               <CatalogColumn
                 tab={catalogTab}
                 setTab={setCatalogTab}
@@ -637,31 +652,12 @@ export default function POSInvoiceModal({
                 groups={groups}
                 onAddItem={(item) => {
                   handleAddItem(item);
-                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                    setCatalogOpen(false);
-                  }
+                  setCatalogOpen(false); // Always close after adding item to return to cart
                 }}
                 onReload={loadData}
                 activeSession={session}
               />
             </div>
-          </div>
-
-          {/* Right panel: TicketColumn */}
-          <div className={`w-full bg-slate-50/50 flex flex-col overflow-hidden shrink-0 transition-all duration-300 ${catalogOpen ? 'lg:w-[450px] lg:border-l border-slate-100' : ''}`}>
-            <TicketColumn
-              session={session}
-              staff={staff}
-              customers={customers}
-              onUpdate={handleUpdateSession}
-              onPickCustomer={(c) => handleUpdateSession({ customer: c })}
-              onClearCustomer={() => handleUpdateSession({ customer: null })}
-              onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
-              onCheckout={() => setCheckoutOpen(true)}
-              onCancel={onClose}
-              onReview={() => {}}
-              onMobileAddClick={!catalogOpen ? () => setCatalogOpen(true) : undefined}
-            />
           </div>
         </div>
 
