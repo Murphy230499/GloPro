@@ -595,6 +595,7 @@ export default function AppointmentHeader({
                 onClose={() => setIsDatePickerOpen(false)}
               />
             )}
+          </div>
         {/* Right Side Items */}
           {/* Force Line Break on Mobile */}
           <div className="basis-full h-0 xl:hidden order-3" />
