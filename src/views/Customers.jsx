@@ -1546,7 +1546,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 <div className="text-[10px] md:text-xs text-slate-400 mt-1">{t('customers.detail.stats_points', 'Tích điểm')}</div>
               </div>
               <div className="min-w-0 overflow-hidden">
-                <div className="text-[10px] md:text-2xl font-semibold text-amber-600 truncate leading-tight" title={formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}>
+                <div className="text-base md:text-2xl font-semibold text-amber-600 truncate leading-tight" title={formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}>
                   {formatVND(invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)).replace('₫', '')}
                 </div>
                 <div className="text-[10px] md:text-xs text-slate-400 mt-1">{t('customers.detail.stats_spend', 'Chi tiêu (đ)')}</div>
