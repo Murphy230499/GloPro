@@ -104,7 +104,7 @@ export default function ManualVoucherModal({ defaultFlow = 'income', onClose, on
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
       <div
-        className="relative bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-3xl p-6 shadow-2xl"
+        className="relative bg-white w-full mx-3 md:mx-0 md:max-w-lg rounded-3xl p-6 shadow-2xl max-h-[82vh] md:max-h-[90vh] flex flex-col overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

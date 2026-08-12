@@ -85,7 +85,7 @@ export default function AddTimeBlockModal({ open, onClose, onSave, onSwitchToApp
   return (
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center font-body" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-xs" />
-      <div className="relative bg-white w-full md:max-w-md rounded-3xl p-6 shadow-2xl flex flex-col overflow-visible" onClick={(e) => e.stopPropagation()}>
+      <div className="relative bg-white w-full mx-3 md:mx-0 md:max-w-md rounded-3xl p-6 shadow-2xl flex flex-col max-h-[82vh] md:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-slate-800 font-sans flex items-center gap-2">

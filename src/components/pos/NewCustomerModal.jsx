@@ -20,7 +20,7 @@ export default function NewCustomerModal({ onClose, onCreate, initialQuery = '',
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-950/65 backdrop-blur-xs pointer-events-auto select-none" onClick={onClose}>
-      <div className="relative bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-3xl p-5 shadow-2xl transition-all select-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="relative bg-white w-full mx-3 md:mx-0 md:max-w-sm rounded-3xl p-5 shadow-2xl transition-all select-auto max-h-[82vh] md:max-h-[90vh] flex flex-col overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-800">{t('customers.add_new_customer', 'Thêm khách hàng mới')}</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors text-slate-500">
