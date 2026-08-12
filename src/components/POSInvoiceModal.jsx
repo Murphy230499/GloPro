@@ -636,7 +636,7 @@ export default function POSInvoiceModal({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 min-w-0 relative">
+            <div className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 min-w-0 relative pb-20">
               <CatalogColumn
                 tab={catalogTab}
                 setTab={setCatalogTab}
@@ -652,11 +652,23 @@ export default function POSInvoiceModal({
                 groups={groups}
                 onAddItem={(item) => {
                   handleAddItem(item);
-                  setCatalogOpen(false); // Always close after adding item to return to cart
+                  toast.success(t('pos.added', 'Đã thêm') + ': ' + item.name);
                 }}
                 onReload={loadData}
                 activeSession={session}
               />
+            </div>
+            {/* Footer with Apply button */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+               <div className="text-sm font-medium text-slate-600">
+                 {t('pos.selected_items', 'Đã chọn')}: <span className="font-bold text-emerald-600 text-base">{session?.cart?.length || 0}</span>
+               </div>
+               <button 
+                 onClick={() => setCatalogOpen(false)} 
+                 className="px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-sm"
+               >
+                 {t('pos.apply', 'Áp dụng')}
+               </button>
             </div>
           </div>
         </div>
