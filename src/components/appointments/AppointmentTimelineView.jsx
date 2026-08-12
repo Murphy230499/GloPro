@@ -195,11 +195,11 @@ export default function AppointmentTimelineView({
       {/* ── Fixed Time Header (Top Row, scroll-synced with body) ── */}
       <div className="shrink-0 border-b border-slate-200 shadow-sm bg-white rounded-t-2xl overflow-hidden z-40 sticky top-0 flex">
         {/* Top-Left Frozen Corner Cell ("Nhân viên" / "Vị trí") */}
-        <div className="w-52 shrink-0 p-4 border-r border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-500 uppercase flex items-center justify-center gap-2 z-40">
+        <div className="w-24 md:w-52 shrink-0 p-2 md:p-4 border-r border-slate-200 bg-slate-50/90 font-bold text-[10px] md:text-xs text-slate-500 uppercase flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 z-40">
           {targetEntity === 'staff' ? (
             <>
               <User className="w-4 h-4 text-blue-600" />
-              <span>{t('invoices.table.staff', t('invoices.table.staff', 'Nhân viên'))}</span>
+              <span className="text-center">{t('invoices.table.staff', t('invoices.table.staff', 'Nhân viên'))}</span>
             </>
           ) : (
             <>
@@ -237,14 +237,16 @@ export default function AppointmentTimelineView({
         <div className="relative" style={{ minWidth: 'max-content', width: TOTAL_CONTAINER_WIDTH }}>
           {/* Red Dotted Current Line Indicator */}
           {currentLineLeftPx > 0 && currentLineLeftPx < TOTAL_GRID_WIDTH_PX && (
-              <div
-                className="absolute top-0 bottom-0 z-30 pointer-events-none flex flex-col items-center"
-                style={{ left: currentLineLeftPx + 208 }}
-              >
-                <div className="bg-[#f43f5e] text-white font-extrabold text-[11px] px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap animate-pulse">
-                  {currentTime}
+              <div className="absolute top-0 bottom-0 ml-24 md:ml-52 z-30 pointer-events-none">
+                <div
+                  className="absolute top-0 bottom-0 flex flex-col items-center"
+                  style={{ transform: `translateX(${currentLineLeftPx}px)` }}
+                >
+                  <div className="bg-[#f43f5e] text-white font-extrabold text-[11px] px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap animate-pulse">
+                    {currentTime}
+                  </div>
+                  <div className="w-[2px] flex-1 border-l-2 border-dashed border-[#f43f5e]" />
                 </div>
-                <div className="w-[2px] flex-1 border-l-2 border-dashed border-[#f43f5e]" />
               </div>
             )}
 
@@ -264,29 +266,31 @@ export default function AppointmentTimelineView({
                   className="flex border-b border-slate-100 min-h-[96px] relative group hover:bg-slate-50/30 transition-colors font-body"
                 >
                   {/* Left Column: Staff Avatar & Name */}
-                  <div className="w-52 shrink-0 px-3 py-4 border-r border-slate-200 bg-white flex items-center gap-3 sticky left-0 z-20 font-body">
+                  <div className="w-24 md:w-52 shrink-0 px-1 md:px-3 py-3 md:py-4 border-r border-slate-200 bg-white flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-1 md:gap-3 sticky left-0 z-20 font-body">
                     {targetEntity === 'staff' ? (
-                      <Avatar
-                        src={row.avatar_url}
-                        name={row.name}
-                        size={40}
-                        color={row.color || '#3b82f6'}
-                      />
+                      <div className="shrink-0 scale-75 md:scale-100 flex items-center justify-center">
+                        <Avatar
+                          src={row.avatar_url}
+                          name={row.name}
+                          size={40}
+                          color={row.color || '#3b82f6'}
+                        />
+                      </div>
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 border border-purple-200">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 border border-purple-200">
                         {row.icon || '📍'}
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-semibold text-[13px] text-slate-800 truncate mb-0.5">
+                    <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full">
+                      <h4 className="font-semibold text-[10px] md:text-[13px] text-slate-800 truncate mb-0.5 w-full text-center md:text-left">
                         {row.name}
                       </h4>
                       {targetEntity === 'staff' ? (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold`} style={getRoleBadgeStyle(row.group_color)}>
-                          {row.group_name}
+                        <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-[8px] md:text-xs font-semibold max-w-full`} style={getRoleBadgeStyle(row.group_color)}>
+                          <span className="truncate">{row.group_name}</span>
                         </span>
                       ) : (
-                        <p className="text-xs text-slate-400 truncate">
+                        <p className="text-[10px] md:text-xs text-slate-400 truncate text-center md:text-left w-full">
                           {row.category || 'Vị trí'}
                         </p>
                       )}

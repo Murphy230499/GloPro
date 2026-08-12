@@ -333,44 +333,7 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 hidden sm:flex order-5">
-            <button
-              onClick={() => setViewMode?.('timeline')}
-              title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === 'timeline'
-                  ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
 
-            <button
-              onClick={() => setViewMode?.('calendar')}
-              title={t('appointments.calendar_view', 'Lịch dạng lưới (Calendar Grid)')}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === 'calendar'
-                  ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setViewMode?.('list')}
-              title={t('appointments.list_view', 'Danh sách (List)')}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === 'list'
-                  ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
 
           {/* Custom Services Dropdown */}
           <div className="relative shrink-0 service-dropdown-container w-[calc(50%-4px)] sm:w-auto order-4 sm:order-3">
@@ -637,8 +600,48 @@ export default function AppointmentHeader({
         </div>
 
         {/* Right Side: Quick Add Appointment Button */}
-        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full xl:w-auto mt-1 xl:mt-0">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0 w-full xl:w-auto mt-1 xl:mt-0">
+          {/* Sub-view Mode Icons: Timeline | Calendar | List */}
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0">
+            <button
+              onClick={() => setViewMode?.('timeline')}
+              title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
+              className={`p-1.5 rounded-lg transition-all ${
+                viewMode === 'timeline'
+                  ? 'bg-blue-500 text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setViewMode?.('calendar')}
+              title={t('appointments.calendar_view', 'Lịch dạng lưới (Calendar Grid)')}
+              className={`p-1.5 rounded-lg transition-all ${
+                viewMode === 'calendar'
+                  ? 'bg-blue-500 text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setViewMode?.('list')}
+              title={t('appointments.list_view', 'Danh sách (List)')}
+              className={`p-1.5 rounded-lg transition-all ${
+                viewMode === 'list'
+                  ? 'bg-blue-500 text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 ml-auto sm:ml-0">
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onFacilityManagementClick}
@@ -698,6 +701,7 @@ export default function AppointmentHeader({
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
