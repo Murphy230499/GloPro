@@ -148,8 +148,8 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('dashboard.tong_quan', 'Tổng quan')}</h1>
-          <p className="text-slate-400 text-sm mt-1">{t('dashboard.welcome_msg', 'Xin chào 👋 Đây là tình hình hôm nay')}</p>
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">{t('dashboard.tong_quan', 'Tổng quan')}</h1>
+          <p className="text-slate-400 text-xs md:text-sm mt-1">{t('dashboard.welcome_msg', 'Xin chào 👋 Đây là tình hình hôm nay')}</p>
         </div>
         <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1">
           {PERIODS.map((p) => (
@@ -172,8 +172,8 @@ export default function Dashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-1 text-xl">{t('dashboard.doanh_thu_7_ngay', 'Doanh thu 7 ngày qua')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-1 text-base md:text-xl">{t('dashboard.doanh_thu_7_ngay', 'Doanh thu 7 ngày qua')}</h3>
           <p className="text-xs text-slate-400 mb-3">{t('dashboard.theo_ngay', 'Theo ngày')}</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} barSize={26}>
@@ -186,8 +186,8 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 flex items-center gap-2 text-xl">{t('dashboard.lich_hen_sap_toi', 'Lịch hẹn sắp tới')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-3 flex items-center gap-2 text-base md:text-xl">{t('dashboard.lich_hen_sap_toi', 'Lịch hẹn sắp tới')}</h3>
           {upcoming.length === 0 ? (
             <div className="text-center py-10 text-slate-400 text-sm">
               <Sparkles className="w-8 h-8 mx-auto mb-2 text-slate-300" />
@@ -215,20 +215,20 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_service_rev', 'Top dịch vụ theo doanh thu')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-3 text-base md:text-xl">{t('dashboard.top_service_rev', 'Top dịch vụ theo doanh thu')}</h3>
           <TopRevenueList items={tops.services} colorFrom="from-pink-400" colorTo="to-purple-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_product_rev', 'Top sản phẩm theo doanh thu')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-3 text-base md:text-xl">{t('dashboard.top_product_rev', 'Top sản phẩm theo doanh thu')}</h3>
           <TopRevenueList items={tops.products} colorFrom="from-emerald-400" colorTo="to-teal-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_staff_rev', 'Top nhân viên theo doanh thu')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-3 text-base md:text-xl">{t('dashboard.top_staff_rev', 'Top nhân viên theo doanh thu')}</h3>
           <TopRevenueList items={tops.staff} colorFrom="from-amber-400" colorTo="to-orange-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-xl">{t('dashboard.top_customer_rev', 'Top khách hàng theo doanh thu')}</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm">
+          <h3 className="font-bold mb-3 text-base md:text-xl">{t('dashboard.top_customer_rev', 'Top khách hàng theo doanh thu')}</h3>
           <TopRevenueList items={tops.customers} colorFrom="from-blue-400" colorTo="to-indigo-500" emptyText={t('common.no_data', 'Chưa có dữ liệu')} />
         </div>
       </div>
