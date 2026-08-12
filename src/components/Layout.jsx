@@ -196,7 +196,7 @@ export default function Layout({ children }) {
 
         {/* Content */}
         <main className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0 flex flex-col" id="main-content">
-          <div className="max-w-[1600px] w-full mx-auto md:px-8 md:py-6 flex-1 flex flex-col min-h-0 bg-[hsl(var(--background))]">
+          <div className="max-w-[1600px] w-full mx-auto px-3 py-4 md:px-8 md:py-6 flex-1 flex flex-col min-h-0 bg-[hsl(var(--background))]">
             {children}
           </div>
         </main>
