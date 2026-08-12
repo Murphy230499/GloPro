@@ -303,13 +303,13 @@ export default function AppointmentHeader({
       <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 sm:gap-3 overflow-visible w-full">
         {/* Left Side Items */}
           {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-2 xl:order-1">
+          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-2 xl:order-1">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'staff'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -322,7 +322,7 @@ export default function AppointmentHeader({
                 setTargetEntity?.('facility');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 targetEntity === 'facility'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -597,79 +597,79 @@ export default function AppointmentHeader({
             )}
         {/* Right Side Items */}
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center justify-center gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-5 xl:ml-auto">
+          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-3 xl:order-5 xl:ml-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'timeline'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <button
               onClick={() => setViewMode?.('calendar')}
               title={t('appointments.calendar_view', 'Lịch dạng lưới (Calendar Grid)')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'calendar'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <CalendarIcon className="w-4 h-4" />
+              <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <button
               onClick={() => setViewMode?.('list')}
               title={t('appointments.list_view', 'Danh sách (List)')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'list'
                   ? 'bg-blue-500 text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <List className="w-4 h-4" />
+              <List className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-2 ml-auto xl:ml-0 order-4 xl:order-6">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 ml-auto xl:ml-0 order-4 xl:order-6 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
               onClick={onFacilityManagementClick}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+              className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg sm:rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
               title={t('appointments.facility_mgmt', 'Quản lý vị trí (ghế/giường)')}
             >
-              <Armchair className="w-4 h-4 stroke-[2]" />
+              <Armchair className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
             </button>
             
             <button
               type="button"
               onClick={onSettingsClick}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+              className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg sm:rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
               title={t('appointments.settings_title', 'Cài đặt lịch hẹn')}
             >
-              <Settings className="w-4 h-4 stroke-[2]" />
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
             </button>
           </div>
           <div className="relative add-menu-container ml-auto sm:ml-0">
-            <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-2xs transition-all active:scale-95 group">
+            <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-lg sm:rounded-xl shadow-2xs transition-all active:scale-95 group">
               <button
                 onClick={onAddClick}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
                 <span className="hidden sm:inline">{t('appointments.create_appt', 'Tạo Lịch Hẹn')}</span>
                 <span className="sm:hidden">{t('common.add', 'Thêm')}</span>
               </button>
               <button
                 onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                className="px-2 py-2 flex items-center justify-center rounded-r-xl"
+                className="px-1.5 sm:px-2 py-1.5 sm:py-2 flex items-center justify-center rounded-r-lg sm:rounded-r-xl"
               >
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
 
