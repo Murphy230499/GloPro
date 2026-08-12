@@ -344,7 +344,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           <button 
             onClick={() => setShowHistoryModal(true)} 
             title={t('invoice_detail.action_history', 'Lịch sử thao tác')}
-            className="w-9 h-9 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
           >
             <History className="w-4 h-4" />
           </button>
@@ -352,7 +352,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           <button 
             onClick={printInvoice} 
             title={t('invoices.action.print', 'In hoá đơn')}
-            className="w-9 h-9 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -362,13 +362,13 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               <button 
                 onClick={permanentlyDeleteInvoice} 
                 title="Xoá vĩnh viễn"
-                className="w-9 h-9 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button 
                 onClick={restoreInvoice} 
-                className="px-6 min-w-[140px] h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                className="px-4 min-w-[120px] h-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" /> Khôi phục
               </button>
@@ -380,7 +380,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               <button 
                 onClick={cancelInvoice} 
                 title={t('invoices.action.delete', 'Huỷ hoá đơn')}
-                className="w-9 h-9 rounded-lg border border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -391,7 +391,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
                   setShowStaffModal(true);
                 }} 
                 title={t('invoice_detail.assign_staff', 'Xếp nhân viên')}
-                className="w-9 h-9 rounded-lg border border-blue-200 text-blue-500 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <Users className="w-4 h-4" />
               </button>
@@ -399,7 +399,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
               <button 
                 onClick={() => setShowPosModal(true)} 
                 title={t('invoices.action.edit', 'Chỉnh sửa')}
-                className="w-9 h-9 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -409,14 +409,14 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
           {isUnpaid && !isCancelled ? (
             <button 
               onClick={() => setShowPosModal(true)} 
-              className="px-8 min-w-[140px] h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+              className="px-12 min-w-[200px] h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
             >
               <CreditCard className="w-4 h-4" /> {t('invoice_detail.pay', 'Thanh toán')}
             </button>
           ) : isPaid && !isCancelled ? (
             <button 
               onClick={unpayInvoice} 
-              className="px-6 min-w-[140px] h-9 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="px-8 min-w-[180px] h-9 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 font-medium text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" /> {t('invoices.action.cancel_payment', 'Huỷ thanh toán')}
             </button>

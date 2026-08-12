@@ -1275,72 +1275,126 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
         {items.length === 0 ? (
           <p className="text-slate-400 text-xs text-center py-10 font-normal font-sans">{noDataText}</p>
         ) : (
-          <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white">
-            <table className="w-full text-xs text-left whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100 font-sans font-bold">
-                <tr>
-                  <th className="px-4 py-3">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
-                  <th className="px-4 py-3">{t('customers.detail.item', 'Mặt hàng')}</th>
-                  <th className="px-4 py-3">{t('common.purchase_date', 'Ngày mua')}</th>
-                  <th className="px-4 py-3">{t('customers.form.staff', 'Nhân viên')}</th>
-                  <th className="px-4 py-3 text-right">{t('customers.detail.unit_price', 'Đơn giá')}</th>
-                  <th className="px-4 py-3 text-center">{t('customers.detail.quantity', 'Số lượng')}</th>
-                  <th className="px-4 py-3 text-center">{t('common.action', 'Hành động')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-655 font-normal font-sans">
-                {items.map((item, idx) => {
-                  const dbStaff = (staffList || []).find(s => s && (s.name === item.staff_name || s.id === item.staff_id));
+          <>
+            <div className="overflow-x-auto hidden md:block border border-slate-100 rounded-2xl bg-white">
+              <table className="w-full text-xs text-left whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100 font-sans font-bold">
+                  <tr>
+                    <th className="px-4 py-3">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
+                    <th className="px-4 py-3">{t('customers.detail.item', 'Mặt hàng')}</th>
+                    <th className="px-4 py-3">{t('common.purchase_date', 'Ngày mua')}</th>
+                    <th className="px-4 py-3">{t('customers.form.staff', 'Nhân viên')}</th>
+                    <th className="px-4 py-3 text-right">{t('customers.detail.unit_price', 'Đơn giá')}</th>
+                    <th className="px-4 py-3 text-center">{t('customers.detail.quantity', 'Số lượng')}</th>
+                    <th className="px-4 py-3 text-center">{t('common.action', 'Hành động')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-655 font-normal font-sans">
+                  {items.map((item, idx) => {
+                    const dbStaff = (staffList || []).find(s => s && (s.name === item.staff_name || s.id === item.staff_id));
 
-                  return (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3.5 font-bold text-amber-600">
-                        <button 
-                          onClick={() => {
-                            handleCloseMembershipModal();
-                            router.push(`/invoices/${item.invoice_id}`);
-                          }} 
-                          className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
-                        >
-                          {item.invoice_code || '—'}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3.5 font-semibold text-slate-800 max-w-[200px] truncate">
-                        {item.name}
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-500">
-                        {formatDate(item.date)}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5 font-normal">
-                          <Avatar src={dbStaff?.avatar_url} name={item.staff_name || 'Nhân viên'} size={20} color={dbStaff?.avatar_color || '#FF6B9D'} />
-                          <span className="truncate max-w-[120px]" title={item.staff_name}>{item.staff_name || '—'}</span>
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-4 py-3.5 font-bold text-amber-600">
+                          <button 
+                            onClick={() => {
+                              handleCloseMembershipModal();
+                              router.push(`/invoices/${item.invoice_id}`);
+                            }} 
+                            className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
+                          >
+                            {item.invoice_code || '—'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3.5 font-semibold text-slate-800 max-w-[200px] truncate">
+                          {item.name}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-500">
+                          {formatDate(item.date)}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5 font-normal">
+                            <Avatar src={dbStaff?.avatar_url} name={item.staff_name || 'Nhân viên'} size={20} color={dbStaff?.avatar_color || '#FF6B9D'} />
+                            <span className="truncate max-w-[120px]" title={item.staff_name}>{item.staff_name || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-right text-slate-700">
+                          {formatVND(item.price)}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-semibold text-slate-700">
+                          {item.qty || 1}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <button
+                            onClick={() => handleBuyAgain(item)}
+                            className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors mx-auto relative group"
+                            title={t('customers.detail.buy_again', 'Mua lại')}
+                          >
+                            <RotateCw className="w-3.5 h-3.5" />
+                            <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-sm font-sans z-20">
+                              {t('customers.detail.buy_again', 'Mua lại')}
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View: Cards */}
+            <div className="md:hidden flex flex-col gap-3">
+              {items.map((item, idx) => {
+                const dbStaff = (staffList || []).find(s => s && (s.name === item.staff_name || s.id === item.staff_id));
+                return (
+                  <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3.5 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                      <button 
+                        onClick={() => {
+                          handleCloseMembershipModal();
+                          router.push(`/invoices/${item.invoice_id}`);
+                        }} 
+                        className="font-bold text-emerald-600 hover:underline text-sm"
+                      >
+                        {item.invoice_code || '—'}
+                      </button>
+                      <span className="text-slate-500 text-[11px]">{formatDate(item.date)}</span>
+                    </div>
+                    
+                    <div className="font-semibold text-slate-800 text-sm">
+                      {item.name}
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col gap-1 text-[11px]">
+                        <span className="text-slate-400">Nhân viên:</span>
+                        <div className="flex items-center gap-1.5">
+                          <Avatar src={dbStaff?.avatar_url} name={item.staff_name || 'Nhân viên'} size={18} color={dbStaff?.avatar_color || '#FF6B9D'} />
+                          <span className="text-slate-700">{item.staff_name || '—'}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-right text-slate-700">
-                        {formatVND(item.price)}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-semibold text-slate-700">
-                        {item.qty || 1}
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <button
-                          onClick={() => handleBuyAgain(item)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors mx-auto relative group"
-                          title={t('customers.detail.buy_again', 'Mua lại')}
-                        >
-                          <RotateCw className="w-3.5 h-3.5" />
-                          <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-sm font-sans z-20">
-                            {t('customers.detail.buy_again', 'Mua lại')}
-                          </span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-[11px] text-slate-400">Thành tiền (SL: {item.qty || 1})</div>
+                        <div className="font-bold text-slate-800 text-sm">{formatVND(item.price)}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-slate-50 flex justify-end">
+                      <button
+                        onClick={() => handleBuyAgain(item)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg text-xs font-semibold transition-colors"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                        {t('customers.detail.buy_again', 'Mua lại')}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     );
@@ -2026,97 +2080,182 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                 {filteredInvoices.length === 0 ? (
                   <p className="text-slate-400 text-xs text-center py-10">{t('customers.detail.no_invoice_found', 'Không tìm thấy hóa đơn nào phù hợp')}</p>
                 ) : (
-                  <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white">
-                    <table className="w-full text-xs text-left whitespace-nowrap">
-                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100">
-                        <tr>
-                          <th className="px-4 py-3 font-bold">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
-                          <th className="px-4 py-3 font-bold">{t('customers.detail.item_details', 'Chi tiết dịch vụ/sản phẩm')}</th>
-                          <th className="px-4 py-3 font-bold">{t('common.created_date', 'Ngày tạo')}</th>
-                          <th className="px-4 py-3 font-bold">{t('customers.form.staff', 'Nhân viên')}</th>
-                          <th className="px-4 py-3 font-bold text-right">{t('common.total', 'Tổng tiền')}</th>
-                          <th className="px-4 py-3 font-bold text-center">{t('common.action', 'Hành động')}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-655 font-normal">
-                        {filteredInvoices.map((inv) => {
-                          const invoiceStaff = [];
-                          const staffMap = {};
-                          (inv.items || []).forEach(it => {
-                            if (it.staff_id) staffMap[it.staff_id] = it.staff_name;
-                          });
-                          Object.entries(staffMap).forEach(([id, name]) => {
-                            invoiceStaff.push({ id, name });
-                          });
+                  <>
+                    <div className="overflow-x-auto hidden md:block border border-slate-100 rounded-2xl bg-white">
+                      <table className="w-full text-xs text-left whitespace-nowrap">
+                        <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-100">
+                          <tr>
+                            <th className="px-4 py-3 font-bold">{t('customers.detail.invoice_code', 'Mã HĐ')}</th>
+                            <th className="px-4 py-3 font-bold">{t('customers.detail.item_details', 'Chi tiết dịch vụ/sản phẩm')}</th>
+                            <th className="px-4 py-3 font-bold">{t('common.created_date', 'Ngày tạo')}</th>
+                            <th className="px-4 py-3 font-bold">{t('customers.form.staff', 'Nhân viên')}</th>
+                            <th className="px-4 py-3 font-bold text-right">{t('common.total', 'Tổng tiền')}</th>
+                            <th className="px-4 py-3 font-bold text-center">{t('common.action', 'Hành động')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-655 font-normal">
+                          {filteredInvoices.map((inv) => {
+                            const invoiceStaff = [];
+                            const staffMap = {};
+                            (inv.items || []).forEach(it => {
+                              if (it.staff_id) staffMap[it.staff_id] = it.staff_name;
+                            });
+                            Object.entries(staffMap).forEach(([id, name]) => {
+                              invoiceStaff.push({ id, name });
+                            });
 
-                          return (
-                            <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-4 py-3.5 font-bold">
-                                <button 
-                                  onClick={() => router.push(`/invoices/${inv.id}`)} 
-                                  className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
-                                >
-                                  {inv.invoice_code || '—'}
-                                </button>
-                              </td>
-                              <td className="px-4 py-3.5 max-w-[300px] font-normal">
-                                <div className="flex items-center gap-1.5 flex-wrap">
+                            return (
+                              <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-4 py-3.5 font-bold">
+                                  <button 
+                                    onClick={() => router.push(`/invoices/${inv.id}`)} 
+                                    className="text-emerald-600 hover:text-emerald-700 hover:underline text-left font-bold transition-colors"
+                                  >
+                                    {inv.invoice_code || '—'}
+                                  </button>
+                                </td>
+                                <td className="px-4 py-3.5 max-w-[300px] font-normal">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {(inv.items || []).map((i, idx) => (
+                                      <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[11px] whitespace-nowrap" title={i.name}>
+                                        {i.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3.5 font-normal">
+                                  {formatDate(inv.date)}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <div className="flex items-center gap-1.5 font-normal">
+                                    {invoiceStaff.slice(0, 3).map((s, idx) => {
+                                      const stf = (staffList || []).find(x => x && x.id === s.id);
+                                      return (
+                                        <div key={idx} className="rounded-full ring-2 ring-white">
+                                          <Avatar src={stf?.avatar_url} name={s.name} size={20} color={stf?.avatar_color || '#FF6B9D'} />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3.5 font-bold text-right text-amber-600">
+                                  {formatVND(inv.total)}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button 
+                                      onClick={() => cancelInvoicePayment(inv)} 
+                                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-colors" 
+                                      title={t('customers.detail.cancel_payment_edit', 'Huỷ thanh toán & Sửa')}
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button 
+                                      onClick={() => { setPrintingInvoice(inv); setIsDraftPrint(false); }} 
+                                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors" 
+                                      title={t('customers.detail.print', 'In hóa đơn')}
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteInvoice(inv.id)} 
+                                      className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-colors" 
+                                      title={t('customers.detail.delete', 'Xoá')}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View: Cards */}
+                    <div className="md:hidden flex flex-col gap-3">
+                      {filteredInvoices.map((inv) => {
+                        const invoiceStaff = [];
+                        const staffMap = {};
+                        (inv.items || []).forEach(it => {
+                          if (it.staff_id) staffMap[it.staff_id] = it.staff_name;
+                        });
+                        Object.entries(staffMap).forEach(([id, name]) => {
+                          invoiceStaff.push({ id, name });
+                        });
+
+                        return (
+                          <div key={inv.id} className="bg-white border border-slate-100 rounded-xl p-3.5 shadow-sm space-y-3">
+                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                              <button 
+                                onClick={() => router.push(`/invoices/${inv.id}`)} 
+                                className="font-bold text-emerald-600 hover:underline text-sm"
+                              >
+                                {inv.invoice_code || '—'}
+                              </button>
+                              <span className="text-slate-500 text-[11px]">{formatDate(inv.date)}</span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-start gap-2">
+                                <span className="text-slate-400 text-[11px] w-[60px] shrink-0 mt-0.5">Mặt hàng:</span>
+                                <div className="flex items-center gap-1.5 flex-wrap flex-1">
                                   {(inv.items || []).map((i, idx) => (
-                                    <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[11px] whitespace-nowrap" title={i.name}>
+                                    <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[10px] whitespace-nowrap" title={i.name}>
                                       {i.name}
                                     </span>
                                   ))}
                                 </div>
-                              </td>
-                              <td className="px-4 py-3.5 font-normal">
-                                {formatDate(inv.date)}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <div className="flex items-center gap-1.5 font-normal">
-                                  {invoiceStaff.slice(0, 3).map((s, idx) => {
+                              </div>
+                              
+                              <div className="flex items-start gap-2">
+                                <span className="text-slate-400 text-[11px] w-[60px] shrink-0 mt-0.5">Nhân viên:</span>
+                                <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                                  {invoiceStaff.map((s, idx) => {
                                     const stf = (staffList || []).find(x => x && x.id === s.id);
                                     return (
-                                      <div key={idx} className="rounded-full ring-2 ring-white">
-                                        <Avatar src={stf?.avatar_url} name={s.name} size={20} color={stf?.avatar_color || '#FF6B9D'} />
+                                      <div key={idx} className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 border border-blue-100">
+                                        <Avatar src={stf?.avatar_url} name={s.name} size={14} color={stf?.avatar_color || '#FF6B9D'} />
+                                        <span className="text-[10px] text-blue-600 whitespace-nowrap">{s.name}</span>
                                       </div>
                                     );
                                   })}
                                 </div>
-                              </td>
-                              <td className="px-4 py-3.5 font-bold text-right text-amber-600">
-                                {formatVND(inv.total)}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button 
-                                    onClick={() => cancelInvoicePayment(inv)} 
-                                    className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-colors" 
-                                    title={t('customers.detail.cancel_payment_edit', 'Huỷ thanh toán & Sửa')}
-                                  >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button 
-                                    onClick={() => { setPrintingInvoice(inv); setIsDraftPrint(false); }} 
-                                    className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors" 
-                                    title="In hoá đơn"
-                                  >
-                                    <Printer className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button 
-                                    onClick={() => deleteCustInvoice(inv)} 
-                                    className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors" 
-                                    title="Xoá hoá đơn"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+                              <div className="flex gap-1.5">
+                                <button 
+                                  onClick={() => cancelInvoicePayment(inv)} 
+                                  className="px-2 py-1.5 rounded-lg bg-slate-50 text-amber-600 hover:bg-amber-50 text-[11px] font-medium flex items-center gap-1"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" /> Sửa
+                                </button>
+                                <button 
+                                  onClick={() => { setPrintingInvoice(inv); setIsDraftPrint(false); }} 
+                                  className="px-2 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 text-[11px] font-medium flex items-center gap-1"
+                                >
+                                  <Printer className="w-3.5 h-3.5" /> In
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteInvoice(inv.id)} 
+                                  className="px-2 py-1.5 rounded-lg bg-slate-50 text-red-500 hover:bg-red-50 text-[11px] font-medium flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-[10px] text-slate-400">Tổng tiền</span>
+                                <span className="font-bold text-amber-600 text-sm">{formatVND(inv.total)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -2134,43 +2273,76 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
                     {t('customers.detail.no_deposit_history', 'Chưa có lịch sử đặt cọc nào.')}
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <table className="w-full text-xs text-left whitespace-nowrap">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                        <tr>
-                          <th className="px-4 py-3 font-semibold">{t('customers.detail.deposit_code', 'Mã ĐC')}</th>
-                          <th className="px-4 py-3 font-semibold">{t('common.created_date', 'Ngày tạo')}</th>
-                          <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.required_deposit', 'Cần cọc')}</th>
-                          <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.paid_deposit', 'Đã cọc')}</th>
-                          <th className="px-4 py-3 font-semibold text-center">{t('common.status', 'Trạng thái')}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {deposits.map(d => (
-                          <tr key={d.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-3 font-medium text-slate-800">{d.deposit_number}</td>
-                            <td className="px-4 py-3 text-slate-500">{new Date(d.created_at).toLocaleDateString('vi-VN')}</td>
-                            <td className="px-4 py-3 text-right text-slate-800">{Number(d.required_amount).toLocaleString('vi-VN')} đ</td>
-                            <td className="px-4 py-3 text-right text-green-600 font-bold">{Number(d.paid_amount).toLocaleString('vi-VN')} đ</td>
-                            <td className="px-4 py-3 text-center">
-                              <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                d.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                d.status === 'partially_paid' ? 'bg-amber-100 text-amber-700' :
-                                d.status === 'applied' ? 'bg-blue-100 text-blue-700' :
-                                d.status === 'refunded' ? 'bg-slate-100 text-slate-700' :
-                                'bg-slate-100 text-slate-600'
-                              }`}>
-                                {d.status === 'paid' ? t('common.status_collected', 'Đã thu') : 
-                                 d.status === 'partially_paid' ? t('common.status_partially_collected', 'Thu một phần') : 
-                                 d.status === 'applied' ? t('common.status_applied', 'Đã áp dụng') : 
-                                 d.status === 'refunded' ? t('common.status_refunded', 'Đã hoàn') : d.status}
-                              </span>
-                            </td>
+                  <>
+                    <div className="overflow-hidden hidden md:block rounded-xl border border-slate-200 bg-white shadow-sm">
+                      <table className="w-full text-xs text-left whitespace-nowrap">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">{t('customers.detail.deposit_code', 'Mã ĐC')}</th>
+                            <th className="px-4 py-3 font-semibold">{t('common.created_date', 'Ngày tạo')}</th>
+                            <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.required_deposit', 'Cần cọc')}</th>
+                            <th className="px-4 py-3 font-semibold text-right">{t('customers.detail.paid_deposit', 'Đã cọc')}</th>
+                            <th className="px-4 py-3 font-semibold text-center">{t('common.status', 'Trạng thái')}</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {deposits.map(d => (
+                            <tr key={d.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3 font-medium text-slate-800">{d.deposit_number}</td>
+                              <td className="px-4 py-3 text-slate-500">{new Date(d.created_at).toLocaleDateString('vi-VN')}</td>
+                              <td className="px-4 py-3 text-right text-slate-800">{Number(d.required_amount).toLocaleString('vi-VN')} đ</td>
+                              <td className="px-4 py-3 text-right text-green-600 font-bold">{Number(d.paid_amount).toLocaleString('vi-VN')} đ</td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                  d.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                  d.status === 'partially_paid' ? 'bg-amber-100 text-amber-700' :
+                                  d.status === 'applied' ? 'bg-blue-100 text-blue-700' :
+                                  d.status === 'refunded' ? 'bg-slate-100 text-slate-700' :
+                                  'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {d.status === 'paid' ? t('common.status_collected', 'Đã thu') : 
+                                   d.status === 'partially_paid' ? t('common.status_partially_collected', 'Thu một phần') : 
+                                   d.status === 'applied' ? t('common.status_applied', 'Đã áp dụng') : 
+                                   d.status === 'refunded' ? t('common.status_refunded', 'Đã hoàn') : d.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View: Cards */}
+                    <div className="md:hidden flex flex-col gap-3">
+                      {deposits.map(d => (
+                        <div key={d.id} className="bg-white border border-slate-100 rounded-xl p-3.5 shadow-sm space-y-3">
+                          <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                            <span className="font-bold text-slate-800">{d.deposit_number}</span>
+                            <span className={`inline-flex px-2 py-0.5 rounded-lg text-[10px] font-bold tracking-wide ${
+                              d.status === 'paid' ? 'bg-green-100 text-green-700 border border-green-200' :
+                              d.status === 'partially_paid' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                              d.status === 'applied' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                              d.status === 'refunded' ? 'bg-slate-100 text-slate-700 border border-slate-200' :
+                              'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {d.status === 'paid' ? t('common.status_collected', 'Đã thu') : 
+                               d.status === 'partially_paid' ? t('common.status_partially_collected', 'Thu một phần') : 
+                               d.status === 'applied' ? t('common.status_applied', 'Đã áp dụng') : 
+                               d.status === 'refunded' ? t('common.status_refunded', 'Đã hoàn') : d.status}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">{new Date(d.created_at).toLocaleDateString('vi-VN')}</span>
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-[11px] text-slate-400">Cần cọc: {Number(d.required_amount).toLocaleString('vi-VN')} đ</span>
+                              <span className="font-bold text-green-600 text-sm">Đã cọc: {Number(d.paid_amount).toLocaleString('vi-VN')} đ</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             )}
