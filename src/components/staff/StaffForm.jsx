@@ -91,18 +91,19 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
       <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-xs" />
-      <div className="relative bg-white w-full md:max-w-2xl rounded-3xl p-6 shadow-2xl relative text-left flex flex-col max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {/* Mobile: cao tối đa 85vh cách viền, Desktop: giữ nguyên */}
+      <div className="relative bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl text-left flex flex-col max-h-[85vh] md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 shrink-0">
+        {/* Header — sticky, không cuộn */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100 shrink-0">
           <h2 className="text-base font-bold text-slate-800 font-sans">{staff.id ? t('staff.form.edit_title', 'Sửa hồ sơ nhân viên') : t('staff.form.title', 'Thêm nhân viên')}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-200/50 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <div className="space-y-4">
+        {/* Form Body — chỉ phần này cuộn */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Section 1: Basic Info */}
           <div className="space-y-3">
             <div className="block font-bold text-slate-400 mb-1 text-[11px] uppercase tracking-wider">{t('staff.form.basic_info', 'THÔNG TIN CƠ BẢN')}</div>
@@ -365,8 +366,8 @@ export default function StaffForm({ staff, branchId, onClose, onSave }) {
 
         </div>
 
-        {/* Footer */}
-        <div className="flex gap-2 pt-4 border-t border-slate-150/50 mt-4 shrink-0">
+        {/* Footer — sticky, không cuộn */}
+        <div className="flex gap-2 px-6 py-4 border-t border-slate-150/50 shrink-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-250 transition-colors font-bold text-xs text-slate-600 font-sans">{t('common.cancel', 'Hủy')}</button>
           <button onClick={handleSubmit} className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans">{t('common.save', 'Lưu')}</button>
         </div>
