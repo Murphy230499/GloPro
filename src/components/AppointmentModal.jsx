@@ -1952,25 +1952,29 @@ export default function AppointmentModal({
                                     {/* Package Services */}
                                     <div className="space-y-3.5">
                                       {packageGroups[packageId].items.map((it) => (
-                                        <div key={it.itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
+                                        <div key={it.itemIdx} className="flex flex-col gap-2 w-full p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
                                           {/* Service Name */}
-                                          <div className="relative flex-1 min-w-[140px]">
-                                            <select
-                                              value={it.service_id || ''}
-                                              disabled
-                                              className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-slate-50 appearance-none truncate cursor-not-allowed transition-all shadow-2xs"
-                                            >
-                                              <option value={it.service_id}>{it.service_name}</option>
-                                            </select>
+                                          <div className="flex items-center gap-2">
+                                            <div className="relative flex-1 min-w-0">
+                                              <select
+                                                value={it.service_id || ''}
+                                                disabled
+                                                className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-slate-50 appearance-none truncate cursor-not-allowed transition-all shadow-2xs"
+                                              >
+                                                <option value={it.service_id}>{it.service_name}</option>
+                                              </select>
+                                            </div>
                                           </div>
                                           {/* Staff Picker */}
-                                          <StaffPickerDropdown
-                                            staffList={staff}
-                                            value={it.staff_id || ''}
-                                            onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
-                                          />
+                                          <div className="flex w-full">
+                                            <StaffPickerDropdown
+                                              staffList={staff}
+                                              value={it.staff_id || ''}
+                                              onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
+                                            />
+                                          </div>
                                           {/* Facility Select */}
-                                          <div className="relative w-[130px] shrink-0">
+                                          <div className="relative w-full shrink-0">
                                             <select
                                               value={it.facility_id || ''}
                                               onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
@@ -1991,29 +1995,41 @@ export default function AppointmentModal({
 
                                 {/* Render Normal Services */}
                                 {normalItems.map((it) => (
-                                  <div key={it.itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
-                                    <div className="relative flex-1 min-w-[140px]">
-                                      <select
-                                        value={it.service_id || ''}
-                                        onChange={(e) => handlePickService(0, it.itemIdx, e.target.value)}
-                                        className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                  <div key={it.itemIdx} className="flex flex-col gap-2 w-full p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
+                                    <div className="flex items-center gap-2">
+                                      <div className="relative flex-1 min-w-0">
+                                        <select
+                                          value={it.service_id || ''}
+                                          onChange={(e) => handlePickService(0, it.itemIdx, e.target.value)}
+                                          className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                        >
+                                          <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
+                                          {services.map(s => (
+                                            <option key={s.id} value={s.id}>
+                                              {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveServiceFromGuest(0, it.itemIdx)}
+                                        className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
+                                        title="Xóa dịch vụ"
                                       >
-                                        <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
-                                        {services.map(s => (
-                                          <option key={s.id} value={s.id}>
-                                            {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                        <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                      </button>
                                     </div>
-                                    <StaffPickerDropdown
-                                      staffList={staff}
-                                      value={it.staff_id || ''}
-                                      onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
-                                      t={t}
-                                    />
-                                    <div className="relative w-[130px] shrink-0">
+                                    <div className="flex w-full">
+                                      <StaffPickerDropdown
+                                        staffList={staff}
+                                        value={it.staff_id || ''}
+                                        onChange={(staffId) => handlePickStaff(0, it.itemIdx, staffId)}
+                                        t={t}
+                                      />
+                                    </div>
+                                    <div className="relative w-full shrink-0">
                                       <select
                                         value={it.facility_id || ''}
                                         onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
@@ -2026,14 +2042,6 @@ export default function AppointmentModal({
                                       </select>
                                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveServiceFromGuest(0, it.itemIdx)}
-                                      className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-                                      title="Xóa dịch vụ"
-                                    >
-                                      <Trash2 className="w-4 h-4 stroke-[1.8]" />
-                                    </button>
                                   </div>
                                 ))}
                               </div>
@@ -2041,29 +2049,41 @@ export default function AppointmentModal({
                           } else {
                             // Non Guest #1 - regular flat list
                             return g.items.map((it, itemIdx) => (
-                              <div key={itemIdx} className="flex items-center gap-3 flex-nowrap w-full">
-                                <div className="relative flex-1 min-w-[140px]">
-                                  <select
-                                    value={it.service_id || ''}
-                                    onChange={(e) => handlePickService(gIdx, itemIdx, e.target.value)}
-                                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                              <div key={itemIdx} className="flex flex-col gap-2 w-full p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <div className="relative flex-1 min-w-0">
+                                    <select
+                                      value={it.service_id || ''}
+                                      onChange={(e) => handlePickService(gIdx, itemIdx, e.target.value)}
+                                      className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-800 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
+                                    >
+                                      <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
+                                      {services.map(s => (
+                                        <option key={s.id} value={s.id}>
+                                          {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveServiceFromGuest(gIdx, itemIdx)}
+                                    className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
+                                    title="Xóa dịch vụ"
                                   >
-                                    <option value="">— {t('appt.modal.select_service', 'Chọn dịch vụ...')} —</option>
-                                    {services.map(s => (
-                                      <option key={s.id} value={s.id}>
-                                        {s.name} ({s.duration_minutes || s.duration || 30} {t('appointments.settings.minutes', 'phút')})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
+                                    <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                  </button>
                                 </div>
-                                <StaffPickerDropdown
-                                  staffList={staff}
-                                  value={it.staff_id || ''}
-                                  onChange={(staffId) => handlePickStaff(gIdx, itemIdx, staffId)}
-                                  t={t}
-                                />
-                                <div className="relative w-[130px] shrink-0">
+                                <div className="flex w-full">
+                                  <StaffPickerDropdown
+                                    staffList={staff}
+                                    value={it.staff_id || ''}
+                                    onChange={(staffId) => handlePickStaff(gIdx, itemIdx, staffId)}
+                                    t={t}
+                                  />
+                                </div>
+                                <div className="relative w-full shrink-0">
                                   <select
                                     value={it.facility_id || ''}
                                     onChange={(e) => handlePickFacility(gIdx, itemIdx, e.target.value)}
@@ -2076,14 +2096,6 @@ export default function AppointmentModal({
                                   </select>
                                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveServiceFromGuest(gIdx, itemIdx)}
-                                  className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-                                  title="Xóa dịch vụ"
-                                >
-                                  <Trash2 className="w-4 h-4 stroke-[1.8]" />
-                                </button>
                               </div>
                             ));
                           }
