@@ -46,6 +46,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
   const [collapsed, setCollapsed] = useState(false);
 
   const [allowedModules, setAllowedModules] = useState(null);
+  const [isMobileDetailView, setIsMobileDetailView] = useState(false);
 
   useEffect(() => {
     async function checkPermissions() {
@@ -103,7 +104,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
       
       {/* Left Sidebar: Modules Menu */}
       <div 
-        className={`bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs shrink-0 transition-all duration-300 relative lg:sticky lg:top-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto w-full lg:w-64`}
+        className={`bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs shrink-0 transition-all duration-300 relative lg:sticky lg:top-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto w-full lg:w-64 ${isMobileDetailView ? 'hidden lg:block' : 'block'}`}
       >
         <div className="px-3 py-2 text-xs font-semibold text-slate-400 normal-case">
           {t('reports.sidebar_header', 'Report Categories')}
@@ -120,6 +121,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
                 key={mod.id}
                 onClick={() => {
                   setActiveTab(mod.id);
+                  setIsMobileDetailView(true);
                 }}
                 className={`w-full flex items-center justify-between rounded-xl text-xs transition cursor-pointer px-3 py-2.5
                   ${isActive
@@ -134,7 +136,7 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
                     {modName}
                   </span>
                 </div>
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-300'}`} />
               </button>
             );
           })}
@@ -142,12 +144,19 @@ export default function ReportLayout({ children, activeTab, setActiveTab, dataFo
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className={`flex-1 min-w-0 space-y-4 ${isMobileDetailView ? 'block animate-in slide-in-from-right-4 duration-200' : 'hidden lg:block'}`}>
         {/* Title Bar & FilterBar */}
         <div className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDetailView(false)}
+                  className="lg:hidden p-1 -ml-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
                 <activeModule.icon className="w-6 h-6 text-blue-600" />
                 <span>{activeModuleName}</span>
               </h1>
