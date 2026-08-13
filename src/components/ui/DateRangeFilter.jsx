@@ -70,10 +70,10 @@ export default function DateRangeFilter({ startDate, endDate, onStartDateChange,
   const theme = FILTER_COLOR_MAP[color] || FILTER_COLOR_MAP.emerald;
   
   return (
-    <div className="font-sans flex flex-col gap-2">
-      <div className="flex gap-2">
+    <div className="font-sans flex flex-col gap-2 w-full">
+      <div className="flex gap-2 w-full">
         {/* From Date Button & Popover */}
-        <div className="relative w-36" ref={startRef}>
+        <div className="relative flex-1 sm:w-36" ref={startRef}>
           <button
             type="button"
             onClick={() => { setOpenStart(!openStart); setOpenEnd(false); }}
@@ -98,23 +98,25 @@ export default function DateRangeFilter({ startDate, endDate, onStartDateChange,
           </button>
 
           {openStart && (
-            <DatePickerPopover
-              selectedDate={startDate}
-              color={color}
-              onSelectDate={(iso) => {
-                onStartDateChange(iso);
-                setOpenStart(false);
-                if (!endDate || iso > endDate) {
-                  onEndDateChange(iso);
-                }
-              }}
-              onClose={() => setOpenStart(false)}
-            />
+            <div className="absolute top-full left-0 mt-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <DatePickerPopover
+                selectedDate={startDate}
+                color={color}
+                onSelectDate={(iso) => {
+                  onStartDateChange(iso);
+                  setOpenStart(false);
+                  if (!endDate || iso > endDate) {
+                    onEndDateChange(iso);
+                  }
+                }}
+                onClose={() => setOpenStart(false)}
+              />
+            </div>
           )}
         </div>
 
         {/* To Date Button & Popover */}
-        <div className="relative w-36" ref={endRef}>
+        <div className="relative flex-1 sm:w-36" ref={endRef}>
           <button
             type="button"
             onClick={() => { setOpenEnd(!openEnd); setOpenStart(false); }}

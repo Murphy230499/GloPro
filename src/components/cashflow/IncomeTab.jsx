@@ -111,11 +111,11 @@ export default function IncomeTab({ branchId, onReload }) {
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-400"
             />
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
+              className="w-full sm:w-auto flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
             >
               <option value="all">{t('cashflow.filter_all_types', 'Tất cả loại')}</option>
               {types.map(typeItem => (
@@ -127,7 +127,7 @@ export default function IncomeTab({ branchId, onReload }) {
             <select
               value={filterSource}
               onChange={e => setFilterSource(e.target.value)}
-              className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
+              className="w-full sm:w-auto flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
             >
               <option value="all">{t('cashflow.filter_all_sources', 'Tất cả nguồn')}</option>
               <option value="auto">⚡ {t('cashflow.source_auto', 'Tự động')}</option>
@@ -135,16 +135,18 @@ export default function IncomeTab({ branchId, onReload }) {
             </select>
           </div>
         </div>
-        <div className="flex gap-2 items-center">
-          <DateRangeFilter
-            startDate={dateFrom}
-            endDate={dateTo}
-            onStartDateChange={setDateFrom}
-            onEndDateChange={setDateTo}
-            color="emerald"
-          />
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full">
+          <div className="flex-1 w-full">
+            <DateRangeFilter
+              startDate={dateFrom}
+              endDate={dateTo}
+              onStartDateChange={setDateFrom}
+              onEndDateChange={setDateTo}
+              color="emerald"
+            />
+          </div>
           {(dateFrom || dateTo || filterType !== 'all' || filterSource !== 'all' || search) && (
-            <button onClick={() => { setDateFrom(''); setDateTo(''); setFilterType('all'); setFilterSource('all'); setSearch(''); }} className="text-xs text-red-500 hover:text-red-600 font-medium px-2">
+            <button onClick={() => { setDateFrom(''); setDateTo(''); setFilterType('all'); setFilterSource('all'); setSearch(''); }} className="text-xs text-red-500 hover:text-red-600 font-medium px-2 self-end sm:self-auto pb-1 sm:pb-0">
               {t('cashflow.clear_filter', 'Xoá lọc')}
             </button>
           )}
