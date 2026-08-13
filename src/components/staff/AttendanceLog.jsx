@@ -272,12 +272,12 @@ export default function AttendanceLog({ branchId, staffData }) {
           </div>
 
           {/* Status Color Legend */}
-          <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-550" style={{ backgroundColor: '#3B82F6' }} /> {t('staff.attendance.on_time', 'Đúng giờ')}</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-550" style={{ backgroundColor: '#EF4444' }} /> {t('staff.attendance.late_early', 'Đi trễ / Về sớm')}</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-550" style={{ backgroundColor: '#8B5CF6' }} /> {t('staff.attendance.no_attendance', 'Chưa chấm công')}</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-550" style={{ backgroundColor: '#D97706' }} /> {t('staff.attendance.missing_punch', 'Chấm công thiếu')}</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-450" style={{ backgroundColor: '#6B7280' }} /> {t('staff.attendance.absent', 'Nghỉ làm')}</span>
+          <div className="flex flex-nowrap sm:flex-wrap items-center gap-3 sm:gap-3 text-[10px] font-bold text-slate-500 overflow-x-auto sm:overflow-visible w-full sm:w-auto scrollbar-none pb-1 sm:pb-0">
+            <span className="flex items-center gap-1 shrink-0"><span className="w-2.5 h-2.5 shrink-0 rounded-full bg-blue-550" style={{ backgroundColor: '#3B82F6' }} /> {t('staff.attendance.on_time', 'Đúng giờ')}</span>
+            <span className="flex items-center gap-1 shrink-0"><span className="w-2.5 h-2.5 shrink-0 rounded-full bg-red-550" style={{ backgroundColor: '#EF4444' }} /> {t('staff.attendance.late_early', 'Đi trễ / Về sớm')}</span>
+            <span className="flex items-center gap-1 shrink-0"><span className="w-2.5 h-2.5 shrink-0 rounded-full bg-purple-550" style={{ backgroundColor: '#8B5CF6' }} /> {t('staff.attendance.no_attendance', 'Chưa chấm công')}</span>
+            <span className="flex items-center gap-1 shrink-0"><span className="w-2.5 h-2.5 shrink-0 rounded-full bg-amber-550" style={{ backgroundColor: '#D97706' }} /> {t('staff.attendance.missing_punch', 'Chấm công thiếu')}</span>
+            <span className="flex items-center gap-1 shrink-0"><span className="w-2.5 h-2.5 shrink-0 rounded-full bg-gray-450" style={{ backgroundColor: '#6B7280' }} /> {t('staff.attendance.absent', 'Nghỉ làm')}</span>
           </div>
         </div>
 
