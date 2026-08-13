@@ -335,7 +335,7 @@ export default function AppointmentHeader({
 
 
           {/* Custom Services Dropdown */}
-          <div className="relative shrink-0 service-dropdown-container hidden sm:block w-[calc(50%-4px)] sm:w-auto order-4 sm:order-3">
+          <div className="relative shrink-0 service-dropdown-container w-[calc(50%-4px)] sm:w-auto order-5 sm:order-2">
             <button
               type="button"
               onClick={() => {
@@ -433,7 +433,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Staffs / Facilities Dropdown */}
-          <div className="relative shrink-0 staff-dropdown-container hidden sm:block w-[calc(50%-4px)] sm:w-auto order-3 sm:order-4">
+          <div className="relative shrink-0 staff-dropdown-container w-[calc(50%-4px)] sm:w-auto order-6 sm:order-3">
             <button
               type="button"
               onClick={() => {
@@ -462,7 +462,7 @@ export default function AppointmentHeader({
             </button>
 
             {isStaffOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl border border-slate-200 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
+              <div className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 w-72 bg-white rounded-xl border border-slate-200 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
                 {/* Search Header Bar */}
                 <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
                   <input
@@ -550,7 +550,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-5 xl:order-4">
+          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-8 sm:order-7 xl:order-4">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
@@ -598,10 +598,12 @@ export default function AppointmentHeader({
           </div>
         {/* Right Side Items */}
           {/* Force Line Break on Mobile */}
-          <div className="basis-full h-0 xl:hidden order-4" />
+          <div className="basis-full h-0 sm:hidden order-4" />
+          {/* Force Line Break on Tablet */}
+          <div className="basis-full h-0 xl:hidden order-7 sm:order-6" />
 
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-2 ml-auto xl:order-5">
+          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-2 sm:order-4 xl:order-5 ml-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
@@ -640,7 +642,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Settings Buttons: Sofa + Cog */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0 order-3 ml-auto xl:order-6 xl:ml-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0 order-3 sm:order-5 xl:order-6">
             <button
               type="button"
               onClick={onFacilityManagementClick}
@@ -661,7 +663,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Create Appointment Button */}
-          <div className="relative add-menu-container shrink-0 order-6 ml-auto xl:order-7 xl:ml-0">
+          <div className="relative add-menu-container shrink-0 order-9 sm:order-8 xl:order-7">
             <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-lg sm:rounded-xl shadow-2xs transition-all active:scale-95 group">
               <button
                 onClick={onAddClick}

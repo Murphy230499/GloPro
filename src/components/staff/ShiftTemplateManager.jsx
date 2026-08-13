@@ -163,19 +163,21 @@ export default function ShiftTemplateManager({ onChanged }) {
   return (
     <div className="space-y-4">
       {/* Header Toolbar */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <h3 className="font-bold text-slate-800 text-sm">{t('staff.scheduler.shift_list_title', 'Danh sách ca làm việc')} ({templates.length})</h3>
-          <p className="text-slate-400 text-xs mt-0.5 font-medium">{t('staff.scheduler.shift_list_desc', 'Quản lý định nghĩa ca trực và thời gian check in/out của nhân sự')}</p>
+      <div className="flex items-center justify-between bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm gap-2 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-slate-800 text-sm truncate">{t('staff.scheduler.shift_list_title', 'Danh sách ca làm việc')} ({templates.length})</h3>
+          <p className="text-slate-400 text-[10px] sm:text-xs mt-0.5 font-medium truncate sm:whitespace-normal">
+            {t('staff.scheduler.shift_list_desc', 'Quản lý định nghĩa ca trực và thời gian check in/out của nhân sự')}
+          </p>
         </div>
         <button
           onClick={() => {
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans"
+          className="flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all font-sans shrink-0 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" /> {t('staff.scheduler.add_shift_btn', 'Thêm ca làm việc')}
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t('staff.scheduler.add_shift_btn', 'Thêm ca làm việc')}
         </button>
       </div>
 
