@@ -152,73 +152,117 @@ export default function ExpenseTab({ branchId, onReload }) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      {/* Table & Cards */}
+      <div className="overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center bg-white rounded-2xl border border-slate-200">
             <TrendingDown className="w-10 h-10 text-slate-200 mx-auto mb-3" />
             <p className="text-slate-400 text-sm">{t('cashflow.no_expense_vouchers', 'Chưa có phiếu chi nào')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_voucher_code', 'Mã phiếu')}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_date', 'Ngày')}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_type', 'Loại')}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_description', 'Mô tả')}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_method', 'P.thức')}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_source', 'Nguồn')}</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_amount', 'Số tiền')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filtered.map(v => {
-                  const typeObj = types.find(t => t.code === v.type_code);
-                  return (
-                    <tr key={v.id} className="hover:bg-red-50/50 transition-colors">
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs font-semibold text-slate-700">{v.code}</span>
-                        {v.ref_code && (
-                          <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                            <ExternalLink className="w-2.5 h-2.5" /> {v.ref_code}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600">{v.date}</td>
-                      <td className="px-4 py-3">
+          <>
+            {/* Mobile View (Cards) */}
+            <div className="md:hidden flex flex-col gap-3">
+              {filtered.map(v => {
+                const typeObj = types.find(t => t.code === v.type_code);
+                return (
+                  <div key={v.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <div className="font-mono text-sm font-bold text-slate-800">{v.code}</div>
+                        <div className="text-xs text-slate-500 mt-1">{v.date}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-red-500 text-sm">{formatVND(v.amount)}</div>
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold text-white shadow-2xs"
                           style={{ background: typeObj?.color || '#94A3B8' }}
                         >
                           {typeObj?.name || v.type_name || 'Khác'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[200px] truncate">
-                        {translateVoucherDescription(v.description)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-600 font-medium">
+                      {translateVoucherDescription(v.description)}
+                    </div>
+                    <div className="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${SOURCE_COLORS[v.source] || SOURCE_COLORS.manual}`}>
+                        {SOURCE_LABELS[v.source] || v.source}
+                      </span>
+                      <span className="text-slate-500 font-medium bg-slate-50 px-2 py-1 rounded-lg">
                         {t(`cashflow.pm_${v.payment_method}`, getPaymentMethodLabel(v.payment_method))}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${SOURCE_COLORS[v.source] || SOURCE_COLORS.manual}`}>
-                          {SOURCE_LABELS[v.source] || v.source}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-red-500">{formatVND(v.amount)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-red-50 border-t-2 border-red-100">
-                  <td colSpan={6} className="px-4 py-3 text-xs font-bold text-red-700">{t('cashflow.total_summary_prefix', 'Tổng cộng')} ({filtered.length} {t('cashflow.voucher_unit', 'phiếu')})</td>
-                  <td className="px-4 py-3 text-right font-bold text-red-700 text-sm">{formatVND(totalAmount)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex justify-between items-center mt-1 shadow-sm">
+                <span className="text-xs font-bold text-red-700 uppercase tracking-wider">{t('cashflow.total_summary_prefix', 'Tổng cộng')} ({filtered.length})</span>
+                <span className="font-bold text-red-700 text-sm">{formatVND(totalAmount)}</span>
+              </div>
+            </div>
+
+            {/* Desktop View (Table) */}
+            <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-2xs">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_voucher_code', 'Mã phiếu')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_date', 'Ngày')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_type', 'Loại')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_description', 'Mô tả')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_method', 'P.thức')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_source', 'Nguồn')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500">{t('cashflow.col_amount', 'Số tiền')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filtered.map(v => {
+                    const typeObj = types.find(t => t.code === v.type_code);
+                    return (
+                      <tr key={v.id} className="hover:bg-red-50/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-xs font-semibold text-slate-700">{v.code}</span>
+                          {v.ref_code && (
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                              <ExternalLink className="w-2.5 h-2.5" /> {v.ref_code}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600">{v.date}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                            style={{ background: typeObj?.color || '#94A3B8' }}
+                          >
+                            {typeObj?.name || v.type_name || 'Khác'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 max-w-[200px] truncate">
+                          {translateVoucherDescription(v.description)}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-500">
+                          {t(`cashflow.pm_${v.payment_method}`, getPaymentMethodLabel(v.payment_method))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${SOURCE_COLORS[v.source] || SOURCE_COLORS.manual}`}>
+                            {SOURCE_LABELS[v.source] || v.source}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-red-500">{formatVND(v.amount)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-red-50 border-t-2 border-red-100">
+                    <td colSpan={6} className="px-4 py-3 text-xs font-bold text-red-700">{t('cashflow.total_summary_prefix', 'Tổng cộng')} ({filtered.length} {t('cashflow.voucher_unit', 'phiếu')})</td>
+                    <td className="px-4 py-3 text-right font-bold text-red-700 text-sm">{formatVND(totalAmount)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
