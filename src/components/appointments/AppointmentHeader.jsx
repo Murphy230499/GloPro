@@ -343,7 +343,7 @@ export default function AppointmentHeader({
 
 
           {/* Custom Services Dropdown */}
-          <div className="relative shrink-0 service-dropdown-container w-[calc(50%-4px)] sm:w-auto order-5 sm:order-2">
+          <div className="hidden sm:block relative shrink-0 service-dropdown-container sm:w-auto order-5 sm:order-2">
             <button
               type="button"
               onClick={() => {
@@ -441,7 +441,7 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Staffs / Facilities Dropdown */}
-          <div className="relative shrink-0 staff-dropdown-container w-[calc(50%-4px)] sm:w-auto order-6 sm:order-3">
+          <div className="hidden sm:block relative shrink-0 staff-dropdown-container sm:w-auto order-6 sm:order-3">
             <button
               type="button"
               onClick={() => {

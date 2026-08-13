@@ -237,7 +237,7 @@ export default function AppointmentTimelineView({
         <div className="relative" style={{ minWidth: 'max-content', width: TOTAL_CONTAINER_WIDTH }}>
           {/* Red Dotted Current Line Indicator */}
           {currentLineLeftPx > 0 && currentLineLeftPx < TOTAL_GRID_WIDTH_PX && (
-              <div className="absolute top-0 bottom-0 ml-24 md:ml-52 z-30 pointer-events-none">
+              <div className="absolute top-0 bottom-0 ml-24 md:ml-52 z-10 pointer-events-none">
                 <div
                   className="absolute top-0 bottom-0 flex flex-col items-center"
                   style={{ transform: `translateX(${currentLineLeftPx}px)` }}
