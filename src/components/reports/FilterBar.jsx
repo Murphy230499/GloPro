@@ -259,6 +259,7 @@ function DateRangePicker({ value, onChange }) {
             </div>
           </div>
         </div>
+      )}
     </div>
   );
 }
