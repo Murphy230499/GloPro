@@ -208,7 +208,7 @@ export default function AppointmentCalendarView({
       {/* ── Scrollable Body (both x and y) ── */}
       <div
         ref={bodyScrollRef}
-        className="overflow-auto flex-1 min-h-0"
+        className="overflow-auto flex-1 min-h-0 pb-24 md:pb-0"
         onScroll={handleBodyScroll}
       >
         <div className="flex relative min-w-[1000px]" style={{ height: TOTAL_GRID_HEIGHT_PX }}>

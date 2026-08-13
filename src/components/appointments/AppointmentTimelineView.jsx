@@ -231,7 +231,7 @@ export default function AppointmentTimelineView({
       {/* ── Scrollable Body Area ── */}
       <div
         ref={bodyScrollRef}
-        className="overflow-auto flex-1 min-h-0"
+        className="overflow-auto flex-1 min-h-0 pb-24 md:pb-0"
         onScroll={handleBodyScroll}
       >
         <div className="relative" style={{ minWidth: 'max-content', width: TOTAL_CONTAINER_WIDTH }}>
