@@ -297,21 +297,27 @@ export default function StaffPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAdvancedConfig(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+              title={t('staff.commission.advanced_config', 'Cài đặt nâng cao')}
+              className="flex items-center justify-center gap-1.5 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs transition-colors"
             >
-              <Settings className="w-4 h-4 text-orange-500" /> {t('staff.commission.advanced_config', 'Cài đặt nâng cao')}
+              <Settings className="w-4 h-4 text-orange-500" />
+              <span className="hidden sm:inline">{t('staff.commission.advanced_config', 'Cài đặt nâng cao')}</span>
             </button>
             <button
               onClick={() => setShowCopyCommission(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+              title={t('staff.commission.copy', 'Sao chép hoa hồng')}
+              className="flex items-center justify-center gap-1.5 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs transition-colors"
             >
-              <Copy className="w-4 h-4 text-blue-500" /> {t('staff.commission.copy', 'Sao chép hoa hồng')}
+              <Copy className="w-4 h-4 text-blue-500" />
+              <span className="hidden sm:inline">{t('staff.commission.copy', 'Sao chép hoa hồng')}</span>
             </button>
             <button
               onClick={() => setShowAuditLog(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs"
+              title={t('staff.commission.history', 'Lịch sử thao tác')}
+              className="flex items-center justify-center gap-1.5 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-sm text-slate-700 shadow-xs transition-colors"
             >
-              <History className="w-4 h-4 text-emerald-500" /> {t('staff.commission.history', 'Lịch sử thao tác')}
+              <History className="w-4 h-4 text-emerald-500" />
+              <span className="hidden sm:inline">{t('staff.commission.history', 'Lịch sử thao tác')}</span>
             </button>
           </div>
         )}
