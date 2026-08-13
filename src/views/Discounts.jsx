@@ -625,7 +625,7 @@ export default function Discounts() {
       </div>
 
       {/* Tabs Menu Bar & Mobile Add Button */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 w-full">
         <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm max-w-max flex-1 sm:flex-none">
         <button 
           onClick={() => setActiveTab('promos')}
