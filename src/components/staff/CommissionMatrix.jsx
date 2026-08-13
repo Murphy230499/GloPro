@@ -529,7 +529,7 @@ export default function CommissionMatrix({ branchId }) {
               <table className="w-full text-left border-collapse table-fixed font-sans">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                    <th className="py-4 px-5 w-[220px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold">
+                    <th className="py-2 sm:py-4 px-2 sm:px-5 w-[33vw] min-w-[33vw] max-w-[33vw] sm:w-[220px] sm:min-w-[220px] sm:max-w-none sticky left-0 bg-slate-50 z-10 border-r border-slate-100 font-semibold align-middle text-[10px] sm:text-xs text-center sm:text-left">
                       {activeTab === 'customer_req' ? 'Dịch vụ' : (TABS.find(t => t.id === activeTab)?.label || 'Dịch vụ / Sản phẩm')}
                     </th>
                     {staff.map(s => (
@@ -546,9 +546,9 @@ export default function CommissionMatrix({ branchId }) {
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/20 transition-colors">
                       {/* Item Info (Sticky Left) */}
-                      <td className="py-3 px-5 sticky left-0 bg-white z-10 border-r border-slate-100">
-                        <div className="font-semibold text-xs text-slate-750 truncate max-w-[180px]">{item.name}</div>
-                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">{formatVND(item.price || 0)}</div>
+                      <td className="py-2 sm:py-3 px-2 sm:px-5 sticky left-0 bg-white z-10 border-r border-slate-100 w-[33vw] min-w-[33vw] max-w-[33vw] sm:w-[220px] sm:min-w-[220px] sm:max-w-none align-top sm:align-middle">
+                        <div className="font-semibold text-[10px] sm:text-xs text-slate-750 line-clamp-2 sm:line-clamp-none sm:truncate w-full sm:max-w-[180px] leading-tight sm:leading-normal text-center sm:text-left">{item.name}</div>
+                        <div className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 sm:mt-0.5 text-center sm:text-left">{formatVND(item.price || 0)}</div>
                       </td>
 
                       {/* Employee Columns */}
