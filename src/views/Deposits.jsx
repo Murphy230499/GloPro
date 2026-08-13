@@ -53,7 +53,7 @@ export default function DepositsView() {
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
-      <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <div className="p-3 sm:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{t('deposits.page_title', 'Quản lý Đặt cọc')}</h1>
@@ -186,12 +186,12 @@ export default function DepositsView() {
                 </table>
 
                 {/* Mobile Tags/Cards View */}
-                <div className="flex sm:hidden flex-col gap-3 p-4">
+                <div className="flex sm:hidden flex-col gap-3 p-0 sm:p-4 bg-slate-50/30">
                   {deposits.map((d) => (
                     <div 
                       key={d.id} 
                       onClick={() => { setEditingDeposit(d); setModalOpen(true); }}
-                      className="flex flex-col p-4 border border-slate-100 rounded-2xl bg-slate-50 shadow-sm gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                      className="flex flex-col p-4 border-y sm:border sm:rounded-2xl border-slate-100 bg-white shadow-sm gap-3 active:scale-[0.98] transition-transform cursor-pointer"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-sm">{d.deposit_number}</span>
