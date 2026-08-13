@@ -327,7 +327,7 @@ export default function ManageTemplatesView({ onBackToEvents }) {
     <div className="flex flex-col h-full min-h-[750px] bg-slate-50/50 font-body rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs">
       
       {/* Top Header & Breadcrumbs */}
-      <div className="px-8 py-6 md:px-10 bg-white border-b border-slate-200/80 sticky top-0 z-10 shadow-2xs space-y-4">
+      <div className="px-4 sm:px-8 py-6 md:px-10 bg-white border-b border-slate-200/80 sticky top-0 z-10 shadow-2xs space-y-4">
         
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -358,23 +358,25 @@ export default function ManageTemplatesView({ onBackToEvents }) {
         </div>
 
         {/* Channel Tabs & Search Bar Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 min-w-0 w-full">
           
-          {/* Channel Tabs Pill */}
-          <div className="flex sm:inline-flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80 overflow-x-auto custom-scrollbar max-w-full">
-            {['Email', 'SMS', 'WhatsApp', 'Telegram', 'Zalo'].map((chan) => (
-              <button
-                key={chan}
-                onClick={() => { setActiveChannel(chan); setCurrentPage(1); }}
-                className={`px-5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 whitespace-nowrap ${
-                  activeChannel === chan
-                    ? 'bg-white text-blue-600 shadow-2xs border border-slate-200/60'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {chan}
-              </button>
-            ))}
+          {/* Channel Tabs Pill (Scrollable Wrapper) */}
+          <div className="w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 -mb-1">
+            <div className="inline-flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80 w-max">
+              {['Email', 'SMS', 'WhatsApp', 'Telegram', 'Zalo'].map((chan) => (
+                <button
+                  key={chan}
+                  onClick={() => { setActiveChannel(chan); setCurrentPage(1); }}
+                  className={`px-5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 whitespace-nowrap ${
+                    activeChannel === chan
+                      ? 'bg-white text-blue-600 shadow-2xs border border-slate-200/60'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {chan}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search Input */}
