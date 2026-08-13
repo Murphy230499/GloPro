@@ -602,14 +602,14 @@ export default function SettingsPage() {
       {/* Tab 2: Tài khoản */}
       {activeTab === 'accounts' && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm gap-4">
-            <h2 className="text-lg font-bold text-slate-800">{t('settings.account_list_title', 'Danh sách tài khoản')}</h2>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm gap-3 md:gap-4">
+            <h2 className="text-base md:text-lg font-bold text-slate-800">{t('settings.account_list_title', 'Danh sách tài khoản')}</h2>
             <div className="flex gap-2 w-full md:w-auto">
               <button 
                 onClick={() => setShowRoleManager(true)}
-                className="flex-1 md:flex-none flex justify-center items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm shadow-xs transition-all active:scale-95"
+                className="flex-1 md:flex-none flex justify-center items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-lg md:rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-xs md:text-sm shadow-xs transition-all active:scale-95"
               >
-                <Shield className="w-4 h-4 text-slate-500" /> {t('settings.btn_roles', 'Vai trò')}
+                <Shield className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-500" /> {t('settings.btn_roles', 'Vai trò')}
               </button>
               <button 
                 onClick={() => setEditingAccount({ 
@@ -623,9 +623,9 @@ export default function SettingsPage() {
                   email: '',
                   avatar_url: ''
                 })} 
-                className="flex-1 md:flex-none flex justify-center items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all active:scale-95"
+                className="flex-1 md:flex-none flex justify-center items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-lg md:rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs md:text-sm shadow-sm transition-all active:scale-95"
               >
-                <Plus className="w-4 h-4" /> <span className="hidden md:inline">{t('settings.btn_add_account', 'Thêm tài khoản')}</span><span className="md:hidden">{t('settings.btn_add_account_short', 'Thêm mới')}</span>
+                <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden md:inline">{t('settings.btn_add_account', 'Thêm tài khoản')}</span><span className="md:hidden">{t('settings.btn_add_account_short', 'Thêm mới')}</span>
               </button>
             </div>
           </div>
