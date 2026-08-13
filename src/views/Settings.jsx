@@ -635,8 +635,8 @@ export default function SettingsPage() {
               <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="bg-white border-y sm:border border-slate-100 sm:rounded-2xl sm:shadow-sm sm:overflow-hidden -mx-4 sm:mx-0">
+              <div className="overflow-x-auto hidden sm:block">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -750,6 +750,107 @@ export default function SettingsPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="flex sm:hidden flex-col gap-3 p-4 bg-slate-50/50">
+                {profiles.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">
+                    {t('settings.no_accounts_yet', 'Chưa có tài khoản đăng nhập nào được khởi tạo.')}
+                  </div>
+                ) : (
+                  profiles.map((acc, index) => {
+                    const assignedBranchNames = (acc.branch_ids || [])
+                      .map(bId => branches.find(b => b.id === bId)?.name)
+                      .filter(Boolean);
+                      
+                    const locationText = acc.role === 'owner' 
+                      ? t('settings.all_branches', 'Tất cả chi nhánh') 
+                      : assignedBranchNames.length > 0 
+                      ? assignedBranchNames.join(', ') 
+                      : t('settings.unassigned_branch', 'Chưa phân chi nhánh');
+
+                    let statusColor = 'bg-slate-50 text-slate-600 border border-slate-100';
+                    let statusText = t('settings.status_disabled', 'Vô hiệu hóa');
+                    if (acc.status === 'active') {
+                      statusColor = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                      statusText = t('settings.status_active', 'Hoạt động');
+                    } else if (acc.status === 'pending') {
+                      statusColor = 'bg-amber-50 text-amber-600 border border-amber-100';
+                      statusText = t('settings.status_pending', 'Chờ kích hoạt');
+                    } else if (acc.status === 'deleted') {
+                      statusColor = 'bg-red-50 text-red-600 border border-red-100';
+                      statusText = t('settings.status_deleted', 'Đã xóa');
+                    }
+
+                    const typeText = acc.type === 'User' ? t('settings.type_user', 'Khách hàng (User)') : t('settings.type_employee', 'Nhân viên');
+
+                    return (
+                      <div 
+                        key={acc.id} 
+                        onClick={() => setEditingAccount(acc)}
+                        className="flex flex-col p-4 border border-slate-100 rounded-2xl bg-white shadow-sm gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-400 uppercase">
+                            ACC_{String(index + 1).padStart(6, '0')}
+                          </span>
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusColor}`}>
+                            {statusText}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
+                            {acc.avatar_url ? (
+                              <img src={acc.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-5 h-5 text-slate-450" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-800 text-sm leading-tight">
+                              {acc.full_name || acc.email}
+                            </span>
+                            <span className="text-xs text-slate-500 mt-0.5">{acc.phone || acc.email}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm mt-1 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">{t('settings.col_role', 'VAI TRÒ')}</div>
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              acc.role === 'owner' 
+                                ? 'bg-amber-50 text-amber-600 border border-amber-100' 
+                                : acc.role === 'admin'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-100'
+                                : 'bg-slate-50 text-slate-600 border border-slate-100'
+                            }`}>
+                              {t('settings.role_' + acc.role, ROLE_LABELS[acc.role] || acc.role)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">{t('settings.col_type', 'PHÂN LOẠI')}</div>
+                            <div className="font-semibold text-slate-600 text-xs">{typeText}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-1 pt-3 border-t border-slate-100/60">
+                          <div className="text-[11px] text-slate-500 max-w-[200px] truncate flex items-center gap-1.5">
+                            <Building className="w-3.5 h-3.5" />
+                            {locationText}
+                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); removeAccount(acc); }} 
+                            className="p-1.5 text-slate-400 hover:text-red-600 bg-white border border-slate-100 rounded-lg transition-colors shadow-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
