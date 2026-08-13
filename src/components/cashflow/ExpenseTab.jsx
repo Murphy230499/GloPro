@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { TrendingDown, Search, ExternalLink } from 'lucide-react';
+import { TrendingDown, Search, ExternalLink, ChevronDown } from 'lucide-react';
 import DateRangeFilter from '@/components/ui/DateRangeFilter';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
@@ -15,6 +15,8 @@ export default function ExpenseTab({ branchId, onReload }) {
   const { t } = useT();
   const [vouchers, setVouchers] = useState([]);
   const [types, setTypes] = useState([]);
+  const [mobileTypeOpen, setMobileTypeOpen] = useState(false);
+  const [mobileSourceOpen, setMobileSourceOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -112,10 +114,34 @@ export default function ExpenseTab({ branchId, onReload }) {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {/* Mobile Custom Select for Type */}
+            <div className="relative block sm:hidden w-full">
+              <button
+                type="button"
+                onClick={() => { setMobileTypeOpen(!mobileTypeOpen); setMobileSourceOpen(false); }}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white shadow-2xs"
+              >
+                <span>{filterType === 'all' ? t('cashflow.filter_all_types', 'Tất cả loại') : types.find(tItem => tItem.code === filterType)?.name || filterType}</span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              </button>
+              {mobileTypeOpen && (
+                <div className="absolute left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl z-50 py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                  <button onClick={() => { setFilterType('all'); setMobileTypeOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                    {t('cashflow.filter_all_types', 'Tất cả loại')}
+                  </button>
+                  {types.map(typeItem => (
+                    <button key={typeItem.code} onClick={() => { setFilterType(typeItem.code); setMobileTypeOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                      {typeItem.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Desktop Native Select for Type */}
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="w-full sm:w-auto flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-red-400 bg-white"
+              className="hidden sm:block w-full sm:w-auto flex-1 px-3 pr-8 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-red-400 bg-white"
             >
               <option value="all">{t('cashflow.filter_all_types', 'Tất cả loại')}</option>
               {types.map(typeItem => (
@@ -124,10 +150,40 @@ export default function ExpenseTab({ branchId, onReload }) {
                 </option>
               ))}
             </select>
+
+            {/* Mobile Custom Select for Source */}
+            <div className="relative block sm:hidden w-full">
+              <button
+                type="button"
+                onClick={() => { setMobileSourceOpen(!mobileSourceOpen); setMobileTypeOpen(false); }}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white shadow-2xs"
+              >
+                <span>
+                  {filterSource === 'all' && t('cashflow.filter_all_sources', 'Tất cả nguồn')}
+                  {filterSource === 'auto' && `⚡ ${t('cashflow.source_auto', 'Tự động')}`}
+                  {filterSource === 'manual' && `✏️ ${t('cashflow.source_manual', 'Thủ công')}`}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              </button>
+              {mobileSourceOpen && (
+                <div className="absolute left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl z-50 py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                  <button onClick={() => { setFilterSource('all'); setMobileSourceOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100">
+                    {t('cashflow.filter_all_sources', 'Tất cả nguồn')}
+                  </button>
+                  <button onClick={() => { setFilterSource('auto'); setMobileSourceOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100">
+                    ⚡ {t('cashflow.source_auto', 'Tự động')}
+                  </button>
+                  <button onClick={() => { setFilterSource('manual'); setMobileSourceOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">
+                    ✏️ {t('cashflow.source_manual', 'Thủ công')}
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* Desktop Native Select for Source */}
             <select
               value={filterSource}
               onChange={e => setFilterSource(e.target.value)}
-              className="w-full sm:w-auto flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-red-400 bg-white"
+              className="hidden sm:block w-full sm:w-auto flex-1 px-3 pr-8 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-red-400 bg-white"
             >
               <option value="all">{t('cashflow.filter_all_sources', 'Tất cả nguồn')}</option>
               <option value="auto">⚡ {t('cashflow.source_auto', 'Tự động')}</option>
