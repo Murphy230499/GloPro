@@ -116,7 +116,7 @@ export default function DataTable({
                 <th
                   key={col.key}
                   onClick={() => col.sortable !== false && handleSort(col.key)}
-                  className={`py-3.5 px-5 font-semibold text-slate-600 select-none ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-100/80 transition' : ''} ${col.align === 'right' ? 'text-right' : ''}`}
+                  className={`py-3.5 px-5 font-semibold text-slate-600 select-none whitespace-nowrap sm:whitespace-normal ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-100/80 transition' : ''} ${col.align === 'right' ? 'text-right' : ''}`}
                 >
                   <div className={`inline-flex items-center gap-1.5 ${col.align === 'right' ? 'justify-end w-full' : ''}`}>
                     <span>{col.label}</span>
@@ -150,7 +150,7 @@ export default function DataTable({
                   className={`hover:bg-slate-50/80 transition ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {activeCols.map(col => (
-                    <td key={col.key} className={`py-3.5 px-5 font-medium text-slate-700 ${col.align === 'right' ? 'text-right' : ''}`}>
+                    <td key={col.key} className={`py-3.5 px-5 font-medium text-slate-700 whitespace-nowrap sm:whitespace-normal ${col.align === 'right' ? 'text-right' : ''}`}>
                       {col.render ? col.render(row[col.key], row) : (row[col.key] !== undefined && row[col.key] !== null ? String(row[col.key]) : '-')}
                     </td>
                   ))}

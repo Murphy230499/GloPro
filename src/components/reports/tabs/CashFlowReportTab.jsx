@@ -246,25 +246,25 @@ export default function CashFlowReportTab({ datePreset = '30d', customRange }) {
             <table className="w-full text-xs">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500">{t('reports.col_voucher_code', 'Voucher Code')}</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500">{t('reports.col_date', 'Date')}</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500">{t('reports.col_category', 'Category')}</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500">{t('reports.col_description', 'Description')}</th>
-                  <th className="text-right px-4 py-2.5 font-semibold text-slate-500">{t('reports.col_amount', 'Amount')}</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500 whitespace-nowrap sm:whitespace-normal">{t('reports.col_voucher_code', 'Voucher Code')}</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500 whitespace-nowrap sm:whitespace-normal">{t('reports.col_date', 'Date')}</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500 whitespace-nowrap sm:whitespace-normal">{t('reports.col_category', 'Category')}</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500 whitespace-nowrap sm:whitespace-normal">{t('reports.col_description', 'Description')}</th>
+                  <th className="text-right px-4 py-2.5 font-semibold text-slate-500 whitespace-nowrap sm:whitespace-normal">{t('reports.col_amount', 'Amount')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {[...filtered].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 100).map(v => (
                   <tr key={v.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 font-mono">{v.code}</td>
-                    <td className="px-4 py-2 text-slate-500">{v.date}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 font-mono whitespace-nowrap sm:whitespace-normal">{v.code}</td>
+                    <td className="px-4 py-2 text-slate-500 whitespace-nowrap sm:whitespace-normal">{v.date}</td>
+                    <td className="px-4 py-2 whitespace-nowrap sm:whitespace-normal">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${v.flow === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
                         {translateTypeName(v.type_name)}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-slate-500 max-w-[160px] truncate">{translateDescription(v.description)}</td>
-                    <td className={`px-4 py-2 text-right font-bold ${v.flow === 'income' ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <td className="px-4 py-2 text-slate-500 max-w-[160px] truncate whitespace-nowrap sm:whitespace-normal">{translateDescription(v.description)}</td>
+                    <td className={`px-4 py-2 text-right font-bold whitespace-nowrap sm:whitespace-normal ${v.flow === 'income' ? 'text-emerald-600' : 'text-red-500'}`}>
                       {v.flow === 'income' ? '+' : '-'}{formatVND(v.amount)}
                     </td>
                   </tr>
