@@ -135,8 +135,8 @@ export default function IncomeTab({ branchId, onReload }) {
             </select>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full">
-          <div className="flex-1 w-full">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
+          <div className="w-full sm:w-auto sm:flex-none">
             <DateRangeFilter
               startDate={dateFrom}
               endDate={dateTo}
