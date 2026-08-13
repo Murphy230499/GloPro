@@ -120,7 +120,7 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 font-body overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-slate-50 font-body overflow-hidden">
       <TopBar onNewAppointment={() => setApptOpen(true)} onNewInvoice={() => setInvOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -195,7 +195,7 @@ export default function Layout({ children }) {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0 flex flex-col" id="main-content">
+        <main className="flex-1 min-w-0 overflow-y-auto pb-24 md:pb-0 flex flex-col" id="main-content">
           <div className="max-w-[1600px] w-full mx-auto px-3 py-4 md:px-8 md:py-6 flex-1 flex flex-col min-h-0 bg-[hsl(var(--background))]">
             {children}
           </div>
