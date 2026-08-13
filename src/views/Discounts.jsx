@@ -595,7 +595,7 @@ export default function Discounts() {
 
   return (
     <div className="space-y-6">
-      {/* Header section with Action Button */}
+      {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-left">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 font-sans">{t('discounts.page_title', 'Giảm giá')}</h1>
@@ -604,25 +604,29 @@ export default function Discounts() {
           </p>
         </div>
 
-        {activeTab === 'promos' ? (
-          <button 
-            onClick={() => { resetPromoForm(); setShowPromoModal(true); }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> {t('discounts.create_promo', 'Tạo chương trình')}
-          </button>
-        ) : (
-          <button 
-            onClick={() => { resetVoucherForm(); setShowVoucherModal(true); }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> {t('discounts.create_voucher', 'Tạo voucher')}
-          </button>
-        )}
+        {/* Desktop Add Button (Hidden on Mobile) */}
+        <div className="hidden sm:block">
+          {activeTab === 'promos' ? (
+            <button 
+              onClick={() => { resetPromoForm(); setShowPromoModal(true); }}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> {t('discounts.create_promo', 'Tạo chương trình')}
+            </button>
+          ) : (
+            <button 
+              onClick={() => { resetVoucherForm(); setShowVoucherModal(true); }}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm shadow-sm hover:bg-pink-600 transition-all font-sans cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> {t('discounts.create_voucher', 'Tạo voucher')}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tabs Menu Bar */}
-      <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm max-w-max">
+      {/* Tabs Menu Bar & Mobile Add Button */}
+      <div className="flex items-center gap-2">
+        <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm max-w-max flex-1 sm:flex-none">
         <button 
           onClick={() => setActiveTab('promos')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
@@ -645,6 +649,26 @@ export default function Discounts() {
           <Ticket className="w-4 h-4 shrink-0" />
           {t('discounts.tab_vouchers', 'Voucher giảm giá')}
         </button>
+        </div>
+        
+        {/* Mobile Add Button (Hidden on Desktop) */}
+        <div className="sm:hidden shrink-0">
+          {activeTab === 'promos' ? (
+            <button 
+              onClick={() => { resetPromoForm(); setShowPromoModal(true); }}
+              className="flex items-center justify-center p-2.5 rounded-xl bg-pink-500 text-white shadow-sm hover:bg-pink-600 transition-all cursor-pointer"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          ) : (
+            <button 
+              onClick={() => { resetVoucherForm(); setShowVoucherModal(true); }}
+              className="flex items-center justify-center p-2.5 rounded-xl bg-pink-500 text-white shadow-sm hover:bg-pink-600 transition-all cursor-pointer"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* TAB 1: CTKM */}
