@@ -635,8 +635,8 @@ export default function SettingsPage() {
               <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="bg-white border-y sm:border border-slate-100 sm:rounded-2xl sm:shadow-sm sm:overflow-hidden -mx-4 sm:mx-0">
-              <div className="overflow-x-auto hidden sm:block">
+            <div className="bg-white border-y md:border border-slate-100 md:rounded-2xl md:shadow-sm md:overflow-hidden -mx-4 md:mx-0">
+              <div className="overflow-x-auto hidden md:block">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -753,7 +753,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Mobile View */}
-              <div className="flex sm:hidden flex-col gap-3 p-4 bg-slate-50/50">
+              <div className="flex md:hidden flex-col gap-3 p-4 bg-slate-50/50">
                 {profiles.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">
                     {t('settings.no_accounts_yet', 'Chưa có tài khoản đăng nhập nào được khởi tạo.')}
