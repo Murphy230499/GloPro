@@ -63,7 +63,7 @@ export default function CashFlow() {
 
       {/* Tabs */}
       <div className="w-full overflow-x-auto custom-scrollbar pb-1 -mb-1">
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-max sm:w-fit">
+        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-2xl min-w-max sm:w-fit">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;

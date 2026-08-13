@@ -101,8 +101,8 @@ export default function IncomeTab({ branchId, onReload }) {
 
       {/* Filters */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[160px]">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               value={search}
@@ -111,27 +111,29 @@ export default function IncomeTab({ branchId, onReload }) {
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-400"
             />
           </div>
-          <select
-            value={filterType}
-            onChange={e => setFilterType(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
-          >
-            <option value="all">{t('cashflow.filter_all_types', 'Tất cả loại')}</option>
-            {types.map(typeItem => (
-              <option key={typeItem.code} value={typeItem.code}>
-                {typeItem.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterSource}
-            onChange={e => setFilterSource(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
-          >
-            <option value="all">{t('cashflow.filter_all_sources', 'Tất cả nguồn')}</option>
-            <option value="auto">⚡ {t('cashflow.source_auto', 'Tự động')}</option>
-            <option value="manual">✏️ {t('cashflow.source_manual', 'Thủ công')}</option>
-          </select>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select
+              value={filterType}
+              onChange={e => setFilterType(e.target.value)}
+              className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
+            >
+              <option value="all">{t('cashflow.filter_all_types', 'Tất cả loại')}</option>
+              {types.map(typeItem => (
+                <option key={typeItem.code} value={typeItem.code}>
+                  {typeItem.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterSource}
+              onChange={e => setFilterSource(e.target.value)}
+              className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-emerald-400 bg-white"
+            >
+              <option value="all">{t('cashflow.filter_all_sources', 'Tất cả nguồn')}</option>
+              <option value="auto">⚡ {t('cashflow.source_auto', 'Tự động')}</option>
+              <option value="manual">✏️ {t('cashflow.source_manual', 'Thủ công')}</option>
+            </select>
+          </div>
         </div>
         <div className="flex gap-2 items-center">
           <DateRangeFilter
