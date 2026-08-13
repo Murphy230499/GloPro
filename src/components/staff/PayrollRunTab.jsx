@@ -397,7 +397,17 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
           <table className="w-full text-left border-collapse font-sans min-w-max whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                <th className="py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.commission.staff_col', 'Nhân viên')}</th>
+                <th className="p-0 sm:py-4 sm:px-4 text-center sm:text-left text-xs font-bold text-slate-500 sm:min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100 align-middle">
+                  {/* Mobile Header Layout */}
+                  <div className="sm:hidden w-24 py-2 px-1 flex flex-col items-center justify-center gap-1 mx-auto text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span className="uppercase text-[10px]">{t('staff.commission.staff_col', 'Nhân viên')}</span>
+                  </div>
+                  {/* Desktop Header Content (Original) */}
+                  <span className="hidden sm:inline">
+                    {t('staff.commission.staff_col', 'Nhân viên')}
+                  </span>
+                </th>
                 {PAYROLL_COLUMNS.map(col => {
                   if (!visibleColumns.includes(col.id)) return null;
                   return (
@@ -460,8 +470,25 @@ export default function PayrollRunTab({ staff = [], onRunPayroll, onSelectStaffF
                 className="hover:bg-orange-50/40 cursor-pointer transition-colors group"
                 title={t("staff.payroll.view_detail_tooltip", "Bấm để xem chi tiết lương nhân viên")}
               >
-                <td className="py-3 px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white group-hover:bg-orange-50/80 z-10 border-r border-slate-100 transition-colors">
-                  <div className="flex items-center gap-3">
+                <td className="p-0 sm:py-3 sm:px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white group-hover:bg-orange-50/80 z-10 border-r border-slate-100 transition-colors align-top sm:align-middle">
+                  {/* Mobile Layout (Strictly w-24 = 96px) */}
+                  <div className="sm:hidden w-24 py-2 px-1 flex flex-col items-center gap-1 mx-auto overflow-hidden">
+                    <div className="shrink-0 flex items-center justify-center">
+                      <Avatar src={row.avatar_url} name={row.name} size={32} color={row.avatar_color} />
+                    </div>
+                    <div className="min-w-0 flex flex-col items-center w-full">
+                      <div className="truncate font-semibold text-[10px] text-slate-800 group-hover:text-orange-600 transition-colors w-full text-center mb-0.5">{row.name}</div>
+                      <span 
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold max-w-full"
+                        style={{ background: (ROLES[row.role]?.color || '#94A3B8') + '15', color: ROLES[row.role]?.color || '#94A3B8' }}
+                      >
+                        <span className="truncate">{ROLES[row.role]?.label || row.role}</span>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Desktop Layout (Exactly original) */}
+                  <div className="hidden sm:flex items-center gap-3">
                     <Avatar src={row.avatar_url} name={row.name} size={32} color={row.avatar_color} />
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-xs text-slate-800 group-hover:text-orange-600 transition-colors">{row.name}</div>
