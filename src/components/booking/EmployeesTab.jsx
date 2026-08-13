@@ -26,7 +26,8 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
   };
 
   useEffect(() => {
-    base44.entities.Staff.list().then(data => {
+    const filterObj = branchId && branchId !== 'all' ? { branch_id: branchId } : {};
+    base44.entities.Staff.filter(filterObj).then(data => {
       setStaff((data || []).filter(s => s.is_active !== false));
     }).catch(() => {}).finally(() => setLoading(false));
   }, [branchId]);
