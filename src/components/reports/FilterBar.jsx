@@ -145,83 +145,120 @@ function DateRangePicker({ value, onChange }) {
       </button>
 
       {open && (
-        <>
-          {/* Mobile backdrop */}
-          <div className="fixed inset-0 z-[100] bg-slate-900/40 sm:hidden" onClick={()=>{setOpen(false);setSelecting(false);}} />
+        <div className="absolute left-0 sm:left-auto sm:right-auto top-full mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden w-[90vw] max-w-[320px] sm:w-auto sm:max-w-none sm:min-w-[740px]">
+          <div className="flex flex-col sm:flex-row h-full">
+            {/* Presets */}
+            <div className="w-full sm:w-44 border-b sm:border-b-0 sm:border-r border-slate-100 p-2 sm:py-2 sm:px-0 flex flex-row sm:flex-col shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              {PRESETS.map(p=>(
+                <button key={p.id} onClick={()=>applyPreset(p.id)}
+                  className={`shrink-0 sm:w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs font-medium transition cursor-pointer rounded-lg sm:rounded-none mr-2 sm:mr-0
+                    ${activePreset===p.id?'bg-blue-50 text-blue-700 font-semibold':'text-slate-600 bg-slate-50 sm:bg-transparent hover:bg-slate-100 hover:text-slate-900'}`}>
+                  {t(`reports.${p.key}`, p.defaultLabel)}
+                </button>
+              ))}
+            </div>
 
-          <div className="fixed inset-4 sm:inset-auto sm:absolute sm:left-0 sm:top-full sm:mt-2 z-[100] sm:z-50 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col sm:w-[740px] animate-in fade-in zoom-in-95 duration-100 max-h-full sm:max-h-none overflow-y-auto">
-            <div className="flex flex-col sm:flex-row h-full">
-              {/* Presets */}
-              <div className="w-full sm:w-44 border-b sm:border-b-0 sm:border-r border-slate-100 py-2 flex flex-row sm:flex-col shrink-0 overflow-x-auto whitespace-nowrap">
-                {PRESETS.map(p=>(
-                  <button key={p.id} onClick={()=>applyPreset(p.id)}
-                    className={`shrink-0 sm:w-full text-left px-4 py-2.5 text-xs font-medium transition cursor-pointer
-                      ${activePreset===p.id?'bg-blue-50 text-blue-700 font-semibold':'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
-                    {t(`reports.${p.key}`, p.defaultLabel)}
-                  </button>
-                ))}
+            {/* Calendars + Footer */}
+            <div className="flex-1 flex flex-col min-w-0">
+              
+              {/* Desktop Calendars - Hidden on Mobile */}
+              <div className="hidden sm:flex flex-row gap-4 p-4">
+                {/* Left month */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <button onClick={()=>setLeftMonth(m=>addMonths(m,-1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
+                      <ChevronLeft className="w-4 h-4 text-slate-500"/>
+                    </button>
+                    <span className="text-sm font-bold text-slate-800">{MONTHS[leftMonth.getMonth()]} {leftMonth.getFullYear()}</span>
+                    <div className="w-6"/>
+                  </div>
+                  <div className="grid grid-cols-7 mb-1">
+                    {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
+                  </div>
+                  <CalGrid year={leftMonth.getFullYear()} month={leftMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
+                </div>
+
+                <div className="w-px bg-slate-100 self-stretch"/>
+
+                {/* Right month */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-6"/>
+                    <span className="text-sm font-bold text-slate-800">{MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}</span>
+                    <button onClick={()=>setLeftMonth(m=>addMonths(m,1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
+                      <ChevronRight className="w-4 h-4 text-slate-500"/>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-7 mb-1">
+                    {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
+                  </div>
+                  <CalGrid year={rightMonth.getFullYear()} month={rightMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
+                </div>
               </div>
 
-              {/* Calendars + Footer */}
-              <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex flex-col sm:flex-row gap-4 p-4">
-                  {/* Left month */}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <button onClick={()=>setLeftMonth(m=>addMonths(m,-1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
-                        <ChevronLeft className="w-4 h-4 text-slate-500"/>
-                      </button>
-                      <span className="text-sm font-bold text-slate-800">{MONTHS[leftMonth.getMonth()]} {leftMonth.getFullYear()}</span>
-                      <div className="w-6"/>
-                    </div>
-                    <div className="grid grid-cols-7 mb-1">
-                      {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
-                    </div>
-                    <CalGrid year={leftMonth.getFullYear()} month={leftMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
+              {/* Inputs & Actions Footer */}
+              <div className="border-t sm:border-slate-100 p-4 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-3">
+                
+                {/* Mobile Native Date Inputs */}
+                <div className="flex sm:hidden flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase">{t('reports.from_date', 'Từ ngày')}</span>
+                    <input 
+                      type="date"
+                      value={startDay ? toISO(startDay) : ''} 
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const [y, m, d] = e.target.value.split('-');
+                          setStartDay(new Date(y, m - 1, d));
+                        } else {
+                          setStartDay(null);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl text-slate-700 bg-white outline-none focus:border-blue-500"
+                    />
                   </div>
-
-                  <div className="hidden sm:block w-px bg-slate-100 self-stretch"/>
-
-                  {/* Right month */}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-6"/>
-                      <span className="text-sm font-bold text-slate-800">{MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}</span>
-                      <button onClick={()=>setLeftMonth(m=>addMonths(m,1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
-                        <ChevronRight className="w-4 h-4 text-slate-500"/>
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-7 mb-1">
-                      {DAYS.map(d=><div key={d} className="text-center text-[10px] font-semibold text-slate-400 py-1">{d}</div>)}
-                    </div>
-                    <CalGrid year={rightMonth.getFullYear()} month={rightMonth.getMonth()} startDay={startDay} endDay={endDay} hoverDay={hoverDay} onHover={setHoverDay} onClick={handleDayClick} selecting={selecting}/>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase">{t('reports.to_date', 'Đến ngày')}</span>
+                    <input 
+                      type="date"
+                      value={endDay ? toISO(endDay) : ''} 
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const [y, m, d] = e.target.value.split('-');
+                          setEndDay(new Date(y, m - 1, d));
+                        } else {
+                          setEndDay(null);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl text-slate-700 bg-white outline-none focus:border-blue-500"
+                    />
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <input readOnly value={startDay?formatDisplay(startDay):''} placeholder={t('reports.from_date', 'From date')}
-                      className="w-28 flex-1 sm:flex-none px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
-                    <span className="text-slate-400 shrink-0">–</span>
-                    <input readOnly value={endDay?formatDisplay(endDay):''} placeholder={t('reports.to_date', 'To date')}
-                      className="w-28 flex-1 sm:flex-none px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
-                  </div>
-                  <div className="flex items-center gap-2 sm:ml-auto shrink-0 justify-end">
-                    <button onClick={()=>{setOpen(false);setSelecting(false);}}
-                      className="px-4 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer whitespace-nowrap">
-                      {t('reports.btn_cancel', 'Cancel')}
-                    </button>
-                    <button onClick={handleApply} disabled={!startDay||!endDay}
-                      className="px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
-                      {t('reports.btn_apply', 'Apply')}
-                    </button>
-                  </div>
+                {/* Desktop Readonly Text Inputs */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <input readOnly value={startDay?formatDisplay(startDay):''} placeholder={t('reports.from_date', 'From date')}
+                    className="w-28 px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
+                  <span className="text-slate-400 shrink-0">–</span>
+                  <input readOnly value={endDay?formatDisplay(endDay):''} placeholder={t('reports.to_date', 'To date')}
+                    className="w-28 px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 sm:ml-auto shrink-0 justify-end mt-2 sm:mt-0">
+                  <button onClick={()=>{setOpen(false);setSelecting(false);}}
+                    className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer whitespace-nowrap text-center">
+                    {t('reports.btn_cancel', 'Cancel')}
+                  </button>
+                  <button onClick={handleApply} disabled={!startDay||!endDay}
+                    className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap text-center">
+                    {t('reports.btn_apply', 'Apply')}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
     </div>
   );
 }
