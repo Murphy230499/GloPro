@@ -195,8 +195,8 @@ export default function Layout({ children }) {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto flex flex-col" id="main-content">
-          <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-24 md:px-8 md:py-6 flex-1 flex flex-col min-h-0 bg-[hsl(var(--background))]">
+        <main className="flex-1 min-w-0 overflow-y-auto flex flex-col relative" id="main-content">
+          <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-28 md:px-8 md:py-6 grow flex flex-col bg-[hsl(var(--background))]">
             {children}
           </div>
         </main>
