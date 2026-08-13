@@ -402,10 +402,57 @@ export default function ManageTemplatesView({ onBackToEvents }) {
       </div>
 
       {/* Main Table Area */}
-      <div className="flex-1 px-8 py-6 md:px-10 overflow-y-auto">
+      <div className="flex-1 px-4 sm:px-8 py-6 md:px-10 overflow-y-auto">
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
           
-          <table className="w-full text-left border-collapse">
+          {/* Mobile View (Cards) */}
+          <div className="md:hidden divide-y divide-slate-100 text-left">
+            {paginatedList.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 font-medium text-xs">
+                {t('automations.no_templates_found', 'Không tìm thấy mẫu kịch bản phù hợp')}
+              </div>
+            ) : (
+              paginatedList.map((tpl) => (
+                <div key={tpl.id} className="p-5 hover:bg-slate-50/70 transition space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1.5">
+                      <div className="font-bold text-slate-800 text-sm line-clamp-2">
+                        {tpl.triggerId ? `${t(`automations.item_${tpl.triggerId}_title`, tpl.triggerEvent)} (${activeChannel})` : tpl.subject}
+                      </div>
+                      <div className="inline-block mt-1">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold border border-slate-200/50 shadow-sm">
+                          {tpl.triggerId ? t(`automations.item_${tpl.triggerId}_title`, tpl.triggerEvent) : tpl.triggerEvent}
+                        </span>
+                      </div>
+                    </div>
+                    {tpl.isCustomized && (
+                      <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px] font-semibold shrink-0">
+                        {t('automations.status_customized', 'Đã sửa')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-50">
+                    <button
+                      onClick={() => setEditingTemplate(tpl)}
+                      className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-blue-600 flex items-center justify-center transition shadow-2xs"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    {tpl.isCustomized && (
+                      <button
+                        onClick={() => handleRevert(tpl)}
+                        className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-rose-600 flex items-center justify-center transition shadow-2xs"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <table className="hidden md:table w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200/80 bg-slate-50/60 text-xs font-medium text-slate-500 normal-case">
                 <th className="py-3.5 px-6 font-medium text-slate-600">{t('automations.col_subject', 'Tiêu đề')}</th>
