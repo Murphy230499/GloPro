@@ -361,12 +361,12 @@ export default function ManageTemplatesView({ onBackToEvents }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           
           {/* Channel Tabs Pill */}
-          <div className="inline-flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80">
+          <div className="flex sm:inline-flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80 overflow-x-auto custom-scrollbar max-w-full">
             {['Email', 'SMS', 'WhatsApp', 'Telegram', 'Zalo'].map((chan) => (
               <button
                 key={chan}
                 onClick={() => { setActiveChannel(chan); setCurrentPage(1); }}
-                className={`px-5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                className={`px-5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 whitespace-nowrap ${
                   activeChannel === chan
                     ? 'bg-white text-blue-600 shadow-2xs border border-slate-200/60'
                     : 'text-slate-500 hover:text-slate-800'
