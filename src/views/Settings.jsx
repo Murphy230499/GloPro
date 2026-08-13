@@ -625,7 +625,7 @@ export default function SettingsPage() {
                 })} 
                 className="flex-1 md:flex-none flex justify-center items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-lg md:rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs md:text-sm shadow-sm transition-all active:scale-95"
               >
-                <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden md:inline">{t('settings.btn_add_account', 'Thêm tài khoản')}</span><span className="md:hidden">{t('settings.btn_add_account_short', 'Thêm mới')}</span>
+                <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden md:inline">{t('settings.btn_add_account', 'Thêm tài khoản')}</span><span className="md:hidden">{t('catalog.btn_add_new', 'Thêm mới')}</span>
               </button>
             </div>
           </div>
