@@ -234,7 +234,7 @@ export default function AutomationsView() {
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* Header Bar */}
-        <div className="px-8 py-6 md:px-10 bg-white border-b border-slate-200/80 sticky top-0 z-10 shadow-2xs space-y-4">
+        <div className="px-4 sm:px-8 py-6 md:px-10 bg-white border-b border-slate-200/80 sticky top-0 z-10 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t('automations.page_title', 'Tin nhắn Tự động (Automation)')}</h1>
@@ -281,7 +281,7 @@ export default function AutomationsView() {
         </div>
 
         {/* Categories / Tags Filtered List */}
-        <div className="p-8 md:p-10 space-y-8 w-full">
+        <div className="p-4 sm:p-8 md:p-10 space-y-8 w-full">
           {categories
             .filter((category) => selectedTag === 'all' || category.id === selectedTag)
             .map((category) => (
