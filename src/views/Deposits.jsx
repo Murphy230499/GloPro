@@ -54,14 +54,14 @@ export default function DepositsView() {
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <div className="p-8 max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('deposits.page_title', 'Quản lý Đặt cọc')}</h1>
-            <p className="text-slate-500 mt-1">{t('deposits.page_subtitle', 'Quản lý tiền cọc của khách hàng')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{t('deposits.page_title', 'Quản lý Đặt cọc')}</h1>
+            <p className="text-sm sm:text-base text-slate-500 mt-1">{t('deposits.page_subtitle', 'Quản lý tiền cọc của khách hàng')}</p>
           </div>
           <button 
             onClick={() => { setEditingDeposit(null); setModalOpen(true); }}
-            className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-sm"
+            className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm w-full sm:w-auto"
           >
             <Plus className="w-5 h-5" />
             <span>{t('deposits.btn_create', 'Tạo đặt cọc')}</span>
@@ -98,91 +98,163 @@ export default function DepositsView() {
                 <p className="text-slate-500 text-sm">{t('deposits.empty_desc', 'Hãy tạo đặt cọc đầu tiên cho khách hàng')}</p>
               </div>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 z-10 border-b border-slate-200 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3">{t('deposits.col_code', 'Mã cọc')}</th>
-                    <th className="px-4 py-3">{t('deposits.col_customer', 'Khách hàng')}</th>
-                    <th className="px-4 py-3">{t('deposits.col_created_at', 'Ngày tạo')}</th>
-                    <th className="px-4 py-3 text-right">{t('deposits.col_required_amount', 'Số tiền yêu cầu')}</th>
-                    <th className="px-4 py-3 text-right">{t('deposits.col_paid_amount', 'Đã thanh toán')}</th>
-                    <th className="px-4 py-3 text-center">{t('deposits.col_status', 'Trạng thái')}</th>
-                    <th className="px-4 py-3 text-right">{t('deposits.col_actions', 'Thao tác')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
+              <>
+                <table className="w-full text-left text-sm hidden sm:table">
+                  <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 z-10 border-b border-slate-200 shadow-sm">
+                    <tr>
+                      <th className="px-4 py-3">{t('deposits.col_code', 'Mã cọc')}</th>
+                      <th className="px-4 py-3">{t('deposits.col_customer', 'Khách hàng')}</th>
+                      <th className="px-4 py-3">{t('deposits.col_created_at', 'Ngày tạo')}</th>
+                      <th className="px-4 py-3 text-right">{t('deposits.col_required_amount', 'Số tiền yêu cầu')}</th>
+                      <th className="px-4 py-3 text-right">{t('deposits.col_paid_amount', 'Đã thanh toán')}</th>
+                      <th className="px-4 py-3 text-center">{t('deposits.col_status', 'Trạng thái')}</th>
+                      <th className="px-4 py-3 text-right">{t('deposits.col_actions', 'Thao tác')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {deposits.map((d) => (
+                      <tr 
+                        key={d.id} 
+                        onClick={() => { setEditingDeposit(d); setModalOpen(true); }}
+                        className="hover:bg-slate-50/50 cursor-pointer transition-colors group"
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-800">{d.deposit_number}</td>
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const cust = customers.find(c => c.id === d.customer_id);
+                            return cust ? (
+                              <div 
+                                className="flex items-center gap-3 cursor-pointer group"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/customers?id=${cust.id}`);
+                                }}
+                              >
+                                <Avatar src={cust.avatar_url} name={cust.name} size={32} color="#FBBF24" />
+                                <div>
+                                  <div className="font-semibold text-slate-800 group-hover:text-pink-600 transition-colors">
+                                    {cust.name}
+                                  </div>
+                                  <div className="text-xs text-slate-500">{cust.phone}</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic">{t('deposits.walk_in_customer', 'Khách vãng lai')}</span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-slate-500 text-sm">{formatDate(d.created_at)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-slate-800">{formatVND(d.required_amount)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-green-600">{formatVND(d.paid_amount)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            d.status === 'paid' ? 'bg-green-100 text-green-700' :
+                            d.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                            'bg-slate-100 text-slate-700'
+                          }`}>
+                            {d.status === 'paid' ? t('deposits.status_paid', 'Đã thu') : d.status === 'pending' ? t('deposits.status_pending', 'Chờ thu') : d.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setPrintingDeposit(d); }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title={t('deposits.btn_print', 'In phiếu cọc')}
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setEditingDeposit(d); setModalOpen(true); }}
+                              className="p-1.5 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
+                              title={t('deposits.btn_edit', 'Chỉnh sửa')}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={(e) => handleDelete(e, d.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title={t('deposits.btn_delete', 'Xoá phiếu cọc')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Mobile Tags/Cards View */}
+                <div className="flex sm:hidden flex-col gap-3 p-4">
                   {deposits.map((d) => (
-                    <tr 
+                    <div 
                       key={d.id} 
                       onClick={() => { setEditingDeposit(d); setModalOpen(true); }}
-                      className="hover:bg-slate-50/50 cursor-pointer transition-colors group"
+                      className="flex flex-col p-4 border border-slate-100 rounded-2xl bg-slate-50 shadow-sm gap-3 active:scale-[0.98] transition-transform cursor-pointer"
                     >
-                      <td className="px-4 py-3 font-medium text-slate-800">{d.deposit_number}</td>
-                      <td className="px-4 py-3">
-                        {(() => {
-                          const cust = customers.find(c => c.id === d.customer_id);
-                          return cust ? (
-                            <div 
-                              className="flex items-center gap-3 cursor-pointer group"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/customers?id=${cust.id}`);
-                              }}
-                            >
-                              <Avatar src={cust.avatar_url} name={cust.name} size={32} color="#FBBF24" />
-                              <div>
-                                <div className="font-semibold text-slate-800 group-hover:text-pink-600 transition-colors">
-                                  {cust.name}
-                                </div>
-                                <div className="text-xs text-slate-500">{cust.phone}</div>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 italic">{t('deposits.walk_in_customer', 'Khách vãng lai')}</span>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-500 text-sm">{formatDate(d.created_at)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-slate-800">{formatVND(d.required_amount)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-green-600">{formatVND(d.paid_amount)}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-sm">{d.deposit_number}</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           d.status === 'paid' ? 'bg-green-100 text-green-700' :
                           d.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                           'bg-slate-100 text-slate-700'
                         }`}>
                           {d.status === 'paid' ? t('deposits.status_paid', 'Đã thu') : d.status === 'pending' ? t('deposits.status_pending', 'Chờ thu') : d.status}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {(() => {
+                          const cust = customers.find(c => c.id === d.customer_id);
+                          return cust ? (
+                            <>
+                              <Avatar src={cust.avatar_url} name={cust.name} size={36} color="#FBBF24" />
+                              <div>
+                                <div className="font-semibold text-slate-800 text-sm">
+                                  {cust.name}
+                                </div>
+                                <div className="text-xs text-slate-500">{cust.phone}</div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-slate-400 italic text-sm">{t('deposits.walk_in_customer', 'Khách vãng lai')}</div>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm mt-1 bg-white p-3 rounded-xl border border-slate-100">
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">{t('deposits.col_required_amount', 'Số tiền yêu cầu')}</div>
+                          <div className="font-semibold text-slate-700">{formatVND(d.required_amount)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">{t('deposits.col_paid_amount', 'Đã thanh toán')}</div>
+                          <div className="font-bold text-green-600">{formatVND(d.paid_amount)}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-100/60">
+                        <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">{formatDate(d.created_at)}</span>
+                        <div className="flex items-center gap-2">
                           <button 
                             onClick={(e) => { e.stopPropagation(); setPrintingDeposit(d); }}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title={t('deposits.btn_print', 'In phiếu cọc')}
+                            className="p-2 text-slate-400 hover:text-blue-600 bg-white border border-slate-100 rounded-lg transition-colors shadow-sm"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); setEditingDeposit(d); setModalOpen(true); }}
-                            className="p-1.5 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
-                            title={t('deposits.btn_edit', 'Chỉnh sửa')}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
                             onClick={(e) => handleDelete(e, d.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title={t('deposits.btn_delete', 'Xoá phiếu cọc')}
+                            className="p-2 text-slate-400 hover:text-red-600 bg-white border border-slate-100 rounded-lg transition-colors shadow-sm"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>
