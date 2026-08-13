@@ -253,7 +253,7 @@ export default function AutomationsView() {
           </div>
 
           {/* Category Filter Tags */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+          <div className="hidden sm:flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
             <button
               onClick={() => setSelectedTag('all')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
