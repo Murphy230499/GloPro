@@ -82,8 +82,8 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
         </div>
       </div>
 
-      {/* Table */}
-      <table className="w-full">
+      {/* Table (Desktop) */}
+      <table className="w-full hidden sm:table">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-100">
             <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 w-28 whitespace-nowrap">{t('booking.col_code', 'Staff Code')}</th>
@@ -135,6 +135,36 @@ export default function EmployeesTab({ setting, onChange, branchId }) {
           ))}
         </tbody>
       </table>
+
+      {/* Tags/Cards (Mobile) */}
+      <div className="flex sm:hidden flex-col gap-3 p-4">
+        {paginated.length === 0 ? (
+          <div className="text-center py-8 text-sm text-slate-400">
+            {search ? t('booking.no_staff_search', 'No staff members found') : t('booking.no_staff_empty', 'No staff members yet. Add staff in Staff module.')}
+          </div>
+        ) : paginated.map((s, i) => (
+          <div key={s.id} className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl bg-slate-50 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 shrink-0 flex items-center justify-center shadow-inner">
+                {s.avatar_url || s.avatar
+                  ? <img src={s.avatar_url || s.avatar} alt={s.name} className="w-full h-full object-cover" />
+                  : <span className="text-sm font-bold text-slate-400">{s.name?.[0] || '?'}</span>
+                }
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-slate-800">{s.name}</span>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {genId(s, (page - 1) * PAGE_SIZE + i)} • {ROLES[s.role]?.label || s.role || s.position || s.job_type || '—'}
+                </span>
+              </div>
+            </div>
+            <Toggle
+              checked={isEnabled(s.id)}
+              onChange={() => toggleStaff(s.id)}
+            />
+          </div>
+        ))}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
