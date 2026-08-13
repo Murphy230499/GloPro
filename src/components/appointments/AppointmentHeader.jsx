@@ -110,71 +110,79 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose })
   };
 
   return (
-    <div className="absolute top-full mt-2 right-0 w-[300px] bg-white rounded-xl border border-slate-200 shadow-2xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150 font-body">
-      {/* Month Year Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <button
-          type="button"
-          onClick={prevMonth}
-          className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs"
-        >
-          <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
-        </button>
+    <div 
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 sm:bg-transparent sm:p-0 sm:block sm:absolute sm:top-full sm:mt-2 sm:right-0 sm:w-[300px] sm:shadow-2xl sm:z-[60] animate-in fade-in zoom-in-95 duration-150 font-body`}
+      onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+    >
+      <div 
+        className="w-[300px] sm:w-full bg-white rounded-xl border border-slate-200 shadow-2xl p-4 sm:shadow-none sm:p-4 sm:border-0 sm:rounded-none sm:bg-transparent"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Month Year Header */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
+          </button>
 
-        <div className="text-base font-bold text-slate-900 tracking-tight">
-          {monthNames[month]} {year}
+          <div className="text-base font-bold text-slate-900 tracking-tight">
+            {monthNames[month]} {year}
+          </div>
+
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[2.2]" />
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={nextMonth}
-          className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs"
-        >
-          <ChevronRight className="w-4 h-4 stroke-[2.2]" />
-        </button>
-      </div>
+        {/* Weekdays Header */}
+        <div className="grid grid-cols-7 text-center mb-2">
+          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+            <span key={d} className="text-xs font-semibold text-slate-400 py-1">
+              {d}
+            </span>
+          ))}
+        </div>
 
-      {/* Weekdays Header */}
-      <div className="grid grid-cols-7 text-center mb-2">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <span key={d} className="text-xs font-semibold text-slate-400 py-1">
-            {d}
-          </span>
-        ))}
-      </div>
+        {/* Days Grid */}
+        <div className="grid grid-cols-7 gap-1 text-center text-xs">
+          {calendarDays.map((item, idx) => {
+            const isSelected = item.iso === selectedIso;
+            const isHighlight = !isSelected && item.isCurrentMonth && isHighlightedWeek(item.iso);
 
-      {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {calendarDays.map((item, idx) => {
-          const isSelected = item.iso === selectedIso;
-          const isHighlight = !isSelected && item.isCurrentMonth && isHighlightedWeek(item.iso);
+            let classNames = "h-9 rounded-2xl flex items-center justify-center cursor-pointer transition-all font-semibold ";
 
-          let classNames = "h-9 rounded-2xl flex items-center justify-center cursor-pointer transition-all font-semibold ";
+            if (isSelected) {
+              classNames += "bg-blue-500 text-white font-bold shadow-sm scale-105 rounded-full";
+            } else if (isHighlight) {
+              classNames += "bg-blue-50 text-blue-900 font-bold hover:bg-blue-100 rounded-full";
+            } else if (item.isCurrentMonth) {
+              classNames += "text-slate-800 hover:bg-slate-100 font-medium rounded-full";
+            } else {
+              classNames += "text-slate-300 hover:bg-slate-50 font-normal rounded-full";
+            }
 
-          if (isSelected) {
-            classNames += "bg-blue-500 text-white font-bold shadow-sm scale-105 rounded-full";
-          } else if (isHighlight) {
-            classNames += "bg-blue-50 text-blue-900 font-bold hover:bg-blue-100 rounded-full";
-          } else if (item.isCurrentMonth) {
-            classNames += "text-slate-800 hover:bg-slate-100 font-medium rounded-full";
-          } else {
-            classNames += "text-slate-300 hover:bg-slate-50 font-normal rounded-full";
-          }
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                onSelectDate(item.iso);
-                onClose();
-              }}
-              className={classNames}
-            >
-              {item.day}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (onSelectDate) onSelectDate(item.iso);
+                  if (onClose) onClose();
+                }}
+                className={classNames}
+              >
+                {item.day}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

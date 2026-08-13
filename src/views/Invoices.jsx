@@ -81,71 +81,79 @@ function InvoiceCustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
   };
 
   return (
-    <div className={`absolute top-full mt-2 ${align === 'right' ? 'right-0' : 'left-0'} w-[310px] bg-white rounded-3xl border border-slate-100 shadow-2xl p-5 z-[70] animate-in fade-in zoom-in-95 duration-150 font-sans`}>
-      {/* Month Year Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <button
-          type="button"
-          onClick={prevMonth}
-          className="w-9 h-9 rounded-full border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
-        >
-          <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
-        </button>
+    <div 
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 sm:bg-transparent sm:p-0 sm:block sm:absolute sm:top-full sm:mt-2 ${align === 'right' ? 'sm:right-0' : 'sm:left-0'} sm:w-[310px] sm:shadow-2xl sm:z-[70] animate-in fade-in zoom-in-95 duration-150 font-sans`}
+      onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+    >
+      <div 
+        className="w-[310px] sm:w-full bg-white rounded-3xl border border-slate-100 shadow-2xl p-5 sm:shadow-none sm:p-5 sm:border-0 sm:rounded-none sm:bg-transparent"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Month Year Header */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="w-9 h-9 rounded-full border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
+          </button>
 
-        <div className="text-base font-bold text-slate-900 tracking-tight">
-          {getMonthTitle()}
+          <div className="text-base font-bold text-slate-900 tracking-tight">
+            {monthNames[month]} {year}
+          </div>
+
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="w-9 h-9 rounded-full border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[2.2]" />
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={nextMonth}
-          className="w-9 h-9 rounded-full border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
-        >
-          <ChevronRight className="w-4 h-4 stroke-[2.2]" />
-        </button>
-      </div>
+        {/* Weekdays Header */}
+        <div className="grid grid-cols-7 text-center mb-2">
+          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+            <span key={d} className="text-xs font-bold text-slate-400 py-1">
+              {d}
+            </span>
+          ))}
+        </div>
 
-      {/* Weekdays Header */}
-      <div className="grid grid-cols-7 text-center mb-2">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <span key={d} className="text-xs font-bold text-slate-400 py-1">
-            {d}
-          </span>
-        ))}
-      </div>
+        {/* Days Grid */}
+        <div className="grid grid-cols-7 gap-1 text-center text-xs">
+          {calendarDays.map((item, idx) => {
+            const isSelected = item.iso === selectedIso;
+            const isHighlight = !isSelected && item.isCurrentMonth && isHighlightedWeek(item.iso);
 
-      {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {calendarDays.map((item, idx) => {
-          const isSelected = item.iso === selectedIso;
-          const isHighlight = !isSelected && item.isCurrentMonth && isHighlightedWeek(item.iso);
+            let classNames = "w-9 h-9 rounded-full mx-auto flex items-center justify-center cursor-pointer transition-all font-semibold ";
 
-          let classNames = "w-9 h-9 rounded-full mx-auto flex items-center justify-center cursor-pointer transition-all font-semibold ";
+            if (isSelected) {
+              classNames += "bg-indigo-500 text-white font-bold shadow-md scale-105";
+            } else if (isHighlight) {
+              classNames += "bg-indigo-50 text-indigo-900 font-bold hover:bg-indigo-100";
+            } else if (item.isCurrentMonth) {
+              classNames += "text-slate-800 hover:bg-slate-100 font-medium";
+            } else {
+              classNames += "text-slate-300 hover:bg-slate-50 font-normal";
+            }
 
-          if (isSelected) {
-            classNames += "bg-emerald-600 text-white font-bold shadow-md scale-105";
-          } else if (isHighlight) {
-            classNames += "bg-emerald-50 text-emerald-900 font-bold hover:bg-emerald-100";
-          } else if (item.isCurrentMonth) {
-            classNames += "text-slate-800 hover:bg-slate-100 font-medium";
-          } else {
-            classNames += "text-slate-300 hover:bg-slate-50 font-normal";
-          }
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                onSelectDate(item.iso);
-                onClose();
-              }}
-              className={classNames}
-            >
-              {item.day}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (onSelectDate) onSelectDate(item.iso);
+                  if (onClose) onClose();
+                }}
+                className={classNames}
+              >
+                {item.day}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
