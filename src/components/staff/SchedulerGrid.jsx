@@ -691,7 +691,12 @@ export default function SchedulerGrid({ branchId }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left py-4 px-4 text-xs font-bold text-slate-500 min-w-[200px] sticky left-0 bg-slate-50 z-10 border-r border-slate-100">{t('staff.scheduler.staff_column', 'Nhân sự')}</th>
+                  <th className="py-2 sm:py-4 px-1 sm:px-4 text-[10px] sm:text-xs font-bold text-slate-500 uppercase sm:normal-case w-24 sm:w-auto min-w-[96px] sm:min-w-[200px] max-w-[96px] sm:max-w-none sticky left-0 bg-slate-50 z-10 border-r border-slate-100 text-center sm:text-left">
+                    <div className="flex flex-col sm:block items-center justify-center gap-1 sm:gap-0">
+                      <User className="w-3.5 h-3.5 sm:hidden text-blue-600" />
+                      <span>{t('staff.scheduler.staff_column', 'Nhân sự')}</span>
+                    </div>
+                  </th>
                   {weekDays.map(d => (
                     <th key={d} className="text-center py-4 px-3 text-xs font-bold text-slate-600 min-w-[120px]">{formatDateHeader(d, t)}</th>
                   ))}
@@ -701,16 +706,18 @@ export default function SchedulerGrid({ branchId }) {
                 {staff.map(s => (
                   <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     {/* Column 1: Staff Profile */}
-                    <td className="py-3 px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <Avatar src={s.avatar_url} name={s.full_name} size={32} color={s.avatar_color} />
-                        <div className="min-w-0">
-                          <div className="truncate font-semibold text-xs text-slate-800">{s.full_name}</div>
+                    <td className="py-2 sm:py-3 px-1 sm:px-4 font-semibold text-sm text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100 w-24 sm:w-auto min-w-[96px] sm:min-w-[200px] max-w-[96px] sm:max-w-none align-top sm:align-middle">
+                      <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-1 sm:gap-3">
+                        <div className="shrink-0 flex items-center justify-center">
+                          <Avatar src={s.avatar_url} name={s.full_name} size={32} color={s.avatar_color} />
+                        </div>
+                        <div className="min-w-0 flex-1 sm:flex-none flex flex-col items-center sm:items-start w-full sm:w-auto">
+                          <div className="truncate font-semibold text-[10px] sm:text-xs text-slate-800 w-full sm:w-auto text-center sm:text-left mb-0.5 sm:mb-0">{s.full_name}</div>
                           <span 
-                            className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
+                            className="inline-flex sm:inline-block items-center px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold sm:mt-0.5 max-w-full"
                             style={{ background: (ROLES[s.role]?.color || '#94A3B8') + '15', color: ROLES[s.role]?.color || '#94A3B8' }}
                           >
-                            {ROLES[s.role]?.label || s.role}
+                            <span className="truncate sm:whitespace-normal">{ROLES[s.role]?.label || s.role}</span>
                           </span>
                         </div>
                       </div>
