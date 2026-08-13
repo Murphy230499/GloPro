@@ -56,7 +56,7 @@ function CalGrid({ year, month, startDay, endDay, hoverDay, onHover, onClick, se
   const effectiveEnd = endDay || (selecting && hoverDay ? hoverDay : null);
 
   return (
-    <div className="grid grid-cols-7 gap-y-0.5">
+    <div className="grid grid-cols-7 gap-y-0 sm:gap-y-0.5">
       {cells.map((d,i) => {
         if(!d) return <div key={`e${i}`}/>;
         const isS = isSameDay(d,startDay);
@@ -71,14 +71,14 @@ function CalGrid({ year, month, startDay, endDay, hoverDay, onHover, onClick, se
         const showBarL = (isE || inR) && !(isS);
         const showBarR = (isS || inR) && !(isE);
         return (
-          <div key={d.getDate()} className="relative flex justify-center items-center h-8">
-            {showBarL && <div className="absolute inset-y-1 left-0 right-1/2 bg-blue-50"/>}
-            {showBarR && <div className="absolute inset-y-1 left-1/2 right-0 bg-blue-50"/>}
+          <div key={d.getDate()} className="relative flex justify-center items-center h-6 sm:h-8">
+            {showBarL && <div className="absolute inset-y-0 sm:inset-y-1 left-0 right-1/2 bg-blue-50"/>}
+            {showBarR && <div className="absolute inset-y-0 sm:inset-y-1 left-1/2 right-0 bg-blue-50"/>}
             <button
               onMouseEnter={()=>onHover(d)}
               onMouseLeave={()=>onHover(null)}
               onClick={()=>onClick(d)}
-              className={`relative z-10 w-7 h-7 rounded-full text-[11px] font-medium transition cursor-pointer select-none
+              className={`relative z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[11px] font-medium transition cursor-pointer select-none
                 ${isS||isE?'bg-blue-600 text-white font-bold':inR?'text-blue-800 hover:bg-blue-100':'text-slate-700 hover:bg-slate-100'}`}
             >
               {d.getDate()}
@@ -155,7 +155,7 @@ function DateRangePicker({ value, onChange }) {
               <div className="w-full sm:w-44 border-b sm:border-b-0 sm:border-r border-slate-100 py-2 flex flex-row sm:flex-col shrink-0 overflow-x-auto whitespace-nowrap">
                 {PRESETS.map(p=>(
                   <button key={p.id} onClick={()=>applyPreset(p.id)}
-                    className={`shrink-0 sm:w-full text-left px-4 py-2.5 text-xs font-medium transition cursor-pointer
+                    className={`shrink-0 sm:w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 text-xs font-medium transition cursor-pointer
                       ${activePreset===p.id?'bg-blue-50 text-blue-700 font-semibold':'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
                     {t(`reports.${p.key}`, p.defaultLabel)}
                   </button>
@@ -164,10 +164,10 @@ function DateRangePicker({ value, onChange }) {
 
               {/* Calendars + Footer */}
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex flex-col sm:flex-row gap-4 p-4">
+                <div className="flex flex-col sm:flex-row gap-2 p-3 sm:gap-4 sm:p-4">
                   {/* Left month */}
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <button onClick={()=>setLeftMonth(m=>addMonths(m,-1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
                         <ChevronLeft className="w-4 h-4 text-slate-500"/>
                       </button>
@@ -184,7 +184,7 @@ function DateRangePicker({ value, onChange }) {
 
                   {/* Right month */}
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <div className="w-6"/>
                       <span className="text-sm font-bold text-slate-800">{MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}</span>
                       <button onClick={()=>setLeftMonth(m=>addMonths(m,1))} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition">
@@ -198,7 +198,7 @@ function DateRangePicker({ value, onChange }) {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="border-t border-slate-100 px-3 py-2 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <div className="flex items-center gap-2">
                     <input readOnly value={startDay?formatDisplay(startDay):''} placeholder={t('reports.from_date', 'From date')}
                       className="w-28 flex-1 sm:flex-none px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
@@ -206,13 +206,13 @@ function DateRangePicker({ value, onChange }) {
                     <input readOnly value={endDay?formatDisplay(endDay):''} placeholder={t('reports.to_date', 'To date')}
                       className="w-28 flex-1 sm:flex-none px-3 py-1.5 text-xs border border-slate-200 rounded-xl text-slate-700 bg-slate-50 cursor-default outline-none"/>
                   </div>
-                  <div className="flex items-center gap-2 sm:ml-auto shrink-0 justify-end">
+                  <div className="flex items-center gap-2 sm:ml-auto shrink-0 justify-end mt-1 sm:mt-0">
                     <button onClick={()=>{setOpen(false);setSelecting(false);}}
-                      className="px-4 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer whitespace-nowrap">
+                      className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer whitespace-nowrap text-center">
                       {t('reports.btn_cancel', 'Cancel')}
                     </button>
                     <button onClick={handleApply} disabled={!startDay||!endDay}
-                      className="px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                      className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap text-center">
                       {t('reports.btn_apply', 'Apply')}
                     </button>
                   </div>
