@@ -610,7 +610,7 @@ export default function SchedulerGrid({ branchId }) {
               <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-slate-200" align="start">
                 <Calendar
                   mode="single"
-                  selected={new Date(baseDate)}
+                  selected={parseLocalDate(baseDate)}
                   onSelect={(date) => {
                     if (date) {
                       setBaseDate(formatLocalDateStr(date));
