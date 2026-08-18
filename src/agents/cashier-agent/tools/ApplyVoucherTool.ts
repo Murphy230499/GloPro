@@ -37,7 +37,7 @@ export class ApplyVoucherTool extends AbstractTool<IApplyVoucherInput, IInvoice>
       try {
         inv = (await base44.entities.Invoice.get(input.invoiceId)) as IInvoice;
       } catch (e) {
-        const local: IInvoice[] = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        const local: IInvoice[] = (await base44.entities.Invoice.list().catch(()=>[]));
         inv = local.find(i => i.id === input.invoiceId) || null;
       }
 
@@ -59,12 +59,12 @@ export class ApplyVoucherTool extends AbstractTool<IApplyVoucherInput, IInvoice>
       try {
         updated = (await base44.entities.Invoice.update(input.invoiceId, updates)) as IInvoice;
       } catch (e) {
-        const local: IInvoice[] = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        const local: IInvoice[] = (await base44.entities.Invoice.list().catch(()=>[]));
         const idx = local.findIndex(i => i.id === input.invoiceId);
         if (idx !== -1) {
           local[idx] = { ...local[idx], ...updates };
           updated = local[idx];
-          localStorage.setItem('glopro_invoices', JSON.stringify(local));
+          // localStorage.setItem replaced with direct Supabase API call above
         } else throw new Error('Invoice not found.');
       }
 

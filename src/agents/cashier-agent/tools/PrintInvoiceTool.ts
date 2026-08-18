@@ -45,7 +45,7 @@ export class PrintInvoiceTool extends AbstractTool<IPrintInvoiceInput, IPrintInv
       try {
         inv = (await base44.entities.Invoice.get(input.invoiceId)) as IInvoice;
       } catch (e) {
-        const local: IInvoice[] = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        const local: IInvoice[] = (await base44.entities.Invoice.list().catch(()=>[]));
         inv = local.find(i => i.id === input.invoiceId) || null;
       }
 

@@ -49,8 +49,8 @@ export class FindAvailableEmployeeTool extends AbstractTool<IFindAvailableEmploy
         staffList = await base44.entities.Staff.list();
         appts = (await base44.entities.Appointment.list()) as IAppointment[];
       } catch (e) {
-        staffList = JSON.parse(localStorage.getItem('glopro_staff') || '[]');
-        appts = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        staffList = (await base44.entities.Staff.list().catch(()=>[]));
+        appts = (await base44.entities.Appointment.list().catch(()=>[]));
       }
 
       const availableList: IAvailableEmployee[] = [];

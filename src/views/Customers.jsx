@@ -204,7 +204,7 @@ export default function Customers() {
         } else {
           delete mappings[targetId];
         }
-        localStorage.setItem('glopro_customer_group_mappings', JSON.stringify(mappings));
+        /* localStorage.setItem('glopro_customer_group_mappings') removed */
       }
     } catch (e) {
       console.error(e);
@@ -225,7 +225,7 @@ export default function Customers() {
         try {
           let mappings = JSON.parse(localMappings);
           delete mappings[id];
-          localStorage.setItem('glopro_customer_group_mappings', JSON.stringify(mappings));
+          /* localStorage.setItem('glopro_customer_group_mappings') removed */
         } catch (e) {}
       }
       handleCloseDetail();
@@ -595,10 +595,13 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
 
   useEffect(() => {
     if (activeTab === 'promotions' && customer?.id) {
-      const localGifts = JSON.parse(localStorage.getItem('glopro_customer_gifts') || '{}');
-      setCustomerGifts(localGifts[customer.id] || []);
-      const localPromos = JSON.parse(localStorage.getItem('glopro_promotions') || '[]');
-      setAllPromotions(localPromos);
+      const load = async () => {
+        const localGifts = (await base44.entities.CustomerGift.list().catch(()=>[]));
+        setCustomerGifts(localGifts[customer.id] || []);
+        const localPromos = (await base44.entities.Promotion.list().catch(()=>[]));
+        setAllPromotions(localPromos);
+      };
+      load();
     }
     if (activeTab === 'deposits' && customer?.id) {
       base44.entities.Deposit.filter({ customer_id: customer.id })
@@ -621,7 +624,7 @@ function CustomerDetail({ customer, customerGroups = [], customerTiers = [], inv
         assigned_at: new Date().toISOString()
       });
 
-      localStorage.setItem('glopro_customer_gifts', JSON.stringify(gifts));
+      /* localStorage.setItem('glopro_customer_gifts') removed */
       setCustomerGifts(gifts[customer.id]);
       setShowGiftModal(false);
       toast.success('Đã tặng ưu đãi cho khách hàng');

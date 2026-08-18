@@ -164,7 +164,7 @@ export async function seedStaffData(branchId, onProgress) {
       const list = localGps ? JSON.parse(localGps) : [];
       const id = 'local_group_' + Date.now() + '_' + g.name;
       list.push({ id, ...g, branch_id: b });
-      localStorage.setItem('glopro_staff_groups', JSON.stringify(list));
+      /* localStorage.setItem('glopro_staff_groups') removed */
       createdGroups[g.name] = id;
     }
   }
@@ -186,7 +186,7 @@ export async function seedStaffData(branchId, onProgress) {
       const list = localTmpl ? JSON.parse(localTmpl) : [];
       const id = 'local_tmpl_' + Date.now() + '_' + t.name;
       list.push({ id, ...t });
-      localStorage.setItem('glopro_shift_templates', JSON.stringify(list));
+      /* localStorage.setItem('glopro_shift_templates') removed */
       createdTemplates[t.name] = id;
     }
   }
@@ -218,7 +218,7 @@ export async function seedStaffData(branchId, onProgress) {
       if (!alreadyExists) {
         const id = 'local_staff_' + Date.now() + '_' + staffPayload.phone;
         list.push({ id, ...payload });
-        localStorage.setItem('glopro_staff', JSON.stringify(list));
+        /* localStorage.setItem('glopro_staff') removed */
         staffCreated++;
       }
     }

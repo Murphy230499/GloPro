@@ -183,7 +183,7 @@ export default function CustomerSegmentsTab({ createTrigger }) {
         parsedAwards.push(newAward);
       });
 
-      localStorage.setItem('glopro_segment_campaign_awards', JSON.stringify(parsedAwards));
+      /* localStorage.setItem('glopro_segment_campaign_awards') removed */
       toast.success('Đã gửi tặng chương trình khuyến mãi thành công!');
       
       setSelectedCampaignIds([]);

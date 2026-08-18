@@ -175,10 +175,12 @@ export default function RevenueConfigTab({
       try {
         const list = await base44.entities.RevenueBonusRule.list();
         setRules(list && list.length > 0 ? list : savedRules);
-        localStorage.setItem('glopro_revenue_bonus_rules', JSON.stringify(list && list.length > 0 ? list : savedRules));
+        // Synchronized via Supabase API
+      await Promise.all(list.map(r => r.id ? base44.entities.RevenueBonusRule.update(r.id, r) : base44.entities.RevenueBonusRule.create(r)));
       } catch {
         setRules(savedRules);
-        localStorage.setItem('glopro_revenue_bonus_rules', JSON.stringify(savedRules));
+        // Synchronized via Supabase API
+      await Promise.all(list.map(r => r.id ? base44.entities.RevenueBonusRule.update(r.id, r) : base44.entities.RevenueBonusRule.create(r)));
       }
       
       toast.success(t('staff.commission.save_revenue_success', 'Cập nhật cấu hình hoa hồng doanh thu thành công!'));

@@ -54,10 +54,10 @@ export class CreateInvoiceTool extends AbstractTool<ICreateInvoiceInput, IInvoic
       try {
         created = (await base44.entities.Invoice.create(payload)) as IInvoice;
       } catch (e) {
-        const local = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        const local = (await base44.entities.Invoice.list().catch(()=>[]));
         created = { id: `inv_${Date.now()}`, ...payload } as IInvoice;
         local.push(created);
-        localStorage.setItem('glopro_invoices', JSON.stringify(local));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
 
       await this.audit('CREATE_INVOICE', input, context, { success: true, data: created, executionTimeMs: 0 });

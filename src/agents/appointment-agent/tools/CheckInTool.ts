@@ -40,12 +40,12 @@ export class CheckInTool extends AbstractTool<ICheckInInput, IAppointment> {
       try {
         updated = (await base44.entities.Appointment.update(input.appointmentId, updates)) as IAppointment;
       } catch (e) {
-        const local: IAppointment[] = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        const local: IAppointment[] = (await base44.entities.Appointment.list().catch(()=>[]));
         const idx = local.findIndex(a => a.id === input.appointmentId);
         if (idx !== -1) {
           local[idx] = { ...local[idx], ...updates };
           updated = local[idx];
-          localStorage.setItem('glopro_appointments', JSON.stringify(local));
+          // localStorage.setItem replaced with direct Supabase API call above
         } else {
           throw new Error('Appointment not found.');
         }

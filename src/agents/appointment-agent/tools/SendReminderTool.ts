@@ -45,7 +45,7 @@ export class SendReminderTool extends AbstractTool<ISendReminderInput, IReminder
       try {
         appt = (await base44.entities.Appointment.get(input.appointmentId)) as IAppointment;
       } catch (e) {
-        const local: IAppointment[] = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        const local: IAppointment[] = (await base44.entities.Appointment.list().catch(()=>[]));
         appt = local.find(a => a.id === input.appointmentId) || null;
       }
 

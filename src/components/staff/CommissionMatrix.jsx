@@ -298,7 +298,8 @@ export default function CommissionMatrix({ branchId }) {
       } else {
         list.push({ id: 'local_' + Date.now(), ...payload });
       }
-      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(list));
+      // Synchronized via Supabase API
+      await Promise.all(updatedRules.map(r => r.id ? base44.entities.StaffCommissionRule.update(r.id, r) : base44.entities.StaffCommissionRule.create(r)));
       setRules(list);
     }
     setSavingKey(null);
@@ -370,10 +371,12 @@ export default function CommissionMatrix({ branchId }) {
     try {
       const updatedRules = await base44.entities.StaffCommissionRule.list();
       setRules(updatedRules && updatedRules.length > 0 ? updatedRules : localList);
-      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(updatedRules && updatedRules.length > 0 ? updatedRules : localList));
+      // Synchronized via Supabase API
+      await Promise.all(updatedRules.map(r => r.id ? base44.entities.StaffCommissionRule.update(r.id, r) : base44.entities.StaffCommissionRule.create(r)));
     } catch {
       setRules(localList);
-      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
+      // Synchronized via Supabase API
+      await Promise.all(updatedRules.map(r => r.id ? base44.entities.StaffCommissionRule.update(r.id, r) : base44.entities.StaffCommissionRule.create(r)));
     }
 
     toast.success(t('staff.commission.group_update_success', 'Cập nhật hoa hồng nhóm thành công!'));
@@ -432,10 +435,12 @@ export default function CommissionMatrix({ branchId }) {
     try {
       const updatedRules = await base44.entities.StaffCommissionRule.list();
       setRules(updatedRules && updatedRules.length > 0 ? updatedRules : localList);
-      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(updatedRules && updatedRules.length > 0 ? updatedRules : localList));
+      // Synchronized via Supabase API
+      await Promise.all(updatedRules.map(r => r.id ? base44.entities.StaffCommissionRule.update(r.id, r) : base44.entities.StaffCommissionRule.create(r)));
     } catch {
       setRules(localList);
-      localStorage.setItem('glopro_staff_commission_rules', JSON.stringify(localList));
+      // Synchronized via Supabase API
+      await Promise.all(updatedRules.map(r => r.id ? base44.entities.StaffCommissionRule.update(r.id, r) : base44.entities.StaffCommissionRule.create(r)));
     }
 
     toast.success(t('staff.commission.copy_success', 'Sao chép hoa hồng thành công!'));

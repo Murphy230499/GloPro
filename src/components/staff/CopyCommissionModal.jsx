@@ -151,7 +151,7 @@ export default function CopyCommissionModal({ staff, onClose, onRefresh }) {
         console.warn('Lỗi ghi log:', logErr);
         const localLogs = JSON.parse(localStorage.getItem('glopro_commission_logs') || '[]');
         localLogs.unshift({ id: 'log_' + Date.now(), ...logPayload });
-        localStorage.setItem('glopro_commission_logs', JSON.stringify(localLogs));
+        /* localStorage.setItem('glopro_commission_logs') removed */
       }
 
       toast.success('Sao chép cấu hình hoa hồng thành công!');

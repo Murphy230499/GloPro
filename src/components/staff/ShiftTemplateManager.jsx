@@ -97,7 +97,7 @@ export default function ShiftTemplateManager({ onChanged }) {
         list.push(newT);
         toast.success('Đã thêm ca làm việc mới (offline)');
       }
-      localStorage.setItem('glopro_shift_templates', JSON.stringify(list));
+      /* localStorage.setItem('glopro_shift_templates') removed */
       resetForm();
       setShowModal(false);
       load();
@@ -152,7 +152,7 @@ export default function ShiftTemplateManager({ onChanged }) {
       const local = localStorage.getItem('glopro_shift_templates');
       if (local) {
         const list = JSON.parse(local).filter(x => x.id !== id);
-        localStorage.setItem('glopro_shift_templates', JSON.stringify(list));
+        /* localStorage.setItem('glopro_shift_templates') removed */
       }
       load();
       onChanged?.();

@@ -28,7 +28,7 @@ export class CheckStockTool extends AbstractTool<ICheckStockInput, IProductItem[
     this.log('info', 'Checking stock inventory items');
 
     try {
-      const items: IProductItem[] = JSON.parse(localStorage.getItem('glopro_products') || '[]');
+      const items: IProductItem[] = (await base44.entities.Product.list().catch(()=>[]));
       let filtered = items;
 
       if (input.query) {

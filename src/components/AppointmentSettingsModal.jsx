@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useT } from '@/lib/i18n';
 import { X, Maximize2, Check, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 const DEFAULT_SETTINGS = {
   timeSlotDuration: '15',
@@ -24,12 +25,20 @@ export default function AppointmentSettingsModal({ open, onClose }) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
-      const stored = localStorage.getItem('glowpro_appointment_settings');
-      if (stored) {
-        try {
-          setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
-        } catch (e) {}
-      }
+      // Load from Supabase
+      base44.entities.BookingSetting.list().then(settingsList => {
+         if (settingsList && settingsList.length > 0) {
+             const dbSettings = settingsList[0].settings_json || {};
+             setSettings({ ...DEFAULT_SETTINGS, ...dbSettings, id: settingsList[0].id });
+         } else {
+             const stored = localStorage.getItem('glowpro_appointment_settings');
+             if (stored) {
+               try {
+                 setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
+               } catch (e) {}
+             }
+         }
+      }).catch(e => console.error(e));
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -37,9 +46,20 @@ export default function AppointmentSettingsModal({ open, onClose }) {
 
   if (!open) return null;
 
-  const handleSave = () => {
-    localStorage.setItem('glowpro_appointment_settings', JSON.stringify(settings));
-    onClose();
+  const handleSave = async () => {
+    try {
+        const { id, ...settingsJson } = settings;
+        if (id) {
+            await base44.entities.BookingSetting.update(id, { settings_json: settingsJson });
+        } else {
+            await base44.entities.BookingSetting.create({ name: 'Default', settings_json: settingsJson });
+        }
+        localStorage.setItem('glowpro_appointment_settings', JSON.stringify(settingsJson));
+        onClose();
+    } catch(e) {
+        console.error(e);
+        onClose();
+    }
   };
 
   return (

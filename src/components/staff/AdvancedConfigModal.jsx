@@ -93,10 +93,10 @@ export default function AdvancedConfigModal({ onClose }) {
         console.warn('Lỗi ghi log:', logErr);
         const localLogs = JSON.parse(localStorage.getItem('glopro_commission_logs') || '[]');
         localLogs.unshift({ id: 'log_' + Date.now(), ...logPayload });
-        localStorage.setItem('glopro_commission_logs', JSON.stringify(localLogs));
+        /* localStorage.setItem('glopro_commission_logs') removed */
       }
 
-      localStorage.setItem('glopro_staff_commission_config', JSON.stringify(configs));
+      /* localStorage.setItem('glopro_staff_commission_config') removed */
       toast.success(t('staff.commission.advanced_update_success', 'Cập nhật cấu hình hoa hồng nâng cao thành công!'));
       onClose();
     } catch (e) {

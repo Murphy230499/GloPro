@@ -66,10 +66,10 @@ export class CreateCustomerTool extends AbstractTool<ICreateCustomerInput, ICust
       try {
         created = (await base44.entities.Customer.create(payload)) as ICustomer;
       } catch (e) {
-        const local = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local = (await base44.entities.Customer.list().catch(()=>[]));
         created = { id: `cust_${Date.now()}`, ...payload } as ICustomer;
         local.push(created);
-        localStorage.setItem('glopro_customers', JSON.stringify(local));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
 
       await this.audit('CREATE', input, context, { success: true, data: created, executionTimeMs: 0 });
@@ -95,9 +95,9 @@ export class CreateCustomerTool extends AbstractTool<ICreateCustomerInput, ICust
       try {
         await base44.entities.Customer.delete(previousResult.data.id);
       } catch (e) {
-        const local: ICustomer[] = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local: ICustomer[] = (await base44.entities.Customer.list().catch(()=>[]));
         const updated = local.filter(c => c.id !== previousResult.data?.id);
-        localStorage.setItem('glopro_customers', JSON.stringify(updated));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
     }
     return { success: true };

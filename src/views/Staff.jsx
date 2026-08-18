@@ -30,6 +30,39 @@ const AuditLogModal = dynamic(() => import('@/components/staff/AuditLogModal'));
 const PayrollManager = dynamic(() => import('@/components/staff/PayrollManager'));
 const StaffPayrollDetailView = dynamic(() => import('@/components/staff/StaffPayrollDetailView'));
 
+class StaffTabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("StaffTab Error caught by ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-white rounded-3xl p-8 border border-slate-150 text-center my-4 space-y-3">
+          <p className="text-sm font-bold text-slate-800">Không thể tải nội dung phần này</p>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">{this.state.error?.message || 'Đã có lỗi xảy ra trong quá trình kết xuất dữ liệu.'}</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function StaffPage() {
   const { t } = useT();
 
@@ -143,7 +176,7 @@ export default function StaffPage() {
             idMap[id] = created.id;
           }
         }
-        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
+        /* localStorage.setItem('glopro_staff_id_map') removed */
         stList = await base44.entities.Staff.filter(filter);
       } else if (local) {
         const parsed = JSON.parse(local);
@@ -154,7 +187,7 @@ export default function StaffPage() {
             idMap[st.id] = matched.id;
           }
         }
-        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
+        /* localStorage.setItem('glopro_staff_id_map') removed */
       }
     } catch (e) {
       console.error('Lỗi tải nhân viên từ API:', e);
@@ -489,8 +522,10 @@ export default function StaffPage() {
             ))}
           </div>
 
-          {scheduleSubTab === 'grid' && <SchedulerGrid branchId={currentBranchId} />}
-          {scheduleSubTab === 'templates' && <ShiftTemplateManager />}
+          <StaffTabErrorBoundary>
+            {scheduleSubTab === 'grid' && <SchedulerGrid branchId={currentBranchId} />}
+            {scheduleSubTab === 'templates' && <ShiftTemplateManager />}
+          </StaffTabErrorBoundary>
         </div>
       )}
 

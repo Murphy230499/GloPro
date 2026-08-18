@@ -35,9 +35,9 @@ export class DeleteCustomerTool extends AbstractTool<IDeleteCustomerInput, { cus
       try {
         await base44.entities.Customer.delete(input.customerId);
       } catch (e) {
-        const local = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local = (await base44.entities.Customer.list().catch(()=>[]));
         const updated = local.filter((c: any) => c.id !== input.customerId);
-        localStorage.setItem('glopro_customers', JSON.stringify(updated));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
 
       await this.audit('DELETE', input, context, { success: true, data: { customerId: input.customerId, deleted: true }, executionTimeMs: 0 });

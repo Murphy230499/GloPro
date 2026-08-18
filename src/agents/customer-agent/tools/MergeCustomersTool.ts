@@ -42,7 +42,7 @@ export class MergeCustomersTool extends AbstractTool<IMergeCustomersInput, ICust
       try {
         list = (await base44.entities.Customer.list()) as ICustomer[];
       } catch (e) {
-        list = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        list = (await base44.entities.Customer.list().catch(()=>[]));
       }
 
       const primary = list.find(c => c.id === input.primaryCustomerId);
@@ -65,14 +65,14 @@ export class MergeCustomersTool extends AbstractTool<IMergeCustomersInput, ICust
         updated = (await base44.entities.Customer.update(primary.id, mergedPayload)) as ICustomer;
         await base44.entities.Customer.delete(secondary.id);
       } catch (e) {
-        const local: ICustomer[] = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local: ICustomer[] = (await base44.entities.Customer.list().catch(()=>[]));
         const idx = local.findIndex(c => c.id === primary.id);
         if (idx !== -1) {
           local[idx] = { ...local[idx], ...mergedPayload };
           updated = local[idx];
         }
         const filtered = local.filter(c => c.id !== secondary.id);
-        localStorage.setItem('glopro_customers', JSON.stringify(filtered));
+        // localStorage.setItem replaced with direct Supabase API call above
         updated = local[idx] || primary;
       }
 

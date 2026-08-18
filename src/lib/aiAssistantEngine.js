@@ -162,9 +162,9 @@ export async function processUserMessage(userMessage, context = {}) {
         created_at: new Date().toISOString()
       };
 
-      const existingSegs = JSON.parse(localStorage.getItem('glopro_customer_segments') || '[]');
+      const existingSegs = (await base44.entities.CustomerSegmentAuto.list().catch(()=>[]));
       existingSegs.push(newSeg);
-      localStorage.setItem('glopro_customer_segments', JSON.stringify(existingSegs));
+      /* localStorage.setItem('glopro_customer_segments') removed */
       notifyReload();
 
       return {
@@ -320,10 +320,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         createdInvoice = await base44.entities.Invoice.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        const local = (await base44.entities.Invoice.list().catch(()=>[]));
         createdInvoice = { id: `inv_${Date.now()}`, ...payload };
         local.push(createdInvoice);
-        localStorage.setItem('glopro_invoices', JSON.stringify(local));
+        /* localStorage.setItem('glopro_invoices') removed */
       }
       notifyReload();
 
@@ -380,7 +380,7 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         existingCusts = await base44.entities.Customer.list();
       } catch (e) {
-        existingCusts = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        existingCusts = (await base44.entities.Customer.list().catch(()=>[]));
       }
 
       const foundCust = (existingCusts || []).find(c =>
@@ -405,7 +405,7 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         existingServices = await base44.entities.Service.list();
       } catch (e) {
-        existingServices = JSON.parse(localStorage.getItem('glopro_services') || '[]');
+        existingServices = (await base44.entities.Service.list().catch(()=>[]));
       }
 
       const foundSvc = (existingServices || []).find(s =>
@@ -433,7 +433,7 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         existingStaff = await base44.entities.Staff.list();
       } catch (e) {
-        existingStaff = JSON.parse(localStorage.getItem('glopro_staff') || '[]');
+        existingStaff = (await base44.entities.Staff.list().catch(()=>[]));
       }
 
       const foundStaff = (existingStaff || []).find(st =>
@@ -469,10 +469,10 @@ export async function processUserMessage(userMessage, context = {}) {
         created = await base44.entities.Appointment.create(payload);
       } catch (err) {
         // Fallback to local storage
-        const local = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        const local = (await base44.entities.Appointment.list().catch(()=>[]));
         created = { id: `appt_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_appointments', JSON.stringify(local));
+        /* localStorage.setItem('glopro_appointments') removed */
       }
       notifyReload();
 
@@ -523,10 +523,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         created = await base44.entities.Customer.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local = (await base44.entities.Customer.list().catch(()=>[]));
         created = { id: `cust_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_customers', JSON.stringify(local));
+        /* localStorage.setItem('glopro_customers') removed */
       }
       notifyReload();
 
@@ -575,10 +575,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         created = await base44.entities.Staff.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_staff') || '[]');
+        const local = (await base44.entities.Staff.list().catch(()=>[]));
         created = { id: `staff_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_staff', JSON.stringify(local));
+        /* localStorage.setItem('glopro_staff') removed */
       }
       notifyReload();
 
@@ -629,10 +629,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         created = await base44.entities.Product.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_products') || '[]');
+        const local = (await base44.entities.Product.list().catch(()=>[]));
         created = { id: `prod_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_products', JSON.stringify(local));
+        /* localStorage.setItem('glopro_products') removed */
       }
       notifyReload();
 
@@ -683,10 +683,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         created = await base44.entities.Service.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_services') || '[]');
+        const local = (await base44.entities.Service.list().catch(()=>[]));
         created = { id: `svc_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_services', JSON.stringify(local));
+        /* localStorage.setItem('glopro_services') removed */
       }
       notifyReload();
 
@@ -735,10 +735,10 @@ export async function processUserMessage(userMessage, context = {}) {
       try {
         created = await base44.entities.Voucher.create(payload);
       } catch (err) {
-        const local = JSON.parse(localStorage.getItem('glopro_vouchers') || '[]');
+        const local = (await base44.entities.Voucher.list().catch(()=>[]));
         created = { id: `vouch_${Date.now()}`, ...payload };
         local.push(created);
-        localStorage.setItem('glopro_vouchers', JSON.stringify(local));
+        /* localStorage.setItem('glopro_vouchers') removed */
       }
       notifyReload();
 

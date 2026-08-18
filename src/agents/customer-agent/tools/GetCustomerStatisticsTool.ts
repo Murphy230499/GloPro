@@ -40,7 +40,7 @@ export class GetCustomerStatisticsTool extends AbstractTool<IGetCustomerStatisti
       try {
         list = (await base44.entities.Customer.list()) as ICustomer[];
       } catch (e) {
-        list = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        list = (await base44.entities.Customer.list().catch(()=>[]));
       }
 
       const totalCustomers = list.length;

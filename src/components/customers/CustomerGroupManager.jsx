@@ -59,7 +59,7 @@ export default function CustomerGroupManager({ branchId, onClose, onChanged }) {
         list.push(newGroup);
         toast.success(t('customers.groups.added_offline', 'Đã thêm nhóm khách hàng (offline)'));
       }
-      localStorage.setItem('glopro_customer_groups', JSON.stringify(list));
+      /* localStorage.setItem('glopro_customer_groups') removed */
       setName('');
       setColor(COLORS[0]);
       setEditingId(null);
@@ -88,7 +88,7 @@ export default function CustomerGroupManager({ branchId, onClose, onChanged }) {
       const local = localStorage.getItem('glopro_customer_groups');
       if (local) {
         const list = JSON.parse(local).filter(x => x.id !== id);
-        localStorage.setItem('glopro_customer_groups', JSON.stringify(list));
+        /* localStorage.setItem('glopro_customer_groups') removed */
       }
       load();
       onChanged?.();

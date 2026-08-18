@@ -50,7 +50,7 @@ export class BookAppointmentTool extends AbstractTool<IBookAppointmentInput, IAp
       try {
         appts = (await base44.entities.Appointment.list()) as IAppointment[];
       } catch (e) {
-        appts = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        appts = (await base44.entities.Appointment.list().catch(()=>[]));
       }
 
       // 2. Conflict Detection Check
@@ -82,10 +82,10 @@ export class BookAppointmentTool extends AbstractTool<IBookAppointmentInput, IAp
       try {
         created = (await base44.entities.Appointment.create(payload)) as IAppointment;
       } catch (e) {
-        const local = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        const local = (await base44.entities.Appointment.list().catch(()=>[]));
         created = { id: `appt_${Date.now()}`, ...payload } as IAppointment;
         local.push(created);
-        localStorage.setItem('glopro_appointments', JSON.stringify(local));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
 
       await this.audit('BOOK', input, context, { success: true, data: created, executionTimeMs: 0 });

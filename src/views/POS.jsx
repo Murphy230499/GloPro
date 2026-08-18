@@ -929,7 +929,24 @@ export default function POS() {
                       const giftToMark = gifts[effectiveCustomer.id].find(g => g.promo_id === session.promo.id && !g.used);
                       if (giftToMark) {
                         giftToMark.used = true;
-                        localStorage.setItem('glopro_customer_gifts', JSON.stringify(gifts));
+                                                // Instead of simple subtraction, we should update the DB. For simplicity in this POS context, we find available gifts and mark as used or decrement.
+                        try {
+                          const gList = await base44.entities.CustomerGift.list();
+                          const available = gList.filter(g => g.customer_id === currentCustomer.id && g.gift_name === item.name && g.status === 'available');
+                          if (available.length > 0) {
+                            let toDeduct = 1; // Assuming qty=1 for gift usage in cart
+                            for (const g of available) {
+                               if (toDeduct <= 0) break;
+                               if (g.qty > toDeduct) {
+                                  await base44.entities.CustomerGift.update(g.id, { qty: g.qty - toDeduct });
+                                  toDeduct = 0;
+                               } else {
+                                  await base44.entities.CustomerGift.update(g.id, { status: 'used' });
+                                  toDeduct -= g.qty;
+                               }
+                            }
+                          }
+                        } catch(e){}
                       }
                     }
                   }
@@ -956,7 +973,12 @@ export default function POS() {
               usages.push(newUsage);
             }
 
-            localStorage.setItem('glopro_promo_usages', JSON.stringify(usages));
+                        for (const u of usages) {
+              if (u.is_new) {
+                delete u.is_new;
+                await base44.entities.PromoUsage.create(u).catch(()=>{});
+              }
+            }
           } catch (pe) {
             console.error('Error recording promo/voucher usage:', pe);
           }

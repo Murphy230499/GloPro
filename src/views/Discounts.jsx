@@ -406,7 +406,7 @@ export default function Discounts() {
         list.push(payload);
       }
 
-      localStorage.setItem('glopro_promotions', JSON.stringify(list));
+      /* localStorage.setItem('glopro_promotions') removed */
       toast.success(editingPromoId ? 'Đã cập nhật khuyến mãi' : 'Đã tạo chương trình khuyến mãi');
       
       reloadPromotions();
@@ -446,7 +446,7 @@ export default function Discounts() {
       const local = localStorage.getItem('glopro_promotions');
       let list = local ? JSON.parse(local) : [];
       list = list.filter(p => p.id !== id);
-      localStorage.setItem('glopro_promotions', JSON.stringify(list));
+      /* localStorage.setItem('glopro_promotions') removed */
       toast.success('Đã xóa chương trình khuyến mãi');
       reloadPromotions();
       loadData();
@@ -531,7 +531,7 @@ export default function Discounts() {
         list.push(payload);
       }
 
-      localStorage.setItem('glopro_vouchers', JSON.stringify(list));
+      /* localStorage.setItem('glopro_vouchers') removed */
       toast.success(editingVoucherId ? 'Đã cập nhật voucher' : 'Đã tạo voucher thành công');
       
       // Mutate VOUCHERS dynamic list in POS promos utility
@@ -577,7 +577,7 @@ export default function Discounts() {
       const local = localStorage.getItem('glopro_vouchers');
       let list = local ? JSON.parse(local) : [];
       list = list.filter(v => v.id !== id);
-      localStorage.setItem('glopro_vouchers', JSON.stringify(list));
+      /* localStorage.setItem('glopro_vouchers') removed */
       toast.success('Đã xóa voucher');
       
       reloadVouchers();

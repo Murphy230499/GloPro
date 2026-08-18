@@ -62,10 +62,10 @@ export class WaitingListTool extends AbstractTool<IWaitingListInput, IWaitingLis
           createdAt: new Date().toISOString()
         };
         list.push(entry);
-        localStorage.setItem('glopro_waiting_list', JSON.stringify(list));
+        /* localStorage.setItem('glopro_waiting_list') removed */
       } else if (input.action === 'remove' && input.entryId) {
         const updated = list.filter(e => e.id !== input.entryId);
-        localStorage.setItem('glopro_waiting_list', JSON.stringify(updated));
+        /* localStorage.setItem('glopro_waiting_list') removed */
         return { success: true, data: updated, executionTimeMs: Date.now() - startTime };
       }
 

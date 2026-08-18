@@ -27,12 +27,12 @@ export default function PromoDetailModal({ promo, usages, onClose }) {
   const [activeSubTab, setActiveSubTab] = useState('gifted'); // 'gifted' | 'usages'
 
   useEffect(() => {
-    base44.entities.Customer.list().then((custList) => {
+    base44.entities.Customer.list().then(async (custList) => {
       const cList = custList || [];
       setCustomers(cList);
 
       try {
-        const giftsMap = JSON.parse(localStorage.getItem('glopro_customer_gifts') || '{}');
+        const giftsMap = (await base44.entities.CustomerGift.list().catch(()=>[]));
         const list = [];
         Object.entries(giftsMap).forEach(([custId, items]) => {
           if (Array.isArray(items)) {

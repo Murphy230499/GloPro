@@ -34,7 +34,7 @@ export class ManageSupplierTool extends AbstractTool<IManageSupplierInput, ISupp
     this.log('info', `Managing supplier action [${input.action}]`);
 
     try {
-      const suppliers: ISupplier[] = JSON.parse(localStorage.getItem('glopro_suppliers') || '[]');
+      const suppliers: ISupplier[] = (await base44.entities.InventorySupplier.list().catch(()=>[]));
 
       if (input.action === 'create' && input.name) {
         const sup: ISupplier = {
@@ -44,7 +44,7 @@ export class ManageSupplierTool extends AbstractTool<IManageSupplierInput, ISupp
           address: input.address || 'Hồ Chí Minh'
         };
         suppliers.push(sup);
-        localStorage.setItem('glopro_suppliers', JSON.stringify(suppliers));
+        // localStorage.setItem replaced with direct Supabase API call above
         return { success: true, data: sup, executionTimeMs: Date.now() - startTime };
       }
 

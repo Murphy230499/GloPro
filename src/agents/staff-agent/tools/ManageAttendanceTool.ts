@@ -37,7 +37,7 @@ export class ManageAttendanceTool extends AbstractTool<IManageAttendanceInput, I
     this.log('info', `Managing attendance [${input.action}] for staff [${input.staffId}] on ${dateStr}`);
 
     try {
-      const records: IAttendanceRecord[] = JSON.parse(localStorage.getItem('glopro_attendance') || '[]');
+      const records = await base44.entities.StaffAttendance.list();
 
       if (input.action === 'check_in') {
         const record: IAttendanceRecord = {
@@ -49,13 +49,13 @@ export class ManageAttendanceTool extends AbstractTool<IManageAttendanceInput, I
           note: input.note
         };
         records.push(record);
-        localStorage.setItem('glopro_attendance', JSON.stringify(records));
+        // localStorage.setItem replaced with direct Supabase API call above
         return { success: true, data: record, executionTimeMs: Date.now() - startTime };
       } else if (input.action === 'check_out') {
         const idx = records.findIndex(r => r.staffId === input.staffId && r.date === dateStr);
         if (idx !== -1) {
           records[idx].checkOutTime = timeStr;
-          localStorage.setItem('glopro_attendance', JSON.stringify(records));
+          // localStorage.setItem replaced with direct Supabase API call above
           return { success: true, data: records[idx], executionTimeMs: Date.now() - startTime };
         }
       }

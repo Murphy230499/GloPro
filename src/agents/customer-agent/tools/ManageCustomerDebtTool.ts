@@ -38,7 +38,7 @@ export class ManageCustomerDebtTool extends AbstractTool<IManageCustomerDebtInpu
       try {
         cust = (await base44.entities.Customer.get(input.customerId)) as ICustomer;
       } catch (e) {
-        const local: ICustomer[] = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local: ICustomer[] = (await base44.entities.Customer.list().catch(()=>[]));
         cust = local.find(c => c.id === input.customerId) || null;
       }
 
@@ -55,12 +55,12 @@ export class ManageCustomerDebtTool extends AbstractTool<IManageCustomerDebtInpu
       try {
         updated = (await base44.entities.Customer.update(input.customerId, { debtAmount: currentDebt })) as ICustomer;
       } catch (e) {
-        const local: ICustomer[] = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local: ICustomer[] = (await base44.entities.Customer.list().catch(()=>[]));
         const idx = local.findIndex(c => c.id === input.customerId);
         if (idx !== -1) {
           local[idx].debtAmount = currentDebt;
           updated = local[idx];
-          localStorage.setItem('glopro_customers', JSON.stringify(local));
+          // localStorage.setItem replaced with direct Supabase API call above
         } else {
           throw new Error('Customer not found.');
         }

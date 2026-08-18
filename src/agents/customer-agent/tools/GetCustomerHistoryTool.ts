@@ -39,8 +39,8 @@ export class GetCustomerHistoryTool extends AbstractTool<IGetCustomerHistoryInpu
         appointments = await base44.entities.Appointment.list();
         invoices = await base44.entities.Invoice.list();
       } catch (e) {
-        appointments = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
-        invoices = JSON.parse(localStorage.getItem('glopro_invoices') || '[]');
+        appointments = (await base44.entities.Appointment.list().catch(()=>[]));
+        invoices = (await base44.entities.Invoice.list().catch(()=>[]));
       }
 
       const custAppts = appointments.filter((a: any) => String(a.customer_id) === String(input.customerId) || a.customer_name);

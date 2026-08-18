@@ -38,7 +38,7 @@ export class SearchCustomerTool extends AbstractTool<ISearchCustomerInput, ICust
       try {
         list = (await base44.entities.Customer.list()) as ICustomer[];
       } catch (e) {
-        list = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        list = (await base44.entities.Customer.list().catch(()=>[]));
       }
 
       const q = input.query.toLowerCase().trim();

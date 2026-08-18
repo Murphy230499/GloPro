@@ -92,7 +92,7 @@ export default function PromotionCampaignsTab({ createTrigger }) {
         parsed.push(payload);
       }
 
-      localStorage.setItem('glopro_promotions', JSON.stringify(parsed));
+      /* localStorage.setItem('glopro_promotions') removed */
       toast.success(editingId ? 'Đã cập nhật chương trình khuyến mãi' : 'Đã tạo chương trình khuyến mãi');
       
       reloadPromotions();
@@ -120,7 +120,7 @@ export default function PromotionCampaignsTab({ createTrigger }) {
       const local = localStorage.getItem('glopro_promotions');
       let parsed = local ? JSON.parse(local) : [];
       parsed = parsed.filter(p => p.id !== id);
-      localStorage.setItem('glopro_promotions', JSON.stringify(parsed));
+      /* localStorage.setItem('glopro_promotions') removed */
       toast.success('Đã xóa chương trình khuyến mãi');
       reloadPromotions();
       load();

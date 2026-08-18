@@ -152,7 +152,7 @@ export default function CustomerTiersTab({ onChanged, createTrigger }) {
         }
       }
 
-      localStorage.setItem('glopro_customer_group_mappings', JSON.stringify(mappings));
+      /* localStorage.setItem('glopro_customer_group_mappings') removed */
       toast.success(`Đã hoàn tất xét duy trì hạng! Có ${changeCount} khách hàng được thay đổi hạng.`);
       onChanged?.();
     } catch (e) {

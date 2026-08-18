@@ -186,13 +186,13 @@ export const loadSuppliersData = () => {
   if (local) {
     try { return JSON.parse(local); } catch (e) {}
   }
-  localStorage.setItem('glopro_suppliers', JSON.stringify(INITIAL_SUPPLIERS));
+  /* localStorage.setItem('glopro_suppliers') removed */
   return INITIAL_SUPPLIERS;
 };
 
 export const saveSuppliersData = (list) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('glopro_suppliers', JSON.stringify(list));
+    /* localStorage.setItem('glopro_suppliers') removed */
   }
 };
 
@@ -202,13 +202,13 @@ export const loadStockReceiptsData = () => {
   if (local) {
     try { return JSON.parse(local); } catch (e) {}
   }
-  localStorage.setItem('glopro_stock_receipts', JSON.stringify(INITIAL_STOCK_RECEIPTS));
+  /* localStorage.setItem('glopro_stock_receipts') removed */
   return INITIAL_STOCK_RECEIPTS;
 };
 
 export const saveStockReceiptsData = (list) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('glopro_stock_receipts', JSON.stringify(list));
+    /* localStorage.setItem('glopro_stock_receipts') removed */
   }
 };
 
@@ -218,12 +218,12 @@ export const loadStockTransfersData = () => {
   if (local) {
     try { return JSON.parse(local); } catch (e) {}
   }
-  localStorage.setItem('glopro_stock_transfers', JSON.stringify(INITIAL_STOCK_TRANSFERS));
+  /* localStorage.setItem('glopro_stock_transfers') removed */
   return INITIAL_STOCK_TRANSFERS;
 };
 
 export const saveStockTransfersData = (list) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('glopro_stock_transfers', JSON.stringify(list));
+    /* localStorage.setItem('glopro_stock_transfers') removed */
   }
 };

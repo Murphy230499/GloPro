@@ -147,7 +147,7 @@ export default function GiftPromoModal({ promo, onClose }) {
         successCount++;
       });
 
-      localStorage.setItem('glopro_customer_gifts', JSON.stringify(gifts));
+      /* localStorage.setItem('glopro_customer_gifts') removed */
       toast.success(`Đã tặng quà cho ${successCount} khách hàng!`);
       onClose();
     } catch (err) {

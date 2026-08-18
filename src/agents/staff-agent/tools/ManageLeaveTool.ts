@@ -35,7 +35,7 @@ export class ManageLeaveTool extends AbstractTool<IManageLeaveInput, ILeaveReque
     this.log('info', `Managing leave action [${input.action}] for staff [${input.staffId}]`);
 
     try {
-      const leaves: ILeaveRequest[] = JSON.parse(localStorage.getItem('glopro_leaves') || '[]');
+      const leaves = await base44.entities.StaffLeave.list();
 
       if (input.action === 'request') {
         const req: ILeaveRequest = {
@@ -48,13 +48,13 @@ export class ManageLeaveTool extends AbstractTool<IManageLeaveInput, ILeaveReque
           status: 'pending'
         };
         leaves.push(req);
-        localStorage.setItem('glopro_leaves', JSON.stringify(leaves));
+        // localStorage.setItem replaced with direct Supabase API call above
         return { success: true, data: req, executionTimeMs: Date.now() - startTime };
       } else if ((input.action === 'approve' || input.action === 'reject') && input.requestId) {
         const idx = leaves.findIndex(l => l.id === input.requestId);
         if (idx !== -1) {
           leaves[idx].status = input.action === 'approve' ? 'approved' : 'rejected';
-          localStorage.setItem('glopro_leaves', JSON.stringify(leaves));
+          // localStorage.setItem replaced with direct Supabase API call above
           return { success: true, data: leaves[idx], executionTimeMs: Date.now() - startTime };
         }
       }

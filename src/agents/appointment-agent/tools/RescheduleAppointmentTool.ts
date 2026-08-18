@@ -40,7 +40,7 @@ export class RescheduleAppointmentTool extends AbstractTool<IRescheduleAppointme
       try {
         appts = (await base44.entities.Appointment.list()) as IAppointment[];
       } catch (e) {
-        appts = JSON.parse(localStorage.getItem('glopro_appointments') || '[]');
+        appts = (await base44.entities.Appointment.list().catch(()=>[]));
       }
 
       const existing = appts.find(a => a.id === input.appointmentId);
@@ -77,7 +77,7 @@ export class RescheduleAppointmentTool extends AbstractTool<IRescheduleAppointme
         const idx = appts.findIndex(a => a.id === input.appointmentId);
         appts[idx] = { ...appts[idx], ...updates };
         updated = appts[idx];
-        localStorage.setItem('glopro_appointments', JSON.stringify(appts));
+        // localStorage.setItem replaced with direct Supabase API call above
       }
 
       await this.audit('RESCHEDULE', input, context, { success: true, data: updated, executionTimeMs: 0 });

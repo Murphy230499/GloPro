@@ -1,7 +1,7 @@
 'use client';
 import { useT } from '@/lib/i18n';
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2, CalendarDays, ChevronDown } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Copy, RefreshCw, AlertCircle, Plus, X, Trash2, CalendarDays, ChevronDown, User } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
@@ -24,25 +24,38 @@ const batchPromises = async (items, fn, batchSize = 3) => {
   }
   return results;
 };
-// Helper to get Mon-Sun dates for a week
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  const parts = String(dateStr).split('-').map(Number);
+  if (parts.length < 3) return new Date();
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+};
+
+const formatLocalDateStr = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Helper to get Mon-Sun dates for a week (Timezone safe)
 const getWeekDays = (baseDateStr) => {
-  const current = new Date(baseDateStr);
+  const current = parseLocalDate(baseDateStr);
   const day = current.getDay();
   // Get Monday
   const diff = current.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(current.setDate(diff));
+  const monday = new Date(current.getFullYear(), current.getMonth(), diff);
   
   const dates = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    dates.push(d.toISOString().slice(0, 10));
+    const target = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+    dates.push(formatLocalDateStr(target));
   }
   return dates;
 };
 
 const formatVietnameseDate = (dateStr, t) => {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   const days = [
     t('common.sunday', 'Chủ nhật'), 
     t('common.monday', 'Thứ 2'), 
@@ -64,7 +77,7 @@ const formatVietnameseDate = (dateStr, t) => {
 };
 
 const formatDateHeader = (dateStr, t) => {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   const days = [
     t('common.sun', 'CN'), 
     t('common.mon', 'T2'), 
@@ -134,7 +147,7 @@ export default function SchedulerGrid({ branchId }) {
     const val = e.target.checked;
     setAutoCopyEnabled(val);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('glopro_auto_copy_schedule', JSON.stringify(val));
+      /* localStorage.setItem('glopro_auto_copy_schedule') removed */
     }
     toast.success(val ? t('staff.scheduler.msg_auto_copy_on', 'Đã BẬT tự động sao chép lịch tuần mới') : t('staff.scheduler.msg_auto_copy_off', 'Đã TẮT tự động sao chép lịch tuần mới'));
   };
@@ -164,7 +177,7 @@ export default function SchedulerGrid({ branchId }) {
             idMap[id] = created.id;
           }
         }
-        localStorage.setItem('glopro_staff_id_map', JSON.stringify(idMap));
+        /* localStorage.setItem('glopro_staff_id_map') removed */
         stList = await base44.entities.Staff.filter(filter);
       }
 
@@ -180,7 +193,7 @@ export default function SchedulerGrid({ branchId }) {
             idMap[id] = created.id;
           }
         }
-        localStorage.setItem('glopro_tmpl_id_map', JSON.stringify(idMap));
+        /* localStorage.setItem('glopro_tmpl_id_map') removed */
         tmplList = await base44.entities.ShiftTemplate.list();
       }
 
@@ -239,9 +252,9 @@ export default function SchedulerGrid({ branchId }) {
   }, [baseDate, branchId]);
 
   const changeWeek = (direction) => {
-    const d = new Date(baseDate);
+    const d = parseLocalDate(baseDate);
     d.setDate(d.getDate() + (direction * 7));
-    setBaseDate(d.toISOString().slice(0, 10));
+    setBaseDate(formatLocalDateStr(d));
     setActiveCell(null);
   };
 
@@ -327,7 +340,7 @@ export default function SchedulerGrid({ branchId }) {
           });
         });
       }
-      localStorage.setItem('glopro_staff_schedules', JSON.stringify(list));
+      /* localStorage.setItem('glopro_staff_schedules') removed */
       setAssignModalCell(null);
       loadData();
       toast.success('Đã lưu ca làm việc (offline)');
@@ -489,39 +502,40 @@ export default function SchedulerGrid({ branchId }) {
     setIsProcessing(true);
     setProcessingMsg('Đang đổi ca nhân sự...');
     try {
-      const schedA = getCellSchedule(swapStaffA, swapDay);
-      const schedB = getCellSchedule(swapStaffB, swapDay);
+      const schedsA = getCellSchedules(swapStaffA, swapDay);
+      const schedsB = getCellSchedules(swapStaffB, swapDay);
 
-      // Store temp values
-      const valA = schedA ? {
-        shift_template_id: schedA.shift_template_id || '',
-        is_off: schedA.is_off,
-        off_type: schedA.off_type || ''
-      } : null;
+      // Delete old schedules
+      for (const oldA of schedsA) {
+        if (!oldA.id.toString().startsWith('local_')) {
+          await base44.entities.StaffSchedule.delete(oldA.id).catch(() => {});
+        }
+      }
+      for (const oldB of schedsB) {
+        if (!oldB.id.toString().startsWith('local_')) {
+          await base44.entities.StaffSchedule.delete(oldB.id).catch(() => {});
+        }
+      }
 
-      const valB = schedB ? {
-        shift_template_id: schedB.shift_template_id || '',
-        is_off: schedB.is_off,
-        off_type: schedB.off_type || ''
-      } : null;
-
-      // Delete old
-      if (schedA) await base44.entities.StaffSchedule.delete(schedA.id);
-      if (schedB) await base44.entities.StaffSchedule.delete(schedB.id);
-
-      // Create swapped
-      if (valB) {
+      // Create swapped schedules for staff A (give A what B had)
+      for (const b of schedsB) {
         await base44.entities.StaffSchedule.create({
           staff_id: swapStaffA,
           date: swapDay,
-          ...valB
+          shift_template_id: b.shift_template_id || '',
+          is_off: b.is_off,
+          off_type: b.off_type || ''
         });
       }
-      if (valA) {
+
+      // Create swapped schedules for staff B (give B what A had)
+      for (const a of schedsA) {
         await base44.entities.StaffSchedule.create({
           staff_id: swapStaffB,
           date: swapDay,
-          ...valA
+          shift_template_id: a.shift_template_id || '',
+          is_off: a.is_off,
+          off_type: a.off_type || ''
         });
       }
 
@@ -561,7 +575,7 @@ export default function SchedulerGrid({ branchId }) {
       if (local) {
         const parsed = JSON.parse(local);
         const filtered = parsed.filter(s => !weekDays.includes(s.date));
-        localStorage.setItem('glopro_staff_schedules', JSON.stringify(filtered));
+        /* localStorage.setItem('glopro_staff_schedules') removed */
       }
       
       toast.success(`Đã xóa sạch ${currentWeekSchedules.length} ca làm việc của tuần hiện tại`);
@@ -599,7 +613,7 @@ export default function SchedulerGrid({ branchId }) {
                   selected={new Date(baseDate)}
                   onSelect={(date) => {
                     if (date) {
-                      setBaseDate(date.toISOString().slice(0, 10));
+                      setBaseDate(formatLocalDateStr(date));
                       setActiveCell(null);
                     }
                   }}

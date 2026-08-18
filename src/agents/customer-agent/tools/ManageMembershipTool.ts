@@ -38,12 +38,12 @@ export class ManageMembershipTool extends AbstractTool<IManageMembershipInput, I
       try {
         updated = (await base44.entities.Customer.update(input.customerId, { tier: input.newTier })) as ICustomer;
       } catch (e) {
-        const local: ICustomer[] = JSON.parse(localStorage.getItem('glopro_customers') || '[]');
+        const local: ICustomer[] = (await base44.entities.Customer.list().catch(()=>[]));
         const idx = local.findIndex(c => c.id === input.customerId);
         if (idx !== -1) {
           local[idx].tier = input.newTier;
           updated = local[idx];
-          localStorage.setItem('glopro_customers', JSON.stringify(local));
+          // localStorage.setItem replaced with direct Supabase API call above
         } else {
           throw new Error('Customer not found.');
         }

@@ -33,7 +33,7 @@ export class ManageScheduleTool extends AbstractTool<IManageScheduleInput, IShif
     this.log('info', `Managing schedule action [${input.action}] for staff [${input.staffId}] on ${input.date}`);
 
     try {
-      const schedules: IShiftSchedule[] = JSON.parse(localStorage.getItem('glopro_schedules') || '[]');
+      const schedules = await base44.entities.StaffSchedule.list();
 
       if (input.action === 'assign_shift') {
         const shift: IShiftSchedule = {
@@ -46,7 +46,7 @@ export class ManageScheduleTool extends AbstractTool<IManageScheduleInput, IShif
           endTime: input.shiftType === 'morning' ? '14:00' : '21:00'
         };
         schedules.push(shift);
-        localStorage.setItem('glopro_schedules', JSON.stringify(schedules));
+        // localStorage.setItem replaced with direct Supabase API call above
         return { success: true, data: shift, executionTimeMs: Date.now() - startTime };
       }
 

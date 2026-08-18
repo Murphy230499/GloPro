@@ -47,10 +47,15 @@ export default function InventoryView() {
       const prods = await base44.entities.Product.filter(filter).catch(() => []);
       setProducts(prods);
 
-      // 2. Load Suppliers, Stock Receipts, Transfers
-      setSuppliers(loadSuppliersData());
-      setStockReceipts(loadStockReceiptsData());
-      setStockTransfers(loadStockTransfersData());
+            // 2. Load Suppliers, Stock Receipts, Transfers
+      const [sups, receipts, transfers] = await Promise.all([
+        base44.entities.InventorySupplier.list().catch(() => []),
+        base44.entities.InventoryReceipt.list().catch(() => []),
+        base44.entities.InventoryTransfer.list().catch(() => [])
+      ]);
+      setSuppliers(sups);
+      setStockReceipts(receipts);
+      setStockTransfers(transfers);
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu kho hàng:', err);
     } finally {

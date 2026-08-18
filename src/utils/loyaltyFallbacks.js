@@ -60,7 +60,7 @@ export const loadCustomerTiers = async () => {
       { id: 'tier_gold', name: 'Hạng Vàng', min_spend: 5000000, min_points: 500, discount_percent: 5, discount_amount: 0, maintenance_period: 'year', maintenance_days: 365, color: '#FBBF24' },
       { id: 'tier_diamond', name: 'Hạng Kim Cương', min_spend: 15000000, min_points: 1500, discount_percent: 10, discount_amount: 0, maintenance_period: 'year', maintenance_days: 365, color: '#60A5FA' }
     ];
-    localStorage.setItem('glopro_customer_tiers', JSON.stringify(defaults));
+    /* localStorage.setItem('glopro_customer_tiers') removed */
     return defaults;
   }
 };
@@ -94,7 +94,7 @@ export const saveCustomerTier = async (data) => {
       const newItem = { id: localId(), ...payload };
       updated = [...list, newItem];
     }
-    localStorage.setItem('glopro_customer_tiers', JSON.stringify(updated));
+    /* localStorage.setItem('glopro_customer_tiers') removed */
     return data.id ? { id: data.id, ...payload } : updated[updated.length - 1];
   }
 };
@@ -108,7 +108,7 @@ export const deleteCustomerTier = async (id) => {
   } catch (e) {
     const list = await loadCustomerTiers();
     const filtered = list.filter(x => x.id !== id);
-    localStorage.setItem('glopro_customer_tiers', JSON.stringify(filtered));
+    /* localStorage.setItem('glopro_customer_tiers') removed */
   }
 };
 
@@ -140,7 +140,7 @@ export const saveCustomerTierHistory = async (data) => {
   } catch (e) {
     const list = await loadCustomerTierHistory();
     const newItem = { id: localId(), ...payload };
-    localStorage.setItem('glopro_customer_tier_history', JSON.stringify([newItem, ...list]));
+    /* localStorage.setItem('glopro_customer_tier_history') removed */
   }
 };
 
@@ -166,7 +166,7 @@ export const loadCustomerSegments = async () => {
       { id: 'seg_vip', name: 'Khách hàng chi tiêu cao (VIP > 5tr)', color: '#FBBF24', conditions: { total_spent_gt: 5000000 } },
       { id: 'seg_new', name: 'Khách hàng mới (Ghé 1 lần)', color: '#3B82F6', conditions: { visit_count_eq: 1 } }
     ];
-    localStorage.setItem('glopro_customer_segments', JSON.stringify(defaults));
+    /* localStorage.setItem('glopro_customer_segments') removed */
     return defaults;
   }
 };
@@ -198,7 +198,7 @@ export const saveCustomerSegment = async (data) => {
       const newItem = { id: localId(), ...localPayload };
       updated = [...list, newItem];
     }
-    localStorage.setItem('glopro_customer_segments', JSON.stringify(updated));
+    /* localStorage.setItem('glopro_customer_segments') removed */
     return data.id ? { id: data.id, ...localPayload } : updated[updated.length - 1];
   }
 };
@@ -212,7 +212,7 @@ export const deleteCustomerSegment = async (id) => {
   } catch (e) {
     const list = await loadCustomerSegments();
     const filtered = list.filter(x => x.id !== id);
-    localStorage.setItem('glopro_customer_segments', JSON.stringify(filtered));
+    /* localStorage.setItem('glopro_customer_segments') removed */
   }
 };
 
@@ -250,7 +250,7 @@ export const loadLoyaltyRule = async () => {
       reset_inactivity_days: 365,
       excluded_item_ids: []
     };
-    localStorage.setItem('glopro_loyalty_rule', JSON.stringify(defaults));
+    /* localStorage.setItem('glopro_loyalty_rule') removed */
     return defaults;
   }
 };
@@ -288,7 +288,7 @@ export const saveLoyaltyRule = async (data) => {
     }
   } catch (e) {
     const localPayload = { id: 'default_loyalty_rule', ...payload, excluded_item_ids: data.excluded_item_ids || [] };
-    localStorage.setItem('glopro_loyalty_rule', JSON.stringify(localPayload));
+    /* localStorage.setItem('glopro_loyalty_rule') removed */
     return localPayload;
   }
 };
