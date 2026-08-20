@@ -1316,6 +1316,7 @@ export default function POS() {
           session={activeSession} 
           onClose={() => setReviewModalOpen(false)} 
           patchSession={patchSession}
+          syncSessionToDb={syncSessionToDb}
         />
       )}
     </div>);
@@ -1328,13 +1329,19 @@ const EMOJIS = [
   { score: 'very_good', label: 'Rất tốt', icon: '😍' },
 ];
 
-function ReviewQRModal({ open, session, onClose, patchSession }) {
+function ReviewQRModal({ open, session, onClose, patchSession, syncSessionToDb }) {
   const [reviewStep, setReviewStep] = useState('waiting'); // 'waiting', 'reviewing', 'done'
   const [reviewData, setReviewData] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!open || !session) return;
     
+    // Ensure the invoice is saved/synced in database so review page can load it
+    if (syncSessionToDb) {
+      syncSessionToDb(session);
+    }
+
     // Check initial status
     if (session.reviewStatus === 'done' || session.reviewData?.status === 'done') {
       setReviewStep('done');
@@ -1433,7 +1440,7 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const reviewUrl = `${originUrl}/review/${session.id}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(reviewUrl)}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=8&data=${encodeURIComponent(reviewUrl)}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4 animate-in fade-in duration-200">
@@ -1468,6 +1475,28 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
                 className="w-48 h-48 rounded-lg object-contain mx-auto"
                 loading="eager"
               />
+            </div>
+
+            {/* Direct URL text & Copy button */}
+            <div className="flex items-center gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl text-left max-w-sm mx-auto">
+              <input 
+                type="text" 
+                readOnly 
+                value={reviewUrl} 
+                className="flex-1 bg-transparent text-[11px] font-mono text-slate-600 outline-none truncate" 
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(reviewUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                  toast.success('Đã sao chép link đánh giá!');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 text-white text-[10px] font-bold shrink-0 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                {copied ? 'Đã sao chép' : 'Sao chép'}
+              </button>
             </div>
 
             {/* Simulated trigger button for testing on same device */}
