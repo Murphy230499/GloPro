@@ -256,7 +256,7 @@ export default function POS() {
     Promise.all([
       catalogPromise,
       base44.entities.ServiceGroup.filter(normalFilter),
-      base44.entities.Staff.filter(normalFilter),
+      base44.entities.Staff.filter(catalogFilter),
       customerPromise,
       loadCustomerTiers()
     ]).then(([catData, gr, st, c, ct]) => {

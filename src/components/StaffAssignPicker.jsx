@@ -8,7 +8,9 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, openUp: false });
-  const selected = staff.find((s) => s.id === value);
+  const staffList = staff || [];
+  const selected = staffList.find((s) => s.id === value);
+  const selectedName = selected ? (selected.full_name || selected.name || 'Nhân viên') : '';
   const displayPlaceholder = placeholder || t('pos.ticket.select_staff_placeholder', '— Phân KTV —');
 
   const handleToggle = (e) => {
@@ -55,8 +57,8 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
       >
         {selected ? (
           <>
-            <Avatar src={selected.avatar_url} name={selected.full_name} size={20} color={selected.avatar_color} />
-            <span className="font-medium truncate">{selected.full_name}</span>
+            <Avatar src={selected.avatar_url} name={selectedName} size={20} color={selected.avatar_color} />
+            <span className="font-medium truncate">{selectedName}</span>
           </>
         ) : (
           <span className="text-slate-400">{displayPlaceholder}</span>
@@ -68,7 +70,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
           <input 
             type="checkbox"
             checked={!!isRequested}
-            onChange={(e) => onChange(value, selected.full_name, e.target.checked)}
+            onChange={(e) => onChange(value, selectedName, e.target.checked)}
             className={`w-3.5 h-3.5 ${getCheckboxTextClass()} border-slate-300 rounded focus:ring-0 focus:outline-none cursor-pointer transition-all shrink-0`}
           />
           <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">{t('pos.ticket.customer_requested', 'Yêu cầu')}</span>
@@ -93,20 +95,21 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
               <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center"><Check className="w-3 h-3 text-slate-400" /></div>
               {t('appointments.unassigned', 'Chưa phân công')}
             </button>
-            {staff.map((s) => {
+            {staffList.map((s) => {
               const isDisabled = disabledStaffIds.includes(s.id);
+              const sName = s.full_name || s.name || 'Nhân viên';
               return (
                 <button
                   key={s.id}
                   type="button"
                   disabled={isDisabled}
-                  onClick={() => { onChange(s.id, s.full_name, isRequested); setOpen(false); }}
+                  onClick={() => { onChange(s.id, sName, isRequested); setOpen(false); }}
                   className={`w-full flex items-center gap-3 px-3 py-2 text-left group transition-colors ${
                     isDisabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:bg-slate-50'
                   }`}
                 >
-                  <Avatar src={s.avatar_url} name={s.full_name} size={20} color={isDisabled ? 'gray' : s.avatar_color} />
-                  <span className={`font-medium truncate flex-1 text-left ${isDisabled ? 'text-slate-400' : ''}`}>{s.full_name}</span>
+                  <Avatar src={s.avatar_url} name={sName} size={20} color={isDisabled ? 'gray' : s.avatar_color} />
+                  <span className={`font-medium truncate flex-1 text-left ${isDisabled ? 'text-slate-400' : ''}`}>{sName}</span>
                   <span className="text-[10px] text-slate-400 text-right truncate max-w-[120px]">
                     {isDisabled ? 'Kẹt lịch' : (s.role ? ({
                       manager: 'Quản lý',
