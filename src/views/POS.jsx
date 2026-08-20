@@ -1584,5 +1584,3 @@ function ReviewQRModal({ open, session, onClose, patchSession }) {
     </div>
   );
 }
-
-}
