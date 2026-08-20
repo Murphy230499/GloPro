@@ -63,7 +63,7 @@ export default function Services() {
       base44.entities.ServiceCombo.filter(filter),
       base44.entities.ProductCombo.filter(filter),
       base44.entities.PrepaidCard.filter(filter),
-      base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })
+      base44.entities.ServiceGroup.list()
     ]).then(async ([s, p, pk, t, sc, pc, gc, g]) => {
       // Auto seed if catalog is empty
       if (s.length === 0 && p.length === 0 && pk.length === 0 && t.length === 0 && sc.length === 0 && pc.length === 0 && gc.length === 0) {
@@ -76,7 +76,7 @@ export default function Services() {
           base44.entities.ServiceCombo.filter(filter),
           base44.entities.ProductCombo.filter(filter),
           base44.entities.PrepaidCard.filter(filter),
-          base44.entities.ServiceGroup.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId })
+          base44.entities.ServiceGroup.list()
         ]);
         setServices(s2);
         setProducts(p2);

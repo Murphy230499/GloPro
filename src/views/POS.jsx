@@ -220,54 +220,42 @@ export default function POS() {
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
 
   const loadData = (forceRefresh = false) => {
-    const now = Date.now();
-    const cacheValid = globalCatalogCache && (now - globalCatalogCacheTime) < CATALOG_TTL_MS;
-
     setIsLoadingCatalog(true);
     const catalogFilter = currentBranchId === 'all' ? {} : { branch_ids: currentBranchId };
-    const normalFilter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
 
-    // If catalog cache is valid and not forced, skip heavy catalog fetches
-    const catalogPromise = (!forceRefresh && cacheValid)
-      ? Promise.resolve(globalCatalogCache)
-      : Promise.all([
-          base44.entities.Service.filter(catalogFilter),
-          base44.entities.Product.filter(catalogFilter),
-          base44.entities.ServicePackage.filter(catalogFilter),
-          base44.entities.Treatment.filter(catalogFilter),
-          base44.entities.ServiceCombo.filter(catalogFilter),
-          base44.entities.ProductCombo.filter(catalogFilter),
-          base44.entities.PrepaidCard.filter(catalogFilter),
-        ]).then(([s, p, pk, t, sc, pc, gc]) => {
-          const data = { s, p, pk, t, sc, pc, gc };
-          globalCatalogCache = data;
-          globalCatalogCacheTime = Date.now();
-          return data;
-        });
+    const catalogPromise = Promise.all([
+      base44.entities.Service.filter(catalogFilter).then(async (res) => {
+        if (!res || res.length === 0) return base44.entities.Service.list();
+        return res;
+      }).catch(() => base44.entities.Service.list().catch(() => [])),
+      base44.entities.Product.filter(catalogFilter).then(async (res) => {
+        if (!res || res.length === 0) return base44.entities.Product.list();
+        return res;
+      }).catch(() => base44.entities.Product.list().catch(() => [])),
+      base44.entities.ServicePackage.filter(catalogFilter).catch(() => base44.entities.ServicePackage.list().catch(() => [])),
+      base44.entities.Treatment.filter(catalogFilter).catch(() => base44.entities.Treatment.list().catch(() => [])),
+      base44.entities.ServiceCombo.filter(catalogFilter).catch(() => base44.entities.ServiceCombo.list().catch(() => [])),
+      base44.entities.ProductCombo.filter(catalogFilter).catch(() => base44.entities.ProductCombo.list().catch(() => [])),
+      base44.entities.PrepaidCard.filter(catalogFilter).catch(() => base44.entities.PrepaidCard.list().catch(() => [])),
+    ]).then(([s, p, pk, t, sc, pc, gc]) => ({ s, p, pk, t, sc, pc, gc }));
 
-    const customerPromise = (globalCustomerCache && (now - globalCustomerCacheTime) < CUSTOMER_TTL_MS)
-      ? Promise.resolve(globalCustomerCache)
-      : base44.entities.Customer.list().then(c => {
-          globalCustomerCache = c;
-          globalCustomerCacheTime = Date.now();
-          return c;
-        });
+    const customerPromise = base44.entities.Customer.list().catch(() => []);
 
     Promise.all([
       catalogPromise,
-      base44.entities.ServiceGroup.filter(normalFilter),
-      base44.entities.Staff.filter(catalogFilter),
+      base44.entities.ServiceGroup.list().catch(() => []),
+      base44.entities.Staff.filter(catalogFilter).catch(() => base44.entities.Staff.list().catch(() => [])),
       customerPromise,
       loadCustomerTiers()
     ]).then(([catData, gr, st, c, ct]) => {
       const { s, p, pk, t, sc, pc, gc } = catData;
-      setServices((s || []).filter((x) => x.is_active));
-      setProducts((p || []).filter((x) => x.is_active));
-      setPackages((pk || []).filter((x) => x.is_active));
-      setTreatments((t || []).filter((x) => x.is_active));
-      setServiceCombos((sc || []).filter((x) => x.is_active));
-      setProductCombos((pc || []).filter((x) => x.is_active));
-      setPrepaidCards((gc || []).filter((x) => x.is_active));
+      setServices((s || []).filter((x) => x.is_active !== false));
+      setProducts((p || []).filter((x) => x.is_active !== false));
+      setPackages((pk || []).filter((x) => x.is_active !== false));
+      setTreatments((t || []).filter((x) => x.is_active !== false));
+      setServiceCombos((sc || []).filter((x) => x.is_active !== false));
+      setProductCombos((pc || []).filter((x) => x.is_active !== false));
+      setPrepaidCards((gc || []).filter((x) => x.is_active !== false));
       setGroups(gr || []);
       setStaff((st || []).filter((x) => x.is_active !== false));
       setCustomers(c || []);
