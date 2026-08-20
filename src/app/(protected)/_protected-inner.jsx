@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -10,28 +10,11 @@ export default function ProtectedLayoutInner({ children }) {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const [showDebug, setShowDebug] = useState(false);
   useEffect(() => {
     if (!isLoadingAuth && !isLoadingPublicSettings && !isAuthenticated) {
-      setShowDebug(true);
+      router.replace('/login');
     }
   }, [isLoadingAuth, isLoadingPublicSettings, isAuthenticated, router]);
-
-  if (showDebug) {
-    return (
-      <div className="fixed inset-0 bg-red-900 text-white p-10 font-mono flex flex-col gap-4 overflow-auto z-[9999]">
-        <h1 className="text-2xl font-bold">DEBUG STOP: Redirect to /login prevented (Protected)</h1>
-        <p>This screen appears because the app tried to send you back to /login from the protected layout.</p>
-        <p>isAuthenticated: {String(isAuthenticated)}</p>
-        <p>isLoadingAuth: {String(isLoadingAuth)}</p>
-        <p>isLoadingPublicSettings: {String(isLoadingPublicSettings)}</p>
-        <p>Please take a screenshot of THIS SCREEN and the CONSOLE LOGS and send them to the AI.</p>
-        <button onClick={() => router.replace('/login')} className="mt-4 p-2 bg-white text-red-900 font-bold max-w-xs">
-          Go to Login
-        </button>
-      </div>
-    );
-  }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
