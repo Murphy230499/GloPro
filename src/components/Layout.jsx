@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CalendarDays, ShoppingCart, Users, UserSquare,
-  Scissors, BarChart3, Settings as SettingsIcon, Grid, X, Megaphone, Boxes, Zap, ChevronLeft, ChevronRight, Wallet, CalendarCheck, PiggyBank } from
+  Scissors, BarChart3, Settings as SettingsIcon, Grid, X, Megaphone, Boxes, Zap, ChevronLeft, ChevronRight, Wallet, CalendarCheck, PiggyBank, MessageSquareHeart } from
 'lucide-react';
 import { Toaster as SonnerToaster, toast } from 'sonner';
 import { useT } from '@/lib/i18n';
@@ -23,6 +23,7 @@ const NAV = [
   { to: '/appointments', tkey: 'nav.appointments', icon: CalendarDays, color: '#60A5FA' },
   { to: '/pos', tkey: 'nav.pos', icon: ShoppingCart, color: '#34D399' },
   { to: '/customers', tkey: 'nav.customers', icon: Users, color: '#FBBF24' },
+  { to: '/feedback', tkey: 'nav.feedback', icon: MessageSquareHeart, color: '#EC4899' },
   { to: '/staff', tkey: 'nav.staff', icon: UserSquare, color: '#F97316' },
   { to: '/services', tkey: 'nav.catalog', icon: Scissors, color: '#A78BFA' },
   { to: '/inventory', tkey: 'nav.inventory', icon: Boxes, color: '#8B5CF6' },

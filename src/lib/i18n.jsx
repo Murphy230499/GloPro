@@ -2238,7 +2238,7 @@ const translations = {
     'common.retry': 'Thử tải lại',
 
     'nav.dashboard': 'Tổng quan', 'nav.appointments': 'Lịch hẹn', 'nav.pos': 'Thu ngân',
-    'nav.customers': 'Khách hàng', 'nav.staff': 'Nhân viên', 'nav.catalog': 'Danh mục',
+    'nav.customers': 'Khách hàng', 'nav.feedback': 'Đánh giá & Phản hồi', 'nav.staff': 'Nhân viên', 'nav.catalog': 'Danh mục',
     'nav.inventory': 'Kho hàng', 'nav.reports': 'Báo cáo', 'nav.settings': 'Cài đặt', 'nav.more': 'Khác', 'nav.all_features': 'Tất cả chức năng',
     'nav.discounts': 'Giảm giá', 'nav.automations': 'Automation', 'nav.cash_flow': 'Thu Chi', 'nav.booking': 'Booking',
     'top.all_branches': 'Tất cả cơ sở',
@@ -5691,7 +5691,7 @@ const translations = {
     'common.retry': 'Retry',
 
     'nav.dashboard': 'Overview', 'nav.appointments': 'Appointments', 'nav.pos': 'Checkout',
-    'nav.customers': 'Customers', 'nav.staff': 'Staff', 'nav.catalog': 'Catalog',
+    'nav.customers': 'Customers', 'nav.feedback': 'Feedback & Reviews', 'nav.staff': 'Staff', 'nav.catalog': 'Catalog',
     'nav.reports': 'Reports', 'nav.settings': 'Settings', 'nav.more': 'More', 'nav.all_features': 'All features',
     'nav.discounts': 'Discounts', 'nav.automations': 'Automation', 'nav.cash_flow': 'Cash Flow', 'nav.booking': 'Booking',
     'top.all_branches': 'All branches',
