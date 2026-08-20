@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, Minus, Trash2, Printer, UserX, CreditCard, X, Edit3, Gift, History, Users, Smile, ChevronDown, Scissors, ShoppingCart, Sparkles, Layers, Boxes, ExternalLink, Package, Star } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, Printer, UserX, CreditCard, X, Edit3, Gift, History, Users, Smile, ChevronDown, Scissors, ShoppingCart, Sparkles, Layers, Boxes, ExternalLink, Package, Star, CheckCircle2, Check } from 'lucide-react';
 import { formatVND } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
@@ -977,29 +977,47 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         </button>
         {/* Review Survey Button with Realtime Status Indication */}
         {(() => {
-          const rStatus = session?.reviewStatus;
+          const rStatus = session?.reviewStatus || session?.reviewData?.status;
           const isReviewing = rStatus === 'reviewing';
           const isDone = rStatus === 'done';
 
-          let btnClass = "w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 flex items-center justify-center transition-all shrink-0 disabled:opacity-40";
+          // Check if any service in cart is missing a staff assignment
+          const hasUnassignedService = cart.some(x => {
+            if (x.type === 'service' || x.is_from_package || !x.type) {
+              return !x.staff_id || !x.staff_name;
+            }
+            return false;
+          });
+
+          const isCartEmpty = cart.length === 0;
+          // Disable review button if cart is empty OR (services not assigned staff AND not done yet)
+          const isReviewDisabled = isCartEmpty || (hasUnassignedService && !isDone);
+
+          let btnClass = "w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 flex items-center justify-center transition-all shrink-0 disabled:opacity-40 disabled:cursor-not-allowed";
           let tooltip = "Khảo sát đánh giá";
 
-          if (isReviewing) {
-            btnClass = "w-9 h-9 rounded-xl border border-amber-400 bg-amber-50 text-amber-600 ring-2 ring-amber-400/30 animate-pulse flex items-center justify-center transition-all shrink-0";
+          if (isDone) {
+            btnClass = "w-9 h-9 rounded-xl border border-emerald-500 bg-emerald-500 text-white shadow-md shadow-emerald-500/25 hover:bg-emerald-600 flex items-center justify-center transition-all shrink-0 cursor-pointer ring-2 ring-emerald-400/40";
+            tooltip = "Khách hàng đã đánh giá xong (Bấm để xem kết quả)";
+          } else if (isReviewing) {
+            btnClass = "w-9 h-9 rounded-xl border border-amber-400 bg-amber-50 text-amber-600 ring-2 ring-amber-400/30 animate-pulse flex items-center justify-center transition-all shrink-0 cursor-pointer";
             tooltip = "Khách hàng đang thực hiện đánh giá...";
-          } else if (isDone) {
-            btnClass = "w-9 h-9 rounded-xl border border-emerald-400 bg-emerald-50 text-emerald-600 ring-2 ring-emerald-400/30 flex items-center justify-center transition-all shrink-0";
-            tooltip = "Khách hàng đã hoàn thành đánh giá";
+          } else if (hasUnassignedService) {
+            tooltip = "Vui lòng phân công KTV cho tất cả dịch vụ trước khi gửi link đánh giá";
           }
 
           return (
             <button 
               onClick={onReview}
-              disabled={cart.length === 0}
+              disabled={isReviewDisabled}
               className={btnClass}
               title={tooltip}
             >
-              <Smile className={`w-4 h-4 ${isReviewing ? 'animate-bounce' : ''}`} />
+              {isDone ? (
+                <CheckCircle2 className="w-4 h-4 text-white stroke-[2.5]" />
+              ) : (
+                <Smile className={`w-4 h-4 ${isReviewing ? 'animate-bounce' : ''}`} />
+              )}
             </button>
           );
         })()}

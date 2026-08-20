@@ -1142,23 +1142,33 @@ export default function POS() {
       {sessions.length > 0 &&
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0">
           {sessions.map((s) => {
-            const isReviewing = s.reviewStatus === 'reviewing';
-            const isDone = s.reviewStatus === 'done';
+            const isReviewing = s.reviewStatus === 'reviewing' || s.reviewData?.status === 'reviewing';
+            const isDone = s.reviewStatus === 'done' || s.reviewData?.status === 'done';
 
             return (
               <button key={s.id} onClick={() => setActiveId(s.id)}
-                className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-colors relative ${
-                  s.id === activeId 
-                    ? 'bg-white border-emerald-500 font-semibold text-slate-800 shadow-2xs' 
-                    : 'bg-slate-100/70 border-transparent text-slate-500 hover:bg-slate-100'
+                className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-t-xl border-b-2 text-sm whitespace-nowrap transition-all relative ${
+                  isDone
+                    ? (s.id === activeId 
+                        ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-950 shadow-xs ring-1 ring-emerald-500/30' 
+                        : 'bg-emerald-50/70 border-emerald-400 text-emerald-800 hover:bg-emerald-100/80')
+                    : isReviewing
+                    ? (s.id === activeId 
+                        ? 'bg-amber-50 border-amber-500 font-bold text-amber-950 shadow-xs ring-1 ring-amber-400/30' 
+                        : 'bg-amber-50/70 border-amber-300 text-amber-800 hover:bg-amber-100/80')
+                    : (s.id === activeId 
+                        ? 'bg-white border-emerald-500 font-semibold text-slate-800 shadow-2xs' 
+                        : 'bg-slate-100/70 border-transparent text-slate-500 hover:bg-slate-100')
                 }`}
               >
                 {s.customer ? (
-                  <Avatar src={s.customer.avatar_url} name={s.customer.name} size={20} color="#E879A9" />
+                  <Avatar src={s.customer.avatar_url} name={s.customer.name} size={20} color={isDone ? '#10B981' : '#E879A9'} />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">W</div>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isDone ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-400'
+                  }`}>W</div>
                 )}
-                <span>{tabName(s)}</span>
+                <span className={isDone ? 'text-emerald-900 font-bold' : ''}>{tabName(s)}</span>
 
                 {/* Review status badge indicator */}
                 {isReviewing && (
@@ -1168,7 +1178,7 @@ export default function POS() {
                   </span>
                 )}
                 {isDone && (
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 text-[10px] font-bold">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold shadow-2xs animate-in zoom-in-95 duration-150">
                     <Check className="w-2.5 h-2.5 stroke-[3]" />
                     <span>Đã đánh giá</span>
                   </span>
