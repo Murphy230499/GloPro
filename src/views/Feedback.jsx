@@ -15,13 +15,6 @@ import { toast } from '@/components/Layout';
 import { useT } from '@/lib/i18n';
 import Avatar from '@/components/Avatar';
 
-const EMOJI_CONFIG = {
-  very_good: { label: 'Rất tốt', icon: '😍', color: 'text-pink-600 bg-pink-50 border-pink-200', score: 5 },
-  good: { label: 'Good', icon: '😚', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', score: 4 },
-  average: { label: 'Bình thường', icon: '😐', color: 'text-amber-600 bg-amber-50 border-amber-200', score: 3 },
-  poor: { label: 'Quá tệ', icon: '😫', color: 'text-rose-600 bg-rose-50 border-rose-200', score: 1 },
-};
-
 export default function FeedbackView() {
   const { t } = useT();
   const { currentBranchId, branches } = useBranch();
@@ -43,13 +36,20 @@ export default function FeedbackView() {
   const [resolutionNote, setResolutionNote] = useState('');
   const [savingResolution, setSavingResolution] = useState(false);
 
+  // Dynamic translated Emoji dictionary based on current branch language
+  const EMOJI_CONFIG = useMemo(() => ({
+    very_good: { label: t('feedback.emoji_very_good', 'Rất tốt'), icon: '😍', color: 'text-pink-600 bg-pink-50 border-pink-200', score: 5 },
+    good: { label: t('feedback.emoji_good', 'Good'), icon: '😚', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', score: 4 },
+    average: { label: t('feedback.emoji_average', 'Bình thường'), icon: '😐', color: 'text-amber-600 bg-amber-50 border-amber-200', score: 3 },
+    poor: { label: t('feedback.emoji_poor', 'Quá tệ'), icon: '😫', color: 'text-rose-600 bg-rose-50 border-rose-200', score: 1 },
+  }), [t]);
+
   // Load Data
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const branchFilter = (currentBranchId === 'all' || !currentBranchId) ? {} : { branch_id: currentBranchId };
       const [invList, staffRes] = await Promise.all([
         base44.entities.Invoice.list('-created_at', 200).catch(() => []),
         base44.entities.Staff.list().catch(() => [])
@@ -59,7 +59,7 @@ export default function FeedbackView() {
       setStaffList(staffRes || []);
     } catch (err) {
       console.error('[Feedback] Load Error:', err);
-      toast.error('Lỗi khi tải dữ liệu phản hồi: ' + (err.message || err));
+      toast.error(t('feedback.err_load', 'Lỗi khi tải dữ liệu phản hồi: ') + (err.message || err));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,7 +75,7 @@ export default function FeedbackView() {
     const channel = supabase.channel('glopro_feedback_global')
       .on('broadcast', { event: 'status_change' }, (payload) => {
         if (payload?.payload?.status === 'done') {
-          toast.success('Có lượt đánh giá mới vừa được gửi!');
+          toast.success(t('feedback.toast_new_review', 'Có lượt đánh giá mới vừa được gửi!'));
           loadData(true);
         }
       })
@@ -84,7 +84,7 @@ export default function FeedbackView() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [t]);
 
   // Parse review data from invoices
   const feedbackItems = useMemo(() => {
@@ -113,7 +113,7 @@ export default function FeedbackView() {
         // Parse per-staff feedback entries
         Object.entries(ratings).forEach(([staffId, scoreKey]) => {
           const staffObj = staffList.find(s => s.id === staffId);
-          const staffName = staffObj?.full_name || staffObj?.name || (inv.items || []).find(i => i.staff_id === staffId)?.staff_name || 'Kỹ thuật viên';
+          const staffName = staffObj?.full_name || staffObj?.name || (inv.items || []).find(i => i.staff_id === staffId)?.staff_name || t('feedback.default_staff_title', 'Kỹ thuật viên');
           const staffServices = (inv.items || []).filter(i => i.staff_id === staffId).map(i => i.name);
           const staffTip = tipSplits.find(ts => ts.staff_id === staffId || ts.staffId === staffId)?.amount || 0;
           const reasons = poorReasons[staffId] || [];
@@ -122,7 +122,7 @@ export default function FeedbackView() {
             id: `${inv.id}_${staffId}`,
             invoiceId: inv.id,
             invoiceCode: inv.invoice_code || inv.saleCode || (inv.id ? String(inv.id).slice(-6) : 'HĐ'),
-            customerName: rData.customerInfo?.name || inv.customer_name || inv.customer?.name || 'Khách vãng lai',
+            customerName: rData.customerInfo?.name || inv.customer_name || inv.customer?.name || t('feedback.walk_in_guest', 'Khách vãng lai'),
             customerPhone: rData.customerInfo?.phone || inv.customer_phone || inv.customer?.phone || '—',
             customerEmail: rData.customerInfo?.email || inv.customer_email || '—',
             customerDob: rData.customerInfo?.dob || '—',
@@ -153,10 +153,10 @@ export default function FeedbackView() {
             id: `${inv.id}_general`,
             invoiceId: inv.id,
             invoiceCode: inv.invoice_code || (inv.id ? String(inv.id).slice(-6) : 'HĐ'),
-            customerName: inv.customer_name || 'Khách vãng lai',
+            customerName: inv.customer_name || t('feedback.walk_in_guest', 'Khách vãng lai'),
             customerPhone: inv.customer_phone || '—',
             staffId: 'general',
-            staffName: 'Toàn bộ ca phục vụ',
+            staffName: t('feedback.general_service_team', 'Toàn bộ ca phục vụ'),
             staffServices: (inv.items || []).map(i => i.name),
             scoreKey: 'good',
             ratingScore: 4,
@@ -176,7 +176,7 @@ export default function FeedbackView() {
     });
 
     return list.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [invoices, staffList]);
+  }, [invoices, staffList, EMOJI_CONFIG, t]);
 
   // Date Filter helper
   const filteredFeedbacks = useMemo(() => {
@@ -323,7 +323,7 @@ export default function FeedbackView() {
         review_data: updatedReviewData
       });
 
-      toast.success('Đã lưu ghi chú xử lý khiếu nại thành công!');
+      toast.success(t('feedback.toast_save_success', 'Đã lưu ghi chú xử lý khiếu nại thành công!'));
       setSelectedFeedback(null);
       loadData(true);
     } catch (e) {
@@ -336,10 +336,23 @@ export default function FeedbackView() {
   // Export CSV Helper
   const handleExportCSV = () => {
     if (filteredFeedbacks.length === 0) {
-      return toast.error('Không có dữ liệu phản hồi để xuất!');
+      return toast.error(t('feedback.err_no_export_data', 'Không có dữ liệu phản hồi để xuất!'));
     }
 
-    const headers = ['Mã Hoá Đơn', 'Ngày Đánh Giá', 'Khách Hàng', 'SĐT', 'Kỹ Thuật Viên', 'Đánh Giá', 'Điểm', 'Lý Do Khiếu Nại', 'Góp Ý', 'Tiền Tip', 'Trạng Thái'];
+    const headers = [
+      t('feedback.th_invoice_code', 'Mã Hoá Đơn'),
+      t('feedback.th_review_date', 'Ngày Đánh Giá'),
+      t('feedback.th_customer_name', 'Khách Hàng'),
+      t('feedback.th_phone', 'SĐT'),
+      t('feedback.th_staff', 'Kỹ Thuật Viên'),
+      t('feedback.th_rating', 'Đánh Giá'),
+      t('feedback.th_score', 'Điểm'),
+      t('feedback.th_reasons', 'Lý Do Khiếu Nại'),
+      t('feedback.th_comments', 'Góp Ý'),
+      t('feedback.th_tip', 'Tiền Tip'),
+      t('feedback.th_status', 'Trạng Thái')
+    ];
+
     const rows = filteredFeedbacks.map(f => [
       `"${f.invoiceCode}"`,
       `"${new Date(f.date).toLocaleString('vi-VN')}"`,
@@ -351,18 +364,18 @@ export default function FeedbackView() {
       `"${f.poorReasons.join(', ')}"`,
       `"${f.customReason.replace(/"/g, '""')}"`,
       f.tip,
-      f.isResolved ? '"Đã xử lý"' : (f.scoreKey === 'poor' ? '"Chờ xử lý"' : '"Bình thường"')
+      f.isResolved ? `"${t('feedback.status_resolved_badge', 'Đã xử lý')}"` : (f.scoreKey === 'poor' ? `"${t('feedback.status_pending_badge', 'Chờ CSKH')}"` : `"${t('feedback.status_good_badge', 'Tốt')}"`)
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Bao_cao_danh_gia_khach_hang_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Feedback_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Đã tải xuống file báo cáo đánh giá!');
+    toast.success(t('feedback.toast_export_success', 'Đã tải xuống file báo cáo đánh giá!'));
   };
 
   return (
@@ -376,13 +389,13 @@ export default function FeedbackView() {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <span>Đánh Giá & Phản Hồi Khách Hàng</span>
+              <span>{t('feedback.title', 'Đánh giá')}</span>
               <span className="text-xs bg-pink-100 text-pink-700 font-bold px-2 py-0.5 rounded-full">
-                QR Realtime
+                {t('feedback.badge_realtime', 'QR Realtime')}
               </span>
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Theo dõi mức độ hài lòng của khách, chấm điểm KTV và tiền tip từ mã QR thời gian thực.
+              {t('feedback.subtitle', 'Theo dõi mức độ hài lòng của khách, chấm điểm KTV và tiền tip từ mã QR thời gian thực.')}
             </p>
           </div>
         </div>
@@ -391,10 +404,10 @@ export default function FeedbackView() {
           {/* Quick Date Range */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
             {[
-              { id: 'today', label: 'Hôm nay' },
-              { id: '7days', label: '7 ngày' },
-              { id: '30days', label: '30 ngày' },
-              { id: 'all', label: 'Tất cả' },
+              { id: 'today', label: t('feedback.range_today', 'Hôm nay') },
+              { id: '7days', label: t('feedback.range_7days', '7 ngày') },
+              { id: '30days', label: t('feedback.range_30days', '30 ngày') },
+              { id: 'all', label: t('feedback.range_all', 'Tất cả') },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -416,7 +429,7 @@ export default function FeedbackView() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-4 h-4 text-slate-400" />
-            <span className="hidden sm:inline">Xuất File</span>
+            <span className="hidden sm:inline">{t('feedback.export_file', 'Xuất File')}</span>
           </button>
 
           {/* Refresh */}
@@ -424,7 +437,7 @@ export default function FeedbackView() {
             onClick={() => loadData(true)}
             disabled={refreshing}
             className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs shadow-2xs transition-all cursor-pointer"
-            title="Làm mới dữ liệu"
+            title={t('feedback.refresh_tooltip', 'Làm mới dữ liệu')}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-pink-500' : ''}`} />
           </button>
@@ -437,17 +450,17 @@ export default function FeedbackView() {
         {/* Card 1: Total Reviews */}
         <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-xs hover:border-pink-200 transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng Lượt Đánh Giá</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('feedback.kpi_total_reviews', 'Tổng Lượt Đánh Giá')}</span>
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Smile className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-800">{metrics.total}</span>
-            <span className="text-xs font-semibold text-slate-400">lượt quét hoàn tất</span>
+            <span className="text-xs font-semibold text-slate-400">{t('feedback.kpi_scans_completed', 'lượt quét hoàn tất')}</span>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] text-slate-500">
-            <span>Điểm trung bình:</span>
+            <span>{t('feedback.kpi_avg_score', 'Điểm trung bình:')}</span>
             <span className="font-bold text-amber-500 flex items-center">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 inline mr-0.5" />
               {metrics.avgScore} / 5.0
@@ -458,14 +471,14 @@ export default function FeedbackView() {
         {/* Card 2: Satisfaction Rate */}
         <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-xs hover:border-emerald-200 transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tỷ Lệ Hài Lòng (CSAT)</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('feedback.kpi_csat', 'Tỷ Lệ Hài Lòng (CSAT)')}</span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Heart className="w-5 h-5 fill-emerald-500/20" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-emerald-600">{metrics.csat}%</span>
-            <span className="text-xs font-semibold text-slate-400">Rất tốt & Tốt</span>
+            <span className="text-xs font-semibold text-slate-400">{t('feedback.kpi_positive_sub', 'Rất tốt & Tốt')}</span>
           </div>
           <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
             <span className="flex items-center gap-1 text-pink-600 font-bold">
@@ -481,7 +494,7 @@ export default function FeedbackView() {
         {/* Card 3: Total Tips Earned */}
         <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-xs hover:border-amber-200 transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tiền Tip Qua Review</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('feedback.kpi_tip_title', 'Tiền Tip Qua Review')}</span>
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <DollarSign className="w-5 h-5" />
             </div>
@@ -490,7 +503,7 @@ export default function FeedbackView() {
             <span className="text-2xl md:text-3xl font-black text-amber-600">{formatVND(metrics.totalTip)}</span>
           </div>
           <div className="mt-3 text-[11px] text-slate-500 font-medium">
-            Tự động chia vào bảng lương & phiếu thu
+            {t('feedback.kpi_tip_sub', 'Tự động chia vào bảng lương & phiếu thu')}
           </div>
         </div>
 
@@ -501,7 +514,7 @@ export default function FeedbackView() {
             : 'bg-white border-slate-150 shadow-xs'
         }`}>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cần CSKH Chú Ý</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('feedback.kpi_complaints_title', 'Cần CSKH Chú Ý')}</span>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
               metrics.poorCount > 0 ? 'bg-rose-100 text-rose-600 animate-pulse' : 'bg-slate-100 text-slate-400'
             }`}>
@@ -512,13 +525,13 @@ export default function FeedbackView() {
             <span className={`text-3xl font-black ${metrics.poorCount > 0 ? 'text-rose-600' : 'text-slate-800'}`}>
               {metrics.poorCount}
             </span>
-            <span className="text-xs font-semibold text-slate-400">đánh giá Kém (😫)</span>
+            <span className="text-xs font-semibold text-slate-400">{t('feedback.kpi_poor_sub', 'đánh giá Kém (😫)')}</span>
           </div>
           <div className="mt-3 text-[11px] text-slate-500 font-medium">
             {metrics.poorCount > 0 ? (
-              <span className="text-rose-600 font-bold">Cần liên hệ hỗ trợ khách hàng ngay</span>
+              <span className="text-rose-600 font-bold">{t('feedback.kpi_urgent_alert', 'Cần liên hệ hỗ trợ khách hàng ngay')}</span>
             ) : (
-              <span className="text-emerald-600 font-bold">Không có khiếu nại chưa xử lý</span>
+              <span className="text-emerald-600 font-bold">{t('feedback.kpi_no_complaints', 'Không có khiếu nại chưa xử lý')}</span>
             )}
           </div>
         </div>
@@ -531,10 +544,10 @@ export default function FeedbackView() {
           <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-500" />
-              <h2 className="text-base font-bold text-slate-800">Bảng Xếp Hạng & Đánh Giá Kỹ Thuật Viên</h2>
+              <h2 className="text-base font-bold text-slate-800">{t('feedback.leaderboard_title', 'Bảng Xếp Hạng & Đánh Giá Kỹ Thuật Viên')}</h2>
             </div>
             <span className="text-xs text-slate-400 font-medium">
-              Dựa trên {metrics.total} lượt đánh giá thực tế từ khách hàng
+              {t('feedback.leaderboard_sub', 'Dựa trên {total} lượt đánh giá thực tế từ khách hàng', { total: metrics.total })}
             </span>
           </div>
 
@@ -576,28 +589,28 @@ export default function FeedbackView() {
                     <Avatar src={st.avatar} name={st.name} size={42} color={isTop1 ? '#F59E0B' : '#64748B'} />
                     <div className="min-w-0 flex-1 pr-12">
                       <div className="font-bold text-sm text-slate-800 truncate">{st.name}</div>
-                      <div className="text-xs text-slate-400 capitalize">{st.role || 'Kỹ thuật viên'}</div>
+                      <div className="text-xs text-slate-400 capitalize">{st.role || t('feedback.default_staff_title', 'Kỹ thuật viên')}</div>
                     </div>
                   </div>
 
                   {/* Rating Scores */}
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-xs">
                     <div>
-                      <span className="text-slate-400 text-[11px] block">Hài lòng:</span>
+                      <span className="text-slate-400 text-[11px] block">{t('feedback.satisfaction_rate', 'Hài lòng:')}</span>
                       <span className="font-extrabold text-emerald-600 text-sm">{st.satisfactionPct}%</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 text-[11px] block">Tiền Tip nhận:</span>
+                      <span className="text-slate-400 text-[11px] block">{t('feedback.tip_received', 'Tiền Tip nhận:')}</span>
                       <span className="font-bold text-amber-600">{formatVND(st.totalTip)}</span>
                     </div>
                   </div>
 
                   {/* Emoji mini breakdown */}
                   <div className="flex items-center justify-between text-[11px] font-semibold pt-2.5 mt-2.5 border-t border-dashed border-slate-200 text-slate-500">
-                    <span title="Rất tốt">😍 {st.very_good}</span>
-                    <span title="Good">😚 {st.good}</span>
-                    <span title="Bình thường">😐 {st.average}</span>
-                    <span title="Kém" className={st.poor > 0 ? 'text-rose-600 font-bold' : ''}>😫 {st.poor}</span>
+                    <span title={t('feedback.emoji_very_good', 'Rất tốt')}>😍 {st.very_good}</span>
+                    <span title={t('feedback.emoji_good', 'Good')}>😚 {st.good}</span>
+                    <span title={t('feedback.emoji_average', 'Bình thường')}>😐 {st.average}</span>
+                    <span title={t('feedback.emoji_poor', 'Quá tệ')} className={st.poor > 0 ? 'text-rose-600 font-bold' : ''}>😫 {st.poor}</span>
                   </div>
                 </div>
               );
@@ -620,7 +633,7 @@ export default function FeedbackView() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên khách, SĐT, KTV, mã HĐ hoặc lý do..."
+                placeholder={t('feedback.search_placeholder', 'Tìm theo tên khách, SĐT, KTV, mã HĐ hoặc lý do...')}
                 className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:border-pink-500 focus:outline-none bg-slate-50/50"
               />
               {search && (
@@ -639,7 +652,7 @@ export default function FeedbackView() {
                 onChange={(e) => setSelectedStaff(e.target.value)}
                 className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none"
               >
-                <option value="all">Tất cả Kỹ thuật viên ({staffList.length})</option>
+                <option value="all">{t('feedback.all_staff', 'Tất cả Kỹ thuật viên ({count})', { count: staffList.length })}</option>
                 {staffList.map(s => (
                   <option key={s.id} value={s.id}>{s.full_name || s.name}</option>
                 ))}
@@ -651,9 +664,9 @@ export default function FeedbackView() {
                 onChange={(e) => setResolutionFilter(e.target.value)}
                 className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none"
               >
-                <option value="all">Tất cả trạng thái CSKH</option>
-                <option value="pending">Chờ CSKH xử lý</option>
-                <option value="resolved">Đã chăm sóc / Xử lý</option>
+                <option value="all">{t('feedback.all_cskh_status', 'Tất cả trạng thái CSKH')}</option>
+                <option value="pending">{t('feedback.status_pending_filter', 'Chờ CSKH xử lý')}</option>
+                <option value="resolved">{t('feedback.status_resolved_filter', 'Đã chăm sóc / Xử lý')}</option>
               </select>
             </div>
           </div>
@@ -661,11 +674,11 @@ export default function FeedbackView() {
           {/* Rating Emoji filter tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-0.5">
             {[
-              { id: 'all', label: 'Tất cả cảm xúc', icon: null, count: feedbackItems.length },
-              { id: 'very_good', label: 'Rất tốt', icon: '😍', count: metrics.countByScore.very_good || 0 },
-              { id: 'good', label: 'Good', icon: '😚', count: metrics.countByScore.good || 0 },
-              { id: 'average', label: 'Bình thường', icon: '😐', count: metrics.countByScore.average || 0 },
-              { id: 'poor', label: 'Quá tệ', icon: '😫', count: metrics.countByScore.poor || 0 },
+              { id: 'all', label: t('feedback.tab_all_emotions', 'Tất cả cảm xúc'), icon: null, count: feedbackItems.length },
+              { id: 'very_good', label: t('feedback.emoji_very_good', 'Rất tốt'), icon: '😍', count: metrics.countByScore.very_good || 0 },
+              { id: 'good', label: t('feedback.emoji_good', 'Good'), icon: '😚', count: metrics.countByScore.good || 0 },
+              { id: 'average', label: t('feedback.emoji_average', 'Bình thường'), icon: '😐', count: metrics.countByScore.average || 0 },
+              { id: 'poor', label: t('feedback.emoji_poor', 'Quá tệ'), icon: '😫', count: metrics.countByScore.poor || 0 },
             ].map(r => (
               <button
                 key={r.id}
@@ -693,14 +706,14 @@ export default function FeedbackView() {
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-150 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="py-3 px-4">Thời gian / Mã HĐ</th>
-                <th className="py-3 px-4">Khách Hàng</th>
-                <th className="py-3 px-4">KTV & Dịch Vụ</th>
-                <th className="py-3 px-4">Cảm Xúc & Đánh Giá</th>
-                <th className="py-3 px-4">Lý Do / Góp Ý</th>
-                <th className="py-3 px-4 text-right">Tiền Tip</th>
-                <th className="py-3 px-4 text-center">CSKH</th>
-                <th className="py-3 px-4 text-right">Chi Tiết</th>
+                <th className="py-3 px-4">{t('feedback.th_time_code', 'Thời gian / Mã HĐ')}</th>
+                <th className="py-3 px-4">{t('feedback.th_customer', 'Khách Hàng')}</th>
+                <th className="py-3 px-4">{t('feedback.th_staff_service', 'KTV & Dịch Vụ')}</th>
+                <th className="py-3 px-4">{t('feedback.th_emotion_rating', 'Cảm Xúc & Đánh Giá')}</th>
+                <th className="py-3 px-4">{t('feedback.th_reasons_comments', 'Lý Do / Góp Ý')}</th>
+                <th className="py-3 px-4 text-right">{t('feedback.th_tip', 'Tiền Tip')}</th>
+                <th className="py-3 px-4 text-center">{t('feedback.th_cskh', 'CSKH')}</th>
+                <th className="py-3 px-4 text-right">{t('feedback.th_detail', 'Chi Tiết')}</th>
               </tr>
             </thead>
 
@@ -709,15 +722,15 @@ export default function FeedbackView() {
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-slate-400">
                     <div className="w-6 h-6 border-2 border-slate-300 border-t-pink-500 rounded-full animate-spin mx-auto mb-2" />
-                    <span>Đang nạp dữ liệu phản hồi...</span>
+                    <span>{t('feedback.loading_data', 'Đang nạp dữ liệu phản hồi...')}</span>
                   </td>
                 </tr>
               ) : filteredFeedbacks.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-slate-400">
                     <Smile className="w-12 h-12 text-slate-300 mx-auto mb-2 stroke-[1.5]" />
-                    <p className="font-bold text-slate-600 text-sm">Chưa có lượt đánh giá nào phù hợp bộ lọc</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Khách hàng quét mã QR tại quầy POS để gửi đánh giá dịch vụ.</p>
+                    <p className="font-bold text-slate-600 text-sm">{t('feedback.no_data_title', 'Chưa có lượt đánh giá nào phù hợp bộ lọc')}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{t('feedback.no_data_sub', 'Khách hàng quét mã QR tại quầy POS để gửi đánh giá dịch vụ.')}</p>
                   </td>
                 </tr>
               ) : (
@@ -791,7 +804,7 @@ export default function FeedbackView() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-[11px]">— Không có khiếu nại —</span>
+                          <span className="text-slate-400 text-[11px]">{t('feedback.no_complaints_label', '— Không có khiếu nại —')}</span>
                         )}
                       </td>
 
@@ -812,16 +825,16 @@ export default function FeedbackView() {
                           f.isResolved ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold border border-emerald-300 flex items-center gap-1 justify-center">
                               <CheckCircle2 className="w-3 h-3" />
-                              <span>Đã xử lý</span>
+                              <span>{t('feedback.status_resolved_badge', 'Đã xử lý')}</span>
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-300 animate-pulse flex items-center gap-1 justify-center">
                               <AlertTriangle className="w-3 h-3" />
-                              <span>Chờ CSKH</span>
+                              <span>{t('feedback.status_pending_badge', 'Chờ CSKH')}</span>
                             </span>
                           )
                         ) : (
-                          <span className="text-slate-400 text-[11px]">Tốt</span>
+                          <span className="text-slate-400 text-[11px]">{t('feedback.status_good_badge', 'Tốt')}</span>
                         )}
                       </td>
 
@@ -834,7 +847,7 @@ export default function FeedbackView() {
                           }}
                           className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
                         >
-                          Xem chi tiết
+                          {t('feedback.btn_view_detail', 'Xem chi tiết')}
                         </button>
                       </td>
 
@@ -848,8 +861,8 @@ export default function FeedbackView() {
 
         {/* Footer pagination / row count */}
         <div className="p-4 border-t border-slate-150 text-xs text-slate-500 flex justify-between items-center">
-          <span>Hiển thị {filteredFeedbacks.length} lượt đánh giá</span>
-          <span className="text-[11px] text-slate-400">Dữ liệu đồng bộ Realtime từ máy khách</span>
+          <span>{t('feedback.footer_showing', 'Hiển thị {count} lượt đánh giá', { count: filteredFeedbacks.length })}</span>
+          <span className="text-[11px] text-slate-400">{t('feedback.footer_realtime', 'Dữ liệu đồng bộ Realtime từ máy khách')}</span>
         </div>
 
       </div>
@@ -863,7 +876,7 @@ export default function FeedbackView() {
             <div className="flex justify-between items-center border-b border-slate-100 pb-3 -mt-1">
               <div className="flex items-center gap-2">
                 <MessageSquareHeart className="w-5 h-5 text-pink-500" />
-                <span className="font-bold text-slate-800 text-sm">Chi Tiết Đánh Giá Khách Hàng</span>
+                <span className="font-bold text-slate-800 text-sm">{t('feedback.modal_title', 'Chi Tiết Đánh Giá Khách Hàng')}</span>
               </div>
               <button 
                 onClick={() => setSelectedFeedback(null)} 
@@ -876,34 +889,34 @@ export default function FeedbackView() {
             {/* Customer & Invoice Info */}
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 space-y-2 text-xs">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-medium">Hoá đơn:</span>
+                <span className="text-slate-400 font-medium">{t('feedback.modal_invoice', 'Hoá đơn:')}</span>
                 <span className="font-bold text-slate-800">#{selectedFeedback.invoiceCode} ({formatVND(selectedFeedback.invoiceTotal)})</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-medium">Khách hàng:</span>
+                <span className="text-slate-400 font-medium">{t('feedback.modal_customer', 'Khách hàng:')}</span>
                 <span className="font-bold text-blue-600">{selectedFeedback.customerName} • {selectedFeedback.customerPhone}</span>
               </div>
               {selectedFeedback.customerEmail && selectedFeedback.customerEmail !== '—' && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 font-medium">Email:</span>
+                  <span className="text-slate-400 font-medium">{t('feedback.modal_email', 'Email:')}</span>
                   <span className="font-medium text-slate-700">{selectedFeedback.customerEmail}</span>
                 </div>
               )}
               {selectedFeedback.customerDob && selectedFeedback.customerDob !== '—' && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 font-medium">Ngày sinh:</span>
+                  <span className="text-slate-400 font-medium">{t('feedback.modal_dob', 'Ngày sinh:')}</span>
                   <span className="font-medium text-slate-700">{selectedFeedback.customerDob}</span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-medium">Thời gian đánh giá:</span>
+                <span className="text-slate-400 font-medium">{t('feedback.modal_reviewed_at', 'Thời gian đánh giá:')}</span>
                 <span className="font-medium text-slate-700">{new Date(selectedFeedback.date).toLocaleString('vi-VN')}</span>
               </div>
             </div>
 
             {/* Staff & Service Details */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Đánh Giá Kỹ Thuật Viên</h4>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('feedback.modal_staff_header', 'Đánh Giá Kỹ Thuật Viên')}</h4>
               <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -924,7 +937,7 @@ export default function FeedbackView() {
                 {/* Complaint Reasons */}
                 {selectedFeedback.poorReasons.length > 0 && (
                   <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                    <span className="text-[11px] font-bold text-rose-600 block">Lý do khách chưa hài lòng:</span>
+                    <span className="text-[11px] font-bold text-rose-600 block">{t('feedback.modal_poor_reasons_title', 'Lý do khách chưa hài lòng:')}</span>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedFeedback.poorReasons.map((r, idx) => (
                         <span key={idx} className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
@@ -938,14 +951,14 @@ export default function FeedbackView() {
                 {/* Custom feedback comment */}
                 {selectedFeedback.customReason && (
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 italic">
-                    <span className="font-bold text-slate-800 not-italic block mb-0.5">Ý kiến đóng góp khác:</span>
+                    <span className="font-bold text-slate-800 not-italic block mb-0.5">{t('feedback.modal_custom_comment_title', 'Ý kiến đóng góp khác:')}</span>
                     "{selectedFeedback.customReason}"
                   </div>
                 )}
 
                 {/* Tip amount */}
                 <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
-                  <span className="font-medium text-slate-500">Tiền Tip thưởng KTV:</span>
+                  <span className="font-medium text-slate-500">{t('feedback.modal_staff_tip_title', 'Tiền Tip thưởng KTV:')}</span>
                   <span className="font-extrabold text-emerald-600 text-sm">+{formatVND(selectedFeedback.tip)}</span>
                 </div>
               </div>
@@ -955,13 +968,13 @@ export default function FeedbackView() {
             {selectedFeedback.scoreKey === 'poor' && (
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <label className="block text-xs font-bold text-slate-800">
-                  Ghi chú chăm sóc khách hàng / Xử lý khiếu nại:
+                  {t('feedback.modal_cskh_title', 'Ghi chú chăm sóc khách hàng / Xử lý khiếu nại:')}
                 </label>
                 <textarea
                   rows={3}
                   value={resolutionNote}
                   onChange={(e) => setResolutionNote(e.target.value)}
-                  placeholder="Ví dụ: Đã gọi điện xin lỗi khách, tặng voucher giảm giá 20% cho lần ghé tới..."
+                  placeholder={t('feedback.modal_cskh_placeholder', 'Ví dụ: Đã gọi điện xin lỗi khách, tặng voucher giảm giá 20% cho lần ghé tới...')}
                   className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
                 />
                 <button
@@ -971,7 +984,7 @@ export default function FeedbackView() {
                   className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{savingResolution ? 'Đang lưu...' : 'Xác nhận đã xử lý khiếu nại'}</span>
+                  <span>{savingResolution ? t('feedback.modal_btn_saving', 'Đang lưu...') : t('feedback.modal_btn_save_resolution', 'Xác nhận đã xử lý khiếu nại')}</span>
                 </button>
               </div>
             )}
@@ -981,7 +994,7 @@ export default function FeedbackView() {
               onClick={() => setSelectedFeedback(null)}
               className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
             >
-              Đóng
+              {t('feedback.modal_btn_close', 'Đóng')}
             </button>
           </div>
         </div>
