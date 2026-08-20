@@ -1208,7 +1208,7 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                 <div className="text-center py-12 text-slate-400 text-sm">{t('pos.ticket.empty_cart', 'Giỏ hàng trống')}</div>
               ) : (
                 Object.entries(groupCartItems(cart)).map(([type, entries]) => {
-                  let label = TYPE_LABELS[type] || t('common.other', 'Khác');
+                  let label = getTypeLabel(type);
                   if (type.startsWith('packageGroup_')) {
                     label = `${t('pos.ticket.use_package', 'Dùng gói:')} ${type.replace('packageGroup_', '')}`;
                   } else if (type.startsWith('treatmentGroup_')) {
