@@ -9,6 +9,7 @@ import CatalogColumn from '@/components/pos/CatalogColumn';
 import TicketColumn from '@/components/pos/TicketColumn';
 import CheckoutModal from '@/components/pos/CheckoutModal';
 import NewCustomerModal from '@/components/pos/NewCustomerModal';
+import ReviewQRModal from '@/components/pos/ReviewQRModal';
 import { useBranch } from '@/lib/BranchContext';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { createIncomeVoucher } from '@/lib/cashFlowHelper';
@@ -30,6 +31,7 @@ export default function POSInvoiceModal({
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [custModal, setCustModal] = useState(false);
   const [custQuery, setCustQuery] = useState('');
   const [paying, setPaying] = useState(false);
@@ -645,7 +647,7 @@ export default function POSInvoiceModal({
               onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
               onCheckout={() => setCheckoutOpen(true)}
               onCancel={onClose}
-              onReview={() => {}}
+              onReview={() => setReviewModalOpen(true)}
             />
           </div>
         </div>
@@ -665,7 +667,7 @@ export default function POSInvoiceModal({
               onNewCustomer={(query) => { setCustQuery(query || ''); setCustModal(true); }}
               onCheckout={() => setCheckoutOpen(true)}
               onCancel={onClose}
-              onReview={() => {}}
+              onReview={() => setReviewModalOpen(true)}
               onMobileAddClick={() => setCatalogOpen(true)}
             />
           </div>
@@ -740,6 +742,16 @@ export default function POSInvoiceModal({
               toast.error(t('pos.invoice.error_create_customer', 'Lỗi khi tạo khách hàng: ') + (err.message || err));
             }
           }}
+        />
+      )}
+
+      {/* Review QR Modal */}
+      {reviewModalOpen && (
+        <ReviewQRModal
+          open={reviewModalOpen}
+          session={session}
+          onClose={() => setReviewModalOpen(false)}
+          patchSession={handleUpdateSession}
         />
       )}
 
