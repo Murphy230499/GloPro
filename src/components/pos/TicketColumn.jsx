@@ -950,14 +950,34 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
         >
           <Trash2 className="w-4 h-4" />
         </button>
-        <button 
-          onClick={onReview}
-          disabled={cart.length === 0}
-          className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 flex items-center justify-center transition-all shrink-0 disabled:opacity-40"
-          title="Khảo sát đánh giá"
-        >
-          <Smile className="w-4 h-4" />
-        </button>
+        {/* Review Survey Button with Realtime Status Indication */}
+        {(() => {
+          const rStatus = session?.reviewStatus;
+          const isReviewing = rStatus === 'reviewing';
+          const isDone = rStatus === 'done';
+
+          let btnClass = "w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 flex items-center justify-center transition-all shrink-0 disabled:opacity-40";
+          let tooltip = "Khảo sát đánh giá";
+
+          if (isReviewing) {
+            btnClass = "w-9 h-9 rounded-xl border border-amber-400 bg-amber-50 text-amber-600 ring-2 ring-amber-400/30 animate-pulse flex items-center justify-center transition-all shrink-0";
+            tooltip = "Khách hàng đang thực hiện đánh giá...";
+          } else if (isDone) {
+            btnClass = "w-9 h-9 rounded-xl border border-emerald-400 bg-emerald-50 text-emerald-600 ring-2 ring-emerald-400/30 flex items-center justify-center transition-all shrink-0";
+            tooltip = "Khách hàng đã hoàn thành đánh giá";
+          }
+
+          return (
+            <button 
+              onClick={onReview}
+              disabled={cart.length === 0}
+              className={btnClass}
+              title={tooltip}
+            >
+              <Smile className={`w-4 h-4 ${isReviewing ? 'animate-bounce' : ''}`} />
+            </button>
+          );
+        })()}
         <button onClick={onCheckout} disabled={cart.length === 0}
           className="flex-1 min-w-[130px] px-4 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 shadow-sm hover:bg-emerald-600 transition-colors shrink-0 whitespace-nowrap">
           <CreditCard className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">{t('appointments.btn_checkout', 'Thanh toán')}</span>
