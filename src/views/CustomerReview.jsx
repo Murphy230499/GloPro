@@ -137,10 +137,9 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
     setLoading(true);
 
     Promise.all([
-      base44.entities.Invoice.get(id).catch(() => null),
-      base44.entities.Branch.list().catch(() => []),
-      base44.entities.Settings.list().catch(() => [])
-    ]).then(([inv, branches, settings]) => {
+      base44.entities.Invoice?.get(id).catch(() => null),
+      base44.entities.Branch?.list().catch(() => [])
+    ]).then(([inv, branches]) => {
       if (inv) {
         setInvoice(inv);
         if (inv.customer) {
@@ -193,7 +192,6 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
       setLoading(false);
     }).catch(err => {
       console.error(err);
-      setLoading(false);
     });
   }, [id]);
 

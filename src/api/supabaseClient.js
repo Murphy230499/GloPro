@@ -336,6 +336,7 @@ export const supabaseClient = {
     RolePermission: createEntityAdapter('role_permissions'),
     Role: createEntityAdapter('roles'),
     Integration: createEntityAdapter('Integration'),
+    Settings: createEntityAdapter('settings'),
   },
   auth: {
     me: async () => {
