@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { formatVND } from '@/lib/format';
@@ -18,26 +18,83 @@ import {
   Clock, 
   Smile, 
   Sparkles, 
-  AlertCircle 
+  AlertCircle,
+  User,
+  Phone,
+  Mail,
+  ShieldCheck,
+  Receipt,
+  Award,
+  Star,
+  Gift,
+  HelpCircle,
+  DollarSign,
+  ThumbsUp,
+  MessageSquare
 } from 'lucide-react';
+import Avatar from '@/components/Avatar';
 
 const EMOJI_OPTIONS = [
-  { id: 'poor', score: 1, labelEn: 'Poor', labelVi: 'Quá tệ', emoji: '😫', color: '#EF4444' },
-  { id: 'average', score: 2, labelEn: 'Average', labelVi: 'Bình thường', emoji: '😐', color: '#64748B' },
-  { id: 'good', score: 3, labelEn: 'Good', labelVi: 'Good', labelViAlt: 'Tốt', emoji: '😚', color: '#64748B' },
-  { id: 'very_good', score: 4, labelEn: 'Very good', labelVi: 'Rất tốt', emoji: '😍', color: '#2563EB' },
+  { 
+    id: 'poor', 
+    score: 1, 
+    labelEn: 'Poor', 
+    labelVi: 'Chưa hài lòng', 
+    emoji: '😫', 
+    descEn: 'Needs improvement',
+    descVi: 'Cần cải thiện',
+    activeClass: 'bg-rose-50 border-rose-500 text-rose-700 shadow-rose-500/10 ring-2 ring-rose-500/20',
+    iconColor: 'text-rose-500'
+  },
+  { 
+    id: 'average', 
+    score: 2, 
+    labelEn: 'Average', 
+    labelVi: 'Bình thường', 
+    emoji: '😐', 
+    descEn: 'Acceptable',
+    descVi: 'Tạm ổn',
+    activeClass: 'bg-amber-50 border-amber-500 text-amber-700 shadow-amber-500/10 ring-2 ring-amber-500/20',
+    iconColor: 'text-amber-500'
+  },
+  { 
+    id: 'good', 
+    score: 3, 
+    labelEn: 'Good', 
+    labelVi: 'Hài lòng', 
+    emoji: '😚', 
+    descEn: 'Good service',
+    descVi: 'Dịch vụ tốt',
+    activeClass: 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-emerald-500/10 ring-2 ring-emerald-500/20',
+    iconColor: 'text-emerald-500'
+  },
+  { 
+    id: 'very_good', 
+    score: 4, 
+    labelEn: 'Excellent', 
+    labelVi: 'Rất tuyệt vời', 
+    emoji: '😍', 
+    descEn: 'Highly satisfied',
+    descVi: 'Rất ấn tượng',
+    activeClass: 'bg-pink-50 border-pink-500 text-pink-700 shadow-pink-500/10 ring-2 ring-pink-500/20',
+    iconColor: 'text-pink-500'
+  },
 ];
 
 const DEFAULT_POOR_REASONS_EN = [
-  'You are not satisfied with the hairstyle.',
-  "You want to report the barber's attitude.",
-  'You are not satisfied with the styling product.'
+  'Not satisfied with the service result / style.',
+  'Staff attitude or attentiveness needs care.',
+  'Wait time was too long.',
+  'Hygiene, salon ambiance, or equipment issue.',
+  'Styling or skincare product used.'
 ];
 
 const DEFAULT_POOR_REASONS_VI = [
-  'Bạn chưa hài lòng về kiểu tóc / kết quả dịch vụ.',
-  'Góp ý về thái độ hoặc sự chu đáo của nhân viên.',
-  'Chưa hài lòng về sản phẩm hoặc mùi hương sử dụng.'
+  'Chưa ưng ý kiểu tóc / kết quả dịch vụ.',
+  'Thái độ hoặc sự chu đáo của nhân viên.',
+  'Thời gian chờ đợi quá lâu.',
+  'Không gian, vệ sinh hoặc dụng cụ phục vụ.',
+  'Sản phẩm tạo kiểu / chăm sóc sử dụng.'
 ];
 
 const TIP_PRESETS = [
@@ -47,12 +104,22 @@ const TIP_PRESETS = [
   { value: 200000, label: '200.000 đ' },
 ];
 
+const MONTH_NAMES_EN = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+const MONTH_NAMES_VI = [
+  'Thg 1', 'Thg 2', 'Thg 3', 'Thg 4', 'Thg 5', 'Thg 6',
+  'Thg 7', 'Thg 8', 'Thg 9', 'Thg 10', 'Thg 11', 'Thg 12'
+];
+
 export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
   const params = useParams();
   const id = reviewIdProp || params?.id;
 
   // Language state
-  const [lang, setLang] = useState('ENG'); // 'ENG' or 'VIE'
+  const [lang, setLang] = useState('VIE'); // 'VIE' or 'ENG'
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   // Time state
@@ -63,7 +130,7 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
   const [step, setStep] = useState('info');
   const [loading, setLoading] = useState(true);
   const [invoice, setInvoice] = useState(null);
-  const [branchInfo, setBranchInfo] = useState({ name: '4RAU Barbershop', logo: '' });
+  const [branchInfo, setBranchInfo] = useState({ name: 'GloPro Beauty & Salon', logo: '' });
 
   // Step 1: Customer info states
   const [customerName, setCustomerName] = useState('');
@@ -75,10 +142,10 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
   // Temp DOB picker wheel states
   const [tempDay, setTempDay] = useState(15);
   const [tempMonth, setTempMonth] = useState(10);
-  const [tempYear, setTempYear] = useState(1997);
+  const [tempYear, setTempYear] = useState(1998);
 
   // Step 3: Staff rating states
-  const [staffList, setStaffList] = useState([]); // [{ id, name, services: [] }]
+  const [staffList, setStaffList] = useState([]); // [{ id, name, services: [], avatar: '' }]
   const [staffRatings, setStaffRatings] = useState({}); // { [staffId]: 'poor'|'average'|'good'|'very_good' }
   const [selectedReasons, setSelectedReasons] = useState({}); // { [staffId]: ['reason1', 'reason2'] }
   const [customReasons, setCustomReasons] = useState({}); // { [staffId]: 'other text' }
@@ -123,7 +190,6 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
     try {
       localStorage.setItem(`glopro_review_${id}`, JSON.stringify(statusPayload));
-      // Dispatch custom storage event for same-window listeners
       window.dispatchEvent(new StorageEvent('storage', {
         key: `glopro_review_${id}`,
         newValue: JSON.stringify(statusPayload)
@@ -138,8 +204,9 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
     Promise.all([
       base44.entities.Invoice?.get(id).catch(() => null),
-      base44.entities.Branch?.list().catch(() => [])
-    ]).then(([inv, branches]) => {
+      base44.entities.Branch?.list().catch(() => []),
+      base44.entities.Staff?.list().catch(() => [])
+    ]).then(([inv, branches, allStaff]) => {
       if (inv) {
         setInvoice(inv);
         if (inv.customer) {
@@ -159,10 +226,13 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
         (inv.items || []).forEach(item => {
           const sId = item.staff_id || 'default_staff';
           const sName = item.staff_name || 'Kỹ thuật viên';
+          const matchedStaff = (allStaff || []).find(st => st.id === sId);
           if (!staffMap[sId]) {
             staffMap[sId] = {
               id: sId,
               name: sName,
+              avatar: matchedStaff?.avatar_url || '',
+              role: matchedStaff?.role || 'Kỹ thuật viên',
               services: []
             };
           }
@@ -182,9 +252,9 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
       // Branch name / salon branding
       if (branches && branches.length > 0) {
-        const br = branches[0];
+        const br = branches.find(b => b.id === inv?.branch_id) || branches[0];
         setBranchInfo({
-          name: br.name || '4RAU Barbershop',
+          name: br.name || 'GloPro Salon & Spa',
           logo: br.logo_url || ''
         });
       }
@@ -192,6 +262,7 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
       setLoading(false);
     }).catch(err => {
       console.error(err);
+      setLoading(false);
     });
   }, [id]);
 
@@ -217,7 +288,6 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
   // Step 3 -> Step 4
   const handleContinueToTip = () => {
-    // Ensure all staff have a rating
     const unrated = staffList.find(s => !staffRatings[s.id]);
     if (unrated) {
       alert(lang === 'ENG' 
@@ -260,7 +330,7 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
       })).filter(x => x.amount > 0);
 
       // 1. Auto create / update customer in Customers database
-      let savedCust = invoice.customer || null;
+      let savedCust = invoice?.customer || null;
       if (customerPhone || customerName) {
         try {
           const existingList = await base44.entities.Customer.list().catch(() => []);
@@ -297,13 +367,14 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
         status: 'done',
         invoiceId: id,
         ratings: staffRatings,
-        reasons: selectedReasons,
-        customReasons: customReasons,
+        poorReasons: selectedReasons,
+        customReason: Object.values(customReasons).filter(Boolean).join('; '),
         tip: totalTip,
         tipSplits: tipSplits,
+        reviewedAt: new Date().toISOString(),
         customerInfo: {
           id: savedCust?.id || '',
-          name: customerName || savedCust?.name || 'Khách vãng lai',
+          name: customerName || savedCust?.name || (lang === 'ENG' ? 'Walk-in Guest' : 'Khách vãng lai'),
           phone: customerPhone || savedCust?.phone || '',
           email: customerEmail || '',
           dob: dob
@@ -335,13 +406,42 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
     }
   };
 
+  // Calculations
+  const grandTotal = useMemo(() => {
+    if (!invoice) return 0;
+    return invoice.total || (invoice.items || []).reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || item.qty || 1)), 0);
+  }, [invoice]);
+
+  const subtotal = invoice?.subtotal || invoice?.items?.reduce((s, i) => s + (i.price * (i.quantity || 1)), 0) || grandTotal;
+  const promotion = invoice?.discount || 0;
+  const vatTax = invoice?.tax || 0;
+
+  // Stepper progress indicator helper
+  const STEP_LIST = [
+    { key: 'info', labelVi: 'Thông tin', labelEn: 'Profile', num: 1 },
+    { key: 'confirm_invoice', labelVi: 'Hoá đơn', labelEn: 'Receipt', num: 2 },
+    { key: 'rating', labelVi: 'Đánh giá', labelEn: 'Rating', num: 3 },
+    { key: 'tip', labelVi: 'Thưởng tip', labelEn: 'Tip', num: 4 },
+  ];
+
+  const currentStepIndex = useMemo(() => {
+    if (step === 'info') return 0;
+    if (step === 'confirm_invoice') return 1;
+    if (step === 'rating') return 2;
+    if (step === 'tip') return 3;
+    return 4;
+  }, [step]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-xs font-semibold text-slate-500">
-            {lang === 'ENG' ? 'Loading review...' : 'Đang tải thông tin...'}
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-white font-sans">
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center shadow-lg shadow-pink-500/20 animate-pulse">
+            <Sparkles className="w-7 h-7 text-white" />
+          </div>
+          <div className="w-8 h-8 border-2 border-white/20 border-t-pink-500 rounded-full animate-spin" />
+          <span className="text-xs font-medium text-slate-400 tracking-wider uppercase">
+            {lang === 'ENG' ? 'Loading service evaluation...' : 'Đang kết nối quầy dịch vụ...'}
           </span>
         </div>
       </div>
@@ -350,342 +450,421 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
   if (!invoice) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-        <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-xl border border-slate-150">
-          <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-6 h-6" />
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-slate-100">
+        <div className="bg-slate-800/90 backdrop-blur-md rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-700">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20">
+            <AlertCircle className="w-7 h-7" />
           </div>
-          <h2 className="text-base font-bold text-slate-800">
+          <h2 className="text-base font-bold text-white">
             {lang === 'ENG' ? 'Invoice Not Found' : 'Không tìm thấy hoá đơn'}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 leading-relaxed">
             {lang === 'ENG' 
-              ? 'Please re-scan the QR code provided by the cashier.' 
-              : 'Vui lòng quét lại mã QR được cung cấp tại quầy thu ngân.'}
+              ? 'Please re-scan the QR code displayed at the checkout counter.' 
+              : 'Vui lòng quét lại mã QR hiển thị tại quầy thu ngân của salon.'}
           </p>
         </div>
       </div>
     );
   }
 
-  // Calculate invoice numbers for Step 2
-  const subtotal = invoice.subtotal || (invoice.items || []).reduce((sum, it) => sum + (it.price * (it.quantity || it.qty || 1)), 0);
-  const promotion = invoice.discount || invoice.discount_amount || 0;
-  const vatTax = invoice.tax || invoice.vat || 0;
-  const grandTotal = subtotal - promotion + vatTax;
-
-  const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const MONTH_NAMES_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans antialiased select-none text-slate-800">
+    <div className="min-h-screen bg-[#0F172A] flex flex-col font-sans antialiased text-slate-100 select-none relative overflow-x-hidden">
+      
+      {/* Background Decorative Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-pink-500/15 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Top Header Bar */}
-      <header className="w-full bg-white border-b border-slate-100 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-30">
-        {/* Left: Clock */}
-        <div className="flex flex-col text-left">
-          <span className="text-base md:text-lg font-extrabold text-slate-800 tracking-tight font-mono">
-            {currentTime || '15:03:45'}
-          </span>
-          <span className="text-[11px] text-slate-400 font-medium font-mono">
-            {currentDate || '15/10/2022'}
+      <header className="relative z-20 w-full bg-slate-900/80 backdrop-blur-xl border-b border-white/10 px-4 md:px-8 py-3 flex items-center justify-between shadow-lg">
+        
+        {/* Left: Clock & Date */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-pink-400 shrink-0">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs md:text-sm font-bold text-white tracking-wider font-mono">
+              {currentTime || '12:00:00'}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">
+              {currentDate || '21/08/2026'}
+            </span>
+          </div>
+        </div>
+
+        {/* Center: Brand Name & Verified Badge */}
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm md:text-base font-bold text-white tracking-tight">
+              {branchInfo.name}
+            </span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          </div>
+          <span className="text-[10px] text-slate-400 hidden sm:inline-block">
+            {lang === 'ENG' ? 'Customer Feedback & Service Quality' : 'Khảo sát dịch vụ & Đánh giá'}
           </span>
         </div>
 
-        {/* Center: Salon Name */}
+        {/* Right: Language Switcher */}
         <div className="flex items-center gap-2">
-          <span className="text-base md:text-xl font-black text-slate-800 tracking-tight">
-            {branchInfo.name}
-          </span>
-        </div>
-
-        {/* Right: Language Dropdown & Logo */}
-        <div className="flex items-center gap-3">
-          {/* Language Switcher */}
           <div className="relative">
             <button
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold shadow-xs hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold shadow-xs transition-all"
             >
-              <span>{lang === 'ENG' ? '🇬🇧 ENG' : '🇻🇳 VIE'}</span>
-              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+              <Globe className="w-3.5 h-3.5 text-pink-400" />
+              <span>{lang === 'ENG' ? 'EN' : 'VI'}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
 
             {langMenuOpen && (
-              <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-150 rounded-xl shadow-lg py-1 z-50 text-left">
-                <button
-                  onClick={() => { setLang('ENG'); setLangMenuOpen(false); }}
-                  className={`w-full px-3 py-2 text-xs font-semibold flex items-center justify-between hover:bg-slate-50 ${lang === 'ENG' ? 'text-blue-600 font-bold bg-blue-50/50' : 'text-slate-700'}`}
-                >
-                  <span>🇬🇧 English</span>
-                  {lang === 'ENG' && <Check className="w-3 h-3 text-blue-600" />}
-                </button>
+              <div className="absolute right-0 mt-1.5 w-32 bg-slate-800 border border-white/10 rounded-2xl shadow-2xl py-1.5 z-50 text-left backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
                 <button
                   onClick={() => { setLang('VIE'); setLangMenuOpen(false); }}
-                  className={`w-full px-3 py-2 text-xs font-semibold flex items-center justify-between hover:bg-slate-50 ${lang === 'VIE' ? 'text-blue-600 font-bold bg-blue-50/50' : 'text-slate-700'}`}
+                  className={`w-full px-3 py-2 text-xs font-medium flex items-center justify-between hover:bg-white/5 transition-colors ${lang === 'VIE' ? 'text-pink-400 font-bold bg-pink-500/10' : 'text-slate-300'}`}
                 >
                   <span>🇻🇳 Tiếng Việt</span>
-                  {lang === 'VIE' && <Check className="w-3 h-3 text-blue-600" />}
+                  {lang === 'VIE' && <Check className="w-3.5 h-3.5 text-pink-400" />}
+                </button>
+                <button
+                  onClick={() => { setLang('ENG'); setLangMenuOpen(false); }}
+                  className={`w-full px-3 py-2 text-xs font-medium flex items-center justify-between hover:bg-white/5 transition-colors ${lang === 'ENG' ? 'text-pink-400 font-bold bg-pink-500/10' : 'text-slate-300'}`}
+                >
+                  <span>🇬🇧 English</span>
+                  {lang === 'ENG' && <Check className="w-3.5 h-3.5 text-pink-400" />}
                 </button>
               </div>
-            )}
-          </div>
-
-          {/* Salon Logo */}
-          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-xs shrink-0">
-            {branchInfo.logo ? (
-              <img src={branchInfo.logo} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-black text-xs tracking-wider">4RAU</span>
             )}
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center p-4 md:p-6">
-        <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100/80 overflow-hidden flex flex-col min-h-[580px]">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-3 md:p-6 w-full max-w-3xl mx-auto">
+        
+        {/* Stepper Progress Bar (Only during steps 1 to 4) */}
+        {step !== 'success' && (
+          <div className="w-full max-w-xl mb-4 px-2">
+            <div className="flex items-center justify-between relative">
+              {/* Progress Line */}
+              <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-0.5 bg-slate-800 -z-0" />
+              <div 
+                className="absolute top-1/2 left-4 -translate-y-1/2 h-0.5 bg-gradient-to-r from-pink-500 to-pink-400 transition-all duration-300 -z-0"
+                style={{ width: `${(currentStepIndex / 3) * 90}%` }}
+              />
+
+              {STEP_LIST.map((s, idx) => {
+                const isActive = idx === currentStepIndex;
+                const isPassed = idx < currentStepIndex;
+
+                return (
+                  <div key={s.key} className="flex flex-col items-center gap-1 z-10">
+                    <div 
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
+                        isActive
+                          ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30 ring-4 ring-pink-500/20 scale-110'
+                          : isPassed
+                            ? 'bg-pink-500 text-white'
+                            : 'bg-slate-800 text-slate-400 border border-white/10'
+                      }`}
+                    >
+                      {isPassed ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                    </div>
+                    <span className={`text-[10px] font-medium hidden sm:inline-block ${isActive ? 'text-pink-400 font-semibold' : 'text-slate-400'}`}>
+                      {lang === 'ENG' ? s.labelEn : s.labelVi}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Card Frame with Luxury Glass & Modern Curves */}
+        <div className="w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden flex flex-col min-h-[520px]">
 
           {/* ========================================================
-              STEP 1: CUSTOMER INFORMATION FORM (Screen 1 & 2)
+              STEP 1: CUSTOMER INFORMATION & MEMBER PERKS
              ======================================================== */}
           {step === 'info' && (
-            <div className="p-6 md:p-10 flex flex-col justify-between flex-1 space-y-8">
+            <div className="p-5 md:p-8 flex flex-col justify-between flex-1 space-y-6 animate-in fade-in duration-200">
+              
               <div className="space-y-6 text-center">
+                
+                {/* Hero Icon & Title */}
                 <div className="space-y-2">
-                  <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase">
-                    {lang === 'ENG' ? 'Please enter your information' : 'Vui lòng nhập thông tin của bạn'}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-semibold">
+                    <Gift className="w-3.5 h-3.5" />
+                    <span>{lang === 'ENG' ? 'Membership Privileges' : 'Đặc quyền thành viên thân thiết'}</span>
+                  </div>
+                  <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                    {lang === 'ENG' ? 'Welcome to Our Salon' : 'Chào mừng quý khách đến trải nghiệm'}
                   </h1>
-                  <p className="text-sm md:text-base font-semibold text-slate-500">
-                    {lang === 'ENG' ? 'Sign up for membership to enjoy exclusive hot deals!' : 'Đăng ký thành viên để nhận ngay nhiều ưu đãi hấp dẫn!'}
+                  <p className="text-xs md:text-sm text-slate-400 max-w-md mx-auto">
+                    {lang === 'ENG' 
+                      ? 'Confirm your profile to accumulate loyalty points, receive birthday gifts and exclusive offers.' 
+                      : 'Xác nhận thông tin để tự động tích điểm, nhận quà tặng sinh nhật và ưu đãi giảm giá.'}
                   </p>
                 </div>
 
-                <div className="space-y-4 max-w-md mx-auto pt-4 text-left">
+                {/* Form Fields */}
+                <div className="space-y-3.5 max-w-md mx-auto pt-2 text-left">
+                  
                   {/* Full Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">
-                      {lang === 'ENG' ? 'Full name' : 'Họ và tên'}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{lang === 'ENG' ? 'Full name' : 'Họ và tên của bạn'}</span>
                     </label>
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder={lang === 'ENG' ? 'Please enter' : 'Vui lòng nhập họ tên'}
-                      className="w-full h-14 px-4 rounded-2xl border border-slate-200 text-sm font-semibold placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                      placeholder={lang === 'ENG' ? 'e.g. John Doe' : 'Ví dụ: Nguyễn Văn A'}
+                      className="w-full h-12 px-4 rounded-2xl bg-slate-800/80 border border-white/10 text-xs font-medium text-white placeholder:text-slate-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all"
                     />
                   </div>
 
-                  {/* Phone number (if walk-in) */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">
-                      {lang === 'ENG' ? 'Phone number' : 'Số điện thoại'}
+                  {/* Phone Number */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{lang === 'ENG' ? 'Phone number (Loyalty ID)' : 'Số điện thoại tích điểm'}</span>
                     </label>
                     <input
                       type="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder={lang === 'ENG' ? '0868xxxxxx' : '0868xxxxxx'}
-                      className="w-full h-14 px-4 rounded-2xl border border-slate-200 text-sm font-semibold placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                      placeholder="0987 xxx xxx"
+                      className="w-full h-12 px-4 rounded-2xl bg-slate-800/80 border border-white/10 text-xs font-medium text-white placeholder:text-slate-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all font-mono"
                     />
                   </div>
 
                   {/* Date of Birth Picker Button */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">
-                      {lang === 'ENG' ? 'Date of birth' : 'Ngày tháng năm sinh'}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <CalendarIcon className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{lang === 'ENG' ? 'Date of birth (Birthday gift)' : 'Ngày sinh (Nhận quà sinh nhật)'}</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => setDobModalOpen(true)}
-                      className="w-full h-14 px-4 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white flex items-center justify-between hover:border-slate-300 focus:border-blue-500 transition-all text-left"
+                      className="w-full h-12 px-4 rounded-2xl bg-slate-800/80 border border-white/10 text-xs font-medium text-white flex items-center justify-between hover:border-white/20 focus:border-pink-500 transition-all text-left"
                     >
-                      <span>{dob || '01/01/2000'}</span>
-                      <CalendarIcon className="w-5 h-5 text-slate-400" />
+                      <span className="font-mono">{dob || '01/01/2000'}</span>
+                      <CalendarIcon className="w-4 h-4 text-slate-400" />
                     </button>
                   </div>
+
+                  {/* Optional Email */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{lang === 'ENG' ? 'Email (Optional for e-invoice)' : 'Email nhận hoá đơn điện tử (Không bắt buộc)'}</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder={lang === 'ENG' ? 'customer@example.com' : 'email@gmail.com'}
+                      className="w-full h-12 px-4 rounded-2xl bg-slate-800/80 border border-white/10 text-xs font-medium text-white placeholder:text-slate-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all"
+                    />
+                  </div>
+
                 </div>
+
+                {/* Membership Perks Mini Card */}
+                <div className="max-w-md mx-auto p-3 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-pink-500/15 flex items-center gap-3 text-left">
+                  <div className="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div className="text-[11px] text-slate-300 leading-snug">
+                    <span className="font-bold text-white block">{lang === 'ENG' ? 'Instant points conversion' : 'Tích luỹ điểm tự động'}</span>
+                    <span className="text-slate-400">{lang === 'ENG' ? 'Get 10% voucher on your birthday!' : 'Tặng voucher ưu đãi vào tuần lễ sinh nhật'}</span>
+                  </div>
+                </div>
+
               </div>
 
               {/* Bottom Action Button */}
-              <div className="pt-6 max-w-md mx-auto w-full">
+              <div className="pt-4 max-w-md mx-auto w-full">
                 <button
                   type="button"
                   onClick={handleContinueFromInfo}
-                  className="w-full h-14 rounded-2xl bg-[#0066FF] hover:bg-[#0052CC] active:scale-[0.99] text-white font-extrabold text-base uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center"
+                  className="w-full h-12 rounded-2xl bg-pink-500 hover:bg-pink-600 active:scale-[0.99] text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {lang === 'ENG' ? 'CONTINUE' : 'TIẾP TỤC'}
+                  <span>{lang === 'ENG' ? 'CONTINUE' : 'TIẾP TỤC'}</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 2: CONFIRM INVOICE INFORMATION (Screen 3)
+              STEP 2: CONFIRM DIGITAL INVOICE RECEIPT
              ======================================================== */}
           {step === 'confirm_invoice' && (
-            <div className="p-6 md:p-10 flex flex-col justify-between flex-1 space-y-6">
-              <div className="space-y-6">
-                {/* Title */}
-                <div className="text-center space-y-2">
-                  <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase">
-                    {lang === 'ENG' ? 'CONFIRM INVOICE INFORMATION' : 'XÁC NHẬN THÔNG TIN HOÁ ĐƠN'}
-                  </h1>
-                  <p className="text-sm md:text-base font-bold text-slate-700">
-                    {lang === 'ENG' ? 'Customer: ' : 'Khách hàng: '}
-                    <span className="text-blue-600">{customerName || 'Khách vãng lai'}</span>
-                    {customerPhone && <span> - {customerPhone}</span>}
-                  </p>
-                  <div className="text-lg md:text-xl font-black text-slate-800 pt-1">
-                    {lang === 'ENG' ? 'Subtotal: ' : 'Tổng cộng: '}
-                    <span className="text-red-500">{formatVND(grandTotal)}</span>
+            <div className="p-5 md:p-8 flex flex-col justify-between flex-1 space-y-6 animate-in fade-in duration-200">
+              
+              <div className="space-y-5">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <button
+                    onClick={() => setStep('info')}
+                    className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div className="text-center">
+                    <h2 className="text-base font-bold text-white uppercase tracking-tight">
+                      {lang === 'ENG' ? 'Service Receipt' : 'Phiếu Hoá Đơn Dịch Vụ'}
+                    </h2>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      #{invoice?.invoice_code || (invoice?.id ? String(invoice.id).slice(-6) : 'HD')}
+                    </span>
+                  </div>
+                  <div className="w-8" />
+                </div>
+
+                {/* Customer summary pill */}
+                <div className="p-3 rounded-2xl bg-slate-800/80 border border-white/10 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-pink-400" />
+                    <div>
+                      <span className="font-semibold text-white">{customerName || (lang === 'ENG' ? 'Walk-in Guest' : 'Khách vãng lai')}</span>
+                      {customerPhone && <span className="text-slate-400 font-mono ml-2">({customerPhone})</span>}
+                    </div>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
+                    {lang === 'ENG' ? 'Active' : 'Đang phục vụ'}
+                  </span>
+                </div>
+
+                {/* Items List */}
+                <div className="bg-slate-800/50 rounded-2xl border border-white/10 overflow-hidden">
+                  <div className="p-3 bg-white/5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex justify-between border-b border-white/5">
+                    <span>{lang === 'ENG' ? 'Service / Product' : 'Dịch vụ / Sản phẩm'}</span>
+                    <span>{lang === 'ENG' ? 'Amount' : 'Thành tiền'}</span>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {(invoice.items || []).map((item, idx) => {
+                      const itemQty = item.quantity || item.qty || 1;
+                      const itemPrice = item.price || 0;
+                      const itemTotal = item.total || (itemPrice * itemQty);
+                      return (
+                        <div key={idx} className="p-3.5 flex items-center justify-between hover:bg-white/5 transition-colors text-xs">
+                          <div className="space-y-0.5">
+                            <div className="font-semibold text-white">{item.name || item.service_name || 'Dịch vụ'}</div>
+                            <div className="text-[11px] text-slate-400">
+                              {itemQty} x {formatVND(itemPrice)}
+                              {item.staff_name && <span className="text-pink-400 ml-1.5">• KTV: {item.staff_name}</span>}
+                            </div>
+                          </div>
+                          <span className="font-bold text-white">{formatVND(itemTotal)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Items Table */}
-                <div className="border border-slate-150 rounded-2xl overflow-hidden shadow-2xs">
-                  <table className="w-full text-left text-xs md:text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-150 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                      <tr>
-                        <th className="py-3.5 px-4">{lang === 'ENG' ? 'Services used' : 'Dịch vụ đã dùng'}</th>
-                        <th className="py-3.5 px-3 text-center">{lang === 'ENG' ? 'Quantity' : 'SL'}</th>
-                        <th className="py-3.5 px-3 text-right">{lang === 'ENG' ? 'Unit price' : 'Đơn giá'}</th>
-                        <th className="py-3.5 px-4 text-right">{lang === 'ENG' ? 'Total amount' : 'Thành tiền'}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                      {(invoice.items || []).map((item, idx) => {
-                        const itemQty = item.quantity || item.qty || 1;
-                        const itemPrice = item.price || 0;
-                        const itemTotal = item.total || (itemPrice * itemQty);
-                        const itemDiscount = item.discount || 0;
-                        return (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="py-3.5 px-4 font-bold text-slate-800">
-                              {idx + 1}. {item.name || item.service_name || 'Dịch vụ'}
-                            </td>
-                            <td className="py-3.5 px-3 text-center text-slate-600">{itemQty}</td>
-                            <td className="py-3.5 px-3 text-right text-slate-600">{formatVND(itemPrice)}</td>
-                            <td className="py-3.5 px-4 text-right font-bold text-slate-800">
-                              <div>{formatVND(itemTotal)}</div>
-                              {itemDiscount > 0 && (
-                                <div className="text-[10px] text-slate-400 font-normal">
-                                  Discount: {formatVND(itemDiscount)}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Sub-summary block */}
-                <div className="flex flex-col items-end space-y-1.5 text-xs md:text-sm font-semibold text-slate-600 pr-2">
-                  <div className="flex justify-between w-64">
-                    <span>{lang === 'ENG' ? 'Total amount:' : 'Tiền dịch vụ:'}</span>
-                    <span className="font-bold text-slate-800">{formatVND(subtotal)}</span>
+                {/* Price Breakdown */}
+                <div className="p-4 rounded-2xl bg-slate-800/80 border border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>{lang === 'ENG' ? 'Subtotal:' : 'Tiền dịch vụ:'}</span>
+                    <span className="text-white font-medium">{formatVND(subtotal)}</span>
                   </div>
                   {promotion > 0 && (
-                    <div className="flex justify-between w-64 text-emerald-600 font-bold">
-                      <span>{lang === 'ENG' ? 'Promotion:' : 'Khuyến mãi:'}</span>
+                    <div className="flex justify-between text-emerald-400">
+                      <span>{lang === 'ENG' ? 'Discount:' : 'Ưu đãi giảm giá:'}</span>
                       <span>-{formatVND(promotion)}</span>
                     </div>
                   )}
                   {vatTax > 0 && (
-                    <div className="flex justify-between w-64">
+                    <div className="flex justify-between text-slate-400">
                       <span>{lang === 'ENG' ? 'VAT Tax:' : 'Thuế VAT:'}</span>
-                      <span className="font-bold text-slate-800">{formatVND(vatTax)}</span>
+                      <span className="text-white font-medium">{formatVND(vatTax)}</span>
                     </div>
                   )}
+                  <div className="pt-2 border-t border-white/10 flex justify-between items-baseline">
+                    <span className="font-bold text-white text-sm">{lang === 'ENG' ? 'Total to Pay:' : 'Tổng tiền thanh toán:'}</span>
+                    <span className="font-bold text-pink-400 text-lg">{formatVND(grandTotal)}</span>
+                  </div>
                 </div>
+
               </div>
 
-              {/* Bottom notice & button */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                  <p className="text-xs text-slate-500 font-medium text-center md:text-left max-w-xs">
-                    {lang === 'ENG'
-                      ? 'Please inform the receptionist for adjustments if you notice any issues with the invoice.'
-                      : 'Vui lòng báo cho thu ngân nếu quý khách thấy thông tin trên hoá đơn chưa chính xác.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleConfirmInvoice}
-                    className="w-full md:w-auto px-8 h-14 rounded-2xl bg-[#0066FF] hover:bg-[#0052CC] text-white font-extrabold text-sm md:text-base uppercase tracking-wider shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all shrink-0"
-                  >
-                    <Check className="w-5 h-5 stroke-[3]" />
-                    <span>{lang === 'ENG' ? 'CONFIRM AS CORRECT' : 'XÁC NHẬN ĐÚNG'}</span>
-                  </button>
-                </div>
+              {/* Bottom confirmation action */}
+              <div className="pt-4 max-w-md mx-auto w-full space-y-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmInvoice}
+                  className="w-full h-12 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>{lang === 'ENG' ? 'CONFIRM & RATE SERVICE' : 'XÁC NHẬN & ĐÁNH GIÁ DỊCH VỤ'}</span>
+                </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 3: RATE SERVICE QUALITY (Screen 4)
+              STEP 3: RATE SERVICE QUALITY (SPECIALIST EVALUATION)
              ======================================================== */}
           {step === 'rating' && (
-            <div className="p-6 md:p-10 flex flex-col justify-between flex-1 space-y-6">
-              <div className="space-y-6">
-                {/* Header with Back Arrow */}
-                <div className="relative flex items-center justify-center pb-2 border-b border-slate-100">
+            <div className="p-5 md:p-8 flex flex-col justify-between flex-1 space-y-6 animate-in fade-in duration-200">
+              
+              <div className="space-y-5">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <button
                     onClick={() => setStep('confirm_invoice')}
-                    className="absolute left-0 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <h1 className="text-lg md:text-xl font-black text-slate-800 tracking-tight uppercase">
-                    {lang === 'ENG' ? 'RATE SERVICE QUALITY' : 'ĐÁNH GIÁ CHẤT LƯỢNG DỊCH VỤ'}
-                  </h1>
+                  <div className="text-center">
+                    <h2 className="text-base font-bold text-white uppercase tracking-tight">
+                      {lang === 'ENG' ? 'Staff Evaluation' : 'Đánh Giá Kỹ Thuật Viên'}
+                    </h2>
+                    <p className="text-[11px] text-slate-400">
+                      {lang === 'ENG' ? 'How was your service experience today?' : 'Bạn cảm thấy chất lượng phục vụ hôm nay thế nào?'}
+                    </p>
+                  </div>
+                  <div className="w-8" />
                 </div>
 
-                {/* Staff Group list */}
-                <div className="space-y-6 divide-y divide-slate-100">
+                {/* Staff List Review Cards */}
+                <div className="space-y-5">
                   {staffList.map((st) => {
                     const currentRating = staffRatings[st.id] || null;
                     const isPoor = currentRating === 'poor';
                     const activeReasons = selectedReasons[st.id] || [];
-
                     const defaultReasons = lang === 'ENG' ? DEFAULT_POOR_REASONS_EN : DEFAULT_POOR_REASONS_VI;
 
                     return (
-                      <div key={st.id} className="pt-5 first:pt-0 space-y-4 text-left">
-                        {/* Staff Name & services */}
-                        <div className="space-y-1">
-                          <h2 className="font-extrabold text-sm md:text-base text-blue-600">
-                            {st.name}
-                          </h2>
-                          <div className="space-y-0.5 text-xs font-semibold text-slate-600">
-                            {st.services.map((svc, sIdx) => (
-                              <div key={sIdx} className="flex items-center gap-1.5">
-                                <span className="text-slate-400">-</span>
-                                <span>{svc}</span>
-                              </div>
-                            ))}
+                      <div key={st.id} className="p-4 rounded-3xl bg-slate-800/80 border border-white/10 space-y-4 text-left">
+                        
+                        {/* Staff profile header */}
+                        <div className="flex items-center gap-3">
+                          <Avatar src={st.avatar} name={st.name} size={42} color="#EC4899" />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white text-sm truncate">{st.name}</div>
+                            <div className="text-[11px] text-pink-400 truncate">{st.services.join(', ')}</div>
                           </div>
                         </div>
 
-                        {/* Emoji Grid (4 options: Poor, Average, Good, Very good) */}
-                        <div className="grid grid-cols-4 gap-2.5 max-w-lg">
+                        {/* 4 Interactive Emotion Cards */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {EMOJI_OPTIONS.map((opt) => {
                             const isSelected = currentRating === opt.id;
-                            
-                            // Specific styling matching mockup:
-                            // If selected and poor -> solid red
-                            // If selected and very_good -> solid blue
-                            // If selected and average/good -> solid slate/blue
-                            let btnStyle = 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300';
-                            if (isSelected) {
-                              if (opt.id === 'poor') {
-                                btnStyle = 'bg-[#EF4444] border-[#EF4444] text-white shadow-md shadow-red-500/20';
-                              } else if (opt.id === 'very_good') {
-                                btnStyle = 'bg-[#0066FF] border-[#0066FF] text-white shadow-md shadow-blue-500/20';
-                              } else {
-                                btnStyle = 'bg-slate-800 border-slate-800 text-white';
-                              }
-                            }
 
                             return (
                               <button
@@ -694,30 +873,35 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                                 onClick={() => {
                                   setStaffRatings(prev => ({ ...prev, [st.id]: opt.id }));
                                 }}
-                                className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all ${btnStyle}`}
+                                className={`p-3 rounded-2xl border transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-pink-500/20 border-pink-500 text-white shadow-lg shadow-pink-500/10 ring-2 ring-pink-500/30'
+                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                                }`}
                               >
-                                <span className="text-3xl mb-1">{opt.emoji}</span>
-                                <span className="text-xs font-bold tracking-tight">
+                                <span className="text-2xl mb-1">{opt.emoji}</span>
+                                <span className="text-xs font-semibold text-white">
                                   {lang === 'ENG' ? opt.labelEn : opt.labelVi}
+                                </span>
+                                <span className="text-[10px] text-slate-400 mt-0.5">
+                                  {lang === 'ENG' ? opt.descEn : opt.descVi}
                                 </span>
                               </button>
                             );
                           })}
                         </div>
 
-                        {/* Expandable Feedback section for 'poor' rating */}
+                        {/* Expandable Reasons for Poor rating */}
                         {isPoor && (
-                          <div className="p-4 rounded-2xl bg-red-50/60 border border-red-100 space-y-3 animate-in fade-in duration-200">
-                            <div className="text-xs font-bold text-slate-700">
-                              {lang === 'ENG' ? 'Feedback section' : 'Ý kiến đóng góp'}
-                            </div>
-
-                            {/* Checkbox Options */}
-                            <div className="space-y-2">
+                          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-2.5 animate-in fade-in duration-200">
+                            <span className="text-xs font-semibold text-rose-300 block">
+                              {lang === 'ENG' ? 'What went wrong? (Help us improve):' : 'Điều gì khiến bạn chưa hài lòng (để chúng tôi cải thiện):'}
+                            </span>
+                            <div className="space-y-1.5">
                               {defaultReasons.map((reasonText, rIdx) => {
                                 const checked = activeReasons.includes(reasonText);
                                 return (
-                                  <label key={rIdx} className="flex items-center gap-2.5 cursor-pointer">
+                                  <label key={rIdx} className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 hover:text-white">
                                     <input
                                       type="checkbox"
                                       checked={checked}
@@ -727,119 +911,105 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                                           : activeReasons.filter(r => r !== reasonText);
                                         setSelectedReasons(prev => ({ ...prev, [st.id]: updated }));
                                       }}
-                                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                                      className="rounded text-pink-500 focus:ring-pink-500"
                                     />
-                                    <span className="text-xs font-medium text-slate-700">
-                                      {reasonText}
-                                    </span>
+                                    <span>{reasonText}</span>
                                   </label>
                                 );
                               })}
-
-                              {/* Other text input option */}
-                              <div className="space-y-1.5 pt-1">
-                                <label className="flex items-center gap-2.5 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(customReasons[st.id])}
-                                    onChange={(e) => {
-                                      if (!e.target.checked) {
-                                        setCustomReasons(prev => ({ ...prev, [st.id]: '' }));
-                                      }
-                                    }}
-                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                                  />
-                                  <span className="text-xs font-medium text-slate-700">
-                                    {lang === 'ENG' ? 'Other: Please enter your reason here...' : 'Khác: Vui lòng nhập lý do tại đây...'}
-                                  </span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={customReasons[st.id] || ''}
-                                  onChange={(e) => setCustomReasons(prev => ({ ...prev, [st.id]: e.target.value }))}
-                                  placeholder={lang === 'ENG' ? 'Enter detailed reason...' : 'Nhập chi tiết ý kiến của bạn...'}
-                                  className="w-full h-10 px-3 rounded-xl border border-red-200 bg-white text-xs font-medium focus:border-red-400 outline-none"
-                                />
-                              </div>
                             </div>
                           </div>
                         )}
+
+                        {/* Custom Feedback Message */}
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={customReasons[st.id] || ''}
+                            onChange={(e) => setCustomReasons(prev => ({ ...prev, [st.id]: e.target.value }))}
+                            placeholder={lang === 'ENG' ? 'Add a note or compliment for staff...' : 'Góp ý hoặc lời khen gửi đến kỹ thuật viên...'}
+                            className="w-full h-10 px-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-pink-500 outline-none"
+                          />
+                        </div>
+
                       </div>
                     );
                   })}
                 </div>
+
               </div>
 
               {/* Bottom Continue button */}
-              <div className="pt-6 max-w-md mx-auto w-full">
+              <div className="pt-4 max-w-md mx-auto w-full">
                 <button
                   type="button"
                   onClick={handleContinueToTip}
-                  className="w-full h-14 rounded-2xl bg-[#0066FF] hover:bg-[#0052CC] text-white font-extrabold text-base uppercase tracking-wider shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all"
+                  className="w-full h-12 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <span>{lang === 'ENG' ? 'CONTINUE' : 'TIẾP TỤC'}</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <span>{lang === 'ENG' ? 'CONTINUE TO TIP' : 'TIẾP TỤC THƯỞNG TIP'}</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 4: MOTIVATIONAL TIPS FOR EMPLOYEES (Screen 5)
+              STEP 4: MOTIVATIONAL TIPS FOR SPECIALISTS
              ======================================================== */}
           {step === 'tip' && (
-            <div className="p-6 md:p-10 flex flex-col justify-between flex-1 space-y-6">
-              <div className="space-y-6">
-                {/* Header with Back Arrow */}
-                <div className="relative flex items-center justify-center pb-2 border-b border-slate-100">
+            <div className="p-5 md:p-8 flex flex-col justify-between flex-1 space-y-6 animate-in fade-in duration-200">
+              
+              <div className="space-y-5">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <button
                     onClick={() => setStep('rating')}
-                    className="absolute left-0 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <h1 className="text-lg md:text-xl font-black text-slate-800 tracking-tight uppercase">
-                    {lang === 'ENG' ? 'MOTIVATIONAL TIPS FOR EMPLOYEES' : 'THƯỞNG TIP ĐỘNG VIÊN NHÂN VIÊN'}
-                  </h1>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-pink-400">
+                      <Heart className="w-4 h-4 fill-pink-500/20" />
+                      <h2 className="text-base font-bold text-white uppercase tracking-tight">
+                        {lang === 'ENG' ? 'Staff Appreciation Tip' : 'Thưởng Tip Động Viên'}
+                      </h2>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      {lang === 'ENG' ? '100% of tips are sent directly to your specialists.' : '100% tiền tip được gửi trực tiếp vào bảng lương của chuyên viên.'}
+                    </p>
+                  </div>
+                  <div className="w-8" />
                 </div>
 
                 {/* Staff tip sections */}
-                <div className="space-y-6 divide-y divide-slate-100">
+                <div className="space-y-5">
                   {staffList.map((st) => {
                     const currentTip = staffTips[st.id] || 0;
-                    const ratingKey = staffRatings[st.id] || 'very_good';
-                    const ratingObj = EMOJI_OPTIONS.find(e => e.id === ratingKey) || EMOJI_OPTIONS[3];
                     const isCustom = customTipActive[st.id];
 
                     return (
-                      <div key={st.id} className="pt-5 first:pt-0 space-y-3.5 text-left">
-                        {/* Top: Staff Name + Reviewed badge */}
+                      <div key={st.id} className="p-4 rounded-3xl bg-slate-800/80 border border-white/10 space-y-3 text-left">
+                        
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="font-extrabold text-sm md:text-base text-blue-600">
-                              {st.name}
-                            </h2>
-                            <div className="space-y-0.5 text-xs font-semibold text-slate-500">
-                              {st.services.map((svc, sIdx) => (
-                                <div key={sIdx}>- {svc}</div>
-                              ))}
+                          <div className="flex items-center gap-2.5">
+                            <Avatar src={st.avatar} name={st.name} size={34} color="#EC4899" />
+                            <div>
+                              <div className="font-semibold text-white text-xs">{st.name}</div>
+                              <div className="text-[10px] text-slate-400">{st.services.join(', ')}</div>
                             </div>
                           </div>
-
-                          {/* Reviewed badge */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-400">
-                              {lang === 'ENG' ? 'Reviewed:' : 'Đã đánh giá:'}
+                          {currentTip > 0 && (
+                            <span className="font-bold text-amber-400 text-xs bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl">
+                              +{formatVND(currentTip)}
                             </span>
-                            <div className={`px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 text-white ${ratingObj.id === 'poor' ? 'bg-red-500' : 'bg-blue-600'}`}>
-                              <span>{ratingObj.emoji}</span>
-                              <span>{lang === 'ENG' ? ratingObj.labelEn : ratingObj.labelVi}</span>
-                            </div>
-                          </div>
+                          )}
                         </div>
 
-                        {/* Quick Tip Presets */}
-                        <div className="grid grid-cols-5 gap-2">
+                        {/* Preset Buttons */}
+                        <div className="grid grid-cols-5 gap-1.5">
                           {TIP_PRESETS.map((preset) => {
                             const isSelected = currentTip === preset.value && !isCustom;
                             return (
@@ -847,69 +1017,67 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                                 key={preset.value}
                                 type="button"
                                 onClick={() => handleSelectTipPreset(st.id, preset.value)}
-                                className={`relative py-3.5 px-2 rounded-2xl font-black text-xs md:text-sm transition-all text-center flex flex-col items-center justify-center ${
+                                className={`py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all text-center cursor-pointer ${
                                   isSelected
-                                    ? 'bg-[#EBF5FF] text-[#0066FF] ring-2 ring-[#0066FF] shadow-xs'
-                                    : 'bg-[#F1F5F9] text-slate-700 hover:bg-slate-200'
+                                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-105'
+                                    : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10'
                                 }`}
                               >
-                                {isSelected && (
-                                  <span className="absolute -top-2 right-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-bold">
-                                    {lang === 'ENG' ? 'Deselect' : 'Bỏ chọn'}
-                                  </span>
-                                )}
-                                <span>{preset.label}</span>
+                                {preset.label.replace(' đ', '')}
                               </button>
                             );
                           })}
 
-                          {/* Other / Custom Button */}
+                          {/* Custom Button */}
                           <button
                             type="button"
                             onClick={() => {
                               setCustomTipActive(prev => ({ ...prev, [st.id]: true }));
                               setStaffTips(prev => ({ ...prev, [st.id]: 0 }));
                             }}
-                            className={`py-3.5 px-2 rounded-2xl font-black text-xs md:text-sm transition-all text-center flex items-center justify-center ${
+                            className={`py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all text-center cursor-pointer ${
                               isCustom
-                                ? 'bg-[#EBF5FF] text-[#0066FF] ring-2 ring-[#0066FF]'
-                                : 'bg-[#F1F5F9] text-slate-700 hover:bg-slate-200'
+                                ? 'bg-amber-500 text-slate-950 shadow-md'
+                                : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10'
                             }`}
                           >
                             {lang === 'ENG' ? 'Other' : 'Khác'}
                           </button>
                         </div>
 
-                        {/* Custom Tip Input if active */}
+                        {/* Custom Input */}
                         {isCustom && (
-                          <div className="pt-1 flex items-center gap-2">
+                          <div className="flex items-center gap-2 pt-1">
                             <input
                               type="number"
                               value={customTipInputs[st.id] || ''}
                               onChange={(e) => handleCustomTipChange(st.id, e.target.value)}
-                              placeholder={lang === 'ENG' ? 'Enter tip amount (VND)...' : 'Nhập số tiền tip (VNĐ)...'}
-                              className="flex-1 h-12 px-4 rounded-xl border border-blue-300 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                              placeholder={lang === 'ENG' ? 'Enter tip amount...' : 'Nhập số tiền tip...'}
+                              className="flex-1 h-10 px-3.5 rounded-xl bg-white/5 border border-amber-500/40 text-xs font-semibold text-white outline-none focus:ring-2 focus:ring-amber-500/20"
                             />
-                            <span className="text-xs font-bold text-slate-400">VNĐ</span>
+                            <span className="text-xs font-bold text-amber-400 font-mono">VNĐ</span>
                           </div>
                         )}
+
                       </div>
                     );
                   })}
                 </div>
+
               </div>
 
-              {/* Bottom Proceed to Payment */}
-              <div className="pt-6 max-w-md mx-auto w-full space-y-2">
+              {/* Bottom Complete Actions */}
+              <div className="pt-4 max-w-md mx-auto w-full space-y-2">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleFinalSubmit}
-                  className="w-full h-14 rounded-2xl bg-[#0066FF] hover:bg-[#0052CC] active:scale-[0.99] text-white font-extrabold text-base uppercase tracking-wider shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="w-full h-12 rounded-2xl bg-pink-500 hover:bg-pink-600 active:scale-[0.99] text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  <span>{lang === 'ENG' ? 'PROCEED TO PAYMENT' : 'TIẾP TỤC THANH TOÁN'}</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <span>{isSubmitting ? (lang === 'ENG' ? 'Submitting...' : 'Đang gửi...') : (lang === 'ENG' ? 'COMPLETE & SUBMIT' : 'HOÀN TẤT ĐÁNH GIÁ')}</span>
+                  <CheckCircle2 className="w-4 h-4" />
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -918,53 +1086,64 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                     setStaffTips(zeros);
                     handleFinalSubmit();
                   }}
-                  className="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                  className="w-full py-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
                 >
-                  {lang === 'ENG' ? 'Skip tip & proceed' : 'Bỏ qua tiền tip & tiếp tục'}
+                  {lang === 'ENG' ? 'No tip, complete evaluation' : 'Không thưởng tip, hoàn tất đánh giá'}
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 5: SUMMARY & THANK YOU SCREEN
+              STEP 5: THANK YOU & VERIFIED SUMMARY SCREEN
              ======================================================== */}
           {step === 'success' && (
-            <div className="p-8 md:p-12 flex flex-col items-center justify-center flex-1 text-center space-y-6">
-              <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center animate-bounce shadow-xs">
-                <CheckCircle2 className="w-12 h-12 stroke-[2.5]" />
+            <div className="p-6 md:p-10 flex flex-col items-center justify-center flex-1 text-center space-y-6 animate-in zoom-in-95 duration-200">
+              
+              <div className="relative">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30">
+                  <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
+                </div>
+                <Sparkles className="w-5 h-5 text-amber-400 absolute -top-1 -right-1 animate-bounce" />
               </div>
 
-              <div className="space-y-2 max-w-md">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase">
-                  {lang === 'ENG' ? 'THANK YOU FOR YOUR FEEDBACK!' : 'CẢM ƠN QUÝ KHÁCH ĐÃ ĐÁNH GIÁ!'}
+              <div className="space-y-1.5 max-w-sm">
+                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                  {lang === 'ENG' ? 'Thank You Very Much!' : 'Cảm Ơn Quý Khách!'}
                 </h1>
-                <p className="text-xs md:text-sm text-slate-500 font-medium leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   {lang === 'ENG'
-                    ? 'Your feedback and tip details have been sent to the receptionist desk. We hope to see you again soon!'
-                    : 'Ý kiến đóng góp và thông tin tip đã được chuyển đến quầy thu ngân. Rất hân hạnh được phục vụ quý khách lần tới!'}
+                    ? 'Your feedback has been recorded in real-time. We look forward to serving you again!'
+                    : 'Ý kiến đánh giá và tiền tip của bạn đã được cập nhật trực tiếp vào hoá đơn. Rất hân hạnh được phục vụ quý khách!'}
                 </p>
               </div>
 
-              {/* Summary of final payment */}
-              <div className="w-full max-w-sm bg-slate-50 rounded-2xl p-5 border border-slate-150 text-xs space-y-2 text-left">
-                <div className="flex justify-between text-slate-600 font-semibold">
-                  <span>{lang === 'ENG' ? 'Invoice total:' : 'Tiền dịch vụ:'}</span>
-                  <span className="font-bold text-slate-800">{formatVND(grandTotal)}</span>
+              {/* Receipt final summary */}
+              <div className="w-full max-w-sm bg-slate-800/80 rounded-2xl p-4 border border-white/10 text-xs space-y-2 text-left">
+                <div className="flex justify-between text-slate-400">
+                  <span>{lang === 'ENG' ? 'Service total:' : 'Tiền dịch vụ:'}</span>
+                  <span className="text-white font-medium">{formatVND(grandTotal)}</span>
                 </div>
                 {Object.values(staffTips).reduce((a, b) => a + (Number(b) || 0), 0) > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-bold">
-                    <span>{lang === 'ENG' ? 'Total tip:' : 'Tổng tiền tip:'}</span>
+                  <div className="flex justify-between text-amber-400 font-semibold">
+                    <span>{lang === 'ENG' ? 'Staff tip bonus:' : 'Tiền tip thưởng KTV:'}</span>
                     <span>+{formatVND(Object.values(staffTips).reduce((a, b) => a + (Number(b) || 0), 0))}</span>
                   </div>
                 )}
-                <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-black text-slate-800">
-                  <span>{lang === 'ENG' ? 'Grand total:' : 'Tổng thanh toán:'}</span>
-                  <span className="text-blue-600">
+                <div className="pt-2 border-t border-white/10 flex justify-between items-baseline text-sm font-bold text-white">
+                  <span>{lang === 'ENG' ? 'Final Payment:' : 'Tổng hoá đơn:'}</span>
+                  <span className="text-pink-400">
                     {formatVND(grandTotal + Object.values(staffTips).reduce((a, b) => a + (Number(b) || 0), 0))}
                   </span>
                 </div>
               </div>
+
+              <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{lang === 'ENG' ? 'Verified by GloPro Salon Management System' : 'Được xác nhận bởi hệ thống quản lý GloPro'}</span>
+              </div>
+
             </div>
           )}
 
@@ -972,27 +1151,28 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
       </main>
 
       {/* ========================================================
-          DATE OF BIRTH WHEEL PICKER MODAL (Screen 2)
+          DATE OF BIRTH WHEEL PICKER MODAL (Wheel Picker)
          ======================================================== */}
       {dobModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center space-y-6 shadow-2xl border border-slate-100">
-            <h2 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight">
-              {lang === 'ENG' ? 'PLEASE SELECT YOUR DATE OF BIRTH' : 'VUI LÒNG CHỌN NGÀY SINH'}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
+          <div className="bg-slate-900 rounded-3xl p-6 max-w-sm w-full text-center space-y-5 shadow-2xl border border-white/15">
+            <h3 className="text-sm font-bold text-white uppercase tracking-tight">
+              {lang === 'ENG' ? 'Select Date of Birth' : 'Chọn Ngày Tháng Năm Sinh'}
+            </h3>
 
             {/* 3 Wheel Columns: Day / Month / Year */}
-            <div className="grid grid-cols-3 gap-2 py-4 border-y border-slate-100 font-bold">
-              {/* Day column */}
-              <div className="h-44 overflow-y-auto space-y-2 no-scrollbar py-16 scroll-smooth">
+            <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-xs">
+              
+              {/* Day Column */}
+              <div className="h-44 overflow-y-auto space-y-2 py-16 scroll-smooth">
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                   <div
                     key={d}
                     onClick={() => setTempDay(d)}
-                    className={`py-1.5 cursor-pointer text-sm md:text-base transition-all ${
+                    className={`py-1 cursor-pointer transition-all ${
                       tempDay === d 
-                        ? 'text-blue-600 font-black text-lg scale-110' 
-                        : 'text-slate-400 hover:text-slate-600'
+                        ? 'text-pink-400 font-bold text-base scale-110' 
+                        : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
                     {d}
@@ -1000,18 +1180,18 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                 ))}
               </div>
 
-              {/* Month column */}
-              <div className="h-44 overflow-y-auto space-y-2 no-scrollbar py-16 scroll-smooth">
+              {/* Month Column */}
+              <div className="h-44 overflow-y-auto space-y-2 py-16 scroll-smooth">
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
                   const mName = lang === 'ENG' ? MONTH_NAMES_EN[m - 1] : MONTH_NAMES_VI[m - 1];
                   return (
                     <div
                       key={m}
                       onClick={() => setTempMonth(m)}
-                      className={`py-1.5 cursor-pointer text-sm md:text-base transition-all ${
+                      className={`py-1 cursor-pointer transition-all ${
                         tempMonth === m 
-                          ? 'text-blue-600 font-black text-lg scale-110' 
-                          : 'text-slate-400 hover:text-slate-600'
+                          ? 'text-pink-400 font-bold text-base scale-110' 
+                          : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
                       {mName}
@@ -1020,35 +1200,37 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
                 })}
               </div>
 
-              {/* Year column */}
-              <div className="h-44 overflow-y-auto space-y-2 no-scrollbar py-16 scroll-smooth">
+              {/* Year Column */}
+              <div className="h-44 overflow-y-auto space-y-2 py-16 scroll-smooth">
                 {Array.from({ length: 70 }, (_, i) => 2026 - i).map((y) => (
                   <div
                     key={y}
                     onClick={() => setTempYear(y)}
-                    className={`py-1.5 cursor-pointer text-sm md:text-base transition-all ${
+                    className={`py-1 cursor-pointer transition-all ${
                       tempYear === y 
-                        ? 'text-blue-600 font-black text-lg scale-110' 
-                        : 'text-slate-400 hover:text-slate-600'
+                        ? 'text-pink-400 font-bold text-base scale-110' 
+                        : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
                     {y}
                   </div>
                 ))}
               </div>
+
             </div>
 
             {/* Confirm Button */}
             <button
               type="button"
               onClick={handleConfirmDob}
-              className="w-full h-12 rounded-xl bg-[#0066FF] hover:bg-[#0052CC] text-white font-extrabold text-sm uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all"
+              className="w-full h-11 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-pink-500/20 transition-all cursor-pointer"
             >
               {lang === 'ENG' ? 'Confirm' : 'Xác nhận'}
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }
