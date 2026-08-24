@@ -70,8 +70,9 @@ export default function FeedbackView() {
     loadData();
   }, [currentBranchId]);
 
-  // Realtime Supabase Broadcast listener for new reviews
+  // Realtime Supabase Broadcast & LocalStorage listener for new reviews
   useEffect(() => {
+    // 1. Supabase Broadcast Channel
     const channel = supabase.channel('glopro_feedback_global')
       .on('broadcast', { event: 'status_change' }, (payload) => {
         if (payload?.payload?.status === 'done') {
@@ -81,14 +82,25 @@ export default function FeedbackView() {
       })
       .subscribe();
 
+    // 2. Local storage / window custom event listener
+    const handleLocalReview = (e) => {
+      loadData(true);
+    };
+
+    window.addEventListener('glopro_feedback_received', handleLocalReview);
+    window.addEventListener('storage', handleLocalReview);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('glopro_feedback_received', handleLocalReview);
+      window.removeEventListener('storage', handleLocalReview);
     };
   }, [t]);
 
-  // Parse review data from invoices
+  // Parse review data from invoices & logs
   const feedbackItems = useMemo(() => {
     const list = [];
+    const processedInvoiceIds = new Set();
 
     invoices.forEach(inv => {
       let rData = inv.review_data;
@@ -100,10 +112,33 @@ export default function FeedbackView() {
         }
       }
 
+      // Fallback 1: Extract from invoice logs if review_data column not populated
+      if (!rData && inv.logs) {
+        let pLogs = inv.logs;
+        if (typeof pLogs === 'string') {
+          try { pLogs = JSON.parse(pLogs); } catch (e) { pLogs = []; }
+        }
+        if (Array.isArray(pLogs)) {
+          const revLog = pLogs.find(l => l && (l.type === 'customer_review' || l.review_data));
+          if (revLog) {
+            rData = revLog.review_data;
+          }
+        }
+      }
+
+      // Fallback 2: Extract from localStorage for this specific invoice
+      if (!rData && typeof window !== 'undefined') {
+        const localRev = localStorage.getItem(`glopro_review_${inv.id}`);
+        if (localRev) {
+          try { rData = JSON.parse(localRev); } catch (e) {}
+        }
+      }
+
       // Check if invoice has review data or ratings
       if (rData && (rData.ratings || rData.status === 'done')) {
+        processedInvoiceIds.add(String(inv.id));
         const ratings = rData.ratings || {};
-        const poorReasons = rData.poorReasons || {};
+        const poorReasons = rData.poorReasons || rData.reasons || {};
         const tipSplits = rData.tipSplits || inv.tip_splits || [];
         const tip = inv.tip || rData.tip || 0;
         
@@ -114,9 +149,9 @@ export default function FeedbackView() {
         Object.entries(ratings).forEach(([staffId, scoreKey]) => {
           const staffObj = staffList.find(s => s.id === staffId);
           const staffName = staffObj?.full_name || staffObj?.name || (inv.items || []).find(i => i.staff_id === staffId)?.staff_name || t('feedback.default_staff_title', 'Kỹ thuật viên');
-          const staffServices = (inv.items || []).filter(i => i.staff_id === staffId).map(i => i.name);
+          const staffServices = (inv.items || []).filter(i => i.staff_id === staffId).map(i => i.name || i.service_name || 'Dịch vụ');
           const staffTip = tipSplits.find(ts => ts.staff_id === staffId || ts.staffId === staffId)?.amount || 0;
-          const reasons = poorReasons[staffId] || [];
+          const reasons = Array.isArray(poorReasons[staffId]) ? poorReasons[staffId] : [];
 
           list.push({
             id: `${inv.id}_${staffId}`,
@@ -130,7 +165,7 @@ export default function FeedbackView() {
             staffName,
             staffAvatar: staffObj?.avatar_url,
             staffRole: staffObj?.role,
-            staffServices: staffServices.length > 0 ? staffServices : (inv.items || []).map(i => i.name),
+            staffServices: staffServices.length > 0 ? staffServices : (inv.items || []).map(i => i.name || i.service_name || 'Dịch vụ'),
             scoreKey,
             ratingScore: EMOJI_CONFIG[scoreKey]?.score || 4,
             poorReasons: reasons,
@@ -157,7 +192,7 @@ export default function FeedbackView() {
             customerPhone: inv.customer_phone || '—',
             staffId: 'general',
             staffName: t('feedback.general_service_team', 'Toàn bộ ca phục vụ'),
-            staffServices: (inv.items || []).map(i => i.name),
+            staffServices: (inv.items || []).map(i => i.name || i.service_name || 'Dịch vụ'),
             scoreKey: 'good',
             ratingScore: 4,
             poorReasons: [],
@@ -175,8 +210,59 @@ export default function FeedbackView() {
       }
     });
 
+    // Fallback 3: Check glopro_feedback_cache in localStorage for newly submitted reviews not yet in server list
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = JSON.parse(localStorage.getItem('glopro_feedback_cache') || '[]');
+        cached.forEach(cItem => {
+          if (cItem && cItem.invoiceId && !processedInvoiceIds.has(String(cItem.invoiceId)) && cItem.status === 'done') {
+            const ratings = cItem.ratings || {};
+            const poorReasons = cItem.poorReasons || cItem.reasons || {};
+            const tipSplits = cItem.tipSplits || [];
+            const tip = cItem.tip || 0;
+            const reviewDate = cItem.reviewedAt || cItem.savedAt || new Date().toISOString();
+
+            Object.entries(ratings).forEach(([staffId, scoreKey]) => {
+              const staffObj = staffList.find(s => s.id === staffId);
+              const staffName = staffObj?.full_name || staffObj?.name || t('feedback.default_staff_title', 'Kỹ thuật viên');
+              const staffTip = tipSplits.find(ts => ts.staff_id === staffId || ts.staffId === staffId)?.amount || 0;
+              const reasons = Array.isArray(poorReasons[staffId]) ? poorReasons[staffId] : [];
+
+              list.push({
+                id: `${cItem.invoiceId}_${staffId}_cached`,
+                invoiceId: cItem.invoiceId,
+                invoiceCode: String(cItem.invoiceId).slice(-6),
+                customerName: cItem.customerInfo?.name || t('feedback.walk_in_guest', 'Khách vãng lai'),
+                customerPhone: cItem.customerInfo?.phone || '—',
+                customerEmail: cItem.customerInfo?.email || '—',
+                customerDob: cItem.customerInfo?.dob || '—',
+                staffId,
+                staffName,
+                staffAvatar: staffObj?.avatar_url,
+                staffRole: staffObj?.role,
+                staffServices: ['Dịch vụ salon'],
+                scoreKey,
+                ratingScore: EMOJI_CONFIG[scoreKey]?.score || 4,
+                poorReasons: reasons,
+                customReason: cItem.customReason || '',
+                tip: staffTip > 0 ? staffTip : (Object.keys(ratings).length === 1 ? tip : 0),
+                totalInvoiceTip: tip,
+                invoiceTotal: 0,
+                date: reviewDate,
+                branchId: currentBranchId,
+                isResolved: cItem.isResolved || false,
+                resolutionNote: cItem.resolutionNote || '',
+                rawInvoice: { id: cItem.invoiceId, invoice_code: String(cItem.invoiceId).slice(-6) },
+                rawReviewData: cItem
+              });
+            });
+          }
+        });
+      } catch (e) {}
+    }
+
     return list.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [invoices, staffList, EMOJI_CONFIG, t]);
+  }, [invoices, staffList, EMOJI_CONFIG, currentBranchId, t]);
 
   // Date Filter helper
   const filteredFeedbacks = useMemo(() => {
@@ -317,11 +403,44 @@ export default function FeedbackView() {
         resolvedAt: new Date().toISOString()
       };
 
-      await base44.entities.Invoice.update(inv.id, {
-        cskh_resolved: true,
-        cskh_note: resolutionNote,
+      // Append resolution note to invoice logs
+      let invLogs = inv?.logs || [];
+      if (typeof invLogs === 'string') {
+        try { invLogs = JSON.parse(invLogs); } catch (e) { invLogs = []; }
+      }
+      if (!Array.isArray(invLogs)) invLogs = [];
+
+      invLogs.push({
+        id: `cskh_${Date.now()}`,
+        type: 'cskh_resolution',
+        action: 'Xử lý khiếu nại khách hàng',
+        details: resolutionNote,
+        time: new Date().toISOString(),
+        user: 'CSKH',
         review_data: updatedReviewData
       });
+
+      if (inv && inv.id) {
+        await base44.entities.Invoice.update(inv.id, {
+          cskh_resolved: true,
+          cskh_note: resolutionNote,
+          logs: JSON.stringify(invLogs),
+          review_data: updatedReviewData
+        }).catch(e => console.warn('Could not update invoice resolution in db:', e));
+      }
+
+      // Update localStorage cache
+      try {
+        localStorage.setItem(`glopro_review_${selectedFeedback.invoiceId}`, JSON.stringify(updatedReviewData));
+        const cached = JSON.parse(localStorage.getItem('glopro_feedback_cache') || '[]');
+        const updatedCache = cached.map(item => {
+          if (item && item.invoiceId === selectedFeedback.invoiceId) {
+            return { ...item, ...updatedReviewData };
+          }
+          return item;
+        });
+        localStorage.setItem('glopro_feedback_cache', JSON.stringify(updatedCache));
+      } catch (e) {}
 
       toast.success(t('feedback.toast_save_success', 'Đã lưu ghi chú xử lý khiếu nại thành công!'));
       setSelectedFeedback(null);

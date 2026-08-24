@@ -179,6 +179,7 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
 
   // Broadcast realtime status helper (both Supabase Channel & LocalStorage)
   const broadcastStatus = (statusPayload) => {
+    // 1. Channel for specific invoice review (POS/TicketColumn/ReviewQRModal)
     try {
       const channel = supabase.channel(`glopro_review_${id}`);
       channel.send({
@@ -188,12 +189,36 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
       }).catch(() => {});
     } catch (e) {}
 
+    // 2. Global channel for Feedback Dashboard
+    try {
+      const globalChannel = supabase.channel('glopro_feedback_global');
+      globalChannel.send({
+        type: 'broadcast',
+        event: 'status_change',
+        payload: statusPayload,
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 3. LocalStorage cross-tab & same-window event sync
     try {
       localStorage.setItem(`glopro_review_${id}`, JSON.stringify(statusPayload));
+      
+      if (statusPayload.status === 'done') {
+        const cached = JSON.parse(localStorage.getItem('glopro_feedback_cache') || '[]');
+        const filtered = cached.filter(f => f && f.invoiceId !== id);
+        filtered.unshift({
+          ...statusPayload,
+          id: `${id}_${Date.now()}`,
+          savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('glopro_feedback_cache', JSON.stringify(filtered.slice(0, 100)));
+      }
+
       window.dispatchEvent(new StorageEvent('storage', {
         key: `glopro_review_${id}`,
         newValue: JSON.stringify(statusPayload)
       }));
+      window.dispatchEvent(new CustomEvent('glopro_feedback_received', { detail: statusPayload }));
     } catch (e) {}
   };
 
@@ -381,20 +406,37 @@ export default function CustomerReview({ reviewId: reviewIdProp } = {}) {
         }
       };
 
-      // 2. Update invoice in database with tip and customer
+      // 2. Append review data to invoice logs to guarantee persistence in database
+      let currentLogs = invoice.logs;
+      if (typeof currentLogs === 'string') {
+        try { currentLogs = JSON.parse(currentLogs); } catch (e) { currentLogs = []; }
+      }
+      if (!Array.isArray(currentLogs)) currentLogs = [];
+
+      currentLogs = currentLogs.filter(l => l && l.type !== 'customer_review');
+      currentLogs.push({
+        id: `review_${Date.now()}`,
+        type: 'customer_review',
+        action: 'Khách hàng đánh giá dịch vụ',
+        details: `Đã chấm điểm cho ${Object.keys(staffRatings).length} nhân viên • Tiền tip: ${formatVND(totalTip)}`,
+        time: new Date().toISOString(),
+        user: customerName || 'Khách hàng',
+        review_data: reviewPayload
+      });
+
       const netTotal = (invoice.subtotal || invoice.total || 0) - (invoice.discount || 0);
       await base44.entities.Invoice.update(invoice.id, {
         tip: totalTip,
         total: netTotal + totalTip,
         tip_splits: tipSplits,
-        customer_id: savedCust?.id || invoice.customer_id || '',
+        customer_id: savedCust?.id || invoice.customer_id || null,
         customer_name: customerName || savedCust?.name || invoice.customer_name || 'Khách vãng lai',
         customer_phone: customerPhone || savedCust?.phone || invoice.customer_phone || '',
-        customer: savedCust || null,
+        logs: JSON.stringify(currentLogs),
         review_data: reviewPayload
       }).catch(e => console.warn('Could not update invoice in db:', e));
 
-      // 3. Broadcast done state to POS
+      // 3. Broadcast done state to POS and Feedback module
       broadcastStatus(reviewPayload);
 
       setIsSubmitting(false);
