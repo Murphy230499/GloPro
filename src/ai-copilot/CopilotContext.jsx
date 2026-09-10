@@ -11,8 +11,8 @@ const defaultCopilotState = {
   selectedInvoice: null,
   selectedAppointment: null,
   selectedEmployee: null,
-  currentUser: { id: 'usr_001', name: 'Minh Thu (Chủ Salon)', role: 'owner' },
-  salonBranch: { id: 'branch_main', name: 'GloPro Salon & Spa Center - Chi nhánh 1' },
+  currentUser: { id: 'current_user', name: 'Chủ tài khoản', role: 'owner' },
+  salonBranch: { id: 'current_branch', name: 'Chi nhánh chính' },
   currentFilters: {},
   currentSearch: '',
   currentPermissions: ['*']

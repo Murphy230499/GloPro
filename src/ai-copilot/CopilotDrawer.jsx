@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
+import { useBranch } from '@/lib/BranchContext';
 import { useCopilot } from './CopilotContext';
 import { 
   Bot, 
@@ -22,19 +24,81 @@ import {
 
 export function CopilotDrawer() {
   const router = useRouter();
-  const { copilotState, copilotEngine } = useCopilot();
+  const { copilotState, copilotEngine, updateCopilotState } = useCopilot();
+  
+  let authUser = null;
+  try {
+    const auth = useAuth();
+    authUser = auth?.user;
+  } catch (e) {
+    // ignore if context not mounted yet
+  }
+
+  let branchData = null;
+  try {
+    const branch = useBranch();
+    branchData = branch?.currentBranch;
+  } catch (e) {
+    // ignore
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [activeModel, setActiveModel] = useState('Gemini AI');
+  
+  const initialName = authUser?.full_name || authUser?.name || 'bạn';
+  const initialBranch = branchData?.name || 'Hệ thống GloPro';
+  
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Xin chào ${copilotState.currentUser?.name || 'bạn'}! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi hiểu toàn bộ ngữ cảnh tại **${copilotState.salonBranch?.name || 'Salon'}** và có thể **tự động thao tác phần mềm** theo lệnh của bạn: đặt lịch, tạo bill, tìm/thêm khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
+      content: `Xin chào ${initialName}! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi hiểu toàn bộ ngữ cảnh tài khoản của bạn tại **${initialBranch}** và có thể **tự động thao tác phần mềm** theo lệnh: đặt lịch, tạo bill, thêm chi nhánh/khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
     }
   ]);
+
+  // Sync logged in account and active branch into Copilot State
+  useEffect(() => {
+    if (authUser || branchData) {
+      updateCopilotState({
+        ...(authUser ? {
+          currentUser: {
+            id: authUser.id,
+            name: authUser.full_name || authUser.name || authUser.email?.split('@')[0] || 'Chủ tài khoản',
+            email: authUser.email,
+            role: authUser.role || 'owner'
+          }
+        } : {}),
+        ...(branchData ? {
+          salonBranch: {
+            id: branchData.id,
+            name: branchData.name,
+            address: branchData.address
+          }
+        } : {})
+      });
+    }
+  }, [authUser?.id, authUser?.full_name, authUser?.email, branchData?.id, branchData?.name]);
+
+  // Update initial welcome message to address the real logged-in user name
+  useEffect(() => {
+    const realName = authUser?.full_name || authUser?.name;
+    const realBranch = branchData?.name || copilotState.salonBranch?.name;
+    if (realName) {
+      setMessages(prev => {
+        if (prev.length === 1 && prev[0].id === 'welcome') {
+          return [{
+            id: 'welcome',
+            role: 'assistant',
+            content: `Xin chào **${realName}**! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi đang kết nối với tài khoản của bạn tại **${realBranch || 'Salon'}** và có thể **tự động thao tác phần mềm** theo lệnh: đặt lịch, tạo bill, thêm chi nhánh/khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
+          }];
+        }
+        return prev;
+      });
+    }
+  }, [authUser?.full_name, branchData?.name]);
 
   const messagesEndRef = useRef(null);
 
