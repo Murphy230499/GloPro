@@ -174,23 +174,14 @@ export class CopilotEngine {
         navigateTo: data.navigateTo
       };
     } catch (apiErr: any) {
-      this.logger.warn(`Gemini API Route failed, falling back to local agents: ${apiErr.message}`);
-
-      // Fallback to local rule-based agents if API route is unreachable
-      const agentContext = this.contextManager.createContext({
-        sessionId: `copilot_session_${Date.now()}`,
-        userId: copilotState.currentUser.id,
-        tenantId: copilotState.salonBranch.id,
-        roles: [copilotState.currentUser.role],
-        permissions: copilotState.currentPermissions || ['*'],
-        metadata: payload.context
-      });
-
-      const selectedAgent = (await this.agentRouter.route(contextResolution.resolvedQuery, agentContext)) || this.agentRegistry.getAgent('agent_customer_management')!;
-      const fallbackResp = await selectedAgent.execute(contextResolution.resolvedQuery, agentContext);
-
+      this.logger.error(`Gemini Copilot Error: ${apiErr.message}`);
       return {
-        response: fallbackResp,
+        response: {
+          sessionId: `err_${Date.now()}`,
+          content: `❌ **Lỗi xử lý yêu cầu:** ${apiErr.message || 'Không thể kết nối máy chủ Gemini.'}`,
+          toolCallsExecuted: [],
+          metadata: { error: true }
+        },
         contextResolution
       };
     }

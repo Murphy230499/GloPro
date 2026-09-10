@@ -523,8 +523,8 @@ QUY TẮC HOẠT ĐỘNG:
       parts: [{ text: message }]
     });
 
-    // Dynamic Model Selection with automatic fallback
-    const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview'];
+    // Dynamic Model Selection with automatic fallback (prioritize high-quota models)
+    const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-3.8-flash', 'gemini-3.6-flash'];
     let selectedModel = candidateModels[0];
     let executedTools = [];
     let navigateTo = null;
@@ -569,34 +569,46 @@ QUY TẮC HOẠT ĐỘNG:
         }
 
         functionResponses.push({
-          response: {
-            name,
-            content: toolResult
-          }
+          name,
+          id: call.id,
+          response: toolResult
         });
       }
 
-      // Feed tool results back to Gemini for the final response
-      const updatedContents = [
-        ...contents,
-        candidate.content,
-        {
-          role: 'user',
-          parts: functionResponses.map(fr => ({
-            functionResponse: fr.response
-          }))
-        }
-      ];
+      // Feed tool results back to Gemini for the final conversational response
+      let finalContent = '';
+      try {
+        const updatedContents = [
+          ...contents,
+          candidate.content,
+          {
+            role: 'user',
+            parts: functionResponses.map(fr => ({
+              functionResponse: {
+                name: fr.name,
+                ...(fr.id ? { id: fr.id } : {}),
+                response: fr.response
+              }
+            }))
+          }
+        ];
 
-      const followUp = await ai.models.generateContent({
-        model: selectedModel,
-        contents: updatedContents,
-        config: {
-          systemInstruction
-        }
-      });
+        const followUp = await ai.models.generateContent({
+          model: selectedModel,
+          contents: updatedContents,
+          config: {
+            systemInstruction
+          }
+        });
 
-      const finalContent = followUp?.text || 'Đã thực hiện xong thao tác của bạn.';
+        finalContent = followUp?.text || '';
+      } catch (followErr) {
+        console.warn('[Gemini followUp error, using tool message]:', followErr.message);
+      }
+
+      if (!finalContent) {
+        finalContent = executedTools.map(t => t.result?.message || `Đã thực thi thành công: ${t.name}`).join('\n');
+      }
 
       return NextResponse.json({
         content: finalContent,
