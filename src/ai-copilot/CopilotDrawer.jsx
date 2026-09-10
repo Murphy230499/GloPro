@@ -32,7 +32,7 @@ export function CopilotDrawer() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Xin chào ${copilotState.currentUser?.name || 'bạn'}! 🤖 Tôi là **GloPro AI Copilot** (kết nối **Google Gemini**).\n\nTôi hiểu toàn bộ ngữ cảnh tại **${copilotState.salonBranch?.name || 'Salon'}** và có thể **tự động thao tác phần mềm** theo lệnh của bạn: đặt lịch, tạo bill, tìm/thêm khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
+      content: `Xin chào ${copilotState.currentUser?.name || 'bạn'}! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi hiểu toàn bộ ngữ cảnh tại **${copilotState.salonBranch?.name || 'Salon'}** và có thể **tự động thao tác phần mềm** theo lệnh của bạn: đặt lịch, tạo bill, tìm/thêm khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
     }
   ]);
 
@@ -179,7 +179,7 @@ export function CopilotDrawer() {
         <button
           onClick={() => setIsOpen(true)}
           className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 border-2 border-white/20 group relative cursor-pointer"
-          title="GloPro AI Copilot (Gemini 2.5 Pro)"
+          title="GloPro AI"
         >
           <div className="relative w-6 h-6 flex items-center justify-center">
             <Sparkles className="w-6 h-6 text-amber-300 animate-pulse absolute inset-0 transition-opacity group-hover:opacity-0" />
@@ -202,7 +202,7 @@ export function CopilotDrawer() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  GloPro AI Copilot
+                  GloPro AI
                   <span className="text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded-full flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     {activeModel}
