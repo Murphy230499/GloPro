@@ -156,6 +156,47 @@ const toolDeclarations = [
       },
       required: ['page']
     }
+  },
+  {
+    name: 'branch_create',
+    description: 'Tạo một chi nhánh mới cho salon trong hệ thống phần mềm (ví dụ: tạo chi nhánh Mango 1).',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: 'Tên chi nhánh (ví dụ: Mango 1)' },
+        address: { type: Type.STRING, description: 'Địa chỉ của chi nhánh' },
+        phone: { type: Type.STRING, description: 'Số điện thoại chi nhánh' },
+        city: { type: Type.STRING, description: 'Thành phố hoặc tỉnh' },
+        manager_name: { type: Type.STRING, description: 'Tên quản lý chi nhánh nếu có' }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'service_create',
+    description: 'Tạo dịch vụ làm đẹp mới cho salon/spa (ví dụ: Cắt tóc nam, Gội đầu dưỡng sinh...).',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: 'Tên dịch vụ mới' },
+        price: { type: Type.NUMBER, description: 'Giá dịch vụ (VND)' },
+        duration_minutes: { type: Type.NUMBER, description: 'Thời lượng dịch vụ tính bằng phút (mặc định 45)' }
+      },
+      required: ['name', 'price']
+    }
+  },
+  {
+    name: 'staff_create',
+    description: 'Thêm nhân viên / thợ làm mới vào salon.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: 'Họ tên nhân viên' },
+        phone: { type: Type.STRING, description: 'Số điện thoại nhân viên' },
+        role: { type: Type.STRING, description: 'Vị trí/vai trò: Thợ chính, Thợ phụ, Thu ngân, Quản lý' }
+      },
+      required: ['name', 'phone']
+    }
   }
 ];
 
@@ -376,6 +417,45 @@ async function executeTool(name, args, context) {
           navigateTo: args.page,
           message: `Đang chuyển màn hình tới: ${args.page_title || args.page}`
         };
+      }
+
+      case 'branch_create': {
+        const payload = {
+          name: args.name,
+          address: args.address || 'Đang cập nhật',
+          phone: args.phone || '0900000000',
+          city: args.city || 'Hồ Chí Minh',
+          manager_name: args.manager_name || 'Quản lý',
+          is_active: true,
+          timezone: 'GMT+07:00',
+          currency: 'VND',
+          language: 'vi'
+        };
+        const res = await base44.entities.Branch.create(payload);
+        return { success: true, branch: res, message: `Đã tạo chi nhánh mới thành công: "${args.name}"` };
+      }
+
+      case 'service_create': {
+        const payload = {
+          name: args.name,
+          price: Number(args.price) || 100000,
+          duration_minutes: Number(args.duration_minutes) || 45,
+          is_active: true
+        };
+        const res = await base44.entities.Service.create(payload);
+        return { success: true, service: res, message: `Đã tạo dịch vụ mới: "${args.name}" (${payload.price.toLocaleString('vi-VN')} đ)` };
+      }
+
+      case 'staff_create': {
+        const payload = {
+          name: args.name,
+          full_name: args.name,
+          phone: args.phone,
+          role: args.role || 'Thợ chính',
+          is_active: true
+        };
+        const res = await base44.entities.Staff.create(payload);
+        return { success: true, staff: res, message: `Đã thêm nhân viên mới: "${args.name}" (${payload.role})` };
       }
 
       default:

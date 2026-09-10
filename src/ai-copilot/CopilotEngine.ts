@@ -93,11 +93,19 @@ export class CopilotEngine {
     const contextResolution = resolveContextualReferences(rawQuery, copilotState);
     this.logger.info(`Copilot Query Resolved: "${rawQuery}" -> "${contextResolution.resolvedQuery}"`);
 
-    // 2. Extract recent conversation history from memory
-    const recentHistory = this.memory.getRecentMessages(6).map(m => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.content
-    }));
+    // 2. Extract recent conversation history from memory safely
+    let recentHistory: Array<{ role: string; content: string }> = [];
+    try {
+      if (this.memory && typeof this.memory.getMessages === 'function') {
+        const msgs = await this.memory.getMessages('copilot_session', 6);
+        recentHistory = (msgs || []).map(m => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content
+        }));
+      }
+    } catch (e) {
+      recentHistory = [];
+    }
 
     // 3. Prepare payload for Gemini API Route
     const payload = {
@@ -136,9 +144,15 @@ export class CopilotEngine {
         responseContent = badge + responseContent;
       }
 
-      // Record in memory
-      this.memory.addMessage('user', contextResolution.resolvedQuery);
-      this.memory.addMessage('assistant', responseContent);
+      // Record in memory safely
+      try {
+        if (this.memory && typeof this.memory.addMessage === 'function') {
+          await this.memory.addMessage('copilot_session', { role: 'user', content: contextResolution.resolvedQuery });
+          await this.memory.addMessage('copilot_session', { role: 'assistant', content: responseContent });
+        }
+      } catch (e) {
+        // ignore memory error
+      }
 
       const agentResponse: IAgentResponse = {
         sessionId: `copilot_session_${Date.now()}`,
