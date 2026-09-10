@@ -88,20 +88,25 @@ export class CopilotEngine {
     return this.eventBus;
   }
 
-  async processQuery(rawQuery: string, copilotState: ICopilotState): Promise<{ response: IAgentResponse; contextResolution: IResolvedContextualQuery }> {
+  async processQuery(rawQuery: string, copilotState: ICopilotState): Promise<{ response: IAgentResponse; contextResolution: IResolvedContextualQuery; navigateTo?: string }> {
     // 1. Resolve Contextual References without asking unnecessary questions!
     const contextResolution = resolveContextualReferences(rawQuery, copilotState);
     this.logger.info(`Copilot Query Resolved: "${rawQuery}" -> "${contextResolution.resolvedQuery}"`);
 
-    // 2. Build or Update Runtime Session Context
-    const agentContext = this.contextManager.createContext({
-      sessionId: `copilot_session_${Date.now()}`,
-      userId: copilotState.currentUser.id,
-      tenantId: copilotState.salonBranch.id,
-      roles: [copilotState.currentUser.role],
-      permissions: copilotState.currentPermissions || ['*'],
-      metadata: {
+    // 2. Extract recent conversation history from memory
+    const recentHistory = this.memory.getRecentMessages(6).map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content
+    }));
+
+    // 3. Prepare payload for Gemini API Route
+    const payload = {
+      message: contextResolution.resolvedQuery,
+      history: recentHistory,
+      context: {
         currentPage: copilotState.currentPage,
+        salonBranch: copilotState.salonBranch,
+        currentUser: copilotState.currentUser,
         selectedCustomer: copilotState.selectedCustomer,
         selectedInvoice: copilotState.selectedInvoice,
         selectedAppointment: copilotState.selectedAppointment,
@@ -109,39 +114,71 @@ export class CopilotEngine {
         currentFilters: copilotState.currentFilters,
         currentSearch: copilotState.currentSearch
       }
-    });
+    };
 
-    // 3. Intelligently Route to the best specialized agent
-    const text = contextResolution.resolvedQuery.toLowerCase();
-    let selectedAgent = this.agentRegistry.getAgent('agent_customer_management');
+    try {
+      const res = await fetch('/api/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    if (text.includes('lịch') || text.includes('hẹn') || text.includes('đặt') || text.includes('rảnh')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_appointment_management');
-    } else if (text.includes('hóa đơn') || text.includes('tính tiền') || text.includes('thanh toán') || text.includes('gộp') || text.includes('voucher') || text.includes('giảm giá')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_cashier_pos');
-    } else if (text.includes('lương') || text.includes('chấm công') || text.includes('hoa hồng') || text.includes('nhân viên') || text.includes('nghỉ phép')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_staff_hr');
-    } else if (text.includes('kho') || text.includes('sản phẩm') || text.includes('nhập kho') || text.includes('xuất kho') || text.includes('hạn dùng') || text.includes('nhà cung cấp')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_inventory_warehouse');
-    } else if (text.includes('chiến dịch') || text.includes('marketing') || text.includes('sms') || text.includes('zalo') || text.includes('sinh nhật') || text.includes('phân khúc')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_marketing_engagement');
-    } else if (text.includes('doanh thu') || text.includes('lợi nhuận') || text.includes('báo cáo') || text.includes('dự báo') || text.includes('thống kê') || text.includes('xu hướng')) {
-      selectedAgent = this.agentRegistry.getAgent('agent_analytics_bi');
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      let responseContent = data.content || 'Đã xử lý xong.';
+
+      // Prepend Context Badge to Response if context was automatically resolved
+      if (contextResolution.contextApplied.length > 0) {
+        const badge = `💡 *[Ngữ cảnh nhận diện: ${contextResolution.contextApplied.join(' | ')}]*\n\n`;
+        responseContent = badge + responseContent;
+      }
+
+      // Record in memory
+      this.memory.addMessage('user', contextResolution.resolvedQuery);
+      this.memory.addMessage('assistant', responseContent);
+
+      const agentResponse: IAgentResponse = {
+        sessionId: `copilot_session_${Date.now()}`,
+        content: responseContent,
+        toolCallsExecuted: (data.executedTools || []).map((t: any) => ({
+          toolName: t.name,
+          args: t.args || {},
+          result: t.result
+        })),
+        metadata: {
+          model: data.model || 'gemini-2.5-pro',
+          navigateTo: data.navigateTo
+        }
+      };
+
+      return {
+        response: agentResponse,
+        contextResolution,
+        navigateTo: data.navigateTo
+      };
+    } catch (apiErr: any) {
+      this.logger.warn(`Gemini API Route failed, falling back to local agents: ${apiErr.message}`);
+
+      // Fallback to local rule-based agents if API route is unreachable
+      const agentContext = this.contextManager.createContext({
+        sessionId: `copilot_session_${Date.now()}`,
+        userId: copilotState.currentUser.id,
+        tenantId: copilotState.salonBranch.id,
+        roles: [copilotState.currentUser.role],
+        permissions: copilotState.currentPermissions || ['*'],
+        metadata: payload.context
+      });
+
+      const selectedAgent = (await this.agentRouter.route(contextResolution.resolvedQuery, agentContext)) || this.agentRegistry.getAgent('agent_customer_management')!;
+      const fallbackResp = await selectedAgent.execute(contextResolution.resolvedQuery, agentContext);
+
+      return {
+        response: fallbackResp,
+        contextResolution
+      };
     }
-
-    if (!selectedAgent) {
-      selectedAgent = (await this.agentRouter.route(contextResolution.resolvedQuery, agentContext)) || this.agentRegistry.getAgent('agent_customer_management')!;
-    }
-
-    // 4. Execute Agent Execution Loop
-    const response = await selectedAgent.execute(contextResolution.resolvedQuery, agentContext);
-
-    // 5. Prepend Context Badge to Response if context was automatically resolved
-    if (contextResolution.contextApplied.length > 0) {
-      const badge = `💡 *[AI Context: ${contextResolution.contextApplied.join(' | ')}]*\n\n`;
-      response.content = badge + response.content;
-    }
-
-    return { response, contextResolution };
   }
 }
