@@ -1,0 +1,160 @@
+import { supabase } from './supabaseClient';
+
+/**
+ * All business tables in the system that are strictly isolated by Salon (Tenant).
+ */
+export const TENANT_SCOPED_TABLES = new Set([
+  'appointment',
+  'branch',
+  'customer',
+  'customergroup',
+  'customersegment',
+  'customertier',
+  'customertierhistory',
+  'deposit',
+  'deposit_policy',
+  'deposit_transaction',
+  'facility',
+  'invoice',
+  'loyaltyrule',
+  'membership',
+  'prepaidcard',
+  'product',
+  'productcombo',
+  'service',
+  'servicecombo',
+  'servicegroup',
+  'servicepackage',
+  'treatment',
+  'shift',
+  'shifttemplate',
+  'staff',
+  'staffattendance',
+  'staffcommissionrule',
+  'staffgroup',
+  'staffschedule',
+  'cashvoucher',
+  'cashvouchertype',
+  'bookingsetting',
+  'customer_package',
+  'customer_treatment',
+  'user_profile',
+  'role_permissions',
+  'roles'
+]);
+
+let inMemoryTenantId = null;
+let tenantPromise = null;
+
+/**
+ * Synchronously retrieves cached tenant ID from memory or browser storage.
+ */
+export function getSyncTenantId() {
+  if (inMemoryTenantId) return inMemoryTenantId;
+  if (typeof window !== 'undefined') {
+    const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
+    if (stored) {
+      inMemoryTenantId = stored;
+      return stored;
+    }
+  }
+  return null;
+}
+
+/**
+ * Asynchronously and reliably resolves the current salon Tenant ID.
+ * Follows hierarchy:
+ * 1. user_profile.tenant_id (if assigned)
+ * 2. If user is owner or new user without tenant_id -> user.id
+ * 3. Auto-persists to user_profile and cache
+ */
+export async function resolveTenantId() {
+  const sync = getSyncTenantId();
+  if (sync) return sync;
+
+  if (tenantPromise) return tenantPromise;
+
+  tenantPromise = (async () => {
+    try {
+      const sessionRes = await supabase.auth.getSession();
+      const user = sessionRes.data?.session?.user;
+      if (!user) return null;
+
+      // 1. Query user_profile
+      const { data: profiles, error } = await supabase
+        .from('user_profile')
+        .select('id, email, role, tenant_id')
+        .eq('email', user.email.toLowerCase())
+        .limit(1);
+
+      let profile = profiles?.[0];
+      let tid = profile?.tenant_id;
+
+      if (!tid) {
+        if (!profile) {
+          // Auto create profile for brand new salon owner registering
+          tid = user.id;
+          try {
+            await supabase.from('user_profile').insert([{
+              email: user.email.toLowerCase(),
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+              role: 'owner',
+              status: 'active',
+              type: 'Employee',
+              tenant_id: tid
+            }]);
+          } catch (e) {
+            console.warn('[TenantManager] Failed to auto-create user_profile on signup:', e);
+          }
+        } else if (profile.role === 'owner' || !profile.role) {
+          tid = user.id;
+          try {
+            await supabase.from('user_profile').update({ tenant_id: tid }).eq('id', profile.id);
+          } catch (e) {
+            console.warn('[TenantManager] Failed to update owner tenant_id:', e);
+          }
+        } else {
+          tid = user.id;
+        }
+      }
+
+      if (tid) {
+        inMemoryTenantId = tid;
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('gp_active_tenant_id', tid);
+          localStorage.setItem('gp_active_tenant_id', tid);
+        }
+      }
+      return tid;
+    } catch (e) {
+      console.error('[TenantManager] Error resolving tenant ID:', e);
+      return null;
+    } finally {
+      tenantPromise = null;
+    }
+  })();
+
+  return tenantPromise;
+}
+
+/**
+ * Clears active tenant cache upon user logout.
+ */
+export function clearActiveTenant() {
+  inMemoryTenantId = null;
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('gp_active_tenant_id');
+    localStorage.removeItem('gp_active_tenant_id');
+  }
+}
+
+// Automatically subscribe to auth state changes to keep tenant in sync
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      clearActiveTenant();
+    } else if (session?.user) {
+      resolveTenantId().catch(() => {});
+    }
+  });
+}

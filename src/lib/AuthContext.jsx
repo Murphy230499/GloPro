@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { appParams } from '@/lib/app-params';
 import { supabase } from '@/lib/supabaseClient';
+import { resolveTenantId, clearActiveTenant } from '@/lib/tenantManager';
 
 const AuthContext = createContext({
   user: null,
@@ -136,6 +137,11 @@ export const AuthProvider = ({ children }) => {
         };
         setUser(sbUser);
         setIsAuthenticated(true);
+        try {
+          await resolveTenantId();
+        } catch (e) {
+          console.warn('[AuthContext] Tenant resolution warning:', e);
+        }
         setIsLoadingAuth(false);
         setAuthChecked(true);
         return;
@@ -144,6 +150,7 @@ export const AuthProvider = ({ children }) => {
 
       // If no valid session exists
       console.log('[AuthContext] No valid session, setting unauthenticated');
+      clearActiveTenant();
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
@@ -158,6 +165,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    clearActiveTenant();
     
     await supabase.auth.signOut().catch(() => {});
     if (shouldRedirect && typeof window !== 'undefined') {

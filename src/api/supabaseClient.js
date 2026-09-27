@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { TENANT_SCOPED_TABLES, getSyncTenantId, resolveTenantId } from '../lib/tenantManager';
 export { supabase };
 
 const objectIdToUuid = (id) => {
@@ -11,6 +12,18 @@ const createEntityAdapter = (tableName) => {
   return {
     async filter(queryObj = {}) {
       let request = supabase.from(tableName).select('*');
+      
+      // Multi-tenant scope
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!queryObj || queryObj.tenant_id === undefined) {
+          request = request.eq('tenant_id', tid);
+        }
+      }
+
       if (queryObj) {
         for (let key in queryObj) {
           if (key === 'created_date') key = 'created_at';
@@ -43,6 +56,15 @@ const createEntityAdapter = (tableName) => {
 
     async list(queryOrSort = {}, limitVal) {
       let request = supabase.from(tableName).select('*');
+      
+      // Multi-tenant scope
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        request = request.eq('tenant_id', tid);
+      }
       
       let query = {};
       if (typeof queryOrSort === 'string') {
@@ -104,7 +126,18 @@ const createEntityAdapter = (tableName) => {
 
     async get(id) {
       if (typeof id === 'string' && id.length === 24) id = objectIdToUuid(id);
-      const { data, error } = await supabase.from(tableName).select('*').eq('id', id).single();
+      let request = supabase.from(tableName).select('*').eq('id', id);
+      
+      // Multi-tenant scope
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        request = request.eq('tenant_id', tid);
+      }
+
+      const { data, error } = await request.single();
       if (error) {
         console.error(`Error getting ${tableName} by id ${id}:`, error);
         throw error;
@@ -122,12 +155,14 @@ const createEntityAdapter = (tableName) => {
       // Remove id if present to allow UUID generation
       if (p.id && String(p.id).includes('temp')) delete p.id;
       
-      // Inject tenant_id if user is logged in
-      try {
-        const sessionRes = await supabase.auth.getSession();
-        const userId = sessionRes.data?.session?.user?.id;
-        if (userId) p.tenant_id = userId;
-      } catch (e) {}
+      // Multi-tenant scope: Inject salon tenant_id
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        let tid = getSyncTenantId();
+        if (!tid && typeof window !== 'undefined') {
+          tid = await resolveTenantId();
+        }
+        if (tid) p.tenant_id = tid;
+      }
 
       // Sanitize fields for Supabase
       const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
@@ -226,8 +261,15 @@ const createEntityAdapter = (tableName) => {
     },
     
     async bulkCreate(payloads) {
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
       const ps = payloads.map(payload => {
         const p = { ...payload };
+        if (tid && TENANT_SCOPED_TABLES.has(tableName) && !p.tenant_id) {
+          p.tenant_id = tid;
+        }
         for (let k in p) {
           if (k === 'id' || k.endsWith('_id')) {
             if (p[k] === '') {
@@ -269,6 +311,14 @@ const createEntityAdapter = (tableName) => {
       delete p.created_date;
       delete p.updated_date;
 
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        p.tenant_id = tid;
+      }
+
       const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       for (let k in p) {
         if (k.endsWith('_id')) {
@@ -282,7 +332,11 @@ const createEntityAdapter = (tableName) => {
         }
       }
 
-      let { data, error } = await supabase.from(tableName).update(p).eq('id', id).select().single();
+      let updateReq = supabase.from(tableName).update(p).eq('id', id);
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        updateReq = updateReq.eq('tenant_id', tid);
+      }
+      let { data, error } = await updateReq.select().single();
       
       // Fallback if column doesn't exist in Supabase schema cache
       let retryCount = 0;
@@ -293,7 +347,11 @@ const createEntityAdapter = (tableName) => {
         if (missingCol && p[missingCol] !== undefined) {
           console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Removing and retrying...`);
           delete p[missingCol];
-          const retryResult = await supabase.from(tableName).update(p).eq('id', id).select().single();
+          let retryReq = supabase.from(tableName).update(p).eq('id', id);
+          if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+            retryReq = retryReq.eq('tenant_id', tid);
+          }
+          const retryResult = await retryReq.select().single();
           data = retryResult.data;
           error = retryResult.error;
         } else {
@@ -305,7 +363,6 @@ const createEntityAdapter = (tableName) => {
       if (error && (error.code === '23503' || error.message?.includes('foreign key constraint'))) {
         if ('group_id' in p && p.group_id) {
           console.warn(`FK constraint on ${tableName} for group_id=${p.group_id}. The group may not exist.`);
-          // Do NOT silently null group_id — let the error propagate so the UI can notify the user
         }
       }
       if (error) {
@@ -322,7 +379,17 @@ const createEntityAdapter = (tableName) => {
 
     async delete(id) {
       if (typeof id === 'string' && id.length === 24) id = objectIdToUuid(id);
-      const { data, error } = await supabase.from(tableName).delete().eq('id', id);
+      let request = supabase.from(tableName).delete().eq('id', id);
+      
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        request = request.eq('tenant_id', tid);
+      }
+
+      const { data, error } = await request;
       if (error) {
         console.error(`Error deleting ${tableName} with id ${id}:`, error);
         throw error;
@@ -332,6 +399,15 @@ const createEntityAdapter = (tableName) => {
     
     async deleteMany(query) {
       let request = supabase.from(tableName).delete();
+      
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
+      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+        request = request.eq('tenant_id', tid);
+      }
+
       for (const key in query) {
         request = request.eq(key, query[key]);
       }
