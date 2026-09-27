@@ -674,7 +674,11 @@ export default function Invoices() {
       base44.entities.Staff.list(),
       base44.entities.Customer.list(),
     ]).then(([data, st, cust]) => {
-      setInvoices(data.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.invoice_code || '').localeCompare(a.invoice_code || '')));
+      const validData = (data || []).filter(inv => 
+        (Array.isArray(inv.items) && inv.items.length > 0) || 
+        Number(inv.total) > 0
+      );
+      setInvoices(validData.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.invoice_code || '').localeCompare(a.invoice_code || '')));
       setStaff(st.filter((x) => x.is_active !== false));
       setCustomers(cust);
       setLoading(false);
@@ -702,9 +706,14 @@ export default function Invoices() {
       if (!codeMatch && !custMatch && !staffMatch) return false;
     }
 
-    // Date Range Filter (Default: Today)
-    if (startDate && inv.date && inv.date < startDate) return false;
-    if (endDate && inv.date && inv.date > endDate) return false;
+    // Date Range Filter: Default is Today for paid, cancelled, and all.
+    // For 'unpaid' tab, show all pending invoices unless user manually picked specific dates.
+    const isUnpaidTab = statusTab === 'unpaid';
+    const isDefaultDate = startDate === getTodayStr() && endDate === getTodayStr();
+    if (!isUnpaidTab || !isDefaultDate) {
+      if (startDate && inv.date && inv.date < startDate) return false;
+      if (endDate && inv.date && inv.date > endDate) return false;
+    }
 
     // Staff Filter (Multi-select)
     if (selectedStaffIds && selectedStaffIds.length > 0) {
@@ -729,6 +738,8 @@ export default function Invoices() {
   const counts = STATUS_TABS.reduce((acc, t) => {
     if (t.value === 'all') {
       acc[t.value] = baseFilteredInvoices.length;
+    } else if (t.value === 'unpaid') {
+      acc[t.value] = invoices.filter((i) => i.status === 'unpaid').length;
     } else {
       acc[t.value] = baseFilteredInvoices.filter((i) => i.status === t.value).length;
     }

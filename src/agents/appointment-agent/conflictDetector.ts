@@ -25,7 +25,7 @@ export function checkSchedulingConflict(
   const sameDayAppts = existingAppointments.filter(a =>
     a.date === date &&
     a.status !== 'cancelled' &&
-    a.id !== excludeAppointmentId &&
+    (!excludeAppointmentId || a.id !== excludeAppointmentId) &&
     a.staff_name &&
     (a.staff_name.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(a.staff_name.toLowerCase()))
   );

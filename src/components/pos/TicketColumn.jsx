@@ -13,6 +13,7 @@ import { useT } from '@/lib/i18n';
 
 import { base44 } from '@/api/base44Client';
 import { getNormalizedLogs } from '@/lib/logHelper';
+import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
 
 // TYPE_LABELS are now translated dynamically via getTypeLabel(type, t)
 const TYPE_LABEL_KEYS = {
@@ -81,8 +82,17 @@ const groupCartItems = (cart) => {
   return groups;
 };
 
-export default function TicketColumn({ session, staff, customers, onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled, onMobileAddClick }) {
+export default function TicketColumn({ session, staff, customers, facilities = [], onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled, onMobileAddClick }) {
   const { t } = useT();
+
+  const effectiveFacilities = React.useMemo(() => {
+    if (facilities && facilities.length > 0) return facilities;
+    try {
+      const cached = localStorage.getItem('gp_facilities_all') || localStorage.getItem('gp_facilities_');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return DEFAULT_FACILITIES;
+  }, [facilities]);
   const getTypeLabel = (type) => {
     const keys = TYPE_LABEL_KEYS[type];
     return keys ? t(keys[0], keys[1]) : t('common.other', 'Khác');
@@ -200,6 +210,8 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
   const [editDiscountType, setEditDiscountType] = useState('vnd'); // 'vnd' or 'percent'
   const [editStaffId, setEditStaffId] = useState('');
   const [editStaffName, setEditStaffName] = useState('');
+  const [editFacilityId, setEditFacilityId] = useState('');
+  const [editFacilityName, setEditFacilityName] = useState('');
   const [editIsRequested, setEditIsRequested] = useState(false);
 
   useEffect(() => {
@@ -470,6 +482,8 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
     setEditDiscountType('vnd');
     setEditStaffId(item.staff_id || '');
     setEditStaffName(item.staff_name || '');
+    setEditFacilityId(item.facility_id || '');
+    setEditFacilityName(item.facility_name || '');
     setEditIsRequested(!!item.is_customer_requested);
   };
 
@@ -553,6 +567,8 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
       originalPrice: origPrice,
       staff_id: editStaffId,
       staff_name: editStaffName,
+      facility_id: editFacilityId,
+      facility_name: editFacilityName,
       is_customer_requested: editIsRequested
     });
     setEditingItemIdx(null);
@@ -885,6 +901,14 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                             </div>
                           </div>
                         )}
+
+                        {x.facility_name && (
+                          <div className="mt-1 flex items-center">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                              🛏️ {x.facility_name}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1086,6 +1110,28 @@ export default function TicketColumn({ session, staff, customers, onUpdate, onPi
                   setEditStaffName(name);
                   setEditIsRequested(req);
                 }} placeholder={t('pos.ticket.select_staff_placeholder', 'Chọn nhân viên phục vụ...')} color="emerald-500" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('appointments.facility', 'Vị trí (Giường / Phòng)')}</label>
+                <div className="relative">
+                  <select
+                    value={editFacilityId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditFacilityId(val);
+                      const fObj = effectiveFacilities.find(f => f.id === val);
+                      setEditFacilityName(fObj?.name || '');
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800 appearance-none cursor-pointer pr-8"
+                  >
+                    <option value="">— {t('rooms_beds.select_facility', 'Chưa chọn vị trí')} —</option>
+                    {effectiveFacilities.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
             </div>
 

@@ -19,7 +19,8 @@ import {
   ChevronRight, 
   CheckCircle2, 
   Compass,
-  Cpu
+  Cpu,
+  RotateCcw
 } from 'lucide-react';
 
 export function CopilotDrawer() {
@@ -51,11 +52,15 @@ export function CopilotDrawer() {
   const initialName = authUser?.full_name || authUser?.name || 'bạn';
   const initialBranch = branchData?.name || 'Hệ thống GloPro';
   
+  const getGreeting = (name) => name 
+    ? `Xin chào **${name}**! 🤖 Tôi có thể giúp gì cho bạn hôm nay?` 
+    : `Xin chào ${initialName}! 🤖 Tôi có thể giúp gì cho bạn hôm nay?`;
+
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Xin chào ${initialName}! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi hiểu toàn bộ ngữ cảnh tài khoản của bạn tại **${initialBranch}** và có thể **tự động thao tác phần mềm** theo lệnh: đặt lịch, tạo bill, thêm chi nhánh/khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
+      content: getGreeting(authUser?.full_name || authUser?.name)
     }
   ]);
 
@@ -82,23 +87,32 @@ export function CopilotDrawer() {
     }
   }, [authUser?.id, authUser?.full_name, authUser?.email, branchData?.id, branchData?.name]);
 
-  // Update initial welcome message to address the real logged-in user name
+  // Always enforce the new concise welcome message even in existing chat sessions
   useEffect(() => {
     const realName = authUser?.full_name || authUser?.name;
-    const realBranch = branchData?.name || copilotState.salonBranch?.name;
-    if (realName) {
-      setMessages(prev => {
-        if (prev.length === 1 && prev[0].id === 'welcome') {
-          return [{
-            id: 'welcome',
-            role: 'assistant',
-            content: `Xin chào **${realName}**! 🤖 Tôi là **GloPro AI** (kết nối **Google Gemini**).\n\nTôi đang kết nối với tài khoản của bạn tại **${realBranch || 'Salon'}** và có thể **tự động thao tác phần mềm** theo lệnh: đặt lịch, tạo bill, thêm chi nhánh/khách hàng, phân tích doanh thu hoặc chuyển trang tức thì.`
-          }];
+    const currentGreeting = getGreeting(realName);
+    setMessages(prev => {
+      if (prev.length > 0 && prev[0].id === 'welcome') {
+        if (prev[0].content !== currentGreeting) {
+          const next = [...prev];
+          next[0] = { ...next[0], content: currentGreeting };
+          return next;
         }
-        return prev;
-      });
-    }
-  }, [authUser?.full_name, branchData?.name]);
+      }
+      return prev;
+    });
+  }, [authUser?.full_name, authUser?.name]);
+
+  const handleResetChat = () => {
+    const realName = authUser?.full_name || authUser?.name;
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: getGreeting(realName)
+      }
+    ]);
+  };
 
   const messagesEndRef = useRef(null);
 
@@ -277,12 +291,22 @@ export function CopilotDrawer() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleResetChat}
+                title="Làm mới cuộc trò chuyện"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                title="Đóng cửa sổ"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Context State Bar */}
@@ -337,12 +361,32 @@ export function CopilotDrawer() {
                   {/* Tool execution badge */}
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-700/60 flex flex-col gap-1 text-[10px] text-emerald-400 font-medium">
-                      {msg.toolCalls.map((t, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 shrink-0" />
-                          <span>Đã thực thi công cụ: <strong>{t.toolName}</strong></span>
-                        </div>
-                      ))}
+                      {msg.toolCalls.map((t, idx) => {
+                        const TOOL_LABELS = {
+                          pos_get_today_summary: 'Tổng kết doanh thu hôm nay',
+                          reports_get_overview: 'Báo cáo kinh doanh',
+                          customer_search: 'Tra cứu khách hàng',
+                          customer_create: 'Tạo khách hàng mới',
+                          customer_update: 'Cập nhật khách hàng',
+                          appointment_create: 'Đặt lịch hẹn mới',
+                          appointment_search: 'Tra cứu lịch hẹn',
+                          appointment_cancel: 'Hủy lịch hẹn',
+                          pos_create_invoice: 'Tạo hóa đơn thanh toán',
+                          services_search: 'Tra cứu dịch vụ',
+                          service_create: 'Tạo dịch vụ mới',
+                          products_search: 'Tra cứu sản phẩm',
+                          staff_search: 'Tra cứu nhân viên',
+                          staff_create: 'Thêm nhân viên mới',
+                          branch_create: 'Tạo chi nhánh',
+                          navigate_to: 'Chuyển màn hình'
+                        };
+                        return (
+                          <div key={idx} className="flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 shrink-0" />
+                            <span>Đã xử lý dữ liệu: <strong>{TOOL_LABELS[t.toolName] || t.toolName}</strong></span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

@@ -772,6 +772,6 @@ export async function processUserMessage(userMessage, context = {}) {
   // 12. GENERAL SALON GUIDANCE & FALLBACK
   return {
     type: 'text',
-    text: `Xin chào! Tôi là **GloPro AI Agent** 🤖. Tôi có thể giúp bạn tạo dữ liệu nhanh chóng:\n\n• **Tạo Lịch Hẹn**: "Tạo lịch hẹn khách Chị Hoa lúc 15:00"\n• **Tạo Khách Hàng**: "Tạo khách hàng Nguyễn Văn A 0912345678"\n• **Thêm Nhân Viên**: "Thêm nhân viên Minh Thu Thợ chính"\n• **Tạo Dịch Vụ / Sản Phẩm**: "Tạo dịch vụ Cắt tóc nam 150k"\n• **Tạo Voucher**: "Tạo voucher GP50K 50k"\n• **Tạo Tập Khách Hàng**: "Tạo tập khách hàng VIP chi tiêu trên 10 triệu"\n• **Import File Excel**: "Import file khách hàng"\n\n*Bạn hãy thử bấm biểu tượng Mic để ra lệnh bằng giọng nói hoặc nhập câu lệnh nhé!*`
+    text: 'Xin chào! Tôi là **GloPro AI** 🤖. Tôi có thể giúp gì cho bạn hôm nay?'
   };
 }

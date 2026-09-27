@@ -1,5 +1,5 @@
-import { base44 } from '@/api/base44Client';
-import { todayStr } from '@/lib/format';
+import { base44 } from '../api/base44Client.js';
+import { todayStr } from './format.js';
 
 // ─── Default Voucher Types ───────────────────────────────────────────────────
 

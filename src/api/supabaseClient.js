@@ -142,16 +142,20 @@ const createEntityAdapter = (tableName) => {
       
       let { data, error } = await supabase.from(tableName).insert([p]).select().single();
       
-      // Fallback if column doesn't exist in Supabase schema cache
-      if (error && error.code === 'PGRST204') {
+      // Robust loop to strip any column that doesn't exist in Supabase schema cache
+      let retryCount = 0;
+      while (error && error.code === 'PGRST204' && retryCount < 6) {
+        retryCount++;
         const match = error.message?.match(/Could not find the '([^']+)' column/i);
         const missingCol = match ? match[1] : (error.message?.includes('logs') ? 'logs' : (error.message?.includes('group') ? 'group' : null));
         if (missingCol && p[missingCol] !== undefined) {
-          console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Retrying without '${missingCol}'...`);
+          console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Removing and retrying...`);
           delete p[missingCol];
           const retryResult = await supabase.from(tableName).insert([p]).select().single();
           data = retryResult.data;
           error = retryResult.error;
+        } else {
+          break;
         }
       }
 
@@ -235,15 +239,19 @@ const createEntityAdapter = (tableName) => {
       let { data, error } = await supabase.from(tableName).update(p).eq('id', id).select().single();
       
       // Fallback if column doesn't exist in Supabase schema cache
-      if (error && error.code === 'PGRST204') {
+      let retryCount = 0;
+      while (error && error.code === 'PGRST204' && retryCount < 6) {
+        retryCount++;
         const match = error.message?.match(/Could not find the '([^']+)' column/i);
         const missingCol = match ? match[1] : null;
         if (missingCol && p[missingCol] !== undefined) {
-          console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Retrying without '${missingCol}'...`);
+          console.warn(`Column '${missingCol}' missing in Supabase ${tableName}. Removing and retrying...`);
           delete p[missingCol];
           const retryResult = await supabase.from(tableName).update(p).eq('id', id).select().single();
           data = retryResult.data;
           error = retryResult.error;
+        } else {
+          break;
         }
       }
 
@@ -304,6 +312,7 @@ export const supabaseClient = {
     DepositPolicy: createEntityAdapter('deposit_policy'),
     DepositTransaction: createEntityAdapter('deposit_transaction'),
     Facility: createEntityAdapter('facility'),
+    Room: createEntityAdapter('room'),
     Invoice: createEntityAdapter('invoice'),
     LoyaltyRule: createEntityAdapter('loyaltyrule'),
     Membership: createEntityAdapter('membership'),

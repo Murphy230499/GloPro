@@ -1018,6 +1018,9 @@ export default function AppointmentModal({
   // Pick Facility for Guest Item
   const handlePickFacility = (guestIdx, itemIdx, facilityId) => {
     const fac = facilityList.find(f => f.id === facilityId);
+    if (fac && fac.allow_overlap === false) {
+      toast.info(t('appointments.facility_no_overlap_info', 'ℹ️ Vị trí "{name}" không bật trùng lịch. Hệ thống sẽ ghi nhận lịch cho vị trí này.', { name: fac.name }));
+    }
     const updated = [...guests];
     updated[guestIdx].items[itemIdx].facility_id = facilityId;
     updated[guestIdx].items[itemIdx].facility_name = fac?.name || '';

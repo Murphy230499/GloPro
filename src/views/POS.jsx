@@ -62,11 +62,11 @@ const newSession = () => {
   };
 };
 const tabName = (s) => {
-  if (s.customer) {
+  if (s.customer && s.customer.name && s.customer.name !== 'Khách vãng lai') {
     const first = s.customer.name.split(' ').slice(-1)[0] || s.customer.name;
     return `${first}-${String(s.seqNum).padStart(3, '0')}`;
   }
-  return `Walk-In-${String(s.seqNum).padStart(3, '0')}`;
+  return `Đơn-${String(s.seqNum).padStart(3, '0')}`;
 };
 
 // Cache catalog data in-memory to avoid repeated fetches (2-minute TTL) across unmounts
@@ -121,7 +121,30 @@ export default function POS() {
       const branchInvs = (currentBranchId === 'all' || !currentBranchId)
         ? invs
         : invs.filter(x => String(x.branch_id) === String(currentBranchId));
-      const unpaidInvs = branchInvs;
+
+      const currentToday = todayStr();
+
+      // Clean up any ghost invoices (no items and zero total) that might have been abandoned
+      const ghostInvs = branchInvs.filter(x => 
+        (!Array.isArray(x.items) || x.items.length === 0) && 
+        (!x.total || Number(x.total) === 0) &&
+        String(x.id) !== String(selectId)
+      );
+      if (ghostInvs.length > 0) {
+        ghostInvs.forEach(g => {
+          base44.entities.Invoice.delete(g.id).catch(() => {});
+        });
+      }
+
+      // Filter valid pending invoices:
+      // Must have items or positive total (or be explicitly selected)
+      // And must be from today (unless explicitly selected via selectId from invoices list)
+      const unpaidInvs = branchInvs.filter(x => {
+        if (selectId && String(x.id) === String(selectId)) return true;
+        const hasContent = (Array.isArray(x.items) && x.items.length > 0) || Number(x.total) > 0;
+        if (!hasContent) return false;
+        return x.date === currentToday;
+      });
       const cusMap = Object.fromEntries(cusList.map(c => [c.id, c]));
       const sorted = unpaidInvs.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
       const mapped = sorted.map((inv, idx) => {
@@ -207,6 +230,7 @@ export default function POS() {
   const [prepaidCards, setPrepaidCards] = useState([]);
   const [groups, setGroups] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [facilities, setFacilities] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [catalogTab, setCatalogTab] = useState('service');
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -247,8 +271,9 @@ export default function POS() {
       base44.entities.ServiceGroup.list().catch(() => []),
       base44.entities.Staff.filter(catalogFilter).catch(() => base44.entities.Staff.list().catch(() => [])),
       customerPromise,
-      loadCustomerTiers()
-    ]).then(([catData, gr, st, c, ct]) => {
+      loadCustomerTiers(),
+      base44.entities.Facility ? base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => []) : Promise.resolve([])
+    ]).then(([catData, gr, st, c, ct, facData]) => {
       const { s, p, pk, t, sc, pc, gc } = catData;
       setServices((s || []).filter((x) => x.is_active !== false));
       setProducts((p || []).filter((x) => x.is_active !== false));
@@ -259,6 +284,7 @@ export default function POS() {
       setPrepaidCards((gc || []).filter((x) => x.is_active !== false));
       setGroups(gr || []);
       setStaff((st || []).filter((x) => x.is_active !== false));
+      setFacilities(facData || []);
       setCustomers(c || []);
       setCustomerTiers(ct || []);
 
@@ -297,6 +323,37 @@ export default function POS() {
           handleUpdateSession({ customer: custObj });
         }
       });
+    }
+
+    // Check prefill from BedDetailDrawer
+    try {
+      const prefillRaw = sessionStorage.getItem('gp_pos_prefill_session');
+      if (prefillRaw) {
+        sessionStorage.removeItem('gp_pos_prefill_session');
+        const prefill = JSON.parse(prefillRaw);
+        if (prefill.customer || prefill.services?.length) {
+          const prefillCart = (prefill.services || []).map(s => ({
+            id: Math.random().toString(),
+            name: s.name || 'Dịch vụ',
+            type: 'service',
+            price: s.price || 0,
+            originalPrice: s.price || 0,
+            qty: 1,
+            staff_id: s.staff_id || '',
+            staff_name: s.staff_name || '',
+            facility_id: prefill.facilityId || '',
+            facility_name: prefill.facilityName || '',
+            duration_minutes: s.duration || 30
+          }));
+          handleUpdateSession({
+            customer: prefill.customer,
+            cart: prefillCart
+          });
+          toast.success(`Đã tải dịch vụ từ ${prefill.facilityName || 'giường'}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading prefill session:', e);
     }
 
     if (buyAgainCustomerId && buyAgainName && buyAgainType) {
@@ -489,6 +546,8 @@ export default function POS() {
             qty: Math.round(x.qty || 1), 
             staff_id: x.staff_id || '', 
             staff_name: x.staff_name || '',
+            facility_id: x.facility_id || '',
+            facility_name: x.facility_name || '',
             is_customer_requested: !!x.is_customer_requested,
             is_from_package: !!x.is_from_package,
             package_name: x.package_name || '',
@@ -656,11 +715,11 @@ export default function POS() {
 
     try {
       const saleCode = 'SC' + String(Math.floor(100000 + Math.random() * 900000));
-      const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, 'Khởi tạo hoá đơn cho Khách vãng lai', 'Lễ tân');
+      const initialLog = createLogEntry(`Tạo hoá đơn #${saleCode}`, 'Khởi tạo hoá đơn mới', 'Lễ tân');
       
       const newInv = await base44.entities.Invoice.create({
         invoice_code: saleCode,
-        customer_name: 'Khách vãng lai',
+        customer_name: '',
         customer_id: '',
         branch_id: currentBranchId,
         items: [],
@@ -680,10 +739,23 @@ export default function POS() {
     }
   };
 
-  const closeSession = (id) => {
+  const closeSession = async (id) => {
+    const sessionToClose = sessions.find((s) => s.id === id);
     const remaining = sessions.filter((s) => s.id !== id);
     setSessions(remaining);
     if (activeId === id) setActiveId(remaining.length ? remaining[remaining.length - 1].id : null);
+
+    // If closing an empty invoice that exists in DB, delete it so it doesn't linger as an orphan unpaid invoice
+    if (sessionToClose && sessionToClose.id && !String(sessionToClose.id).startsWith('direct_pos_')) {
+      const isCartEmpty = !sessionToClose.cart || sessionToClose.cart.length === 0;
+      if (isCartEmpty) {
+        try {
+          await base44.entities.Invoice.delete(sessionToClose.id);
+        } catch (e) {
+          console.warn('Failed to delete empty invoice on close:', e);
+        }
+      }
+    }
   };
 
   const addToCart = async (item, type) => {
@@ -814,6 +886,8 @@ export default function POS() {
             qty: Math.round(x.qty || 1), 
             staff_id: x.staff_id || '', 
             staff_name: x.staff_name || '',
+            facility_id: x.facility_id || '',
+            facility_name: x.facility_name || '',
             is_customer_requested: !!x.is_customer_requested,
             is_from_package: !!x.is_from_package,
             package_name: x.package_name || '',
@@ -1203,7 +1277,7 @@ export default function POS() {
         serviceCombos={serviceCombos} productCombos={productCombos} prepaidCards={prepaidCards}
         groups={groups} onAddItem={addToCart} onReload={() => loadData(true)} activeSession={activeSession} isLoading={isLoadingCatalog} />
         {activeSession ?
-        <TicketColumn session={activeSession} staff={staff} customers={customers}
+        <TicketColumn session={activeSession} staff={staff} customers={customers} facilities={facilities}
         onUpdate={patchSession}
         onPickCustomer={(c) => patchSession({ customer: c })}
         onClearCustomer={() => patchSession({ customer: null })}
@@ -1239,7 +1313,7 @@ export default function POS() {
         {/* Main panel: TicketColumn */}
         <div className="absolute inset-0 flex flex-col overflow-hidden bg-white rounded-2xl border border-slate-100 shadow-sm">
           {activeSession ?
-          <TicketColumn session={activeSession} staff={staff} customers={customers}
+          <TicketColumn session={activeSession} staff={staff} customers={customers} facilities={facilities}
           onUpdate={patchSession}
           onPickCustomer={(c) => patchSession({ customer: c })}
           onClearCustomer={() => patchSession({ customer: null })}

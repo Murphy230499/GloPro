@@ -176,6 +176,14 @@ const MODULE_GROUPS = [
       setting_integration_view: 'Xem cấu hình tích hợp (Facebook, Zalo...)',
       setting_integration_edit: 'Chỉnh sửa/kết nối các dịch vụ tích hợp'
     }
+  },
+  {
+    id: 16,
+    title: '16. Quản lý Giường & Phòng',
+    modules: {
+      room_bed_view: 'Xem sơ đồ vị trí & tình trạng giường phòng',
+      room_bed_manage: 'Thêm, sửa, xoá phòng và vị trí giường'
+    }
   }
 ];
 
