@@ -65,27 +65,37 @@ export default function FacilityAssignPicker({
 
       // Load Rooms
       let loadedRooms = [];
-      const roomsKey = getTenantStorageKey('gp_rooms', branchKey);
-      const savedRooms = localStorage.getItem(roomsKey);
+      const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
+      const branchRoomsKey = getTenantStorageKey('gp_rooms', branchKey);
+      const savedRooms = localStorage.getItem(unifiedRoomsKey) || localStorage.getItem(branchRoomsKey);
       if (savedRooms) {
         try { loadedRooms = JSON.parse(savedRooms); } catch (e) {}
       }
       if (!loadedRooms || loadedRooms.length === 0) {
         loadedRooms = INITIAL_DEMO_ROOMS;
       }
+      // Filter strictly by branch if a specific branch is selected
+      if (branchKey && branchKey !== 'all') {
+        loadedRooms = loadedRooms.filter(r => !r.branch_id || r.branch_id === branchKey);
+      }
       setRooms(loadedRooms);
 
       // Load Beds
       let loadedBeds = facilities && facilities.length > 0 ? facilities : [];
-      const bedsKey = getTenantStorageKey('gp_facilities', branchKey);
       if (!loadedBeds || loadedBeds.length === 0) {
-        const savedBeds = localStorage.getItem(bedsKey);
+        const unifiedBedsKey = getTenantStorageKey('gp_facilities');
+        const branchBedsKey = getTenantStorageKey('gp_facilities', branchKey);
+        const savedBeds = localStorage.getItem(unifiedBedsKey) || localStorage.getItem(branchBedsKey);
         if (savedBeds) {
           try { loadedBeds = JSON.parse(savedBeds); } catch (e) {}
         }
       }
       if (!loadedBeds || loadedBeds.length === 0) {
         loadedBeds = INITIAL_DEMO_BEDS;
+      }
+      // Filter strictly by branch if a specific branch is selected
+      if (branchKey && branchKey !== 'all') {
+        loadedBeds = loadedBeds.filter(b => !b.branch_id || b.branch_id === branchKey);
       }
       setBeds(loadedBeds);
 

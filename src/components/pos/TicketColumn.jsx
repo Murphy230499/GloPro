@@ -16,6 +16,7 @@ import { base44 } from '@/api/base44Client';
 import { getNormalizedLogs } from '@/lib/logHelper';
 import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
 import { getTenantStorageKey } from '@/lib/tenantManager';
+import { useBranch } from '@/lib/BranchContext';
 
 // TYPE_LABELS are now translated dynamically via getTypeLabel(type, t)
 const TYPE_LABEL_KEYS = {
@@ -86,15 +87,23 @@ const groupCartItems = (cart) => {
 
 export default function TicketColumn({ session, staff, customers, facilities = [], onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled, onMobileAddClick }) {
   const { t } = useT();
+  const { currentBranchId } = useBranch();
 
   const effectiveFacilities = React.useMemo(() => {
-    if (facilities && facilities.length > 0) return facilities;
-    try {
-      const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', 'all')) || localStorage.getItem(getTenantStorageKey('gp_facilities', ''));
-      if (cached) return JSON.parse(cached);
-    } catch (e) {}
-    return DEFAULT_FACILITIES;
-  }, [facilities]);
+    let list = facilities;
+    if (!list || list.length === 0) {
+      try {
+        const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
+                       localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
+        if (cached) list = JSON.parse(cached);
+      } catch (e) {}
+    }
+    if (!list || list.length === 0) list = DEFAULT_FACILITIES;
+    if (currentBranchId && currentBranchId !== 'all') {
+      return list.filter(b => !b.branch_id || b.branch_id === currentBranchId);
+    }
+    return list;
+  }, [facilities, currentBranchId]);
   const getTypeLabel = (type) => {
     const keys = TYPE_LABEL_KEYS[type];
     return keys ? t(keys[0], keys[1]) : t('common.other', 'Khác');

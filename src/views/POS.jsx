@@ -303,12 +303,16 @@ export default function POS() {
       let loadedFac = facData;
       if (!loadedFac || loadedFac.length === 0) {
         try {
-          const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
+          const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
+                         localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
           if (cached) loadedFac = JSON.parse(cached);
         } catch (e) {}
       }
       if (!loadedFac || loadedFac.length === 0) {
         loadedFac = DEFAULT_FACILITIES;
+      }
+      if (currentBranchId && currentBranchId !== 'all') {
+        loadedFac = loadedFac.filter(b => !b.branch_id || b.branch_id === currentBranchId);
       }
       setFacilities(loadedFac || []);
       setCustomers(c || []);

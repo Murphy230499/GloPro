@@ -162,7 +162,8 @@ export default function Appointments() {
         let finalRooms = roomData;
         if (!finalRooms || finalRooms.length === 0) {
           if (typeof window !== 'undefined') {
-            const cached = localStorage.getItem(getTenantStorageKey('gp_rooms', currentBranchId));
+            const cached = localStorage.getItem(getTenantStorageKey('gp_rooms')) ||
+                           localStorage.getItem(getTenantStorageKey('gp_rooms', currentBranchId));
             if (cached) {
               try { finalRooms = JSON.parse(cached); } catch (e) {}
             }
@@ -171,13 +172,17 @@ export default function Appointments() {
             finalRooms = INITIAL_DEMO_ROOMS;
           }
         }
+        if (currentBranchId && currentBranchId !== 'all') {
+          finalRooms = (finalRooms || []).filter(r => !r.branch_id || r.branch_id === currentBranchId);
+        }
         const roomMap = Object.fromEntries((finalRooms || []).map((r) => [r.id, r]));
 
         // Beds / Facilities data from DB or cache or INITIAL_DEMO_BEDS
         let finalBeds = facData;
         if (!finalBeds || finalBeds.length === 0) {
           if (typeof window !== 'undefined') {
-            const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
+            const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
+                           localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
             if (cached) {
               try { finalBeds = JSON.parse(cached); } catch (e) {}
             }
@@ -185,6 +190,9 @@ export default function Appointments() {
           if (!finalBeds || finalBeds.length === 0) {
             finalBeds = INITIAL_DEMO_BEDS;
           }
+        }
+        if (currentBranchId && currentBranchId !== 'all') {
+          finalBeds = (finalBeds || []).filter(b => !b.branch_id || b.branch_id === currentBranchId);
         }
 
         const effectiveFacilities = (finalBeds || []).map((b) => {
