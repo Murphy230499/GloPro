@@ -88,21 +88,26 @@ export default function BedDetailDrawer({
       const validCustomerId = (customer.id && isUuid(customer.id)) ? customer.id : null;
 
       // 1. Tìm tất cả các phòng / giường đang phục vụ cho khách này trên toàn hệ thống
-      const relatedSessions = findCustomerActiveSessions(
-        allBedSessions,
-        customer,
-        activeSession.master_session_id,
-        bed.id
-      );
-      const relatedBedIds = [...new Set([bed.id, ...relatedSessions.map(s => s.bed_id).filter(Boolean)])];
+      let relatedSessions = [];
+      try {
+        relatedSessions = findCustomerActiveSessions(
+          allBedSessions,
+          customer,
+          activeSession.master_session_id,
+          bed.id
+        );
+      } catch (findErr) {
+        console.warn('Lỗi tìm sessions liên quan:', findErr);
+      }
+      const relatedBedIds = [...new Set([bed.id, ...relatedSessions.map(s => s?.bed_id).filter(Boolean)])];
 
       // 2. Gom tất cả dịch vụ từ tất cả các giường / phòng của khách thành 1 danh sách
-      const rawServices = allConsolidatedServices.length > 0 
+      const rawServices = (allConsolidatedServices && allConsolidatedServices.length > 0)
         ? allConsolidatedServices 
         : (activeSession.services || []);
 
       // Chuẩn hóa item cho hoá đơn POS
-      const posItems = rawServices.map(s => {
+      const posItems = (rawServices || []).filter(Boolean).map(s => {
         const bedName = s.bed_name || bed.name || '';
         const roomName = s.room_name || room?.name || '';
         const displayLocation = roomName && bedName && !bedName.includes(roomName)
@@ -141,7 +146,7 @@ export default function BedDetailDrawer({
       }
 
       if (!effectiveBranch && Array.isArray(branches) && branches.length > 0) {
-        const firstReal = branches.find(b => b.id && b.id !== '00000000-0000-0000-0000-000000000000' && isUuid(b.id));
+        const firstReal = branches.find(b => b?.id && b.id !== '00000000-0000-0000-0000-000000000000' && isUuid(b.id));
         if (firstReal) effectiveBranch = firstReal.id;
       }
 
@@ -152,7 +157,7 @@ export default function BedDetailDrawer({
       // 3. Tạo ngay hóa đơn tại Thu ngân (POS) trong cơ sở dữ liệu
       let createdInvoice = null;
       try {
-        if (base44.entities.Invoice) {
+        if (base44?.entities?.Invoice?.create) {
           createdInvoice = await base44.entities.Invoice.create({
             invoice_code: saleCode,
             customer_name: customerDisplayName,
@@ -187,39 +192,47 @@ export default function BedDetailDrawer({
         }
       } catch (releaseErr) {
         console.warn('Lỗi giải phóng phiên giường:', releaseErr);
-        onCompleteSession?.(bed.id);
+        try {
+          onCompleteSession?.(bed.id);
+        } catch (e) {}
       }
 
       // 5. Bắn Event đồng bộ cho toàn hệ thống
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
-          detail: {
-            masterSessionId: activeSession.master_session_id,
-            customerId: validCustomerId,
-            customerPhone: cleanPhone,
-            customerName: cleanName,
-            releasedBedIds: relatedBedIds
-          }
-        }));
+      try {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
+            detail: {
+              masterSessionId: activeSession.master_session_id,
+              customerId: validCustomerId,
+              customerPhone: cleanPhone,
+              customerName: cleanName,
+              releasedBedIds: relatedBedIds
+            }
+          }));
+        }
+      } catch (evtErr) {
+        console.warn('Event dispatch error:', evtErr);
       }
 
       // 6. Lưu trữ prefill session dự phòng cho POS
       try {
-        sessionStorage.setItem('gp_pos_prefill_session', JSON.stringify({
-          createdInvoiceId: createdInvoice?.id || null,
-          customer: {
-            id: validCustomerId,
-            name: cleanName,
-            phone: cleanPhone,
-            avatar_url: customer.avatar_url || ''
-          },
-          services: posItems,
-          masterSessionId: activeSession.master_session_id || null,
-          facilityId: bed.id,
-          facilityName: bed.name,
-          roomName: room?.name || '',
-          branchId: effectiveBranch
-        }));
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('gp_pos_prefill_session', JSON.stringify({
+            createdInvoiceId: createdInvoice?.id || null,
+            customer: {
+              id: validCustomerId,
+              name: cleanName,
+              phone: cleanPhone,
+              avatar_url: customer.avatar_url || ''
+            },
+            services: posItems,
+            masterSessionId: activeSession.master_session_id || null,
+            facilityId: bed.id,
+            facilityName: bed.name,
+            roomName: room?.name || '',
+            branchId: effectiveBranch
+          }));
+        }
       } catch (e) {
         console.warn('Error saving prefill session:', e);
       }
@@ -227,17 +240,20 @@ export default function BedDetailDrawer({
       const roomCountNotice = relatedBedIds.length > 1 ? ` trên ${relatedBedIds.length} phòng/vị trí` : '';
       toast.success(`Đã gom hoá đơn${roomCountNotice} & chuyển ra thu ngân`);
 
-      onClose?.();
+      try {
+        onClose?.();
+      } catch (e) {}
 
       // 7. Chuyển ngay ra thu ngân và mở hoá đơn vừa tạo
-      if (createdInvoice?.id) {
-        router.push(`/pos?edit_invoice_id=${createdInvoice.id}`);
-      } else {
-        router.push('/pos');
+      const targetUrl = createdInvoice?.id ? `/pos?edit_invoice_id=${createdInvoice.id}` : '/pos';
+      if (router && typeof router.push === 'function') {
+        router.push(targetUrl);
+      } else if (typeof window !== 'undefined') {
+        window.location.href = targetUrl;
       }
     } catch (err) {
       console.error('Lỗi khi checkout ra thu ngân:', err);
-      toast.error('Lỗi khi xử lý checkout');
+      toast.error('Lỗi khi xử lý checkout: ' + (err?.message || 'Vui lòng thử lại'));
     } finally {
       setIsProcessingCheckout(false);
     }
