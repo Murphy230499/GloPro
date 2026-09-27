@@ -6,6 +6,7 @@ import { formatVND } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/Layout';
 import { base44 } from '@/api/base44Client';
+import { useBranch } from '@/lib/BranchContext';
 import BedTransferModal from './BedTransferModal';
 import { getAllServicesForCustomer, findCustomerActiveSessions } from '@/lib/bedSessionHelpers';
 
@@ -27,6 +28,7 @@ export default function BedDetailDrawer({
 }) {
   const { t } = useT();
   const router = useRouter();
+  const { currentBranchId } = useBranch();
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
@@ -76,10 +78,14 @@ export default function BedDetailDrawer({
     setIsProcessingCheckout(true);
 
     try {
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       const customer = activeSession.customer || {};
-      const customerName = customer.name || activeSession.customer_name || 'Khách vãng lai';
-      const customerId = (customer.id && customer.id !== 'walk_in') ? customer.id : (activeSession.customer_id || '');
-      const customerPhone = customer.phone || activeSession.customer_phone || '';
+      const cleanName = (customer.name || activeSession.customer_name || 'Khách vãng lai').trim();
+      const cleanPhone = (customer.phone || activeSession.customer_phone || '').trim();
+      const customerDisplayName = cleanPhone && !cleanName.includes(cleanPhone)
+        ? `${cleanName} (${cleanPhone})`
+        : cleanName;
+      const validCustomerId = (customer.id && isUuid(customer.id)) ? customer.id : null;
 
       // 1. Tìm tất cả các phòng / giường đang phục vụ cho khách này trên toàn hệ thống
       const relatedSessions = findCustomerActiveSessions(
@@ -121,7 +127,13 @@ export default function BedDetailDrawer({
       const subtotal = posItems.reduce((sum, item) => sum + item.price * item.qty, 0);
       const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
       const today = new Date().toISOString().split('T')[0];
-      const branchId = bed.branch_id || (typeof window !== 'undefined' ? localStorage.getItem('gp_current_branch_id') || '' : '');
+
+      // Xác định branch_id hợp lệ
+      const effectiveBranch = (currentBranchId && currentBranchId !== 'all' && isUuid(currentBranchId))
+        ? currentBranchId
+        : (bed.branch_id && isUuid(bed.branch_id)
+            ? bed.branch_id
+            : (typeof window !== 'undefined' && isUuid(localStorage.getItem('glowpro_branch')) ? localStorage.getItem('glowpro_branch') : null));
 
       // 3. Tạo ngay hóa đơn tại Thu ngân (POS) trong cơ sở dữ liệu
       let createdInvoice = null;
@@ -129,10 +141,9 @@ export default function BedDetailDrawer({
         if (base44.entities.Invoice) {
           createdInvoice = await base44.entities.Invoice.create({
             invoice_code: saleCode,
-            customer_name: customerName,
-            customer_id: customerId,
-            customer_phone: customerPhone,
-            branch_id: branchId === 'all' ? '' : branchId,
+            customer_name: customerDisplayName,
+            customer_id: validCustomerId,
+            branch_id: effectiveBranch,
             items: posItems,
             subtotal,
             discount: 0,
@@ -151,9 +162,9 @@ export default function BedDetailDrawer({
       if (onReleaseCustomerSessions) {
         await onReleaseCustomerSessions({
           masterSessionId: activeSession.master_session_id,
-          customerId,
-          customerPhone,
-          customerName,
+          customerId: validCustomerId,
+          customerPhone: cleanPhone,
+          customerName: cleanName,
           bedIds: relatedBedIds
         });
       } else {
@@ -165,9 +176,9 @@ export default function BedDetailDrawer({
         window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
           detail: {
             masterSessionId: activeSession.master_session_id,
-            customerId,
-            customerPhone,
-            customerName,
+            customerId: validCustomerId,
+            customerPhone: cleanPhone,
+            customerName: cleanName,
             releasedBedIds
           }
         }));
@@ -178,9 +189,9 @@ export default function BedDetailDrawer({
         sessionStorage.setItem('gp_pos_prefill_session', JSON.stringify({
           createdInvoiceId: createdInvoice?.id || null,
           customer: {
-            id: customerId,
-            name: customerName,
-            phone: customerPhone,
+            id: validCustomerId,
+            name: cleanName,
+            phone: cleanPhone,
             avatar_url: customer.avatar_url || ''
           },
           services: posItems,
@@ -188,7 +199,7 @@ export default function BedDetailDrawer({
           facilityId: bed.id,
           facilityName: bed.name,
           roomName: room?.name || '',
-          branchId
+          branchId: effectiveBranch
         }));
       } catch (e) {
         console.warn('Error saving prefill session:', e);

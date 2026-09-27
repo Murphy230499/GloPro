@@ -130,12 +130,15 @@ const createEntityAdapter = (tableName) => {
       } catch (e) {}
 
       // Sanitize fields for Supabase
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       for (let k in p) {
         if (k === 'id' || k.endsWith('_id')) {
-          if (p[k] === '') {
+          if (!p[k] || p[k] === '') {
             p[k] = null;
           } else if (typeof p[k] === 'string' && p[k].length === 24) {
             p[k] = objectIdToUuid(p[k]);
+          } else if (typeof p[k] === 'string' && !isUuid(p[k])) {
+            p[k] = null;
           }
         }
       }
@@ -159,15 +162,30 @@ const createEntityAdapter = (tableName) => {
         }
       }
 
-      // Fallback if foreign key constraint (e.g. group_id) is violated
-      if (error && (error.code === '23503' || error.message?.includes('foreign key constraint') || error.message?.includes('fk_service_group_id'))) {
-        if ('group_id' in p) {
-          console.warn(`Foreign key constraint on ${tableName}. Retrying with group_id = null...`);
-          p.group_id = null;
-          const retryResult = await supabase.from(tableName).insert([p]).select().single();
-          data = retryResult.data;
-          error = retryResult.error;
+      // Fallback if UUID syntax error (22P02)
+      if (error && error.code === '22P02') {
+        console.warn(`UUID syntax error on ${tableName}. Setting non-standard ID columns to null...`);
+        for (let k in p) {
+          if (k.endsWith('_id') && p[k] && !isUuid(p[k])) {
+            p[k] = null;
+          }
         }
+        const retryResult = await supabase.from(tableName).insert([p]).select().single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
+
+      // Fallback if foreign key constraint (e.g. group_id, customer_id, branch_id) is violated
+      if (error && (error.code === '23503' || error.message?.includes('foreign key constraint') || error.message?.includes('fk_service_group_id'))) {
+        console.warn(`Foreign key constraint on ${tableName}. Retrying with null foreign keys...`);
+        for (let k in p) {
+          if (k.endsWith('_id') && p[k]) {
+            p[k] = null;
+          }
+        }
+        const retryResult = await supabase.from(tableName).insert([p]).select().single();
+        data = retryResult.data;
+        error = retryResult.error;
       }
 
       if (error) {
@@ -226,12 +244,15 @@ const createEntityAdapter = (tableName) => {
       delete p.created_date;
       delete p.updated_date;
 
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       for (let k in p) {
         if (k.endsWith('_id')) {
-          if (p[k] === '') {
+          if (!p[k] || p[k] === '') {
             p[k] = null;
           } else if (typeof p[k] === 'string' && p[k].length === 24) {
             p[k] = objectIdToUuid(p[k]);
+          } else if (typeof p[k] === 'string' && !isUuid(p[k])) {
+            p[k] = null;
           }
         }
       }

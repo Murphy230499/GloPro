@@ -120,7 +120,10 @@ export default function POS() {
         : [];
       const branchInvs = (currentBranchId === 'all' || !currentBranchId)
         ? invs
-        : invs.filter(x => String(x.branch_id) === String(currentBranchId));
+        : invs.filter(x => {
+            if (selectId && String(x.id) === String(selectId)) return true;
+            return String(x.branch_id) === String(currentBranchId);
+          });
 
       const currentToday = todayStr();
 
@@ -149,8 +152,13 @@ export default function POS() {
       const sorted = unpaidInvs.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
       const mapped = sorted.map((inv, idx) => {
         let cObj = inv.customer_id ? (cusMap[inv.customer_id] || cusList.find(c => c && String(c.id) === String(inv.customer_id))) : null;
-        if (!cObj && inv.customer_phone) {
-          cObj = cusList.find(c => c && c.phone && c.phone === inv.customer_phone);
+        let customerPhoneFromInv = '';
+        if (inv.customer_name) {
+          const m = inv.customer_name.match(/\((0\d{9,10})\)/);
+          if (m) customerPhoneFromInv = m[1];
+        }
+        if (!cObj && customerPhoneFromInv) {
+          cObj = cusList.find(c => c && c.phone && c.phone === customerPhoneFromInv);
         }
         let resolvedCustomer = null;
         if (cObj) {
@@ -158,15 +166,16 @@ export default function POS() {
             id: cObj.id,
             name: cObj.name,
             avatar_url: cObj.avatar_url,
-            phone: cObj.phone || inv.customer_phone || '',
+            phone: cObj.phone || customerPhoneFromInv || '',
             points: cObj.points || 0,
             total_spent: cObj.total_spent || 0
           };
         } else if (inv.customer_name && inv.customer_name !== 'Khách vãng lai') {
+          const cleanName = inv.customer_name.replace(/\s*\((0\d{9,10})\)/, '').trim();
           resolvedCustomer = {
             id: inv.customer_id || null,
-            name: inv.customer_name,
-            phone: inv.customer_phone || '',
+            name: cleanName || inv.customer_name,
+            phone: customerPhoneFromInv,
             points: 0,
             total_spent: 0
           };
@@ -330,73 +339,6 @@ export default function POS() {
       });
     }
 
-    // Check prefill from BedDetailDrawer
-    try {
-      const prefillRaw = sessionStorage.getItem('gp_pos_prefill_session');
-      if (prefillRaw) {
-        sessionStorage.removeItem('gp_pos_prefill_session');
-        const prefill = JSON.parse(prefillRaw);
-        
-        // Trường hợp 1: Đã có sẵn Hoá đơn do BedDetailDrawer tạo trực tiếp
-        if (prefill.createdInvoiceId) {
-          loadUnpaidInvoices(prefill.createdInvoiceId);
-        } else if (prefill.customer || prefill.services?.length) {
-          // Trường hợp 2: Dự phòng tạo hoá đơn nếu trước đó chưa lưu được
-          const prefillCart = (prefill.services || []).map(s => {
-            const bedName = s.bed_name || prefill.facilityName || '';
-            const roomName = s.room_name || prefill.roomName || '';
-            const displayLocation = roomName && bedName && !bedName.includes(roomName)
-              ? `${bedName} (${roomName})`
-              : (bedName || roomName || '');
-
-            return {
-              id: Math.random().toString(),
-              name: s.name || s.service_name || 'Dịch vụ',
-              type: 'service',
-              price: Math.round(Number(s.price) || 0),
-              originalPrice: Math.round(Number(s.price) || 0),
-              qty: 1,
-              staff_id: s.staff_id || '',
-              staff_name: s.staff_name || '',
-              facility_id: s.bed_id || s.facility_id || prefill.facilityId || '',
-              facility_name: s.facility_name || displayLocation,
-              duration_minutes: Number(s.duration || s.duration_minutes) || 30
-            };
-          });
-
-          const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
-          const subtotal = prefillCart.reduce((sum, item) => sum + item.price * item.qty, 0);
-          const custName = prefill.customer?.name || 'Khách vãng lai';
-          const custId = (prefill.customer?.id && prefill.customer.id !== 'walk_in') ? prefill.customer.id : '';
-          const custPhone = prefill.customer?.phone || '';
-
-          base44.entities.Invoice.create({
-            invoice_code: saleCode,
-            customer_name: custName,
-            customer_id: custId,
-            customer_phone: custPhone,
-            branch_id: (currentBranchId === 'all' || !currentBranchId) ? (prefill.branchId || '') : currentBranchId,
-            items: prefillCart,
-            subtotal,
-            discount: 0,
-            total: subtotal,
-            tip: 0,
-            status: 'unpaid',
-            date: todayStr(),
-            created_at: new Date().toISOString()
-          }).then(async (newInv) => {
-            await loadUnpaidInvoices(newInv.id);
-            toast.success(`Đã tạo hoá đơn cho ${custName} (${prefillCart.length} dịch vụ)`);
-          }).catch(err => {
-            console.error('Lỗi khi tự động tạo hoá đơn từ giường:', err);
-            loadUnpaidInvoices();
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('Error reading prefill session:', e);
-    }
-
     if (buyAgainCustomerId && buyAgainName && buyAgainType) {
       if (currentBranchId === 'all' || !currentBranchId) {
         toast.error(t('pos.err_select_branch_buy_again', 'Vui lòng chọn cơ sở cụ thể để mua lại dịch vụ/sản phẩm'));
@@ -447,13 +389,89 @@ export default function POS() {
         // Clean query params
         clearSearchParams(['buy_again_customer_id', 'buy_again_name', 'buy_again_type', 'buy_again_price']);
       });
-    } else {
-      loadUnpaidInvoices(editInvoiceId).then(() => {
-        if (editInvoiceId) {
-          clearSearchParams(['edit_invoice_id']);
-        }
-      });
+      return;
     }
+
+    // Check prefill from BedDetailDrawer
+    try {
+      const prefillRaw = typeof window !== 'undefined' ? sessionStorage.getItem('gp_pos_prefill_session') : null;
+      if (prefillRaw) {
+        sessionStorage.removeItem('gp_pos_prefill_session');
+        const prefill = JSON.parse(prefillRaw);
+        
+        // Trường hợp 1: Đã có sẵn Hoá đơn do BedDetailDrawer tạo trực tiếp
+        if (prefill.createdInvoiceId) {
+          loadUnpaidInvoices(prefill.createdInvoiceId).then(() => {
+            if (editInvoiceId) clearSearchParams(['edit_invoice_id']);
+          });
+          return;
+        } else if (prefill.customer || prefill.services?.length) {
+          // Trường hợp 2: Dự phòng tạo hoá đơn nếu trước đó chưa lưu được
+          const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+          const prefillCart = (prefill.services || []).map(s => {
+            const bedName = s.bed_name || prefill.facilityName || '';
+            const roomName = s.room_name || prefill.roomName || '';
+            const displayLocation = roomName && bedName && !bedName.includes(roomName)
+              ? `${bedName} (${roomName})`
+              : (bedName || roomName || '');
+
+            return {
+              id: Math.random().toString(),
+              name: s.name || s.service_name || 'Dịch vụ',
+              type: 'service',
+              price: Math.round(Number(s.price) || 0),
+              originalPrice: Math.round(Number(s.price) || 0),
+              qty: 1,
+              staff_id: s.staff_id || '',
+              staff_name: s.staff_name || '',
+              facility_id: s.bed_id || s.facility_id || prefill.facilityId || '',
+              facility_name: s.facility_name || displayLocation,
+              duration_minutes: Number(s.duration || s.duration_minutes) || 30
+            };
+          });
+
+          const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
+          const subtotal = prefillCart.reduce((sum, item) => sum + item.price * item.qty, 0);
+          const custName = (prefill.customer?.name || 'Khách vãng lai').trim();
+          const custPhone = (prefill.customer?.phone || '').trim();
+          const displayName = custPhone && !custName.includes(custPhone) ? `${custName} (${custPhone})` : custName;
+          const custId = isUuid(prefill.customer?.id) ? prefill.customer.id : null;
+          const branchId = isUuid(currentBranchId) ? currentBranchId : (isUuid(prefill.branchId) ? prefill.branchId : null);
+
+          base44.entities.Invoice.create({
+            invoice_code: saleCode,
+            customer_name: displayName,
+            customer_id: custId,
+            branch_id: branchId,
+            items: prefillCart,
+            subtotal,
+            discount: 0,
+            total: subtotal,
+            tip: 0,
+            status: 'unpaid',
+            date: todayStr(),
+            created_at: new Date().toISOString()
+          }).then(async (newInv) => {
+            await loadUnpaidInvoices(newInv.id);
+            if (editInvoiceId) clearSearchParams(['edit_invoice_id']);
+            toast.success(`Đã tạo hoá đơn cho ${custName} (${prefillCart.length} dịch vụ)`);
+          }).catch(err => {
+            console.error('Lỗi khi tự động tạo hoá đơn từ giường:', err);
+            loadUnpaidInvoices();
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading prefill session:', e);
+    }
+
+    // Default flow
+    loadUnpaidInvoices(editInvoiceId).then(() => {
+      if (editInvoiceId) {
+        clearSearchParams(['edit_invoice_id']);
+      }
+    });
   }, [currentBranchId]);
 
   useEffect(() => {
