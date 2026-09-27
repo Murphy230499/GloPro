@@ -1019,12 +1019,42 @@ export default function AppointmentModal({
   const handlePickFacility = (guestIdx, itemIdx, facilityId) => {
     const fac = facilityList.find(f => f.id === facilityId);
     if (fac && fac.allow_overlap === false) {
-      toast.info(t('appointments.facility_no_overlap_info', 'ℹ️ Vị trí "{name}" không bật trùng lịch. Hệ thống sẽ ghi nhận lịch cho vị trí này.', { name: fac.name }));
+      toast.info(t('appointments.facility_no_overlap_info', 'ℹ️ Vị trí "{name}" không bật trùng lịch. Hệ thống sẽ ghi nhận lịch cho vị trí này.', { name: fac.display_name || fac.name }));
     }
     const updated = [...guests];
     updated[guestIdx].items[itemIdx].facility_id = facilityId;
-    updated[guestIdx].items[itemIdx].facility_name = fac?.name || '';
+    updated[guestIdx].items[itemIdx].facility_name = fac?.display_name || fac?.name || '';
     setGuests(updated);
+  };
+
+  const renderFacilityOptions = () => {
+    const byRoom = facilityList.reduce((acc, fac) => {
+      const rName = fac.room_name || '';
+      (acc[rName] = acc[rName] || []).push(fac);
+      return acc;
+    }, {});
+
+    const hasRooms = facilityList.some(f => f.room_name);
+    if (!hasRooms) {
+      return facilityList.map(fac => (
+        <option key={fac.id} value={fac.id}>🛏️ {fac.display_name || fac.name}</option>
+      ));
+    }
+
+    return Object.entries(byRoom).map(([rName, items]) => {
+      if (!rName) {
+        return items.map(fac => (
+          <option key={fac.id} value={fac.id}>🛏️ {fac.display_name || fac.name}</option>
+        ));
+      }
+      return (
+        <optgroup key={rName} label={`🚪 ${rName}`}>
+          {items.map(fac => (
+            <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
+          ))}
+        </optgroup>
+      );
+    });
   };
 
   const handleApplyPackageItems = (selectedItems) => {
@@ -1984,9 +2014,7 @@ export default function AppointmentModal({
                                               className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                             >
                                               <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
-                                              {facilityList.map(fac => (
-                                                <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
-                                              ))}
+                                              {renderFacilityOptions()}
                                             </select>
                                             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
                                           </div>
@@ -2039,9 +2067,7 @@ export default function AppointmentModal({
                                         className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                       >
                                         <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
-                                        {facilityList.map(fac => (
-                                          <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
-                                        ))}
+                                        {renderFacilityOptions()}
                                       </select>
                                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
                                     </div>
@@ -2093,9 +2119,7 @@ export default function AppointmentModal({
                                     className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                   >
                                     <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
-                                    {facilityList.map(fac => (
-                                      <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
-                                    ))}
+                                    {renderFacilityOptions()}
                                   </select>
                                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
                                 </div>

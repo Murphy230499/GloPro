@@ -1,13 +1,31 @@
-export const DEFAULT_FACILITIES = [
-  { id: 'fac_nail_1', name: 'Bàn Làm Nail 1', category: 'Dịch vụ Nail', icon: '💅' },
-  { id: 'fac_nail_2', name: 'Bàn Làm Nail 2', category: 'Dịch vụ Nail', icon: '💅' },
-  { id: 'fac_nail_3', name: 'Bàn Làm Nail 3', category: 'Dịch vụ Nail', icon: '💅' },
-  { id: 'fac_nail_4', name: 'Bàn Làm Nail 4', category: 'Dịch vụ Nail', icon: '💅' },
-  { id: 'fac_room_1', name: 'Phòng Spa VIP 1', category: 'Spa & Chăm sóc', icon: '💆‍♀️' },
-  { id: 'fac_room_2', name: 'Phòng Spa VIP 2', category: 'Spa & Chăm sóc', icon: '💆‍♀️' },
-  { id: 'fac_vip_1', name: 'Ghế Cắt Tóc VIP 1', category: 'Tóc & Hóa chất', icon: '💇‍♀️' },
-  { id: 'fac_vip_2', name: 'Ghế Cắt Tóc VIP 2', category: 'Tóc & Hóa chất', icon: '💇‍♀️' },
+export const INITIAL_DEMO_ROOMS = [
+  { id: 'room_1', name: 'Phòng 1', display_order: 1 },
+  { id: 'room_2', name: 'Phòng 2', display_order: 2 },
+  { id: 'room_3', name: 'Phòng 3', display_order: 3 },
+  { id: 'room_4', name: 'Phòng 4', display_order: 4 },
 ];
+
+export const INITIAL_DEMO_BEDS = [
+  // Phòng 1 (4 giường)
+  { id: 'bed_p1_1', name: 'Giường 1', room_id: 'room_1', room_name: 'Phòng 1', display_name: 'Giường 1 (Phòng 1)', is_active: true },
+  { id: 'bed_p1_2', name: 'Giường 2', room_id: 'room_1', room_name: 'Phòng 1', display_name: 'Giường 2 (Phòng 1)', is_active: true },
+  { id: 'bed_p1_3', name: 'Giường 3', room_id: 'room_1', room_name: 'Phòng 1', display_name: 'Giường 3 (Phòng 1)', is_active: true },
+  { id: 'bed_p1_4', name: 'Giường 4', room_id: 'room_1', room_name: 'Phòng 1', display_name: 'Giường 4 (Phòng 1)', is_active: true },
+
+  // Phòng 2 (3 giường)
+  { id: 'bed_p2_1', name: 'Giường 1', room_id: 'room_2', room_name: 'Phòng 2', display_name: 'Giường 1 (Phòng 2)', is_active: true },
+  { id: 'bed_p2_2', name: 'Giường 2', room_id: 'room_2', room_name: 'Phòng 2', display_name: 'Giường 2 (Phòng 2)', is_active: true },
+  { id: 'bed_p2_3', name: 'Giường 3', room_id: 'room_2', room_name: 'Phòng 2', display_name: 'Giường 3 (Phòng 2)', is_active: true },
+
+  // Phòng 3 (2 giường)
+  { id: 'bed_p3_1', name: 'Giường 1', room_id: 'room_3', room_name: 'Phòng 3', display_name: 'Giường 1 (Phòng 3)', is_active: true },
+  { id: 'bed_p3_2', name: 'Giường 2', room_id: 'room_3', room_name: 'Phòng 3', display_name: 'Giường 2 (Phòng 3)', is_active: true },
+
+  // Phòng 4 (1 giường VIP)
+  { id: 'bed_p4_1', name: 'Giường VIP 1', room_id: 'room_4', room_name: 'Phòng 4', display_name: 'Giường VIP 1 (Phòng 4)', is_active: true },
+];
+
+export const DEFAULT_FACILITIES = INITIAL_DEMO_BEDS;
 
 export const TIMELINE_SLOTS = [
   '00:00', '00:30', '01:00', '01:30', '02:00', '02:30', '03:00', '03:30',

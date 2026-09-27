@@ -96,8 +96,8 @@ export default function AppointmentCalendarView({
         ...(staffList.length ? staffList.map(s => ({ id: s.id, name: s.full_name || s.name, avatar_url: s.avatar_url })) : sampleStaffColumns.filter(c => c.id !== '__unassigned'))
       ]
     : [
-        { id: '__unassigned_facility', name: t('appointments.unassigned_facility', 'Chưa xếp vị trí'), icon: '❓' },
-        ...facilityList.map(f => ({ id: f.id, name: f.name, icon: f.icon || '📍' }))
+        { id: '__unassigned_facility', name: t('appointments.unassigned_facility', 'Chưa xếp giường'), icon: '❓' },
+        ...facilityList.map(f => ({ id: f.id, name: f.name, display_name: f.display_name, room_name: f.room_name, icon: f.icon || '🛏️' }))
       ];
 
   if (selectedStaff && selectedStaff !== 'all') {
@@ -195,7 +195,7 @@ export default function AppointmentCalendarView({
                   if (col.id === '__unassigned_facility') {
                     return !a.facility_id || a.facility_id === '__unassigned' || a.facility_id === '__unassigned_facility';
                   }
-                  return a.facility_id === col.id || (a.facility_name && col.name && a.facility_name.toLowerCase() === col.name.toLowerCase());
+                  return a.facility_id === col.id || (a.facility_name && (col.display_name === a.facility_name || col.name === a.facility_name || a.facility_name.toLowerCase() === col.name.toLowerCase()));
                 }
               }).length;
 
@@ -207,13 +207,18 @@ export default function AppointmentCalendarView({
                   {targetEntity === 'staff' ? (
                     <Avatar src={col.avatar_url} name={col.name} size={36} color="#3B82F6" />
                   ) : (
-                    <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
-                      {col.icon || '📍'}
+                    <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
+                      {col.icon || '🛏️'}
                     </div>
                   )}
                   <span className="text-xs font-bold text-slate-800 truncate max-w-full">
                     {col.name} <span className="text-slate-400 font-normal">({colApptsCount})</span>
                   </span>
+                  {targetEntity === 'facility' && col.room_name && (
+                    <span className="text-[10px] text-slate-400 truncate max-w-full -mt-1">
+                      {col.room_name}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -268,7 +273,7 @@ export default function AppointmentCalendarView({
                     if (col.id === '__unassigned_facility') {
                       return !a.facility_id || a.facility_id === '__unassigned' || a.facility_id === '__unassigned_facility';
                     }
-                    return a.facility_id === col.id || (a.facility_name && col.name && a.facility_name.toLowerCase() === col.name.toLowerCase());
+                    return a.facility_id === col.id || (a.facility_name && (col.display_name === a.facility_name || col.name === a.facility_name || a.facility_name.toLowerCase() === col.name.toLowerCase()));
                   }
                 });
 

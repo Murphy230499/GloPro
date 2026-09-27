@@ -204,7 +204,7 @@ export default function AppointmentTimelineView({
           ) : (
             <>
               <Building2 className="w-4 h-4 text-purple-600" />
-              <span>Vị trí</span>
+              <span>{t('appointments.bed_or_room', 'Giường / Phòng')}</span>
             </>
           )}
         </div>
@@ -256,7 +256,7 @@ export default function AppointmentTimelineView({
                 if (targetEntity === 'staff') {
                   return a.staff_id === row.id;
                 } else {
-                  return a.facility_id === row.id || a.facility_name === row.name;
+                  return a.facility_id === row.id || a.facility_name === row.display_name || a.facility_name === row.name;
                 }
               });
 
@@ -278,7 +278,7 @@ export default function AppointmentTimelineView({
                       </div>
                     ) : (
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 border border-purple-200">
-                        {row.icon || '📍'}
+                        {row.icon || '🛏️'}
                       </div>
                     )}
                     <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full">
@@ -291,7 +291,7 @@ export default function AppointmentTimelineView({
                         </span>
                       ) : (
                         <p className="text-[10px] md:text-xs text-slate-400 truncate text-center md:text-left w-full">
-                          {row.category || 'Vị trí'}
+                          {row.room_name || row.category || 'Phòng'}
                         </p>
                       )}
                     </div>

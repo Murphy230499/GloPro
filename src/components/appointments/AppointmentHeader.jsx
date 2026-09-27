@@ -14,7 +14,6 @@ import {
   Search,
   Check,
   Settings,
-  Armchair,
   User,
   BedDouble
 } from 'lucide-react';
@@ -206,8 +205,7 @@ export default function AppointmentHeader({
   facilityList = [],
   onAddClick,
   onAddTimeBlockClick,
-  onSettingsClick,
-  onFacilityManagementClick
+  onSettingsClick
 }) {
   const { t } = useT();
   const [isServiceOpen, setIsServiceOpen] = useState(false);
@@ -276,8 +274,8 @@ export default function AppointmentHeader({
     : effectiveStaffList.find(f => f.id === selectedStaff);
 
   const staffLabel = selectedStaff === 'all'
-    ? (targetEntity === 'staff' ? t('appointments.select_staff_applied', 'Chọn nhân viên áp dụng') : t('appointments.select_facility_applied', 'Chọn vị trí áp dụng'))
-    : (currentStaffObj?.full_name || currentStaffObj?.name || currentStaffObj?.staff_name || selectedStaff);
+    ? (targetEntity === 'staff' ? t('appointments.select_staff_applied', 'Chọn nhân viên áp dụng') : t('appointments.select_bed_applied', 'Chọn giường / phòng áp dụng'))
+    : (currentStaffObj?.display_name || currentStaffObj?.full_name || currentStaffObj?.name || currentStaffObj?.staff_name || selectedStaff);
 
   // Filtered Services List
   const filteredServices = effectiveServices.filter(s => {
@@ -288,7 +286,7 @@ export default function AppointmentHeader({
   // Filtered Staffs / Facilities List
   const filteredStaffList = targetEntity === 'staff'
     ? effectiveStaffList.filter(st => (st.full_name || st.name || st.staff_name || '').toLowerCase().includes(searchStaff.toLowerCase()))
-    : effectiveStaffList.filter(f => (f.name || f.facility_name || '').toLowerCase().includes(searchStaff.toLowerCase()));
+    : effectiveStaffList.filter(f => (f.display_name || f.name || f.facility_name || '').toLowerCase().includes(searchStaff.toLowerCase()));
 
   // Group Services by Category
   const servicesByCategory = filteredServices.reduce((acc, s) => {
@@ -302,7 +300,9 @@ export default function AppointmentHeader({
 
   // Group Staff / Facility by Role / Category
   const staffByGroup = filteredStaffList.reduce((acc, item) => {
-    const grp = (item.role || item.category || (targetEntity === 'staff' ? 'NHÂN VIÊN CHUYÊN MÔN' : 'KHU VỰC DỊCH VỤ')).toUpperCase();
+    const grp = (targetEntity === 'facility'
+      ? (item.room_name || item.category || 'GIƯỜNG DỊCH VỤ')
+      : (item.role || item.category || 'NHÂN VIÊN CHUYÊN MÔN')).toUpperCase();
     (acc[grp] = acc[grp] || []).push(item);
     return acc;
   }, {});
@@ -479,7 +479,7 @@ export default function AppointmentHeader({
                 <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
                   <input
                     type="text"
-                    placeholder={targetEntity === 'staff' ? t('appointments.search_staff_placeholder', 'tìm kiếm nhân viên...') : t('appointments.search_facility_placeholder', 'tìm kiếm vị trí...')}
+                    placeholder={targetEntity === 'staff' ? t('appointments.search_staff_placeholder', 'tìm kiếm nhân viên...') : t('appointments.search_bed_placeholder', 'tìm kiếm giường / phòng...')}
                     value={searchStaff}
                     onChange={(e) => setSearchStaff(e.target.value)}
                     className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-light"
@@ -522,7 +522,7 @@ export default function AppointmentHeader({
                       <div className="pl-6 space-y-0.5">
                         {items.map((item) => {
                           const isSelected = selectedStaff === item.id;
-                          const name = item.full_name || item.name || item.staff_name;
+                          const name = item.display_name || item.full_name || item.name || item.staff_name;
                           return (
                             <button
                               key={item.id}
@@ -545,7 +545,7 @@ export default function AppointmentHeader({
                                   <Avatar src={item.avatar_url} name={name} size={20} color={item.avatar_color || '#3B82F6'} />
                                 ) : (
                                   <span className="w-4 h-4 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                                    {item.icon || '📍'}
+                                    {item.icon || '🛏️'}
                                   </span>
                                 )}
                                 <span className="truncate">{name}</span>
@@ -653,17 +653,8 @@ export default function AppointmentHeader({
             </button>
           </div>
 
-          {/* Settings Buttons: Sofa + Cog */}
+          {/* Settings Button: Cog */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0 order-3 sm:order-5 xl:order-6">
-            <button
-              type="button"
-              onClick={onFacilityManagementClick}
-              className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg sm:rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
-              title={t('appointments.facility_mgmt', 'Quản lý vị trí (ghế/giường)')}
-            >
-              <Armchair className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
-            </button>
-            
             <button
               type="button"
               onClick={onSettingsClick}

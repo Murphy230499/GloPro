@@ -16,33 +16,32 @@ import { Phone, CheckCircle2, UserCheck, XCircle, Edit3, Trash2, Clock } from 'l
 import AppointmentHeader from '@/components/appointments/AppointmentHeader';
 import AppointmentSettingsModal from '@/components/AppointmentSettingsModal';
 import AddTimeBlockModal from '@/components/appointments/AddTimeBlockModal';
-import FacilityManagementModal from '@/components/appointments/FacilityManagementModal';
 import AppointmentTimelineView from '@/components/appointments/AppointmentTimelineView';
 import AppointmentCalendarView from '@/components/appointments/AppointmentCalendarView';
-import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
+import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS } from '@/components/appointments/constants';
 
 const SAMPLE_DEMO_APPOINTMENTS = [
-  { id: 'demo_1', customer_name: 'Michael Johnson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:30', staff_id: '__unassigned', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'confirmed' },
-  { id: 'demo_2', customer_name: 'Emily Harris', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: '__unassigned', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'pending' },
-  { id: 'demo_3', customer_name: 'Jessica Miller', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:00', staff_id: '__unassigned', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'checked_in' },
-  { id: 'demo_4', customer_name: 'Sarah Wilson', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '11:00', end_time: '11:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'checked_in' },
-  { id: 'demo_5', customer_name: 'Brandon Martinez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'confirmed' },
-  { id: 'demo_6', customer_name: 'Megan Taylor', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'fac_nail_1', facility_name: 'Bàn Làm Nail 1', status: 'pending' },
-  { id: 'demo_7', customer_name: 'Anh Ngọc Nguyễn', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '12:30', end_time: '13:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'fac_nail_2', facility_name: 'Bàn Làm Nail 2', status: 'checked_in' },
-  { id: 'demo_8', customer_name: 'Emma Brown', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'fac_nail_2', facility_name: 'Bàn Làm Nail 2', status: 'confirmed' },
-  { id: 'demo_9', customer_name: 'Ava Campbell', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'fac_nail_3', facility_name: 'Bàn Làm Nail 3', status: 'pending' },
-  { id: 'demo_10', customer_name: 'Sophia Hernandez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '15:30', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'fac_nail_3', facility_name: 'Bàn Làm Nail 3', status: 'checked_in' },
-  { id: 'demo_11', customer_name: 'Olivia Thompson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '12:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'fac_nail_4', facility_name: 'Bàn Làm Nail 4', status: 'checked_in' },
-  { id: 'demo_12', customer_name: 'Kylie Walker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '12:00', end_time: '13:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'fac_nail_4', facility_name: 'Bàn Làm Nail 4', status: 'checked_in' },
-  { id: 'demo_13', customer_name: 'Andrew Robinson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'fac_nail_4', facility_name: 'Bàn Làm Nail 4', status: 'confirmed' },
-  { id: 'demo_14', customer_name: 'Grace Moore', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'fac_room_1', facility_name: 'Phòng Spa VIP 1', status: 'checked_in' },
-  { id: 'demo_15', customer_name: 'Chloe Scott', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'fac_room_2', facility_name: 'Phòng Spa VIP 2', status: 'in_progress' },
-  { id: 'demo_16', customer_name: 'Madison Baker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'fac_room_2', facility_name: 'Phòng Spa VIP 2', status: 'checked_in' },
-  { id: 'demo_17', customer_name: 'Mia Carter', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_7', staff_name: 'Nga H.', facility_id: 'fac_vip_1', facility_name: 'Ghế Cắt Tóc VIP 1', status: 'checked_in' },
-  { id: 'demo_18', customer_name: 'Trần Thu Hà', service_name: 'Cắt gội xấy tạo kiểu (1.5h)', price: 250000, start_time: '09:30', end_time: '11:00', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'fac_vip_1', facility_name: 'Ghế Cắt Tóc VIP 1', status: 'completed' },
-  { id: 'demo_19', customer_name: 'Đặng Văn Lâm', service_name: 'Massage cổ vai gáy (1h)', price: 300000, start_time: '10:00', end_time: '11:00', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'fac_room_1', facility_name: 'Phòng Spa VIP 1', status: 'completed' },
-  { id: 'demo_20', customer_name: 'Nguyễn Hoàng Nam', service_name: 'Uốn tóc Hàn Quốc (2h)', price: 650000, start_time: '14:00', end_time: '16:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'fac_vip_2', facility_name: 'Ghế Cắt Tóc VIP 2', status: 'cancelled' },
-  { id: 'demo_21', customer_name: 'Phạm Đức Anh', service_name: 'Chăm sóc da chuyên sâu (1.5h)', price: 500000, start_time: '15:00', end_time: '16:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'fac_room_2', facility_name: 'Phòng Spa VIP 2', status: 'no_show' },
+  { id: 'demo_1', customer_name: 'Michael Johnson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:30', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'confirmed' },
+  { id: 'demo_2', customer_name: 'Emily Harris', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'pending' },
+  { id: 'demo_3', customer_name: 'Jessica Miller', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:00', staff_id: '__unassigned', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
+  { id: 'demo_4', customer_name: 'Sarah Wilson', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '11:00', end_time: '11:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
+  { id: 'demo_5', customer_name: 'Brandon Martinez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p1_3', facility_name: 'Giường 3 (Phòng 1)', status: 'confirmed' },
+  { id: 'demo_6', customer_name: 'Megan Taylor', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p1_4', facility_name: 'Giường 4 (Phòng 1)', status: 'pending' },
+  { id: 'demo_7', customer_name: 'Anh Ngọc Nguyễn', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '12:30', end_time: '13:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p2_1', facility_name: 'Giường 1 (Phòng 2)', status: 'checked_in' },
+  { id: 'demo_8', customer_name: 'Emma Brown', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p2_2', facility_name: 'Giường 2 (Phòng 2)', status: 'confirmed' },
+  { id: 'demo_9', customer_name: 'Ava Campbell', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'bed_p2_3', facility_name: 'Giường 3 (Phòng 2)', status: 'pending' },
+  { id: 'demo_10', customer_name: 'Sophia Hernandez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '15:30', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'bed_p3_1', facility_name: 'Giường 1 (Phòng 3)', status: 'checked_in' },
+  { id: 'demo_11', customer_name: 'Olivia Thompson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '12:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'checked_in' },
+  { id: 'demo_12', customer_name: 'Kylie Walker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '12:00', end_time: '13:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'checked_in' },
+  { id: 'demo_13', customer_name: 'Andrew Robinson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'confirmed' },
+  { id: 'demo_14', customer_name: 'Grace Moore', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'checked_in' },
+  { id: 'demo_15', customer_name: 'Chloe Scott', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'in_progress' },
+  { id: 'demo_16', customer_name: 'Madison Baker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
+  { id: 'demo_17', customer_name: 'Mia Carter', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_7', staff_name: 'Nga H.', facility_id: 'bed_p2_1', facility_name: 'Giường 1 (Phòng 2)', status: 'checked_in' },
+  { id: 'demo_18', customer_name: 'Trần Thu Hà', service_name: 'Cắt gội xấy tạo kiểu (1.5h)', price: 250000, start_time: '09:30', end_time: '11:00', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p2_2', facility_name: 'Giường 2 (Phòng 2)', status: 'completed' },
+  { id: 'demo_19', customer_name: 'Đặng Văn Lâm', service_name: 'Massage cổ vai gáy (1h)', price: 300000, start_time: '10:00', end_time: '11:00', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'bed_p3_1', facility_name: 'Giường 1 (Phòng 3)', status: 'completed' },
+  { id: 'demo_20', customer_name: 'Nguyễn Hoàng Nam', service_name: 'Uốn tóc Hàn Quốc (2h)', price: 650000, start_time: '14:00', end_time: '16:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'cancelled' },
+  { id: 'demo_21', customer_name: 'Phạm Đức Anh', service_name: 'Chăm sóc da chuyên sâu (1.5h)', price: 500000, start_time: '15:00', end_time: '16:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'no_show' },
   { id: 'demo_break_1', customer_name: 'Nghỉ trưa', service_name: 'Khung giờ bận', price: 0, start_time: '12:00', end_time: '13:00', staff_id: 'st_1', staff_name: 'Maria A.', is_break: true, status: 'break' },
   { id: 'demo_break_2', customer_name: 'Nghỉ trưa', service_name: 'Khung giờ bận', price: 0, start_time: '12:30', end_time: '13:30', staff_id: 'st_3', staff_name: 'Minh P.', is_break: true, status: 'break' }
 ];
@@ -129,7 +128,6 @@ export default function Appointments() {
   // Modals
   const [modalOpen, setModalOpen] = useState(false);
   const [timeBlockModalOpen, setTimeBlockModalOpen] = useState(false);
-  const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [posModalOpen, setPosModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -150,28 +148,56 @@ export default function Appointments() {
       base44.entities.Staff.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }),
       base44.entities.Customer.list(),
       base44.entities.Service ? base44.entities.Service.list() : Promise.resolve([]),
-      base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => []),
+      base44.entities.Room ? base44.entities.Room.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => []) : Promise.resolve([]),
+      base44.entities.Facility ? base44.entities.Facility.filter(currentBranchId === 'all' ? {} : { branch_id: currentBranchId }).catch(() => []) : Promise.resolve([]),
       base44.entities.StaffGroup.list().catch(() => [])
     ])
-      .then(([allAppts, st, cus, srv, facData, staffGroups]) => {
-        const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
-        const stMap = Object.fromEntries(st.map((s) => [s.id, s]));
-        let effectiveFacilities = facData?.length > 0 ? facData : [];
-        if (effectiveFacilities.length === 0 && typeof window !== 'undefined') {
-          try {
+      .then(([allAppts, st, cus, srv, roomData, facData, staffGroups]) => {
+        const cusMap = Object.fromEntries((cus || []).map((c) => [c.id, c]));
+        const stMap = Object.fromEntries((st || []).map((s) => [s.id, s]));
+        const srvMap = Object.fromEntries((srv || []).map((s) => [s.id, s]));
+
+        // Rooms data from DB or cache or INITIAL_DEMO_ROOMS
+        let finalRooms = roomData;
+        if (!finalRooms || finalRooms.length === 0) {
+          if (typeof window !== 'undefined') {
+            const cached = localStorage.getItem(`gp_rooms_${currentBranchId}`);
+            if (cached) {
+              try { finalRooms = JSON.parse(cached); } catch (e) {}
+            }
+          }
+          if (!finalRooms || finalRooms.length === 0) {
+            finalRooms = INITIAL_DEMO_ROOMS;
+          }
+        }
+        const roomMap = Object.fromEntries((finalRooms || []).map((r) => [r.id, r]));
+
+        // Beds / Facilities data from DB or cache or INITIAL_DEMO_BEDS
+        let finalBeds = facData;
+        if (!finalBeds || finalBeds.length === 0) {
+          if (typeof window !== 'undefined') {
             const cached = localStorage.getItem(`gp_facilities_${currentBranchId}`);
             if (cached) {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                effectiveFacilities = parsed;
-              }
+              try { finalBeds = JSON.parse(cached); } catch (e) {}
             }
-          } catch (e) {}
-        }
-        if (!effectiveFacilities || effectiveFacilities.length === 0) {
-          effectiveFacilities = DEFAULT_FACILITIES;
+          }
+          if (!finalBeds || finalBeds.length === 0) {
+            finalBeds = INITIAL_DEMO_BEDS;
+          }
         }
 
+        const effectiveFacilities = (finalBeds || []).map((b) => {
+          const room = roomMap[b.room_id];
+          const roomName = room?.name || b.room_name || '';
+          const displayName = roomName && !b.name.includes(roomName)
+            ? `${b.name} (${roomName})`
+            : b.name;
+          return {
+            ...b,
+            room_name: roomName,
+            display_name: displayName
+          };
+        });
         
         // Filter out inactive staff for scheduling
         const activeStaffList = st.filter(s => s.is_active !== false).map(s => {
@@ -233,7 +259,7 @@ export default function Appointments() {
                 staff_name: stObj?.full_name || stObj?.name || sItem.staff_name || (staffId === '__unassigned' ? t('appointments.unassigned', 'Chưa phân công') : 'Nhân viên'),
                 staff_avatar_url: stObj?.avatar_url || sItem.staff_avatar_url,
                 facility_id: facId,
-                facility_name: facObj?.name || sItem.facility_name || a.facility_name || defaultFac.name,
+                facility_name: facObj?.display_name || facObj?.name || sItem.facility_name || a.facility_name || defaultFac?.display_name || defaultFac?.name,
                 price: sItem.price || srvObj?.price || a.price,
                 duration_minutes: sDur,
                 start_time: sStart,
@@ -246,13 +272,15 @@ export default function Appointments() {
             const stObj = stMap[staffId];
             const srvObj = srvMap[a.service_id] || srvMap[a.service_name] || srv.find((s) => s.name === a.service_name);
             const finalPrice = a.price || srvObj?.price || 450000;
+            const facId = a.facility_id || defaultFac?.id;
+            const facObj = effectiveFacilities.find(f => f.id === facId);
 
             enriched.push({
               ...a,
               raw_appointment: a,
               staff_id: staffId,
-              facility_id: a.facility_id || defaultFac.id,
-              facility_name: a.facility_name || defaultFac.name,
+              facility_id: facId,
+              facility_name: a.facility_name || facObj?.display_name || facObj?.name || defaultFac?.display_name || defaultFac?.name,
               price: finalPrice,
               staff_name: a.staff_name || stObj?.full_name || stObj?.name || (staffId === '__unassigned' ? t('appointments.unassigned', 'Chưa phân công') : 'Nhân viên'),
               staff_avatar_url: stObj?.avatar_url || a.staff_avatar_url,
@@ -641,7 +669,6 @@ export default function Appointments() {
             setTimeBlockModalOpen(true);
           }}
           onSettingsClick={() => setIsSettingsOpen(true)}
-          onFacilityManagementClick={() => setIsFacilityModalOpen(true)}
         />
       </div>
 
@@ -1037,15 +1064,6 @@ export default function Appointments() {
         <AppointmentSettingsModal 
           open={isSettingsOpen} 
           onClose={() => setIsSettingsOpen(false)} 
-        />
-      )}
-
-      {isFacilityModalOpen && (
-        <FacilityManagementModal
-          open={isFacilityModalOpen}
-          onClose={() => setIsFacilityModalOpen(false)}
-          services={services}
-          onFacilityChange={load}
         />
       )}
 

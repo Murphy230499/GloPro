@@ -10,46 +10,13 @@ import { useT } from '@/lib/i18n';
 import { useBranch } from '@/lib/BranchContext';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
-import { DEFAULT_FACILITIES, formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
-
+import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS, formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
 import RoomModal from '@/components/rooms-beds/RoomModal';
 import BedModal from '@/components/rooms-beds/BedModal';
 import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
-
-// Sample fallback initial rooms
-const INITIAL_DEMO_ROOMS = [
-  { id: 'room_1', name: 'Phòng 1', display_order: 1 },
-  { id: 'room_2', name: 'Phòng 2', display_order: 2 },
-  { id: 'room_3', name: 'Phòng 3', display_order: 3 },
-  { id: 'room_4', name: 'Phòng 4', display_order: 4 },
-];
-
-// Sample fallback initial beds grouped by room
-const INITIAL_DEMO_BEDS = [
-  // Phòng 1
-  { id: 'bed_p1_1', name: 'Giường 1', room_id: 'room_1', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p1_2', name: 'Giường 2', room_id: 'room_1', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p1_3', name: 'Giường 3', room_id: 'room_1', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p1_4', name: 'Giường 4', room_id: 'room_1', applicable_services: [], allow_overlap: false },
-  // Phòng 2
-  { id: 'bed_p2_1', name: 'Giường 1', room_id: 'room_2', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p2_2', name: 'Giường 2', room_id: 'room_2', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p2_3', name: 'Giường 3', room_id: 'room_2', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p2_4', name: 'Giường 4', room_id: 'room_2', applicable_services: [], allow_overlap: false },
-  // Phòng 3
-  { id: 'bed_p3_1', name: 'Giường 1', room_id: 'room_3', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p3_2', name: 'Giường 2', room_id: 'room_3', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p3_3', name: 'Giường 3', room_id: 'room_3', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p3_4', name: 'Giường 4', room_id: 'room_3', applicable_services: [], allow_overlap: false },
-  // Phòng 4
-  { id: 'bed_p4_1', name: 'Giường 1', room_id: 'room_4', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p4_2', name: 'Giường 2', room_id: 'room_4', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p4_3', name: 'Giường 3', room_id: 'room_4', applicable_services: [], allow_overlap: false },
-  { id: 'bed_p4_4', name: 'Giường 4', room_id: 'room_4', applicable_services: [], allow_overlap: false },
-];
 
 export default function RoomsBeds() {
   const { t } = useT();
