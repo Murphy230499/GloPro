@@ -3,6 +3,8 @@ import { X, ArrowRightLeft, Sparkles, Clock, Check, Plus, Trash2, ChevronDown, B
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import Avatar from '@/components/Avatar';
+import ServicePickerDropdown from './ServicePickerDropdown';
+import StaffPickerDropdown from './StaffPickerDropdown';
 
 export default function BedTransferModal({
   open,
@@ -280,37 +282,21 @@ export default function BedTransferModal({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div className="relative">
-                        <select
-                          value={row.service_id}
-                          onChange={(e) => handleServiceChange(idx, 'service_id', e.target.value)}
-                          className="w-full pl-3.5 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer appearance-none"
-                        >
-                          <option value="">— {t('rooms_beds.select_service', 'Chọn dịch vụ')} —</option>
-                          {applicableServices.map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.name} ({s.duration_minutes || s.duration || 30}p)
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                      <ServicePickerDropdown
+                        servicesList={applicableServices}
+                        value={row.service_id}
+                        onChange={(val) => handleServiceChange(idx, 'service_id', val)}
+                        t={t}
+                        placeholder={`— ${t('rooms_beds.select_service', 'Chọn dịch vụ')} —`}
+                      />
 
-                      <div className="relative">
-                        <select
-                          value={row.staff_id}
-                          onChange={(e) => handleServiceChange(idx, 'staff_id', e.target.value)}
-                          className="w-full pl-3.5 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer appearance-none"
-                        >
-                          <option value="">— {t('rooms_beds.select_staff', 'Chọn nhân viên')} —</option>
-                          {staff.map(st => (
-                            <option key={st.id} value={st.id}>
-                              {st.full_name || st.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                      <StaffPickerDropdown
+                        staffList={staff}
+                        value={row.staff_id}
+                        onChange={(val) => handleServiceChange(idx, 'staff_id', val)}
+                        t={t}
+                        placeholder={`— ${t('rooms_beds.select_staff', 'Chọn nhân viên')} —`}
+                      />
                     </div>
                   </div>
                 ))}
