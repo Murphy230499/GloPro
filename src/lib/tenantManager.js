@@ -103,8 +103,24 @@ export async function resolveTenantId() {
               type: 'Employee',
               tenant_id: tid
             }]);
+
+            // Auto-create "GloPro Demo" branch for this new salon
+            const { data: existingBranches } = await supabase.from('branch').select('id').eq('tenant_id', tid).limit(1);
+            if (!existingBranches || existingBranches.length === 0) {
+              await supabase.from('branch').insert([{
+                name: 'GloPro Demo',
+                address: 'Chi nhánh Demo',
+                phone: '0900 000 000',
+                city: 'Hồ Chí Minh',
+                is_active: true,
+                country: 'Vietnam',
+                currency: 'VND',
+                language: 'vi',
+                tenant_id: tid
+              }]);
+            }
           } catch (e) {
-            console.warn('[TenantManager] Failed to auto-create user_profile on signup:', e);
+            console.warn('[TenantManager] Failed to auto-create user_profile or demo branch on signup:', e);
           }
         } else if (profile.role === 'owner' || !profile.role) {
           tid = user.id;
