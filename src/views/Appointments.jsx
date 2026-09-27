@@ -139,8 +139,21 @@ export default function Appointments() {
       .then(([allAppts, st, cus, srv, facData, staffGroups]) => {
         const cusMap = Object.fromEntries(cus.map((c) => [c.id, c]));
         const stMap = Object.fromEntries(st.map((s) => [s.id, s]));
-        const srvMap = Object.fromEntries(srv.map((s) => [s.id || s.name, s]));
-        const effectiveFacilities = facData?.length > 0 ? facData : DEFAULT_FACILITIES;
+        let effectiveFacilities = facData?.length > 0 ? facData : [];
+        if (effectiveFacilities.length === 0 && typeof window !== 'undefined') {
+          try {
+            const cached = localStorage.getItem(`gp_facilities_${currentBranchId}`);
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                effectiveFacilities = parsed;
+              }
+            }
+          } catch (e) {}
+        }
+        if (!effectiveFacilities || effectiveFacilities.length === 0) {
+          effectiveFacilities = DEFAULT_FACILITIES;
+        }
 
         
         // Filter out inactive staff for scheduling

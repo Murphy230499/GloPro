@@ -1983,9 +1983,9 @@ export default function AppointmentModal({
                                               onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
                                               className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                             >
-                                              <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
+                                              <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
                                               {facilityList.map(fac => (
-                                                <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                                <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
                                               ))}
                                             </select>
                                             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
@@ -2038,9 +2038,9 @@ export default function AppointmentModal({
                                         onChange={(e) => handlePickFacility(0, it.itemIdx, e.target.value)}
                                         className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                       >
-                                        <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
+                                        <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
                                         {facilityList.map(fac => (
-                                          <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                          <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
                                         ))}
                                       </select>
                                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />
@@ -2092,9 +2092,9 @@ export default function AppointmentModal({
                                     onChange={(e) => handlePickFacility(gIdx, itemIdx, e.target.value)}
                                     className="w-full pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-xs font-normal text-slate-700 bg-white hover:border-slate-300 focus:border-blue-500 appearance-none cursor-pointer truncate transition-all shadow-2xs"
                                   >
-                                    <option value="">— {t('appointments.facility', 'Vị trí')} —</option>
+                                    <option value="">— {t('appointments.select_bed_or_room', 'Chọn Giường / Phòng')} —</option>
                                     {facilityList.map(fac => (
-                                      <option key={fac.id} value={fac.id}>{fac.name}</option>
+                                      <option key={fac.id} value={fac.id}>🛏️ {fac.name}</option>
                                     ))}
                                   </select>
                                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[1.8]" />

@@ -2269,6 +2269,9 @@ const translations = {
     'appointments.success_save_timeblock': 'Đã lưu Time Block',
 
     'appointments.facility': 'Vị trí',
+    'appointments.by_staff': 'Nhân viên',
+    'appointments.by_bed_room': 'Giường / Phòng',
+    'appointments.select_bed_or_room': 'Chọn Giường / Phòng',
     'appointments.timeline_view': 'Dòng thời gian (Timeline)',
     'appointments.calendar_view': 'Lịch dạng lưới (Calendar Grid)',
     'appointments.list_view': 'Danh sách (List)',
@@ -5900,6 +5903,9 @@ const translations = {
     'appointments.success_save_timeblock': 'Time Block saved',
 
     'appointments.facility': 'Position',
+    'appointments.by_staff': 'By Staff',
+    'appointments.by_bed_room': 'By Bed / Room',
+    'appointments.select_bed_or_room': 'Select Bed / Room',
     'appointments.timeline_view': 'Timeline View',
     'appointments.calendar_view': 'Calendar Grid',
     'appointments.list_view': 'List View',
@@ -7424,6 +7430,12 @@ const translations = {
     'appointments.success_save_timeblock': '忙碌时间已保存',
 
     'appointments.facility': '位置',
+    'appointments.by_staff': 'スタッフ別',
+    'appointments.by_bed_room': 'ベッド・個室別',
+    'appointments.select_bed_or_room': 'ベッド・個室を選択',
+    'appointments.by_staff': '按员工',
+    'appointments.by_bed_room': '按床位/房间',
+    'appointments.select_bed_or_room': '选择床位/房间',
     'appointments.timeline_view': '时间线视图',
     'appointments.calendar_view': '日历视图',
     'appointments.list_view': '列表视图',
@@ -10554,6 +10566,9 @@ const translations = {
     'appointments.success_save_timeblock': '근무 외 시간이 저장되었습니다',
 
     'appointments.facility': '위치',
+    'appointments.by_staff': '직원별',
+    'appointments.by_bed_room': '베드/룸별',
+    'appointments.select_bed_or_room': '베드/룸 선택',
     'appointments.timeline_view': '타임라인 보기',
     'appointments.calendar_view': '캘린더 보기',
     'appointments.list_view': '리스트 보기',

@@ -14,7 +14,9 @@ import {
   Search,
   Check,
   Settings,
-  Armchair
+  Armchair,
+  User,
+  BedDouble
 } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 
@@ -310,33 +312,35 @@ export default function AppointmentHeader({
       {/* Responsive Horizontal Container without Overflow Clipping */}
       <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 sm:gap-3 overflow-visible w-full">
         {/* Left Side Items */}
-          {/* Target Entity Switcher: Nhân viên | Vị trí */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-between gap-1 border border-slate-200/60 shrink-0 w-auto order-1">
+          {/* Target Entity Switcher: Nhân viên | Giường / Phòng */}
+          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-xl flex items-center justify-between gap-1 border border-slate-200/70 shrink-0 w-auto order-1 shadow-2xs">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 targetEntity === 'staff'
-                  ? 'bg-blue-500 text-white shadow-2xs'
+                  ? 'bg-blue-600 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {t('nav.staff', 'Nhân viên')}
+              <User className="w-3.5 h-3.5" />
+              <span>{t('appointments.by_staff', 'Nhân viên')}</span>
             </button>
             <button
               onClick={() => {
                 setTargetEntity?.('facility');
                 setSelectedStaff?.('all');
               }}
-              className={`flex-1 sm:flex-none justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 targetEntity === 'facility'
-                  ? 'bg-blue-500 text-white shadow-2xs'
+                  ? 'bg-blue-600 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {t('appointments.facility', 'Vị trí')}
+              <BedDouble className="w-3.5 h-3.5" />
+              <span>{t('appointments.by_bed_room', 'Giường / Phòng')}</span>
             </button>
           </div>
 
