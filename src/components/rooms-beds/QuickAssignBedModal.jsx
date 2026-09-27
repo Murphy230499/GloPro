@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX } from 'lucide-react';
+import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX, ChevronDown } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import { formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
@@ -399,13 +399,13 @@ export default function QuickAssignBedModal({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* Service Picker */}
-                      <div>
+                      <div className="relative">
                         <select
                           value={row.service_id}
                           onChange={(e) => handleServiceChange(idx, 'service_id', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                          className="w-full pl-3.5 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer appearance-none transition-colors"
                         >
                           <option value="">— {t('rooms_beds.select_service', 'Chọn dịch vụ')} —</option>
                           {applicableServices.map(s => (
@@ -414,14 +414,15 @@ export default function QuickAssignBedModal({
                             </option>
                           ))}
                         </select>
+                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
 
                       {/* Staff Picker */}
-                      <div>
+                      <div className="relative">
                         <select
                           value={row.staff_id}
                           onChange={(e) => handleServiceChange(idx, 'staff_id', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                          className="w-full pl-3.5 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer appearance-none transition-colors"
                         >
                           <option value="">— {t('rooms_beds.select_staff', 'Chọn nhân viên')} —</option>
                           {staff.map(st => (
@@ -430,6 +431,7 @@ export default function QuickAssignBedModal({
                             </option>
                           ))}
                         </select>
+                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
                   </div>

@@ -157,14 +157,14 @@ export default function BedModal({
                 <select
                   value={formData.room_id}
                   onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all appearance-none cursor-pointer pr-9"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all appearance-none cursor-pointer pr-10"
                 >
                   <option value="">— {t('rooms_beds.unassigned_room', 'Chưa phân phòng / Khu vực chung')} —</option>
                   {rooms.map(room => (
                     <option key={room.id} value={room.id}>{room.name}</option>
                   ))}
                 </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
