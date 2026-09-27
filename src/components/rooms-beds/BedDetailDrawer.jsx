@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { X, Clock, User, Phone, CheckCircle2, ShoppingCart, Scissors, ArrowRightLeft, Sparkles, Building2 } from 'lucide-react';
+import { X, Clock, User, Phone, CheckCircle2, ShoppingCart, Scissors, ArrowRightLeft, Sparkles, Building2, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import Avatar from '@/components/Avatar';
 import { formatVND } from '@/lib/format';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/Layout';
+import { base44 } from '@/api/base44Client';
 import BedTransferModal from './BedTransferModal';
-import { getAllServicesForCustomer } from '@/lib/bedSessionHelpers';
+import { getAllServicesForCustomer, findCustomerActiveSessions } from '@/lib/bedSessionHelpers';
 
 export default function BedDetailDrawer({
   open,
@@ -19,12 +21,14 @@ export default function BedDetailDrawer({
   applicableServices = [],
   staff = [],
   onCompleteSession,
+  onReleaseCustomerSessions,
   onTransferBed,
   onOpenAssignModal
 }) {
   const { t } = useT();
   const router = useRouter();
   const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
   // Consolidated services for the customer across all beds & previous transfers
   const allConsolidatedServices = useMemo(() => {
@@ -67,28 +71,146 @@ export default function BedDetailDrawer({
     );
   };
 
-  const handleGoToPOS = () => {
-    if (!activeSession) return;
-    const customer = activeSession.customer;
-    // Collect all services from all rooms & past services of this customer
-    const services = allConsolidatedServices.length > 0 
-      ? allConsolidatedServices 
-      : (activeSession.services || []);
-    
+  const handleGoToPOS = async () => {
+    if (!activeSession || isProcessingCheckout) return;
+    setIsProcessingCheckout(true);
+
     try {
-      sessionStorage.setItem('gp_pos_prefill_session', JSON.stringify({
+      const customer = activeSession.customer || {};
+      const customerName = customer.name || activeSession.customer_name || 'Khách vãng lai';
+      const customerId = (customer.id && customer.id !== 'walk_in') ? customer.id : (activeSession.customer_id || '');
+      const customerPhone = customer.phone || activeSession.customer_phone || '';
+
+      // 1. Tìm tất cả các phòng / giường đang phục vụ cho khách này trên toàn hệ thống
+      const relatedSessions = findCustomerActiveSessions(
+        allBedSessions,
         customer,
-        services,
-        masterSessionId: activeSession.master_session_id || null,
-        facilityId: bed.id,
-        facilityName: bed.name,
-        roomName: room?.name || ''
-      }));
-    } catch (e) {
-      console.warn('Error saving prefill session:', e);
+        activeSession.master_session_id,
+        bed.id
+      );
+      const relatedBedIds = [...new Set([bed.id, ...relatedSessions.map(s => s.bed_id).filter(Boolean)])];
+
+      // 2. Gom tất cả dịch vụ từ tất cả các giường / phòng của khách thành 1 danh sách
+      const rawServices = allConsolidatedServices.length > 0 
+        ? allConsolidatedServices 
+        : (activeSession.services || []);
+
+      // Chuẩn hóa item cho hoá đơn POS
+      const posItems = rawServices.map(s => {
+        const bedName = s.bed_name || bed.name || '';
+        const roomName = s.room_name || room?.name || '';
+        const displayLocation = roomName && bedName && !bedName.includes(roomName)
+          ? `${bedName} (${roomName})`
+          : (bedName || roomName || '');
+
+        return {
+          id: Math.random().toString(),
+          name: s.name || s.service_name || 'Dịch vụ',
+          type: 'service',
+          price: Math.round(Number(s.price) || 0),
+          originalPrice: Math.round(Number(s.price) || 0),
+          qty: 1,
+          staff_id: s.staff_id || '',
+          staff_name: s.staff_name || '',
+          facility_id: s.bed_id || bed.id || '',
+          facility_name: displayLocation,
+          duration_minutes: Number(s.duration || s.duration_minutes) || 30
+        };
+      });
+
+      const subtotal = posItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
+      const today = new Date().toISOString().split('T')[0];
+      const branchId = bed.branch_id || (typeof window !== 'undefined' ? localStorage.getItem('gp_current_branch_id') || '' : '');
+
+      // 3. Tạo ngay hóa đơn tại Thu ngân (POS) trong cơ sở dữ liệu
+      let createdInvoice = null;
+      try {
+        if (base44.entities.Invoice) {
+          createdInvoice = await base44.entities.Invoice.create({
+            invoice_code: saleCode,
+            customer_name: customerName,
+            customer_id: customerId,
+            customer_phone: customerPhone,
+            branch_id: branchId === 'all' ? '' : branchId,
+            items: posItems,
+            subtotal,
+            discount: 0,
+            total: subtotal,
+            tip: 0,
+            status: 'unpaid',
+            date: today,
+            created_at: new Date().toISOString()
+          });
+        }
+      } catch (invErr) {
+        console.warn('Lỗi khi tạo hóa đơn trực tiếp trong Base44:', invErr);
+      }
+
+      // 4. Giải phóng TẤT CẢ các giường / phòng của khách này ngay lập tức (không cần check out từng phòng)
+      if (onReleaseCustomerSessions) {
+        await onReleaseCustomerSessions({
+          masterSessionId: activeSession.master_session_id,
+          customerId,
+          customerPhone,
+          customerName,
+          bedIds: relatedBedIds
+        });
+      } else {
+        onCompleteSession?.(bed.id);
+      }
+
+      // 5. Bắn Event đồng bộ cho toàn hệ thống
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
+          detail: {
+            masterSessionId: activeSession.master_session_id,
+            customerId,
+            customerPhone,
+            customerName,
+            releasedBedIds
+          }
+        }));
+      }
+
+      // 6. Lưu trữ prefill session dự phòng cho POS
+      try {
+        sessionStorage.setItem('gp_pos_prefill_session', JSON.stringify({
+          createdInvoiceId: createdInvoice?.id || null,
+          customer: {
+            id: customerId,
+            name: customerName,
+            phone: customerPhone,
+            avatar_url: customer.avatar_url || ''
+          },
+          services: posItems,
+          masterSessionId: activeSession.master_session_id || null,
+          facilityId: bed.id,
+          facilityName: bed.name,
+          roomName: room?.name || '',
+          branchId
+        }));
+      } catch (e) {
+        console.warn('Error saving prefill session:', e);
+      }
+
+      const roomCountNotice = relatedBedIds.length > 1 ? ` trên ${relatedBedIds.length} phòng/vị trí` : '';
+      toast.success(`Đã gom hoá đơn${roomCountNotice} & chuyển ra thu ngân`);
+
+      onClose?.();
+
+      // 7. Chuyển ngay ra thu ngân và mở hoá đơn vừa tạo
+      if (createdInvoice?.id) {
+        router.push(`/pos?edit_invoice_id=${createdInvoice.id}`);
+      } else {
+        router.push('/pos');
+      }
+    } catch (err) {
+      console.error('Lỗi khi checkout ra thu ngân:', err);
+      toast.error('Lỗi khi xử lý checkout');
+    } finally {
+      setIsProcessingCheckout(false);
     }
-    
-    router.push('/pos');
   };
 
   return (
@@ -266,6 +388,17 @@ export default function BedDetailDrawer({
                           </div>
                         ))}
                       </div>
+
+                      {/* Multi-room Notice */}
+                      <div className="p-3 rounded-2xl bg-blue-50/90 border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5 shadow-2xs">
+                        <Building2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold text-blue-900 text-xs">Checkout 1 chạm liên phòng</p>
+                          <p className="text-[11px] text-blue-700 leading-relaxed">
+                            Khách có dịch vụ tại các phòng khác nhau. Khi bấm <strong>Thanh toán POS</strong>, hệ thống sẽ tự động giải phóng tất cả giường phòng của khách và gom toàn bộ dịch vụ vào 1 bill duy nhất tại thu ngân.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
@@ -303,26 +436,37 @@ export default function BedDetailDrawer({
                   {/* Bed Transfer Button */}
                   <button
                     type="button"
+                    disabled={isProcessingCheckout}
                     onClick={() => setTransferModalOpen(true)}
-                    className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                    className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     title={t('rooms_beds.transfer_bed_title', 'Chuyển giường / phòng')}
                   >
                     <ArrowRightLeft className="w-4 h-4 text-blue-600" />
                     <span>{t('rooms_beds.transfer_bed_btn', 'Chuyển giường')}</span>
                   </button>
 
-                  {/* Checkout POS Button (Consolidated) */}
+                  {/* Checkout POS Button (Consolidated Multi-room) */}
                   <button
                     type="button"
+                    disabled={isProcessingCheckout}
                     onClick={handleGoToPOS}
-                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span className="truncate">
-                      {allConsolidatedServices.length > (activeSession.services?.length || 0)
-                        ? `${t('rooms_beds.checkout_pos_btn', 'Thanh toán POS')} (${allConsolidatedServices.length} món)`
-                        : t('rooms_beds.checkout_pos_btn', 'Thanh toán POS')}
-                    </span>
+                    {isProcessingCheckout ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang tạo hoá đơn...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4" />
+                        <span className="truncate">
+                          {allConsolidatedServices.length > (activeSession.services?.length || 0)
+                            ? `Thanh toán POS (${allConsolidatedServices.length} món - Gom các phòng)`
+                            : `${t('rooms_beds.checkout_pos_btn', 'Thanh toán POS')} (${allConsolidatedServices.length || activeSession.services?.length || 1} món)`}
+                        </span>
+                      </>
+                    )}
                   </button>
 
                   {/* Finish / Release Button */}

@@ -373,16 +373,52 @@ export default function RoomsBeds() {
     toast.success(t('rooms_beds.bed_freed', 'Đã trả giường thành công'));
   };
 
+  const handleReleaseCustomerSessions = async (identifier) => {
+    let releasedIds = [];
+    setBedSessions(prev => {
+      const { updatedSessions, releasedBedIds, releasedCount } = releaseCustomerBedSessions(prev, identifier);
+      releasedIds = releasedBedIds;
+      if (releasedCount > 0) {
+        localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updatedSessions));
+      }
+      return updatedSessions;
+    });
+
+    // Cập nhật trạng thái 'completed' cho các lịch hẹn liên quan trong cơ sở dữ liệu nếu có
+    if (base44.entities.Appointment && releasedIds.length > 0) {
+      try {
+        const appts = await base44.entities.Appointment.filter(
+          currentBranchId === 'all' ? {} : { branch_id: currentBranchId }
+        ).catch(() => []);
+
+        for (const appt of appts) {
+          if (
+            releasedIds.includes(appt.facility_id) &&
+            (appt.status === 'in_progress' || appt.status === 'checked_in')
+          ) {
+            await base44.entities.Appointment.update(appt.id, { status: 'completed' }).catch(() => null);
+          }
+        }
+      } catch (err) {
+        console.warn('Error marking linked appointments completed:', err);
+      }
+    }
+    return releasedIds;
+  };
+
   // 7. Auto-release beds when POS checkout completes
   useEffect(() => {
     const handleCheckoutCompleted = (e) => {
-      const { masterSessionId, customerId } = e.detail || {};
-      if (!masterSessionId && !customerId) return;
+      const { masterSessionId, customerId, customerPhone, customerName, releasedBedIds } = e.detail || {};
+      if (!masterSessionId && !customerId && !customerPhone && !customerName && (!releasedBedIds || releasedBedIds.length === 0)) return;
 
       setBedSessions(prev => {
         const { updatedSessions, releasedCount } = releaseCustomerBedSessions(prev, {
           masterSessionId,
-          customerId
+          customerId,
+          customerPhone,
+          customerName,
+          bedIds: releasedBedIds
         });
         if (releasedCount > 0) {
           localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updatedSessions));
@@ -869,6 +905,7 @@ export default function RoomsBeds() {
         staff={staff}
         onTransferBed={handleTransferBed}
         onCompleteSession={handleCompleteSession}
+        onReleaseCustomerSessions={handleReleaseCustomerSessions}
         onOpenAssignModal={(b) => setQuickAssignBed({ bed: b, room: rooms.find(r => r.id === b.room_id) })}
       />
 

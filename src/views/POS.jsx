@@ -149,13 +149,16 @@ export default function POS() {
       const sorted = unpaidInvs.sort((a, b) => (a.invoice_code || '').localeCompare(b.invoice_code || ''));
       const mapped = sorted.map((inv, idx) => {
         let cObj = inv.customer_id ? (cusMap[inv.customer_id] || cusList.find(c => c && String(c.id) === String(inv.customer_id))) : null;
+        if (!cObj && inv.customer_phone) {
+          cObj = cusList.find(c => c && c.phone && c.phone === inv.customer_phone);
+        }
         let resolvedCustomer = null;
         if (cObj) {
           resolvedCustomer = {
             id: cObj.id,
             name: cObj.name,
             avatar_url: cObj.avatar_url,
-            phone: cObj.phone || '',
+            phone: cObj.phone || inv.customer_phone || '',
             points: cObj.points || 0,
             total_spent: cObj.total_spent || 0
           };
@@ -163,7 +166,7 @@ export default function POS() {
           resolvedCustomer = {
             id: inv.customer_id || null,
             name: inv.customer_name,
-            phone: '',
+            phone: inv.customer_phone || '',
             points: 0,
             total_spent: 0
           };
@@ -187,6 +190,8 @@ export default function POS() {
               qty: x.qty || 1,
               staff_id: x.staff_id || '',
               staff_name: x.staff_name || '',
+              facility_id: x.facility_id || '',
+              facility_name: x.facility_name || '',
               is_customer_requested: !!x.is_customer_requested,
               is_from_package: !!x.is_from_package,
               package_name: x.package_name || '',
@@ -320,7 +325,7 @@ export default function POS() {
       base44.entities.Customer.list().then(cusList => {
         const custObj = cusList.find(c => c && String(c.id) === String(prefillCustomerId));
         if (custObj) {
-          handleUpdateSession({ customer: custObj });
+          updateSession({ customer: custObj });
         }
       });
     }
@@ -331,7 +336,12 @@ export default function POS() {
       if (prefillRaw) {
         sessionStorage.removeItem('gp_pos_prefill_session');
         const prefill = JSON.parse(prefillRaw);
-        if (prefill.customer || prefill.services?.length) {
+        
+        // Trường hợp 1: Đã có sẵn Hoá đơn do BedDetailDrawer tạo trực tiếp
+        if (prefill.createdInvoiceId) {
+          loadUnpaidInvoices(prefill.createdInvoiceId);
+        } else if (prefill.customer || prefill.services?.length) {
+          // Trường hợp 2: Dự phòng tạo hoá đơn nếu trước đó chưa lưu được
           const prefillCart = (prefill.services || []).map(s => {
             const bedName = s.bed_name || prefill.facilityName || '';
             const roomName = s.room_name || prefill.roomName || '';
@@ -343,23 +353,44 @@ export default function POS() {
               id: Math.random().toString(),
               name: s.name || s.service_name || 'Dịch vụ',
               type: 'service',
-              price: s.price || 0,
-              originalPrice: s.price || 0,
+              price: Math.round(Number(s.price) || 0),
+              originalPrice: Math.round(Number(s.price) || 0),
               qty: 1,
               staff_id: s.staff_id || '',
               staff_name: s.staff_name || '',
-              facility_id: s.bed_id || prefill.facilityId || '',
-              facility_name: displayLocation,
-              duration_minutes: s.duration || s.duration_minutes || 30
+              facility_id: s.bed_id || s.facility_id || prefill.facilityId || '',
+              facility_name: s.facility_name || displayLocation,
+              duration_minutes: Number(s.duration || s.duration_minutes) || 30
             };
           });
-          handleUpdateSession({
-            customer: prefill.customer,
-            cart: prefillCart,
-            master_session_id: prefill.masterSessionId || null
+
+          const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
+          const subtotal = prefillCart.reduce((sum, item) => sum + item.price * item.qty, 0);
+          const custName = prefill.customer?.name || 'Khách vãng lai';
+          const custId = (prefill.customer?.id && prefill.customer.id !== 'walk_in') ? prefill.customer.id : '';
+          const custPhone = prefill.customer?.phone || '';
+
+          base44.entities.Invoice.create({
+            invoice_code: saleCode,
+            customer_name: custName,
+            customer_id: custId,
+            customer_phone: custPhone,
+            branch_id: (currentBranchId === 'all' || !currentBranchId) ? (prefill.branchId || '') : currentBranchId,
+            items: prefillCart,
+            subtotal,
+            discount: 0,
+            total: subtotal,
+            tip: 0,
+            status: 'unpaid',
+            date: todayStr(),
+            created_at: new Date().toISOString()
+          }).then(async (newInv) => {
+            await loadUnpaidInvoices(newInv.id);
+            toast.success(`Đã tạo hoá đơn cho ${custName} (${prefillCart.length} dịch vụ)`);
+          }).catch(err => {
+            console.error('Lỗi khi tự động tạo hoá đơn từ giường:', err);
+            loadUnpaidInvoices();
           });
-          const sourceText = prefill.facilityName ? ` từ ${prefill.facilityName}` : '';
-          toast.success(`Đã tải ${prefillCart.length} dịch vụ${sourceText} vào hoá đơn`);
         }
       }
     } catch (e) {
@@ -1203,11 +1234,13 @@ export default function POS() {
 
       // Auto-release bed sessions if this checkout is associated with rooms/beds
       try {
-        if (session.master_session_id || session.customer?.id) {
+        if (session.master_session_id || session.customer?.id || session.customer?.phone || session.customer?.name) {
           window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
             detail: {
               masterSessionId: session.master_session_id || null,
-              customerId: session.customer?.id || null
+              customerId: session.customer?.id || null,
+              customerPhone: session.customer?.phone || null,
+              customerName: session.customer?.name || null
             }
           }));
         }
