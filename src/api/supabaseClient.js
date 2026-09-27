@@ -142,6 +142,16 @@ const createEntityAdapter = (tableName) => {
           }
         }
       }
+
+      // Safeguard: invoice requires a NOT NULL valid branch_id
+      if (tableName === 'invoice' && (!p.branch_id || !isUuid(p.branch_id))) {
+        let fallbackBranch = null;
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('glowpro_branch');
+          if (stored && stored !== 'all' && isUuid(stored)) fallbackBranch = stored;
+        }
+        p.branch_id = fallbackBranch || '6a473852-3dde-addc-bb57-8d6b00000000';
+      }
       
       let { data, error } = await supabase.from(tableName).insert([p]).select().single();
       
@@ -170,6 +180,18 @@ const createEntityAdapter = (tableName) => {
             p[k] = null;
           }
         }
+        if (tableName === 'invoice' && !p.branch_id) {
+          p.branch_id = '6a473852-3dde-addc-bb57-8d6b00000000';
+        }
+        const retryResult = await supabase.from(tableName).insert([p]).select().single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
+
+      // Fallback if not-null constraint on branch_id (23502)
+      if (error && error.code === '23502' && (error.message?.includes('branch_id') || tableName === 'invoice')) {
+        console.warn(`Not-null constraint on branch_id for ${tableName}. Setting default branch UUID and retrying...`);
+        p.branch_id = '6a473852-3dde-addc-bb57-8d6b00000000';
         const retryResult = await supabase.from(tableName).insert([p]).select().single();
         data = retryResult.data;
         error = retryResult.error;
@@ -179,9 +201,12 @@ const createEntityAdapter = (tableName) => {
       if (error && (error.code === '23503' || error.message?.includes('foreign key constraint') || error.message?.includes('fk_service_group_id'))) {
         console.warn(`Foreign key constraint on ${tableName}. Retrying with null foreign keys...`);
         for (let k in p) {
-          if (k.endsWith('_id') && p[k]) {
+          if (k.endsWith('_id') && p[k] && !(tableName === 'invoice' && k === 'branch_id')) {
             p[k] = null;
           }
+        }
+        if (tableName === 'invoice' && (!p.branch_id || !isUuid(p.branch_id))) {
+          p.branch_id = '6a473852-3dde-addc-bb57-8d6b00000000';
         }
         const retryResult = await supabase.from(tableName).insert([p]).select().single();
         data = retryResult.data;

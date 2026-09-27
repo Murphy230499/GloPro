@@ -81,7 +81,7 @@ const CUSTOMER_TTL_MS = 30 * 1000; // 30 seconds
 export default function POS() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentBranchId } = useBranch();
+  const { currentBranchId, branches } = useBranch();
   const { t } = useT();
 
   const clearSearchParams = (keys) => {
@@ -432,11 +432,16 @@ export default function POS() {
 
           const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
           const subtotal = prefillCart.reduce((sum, item) => sum + item.price * item.qty, 0);
-          const custName = (prefill.customer?.name || 'Khách vãng lai').trim();
-          const custPhone = (prefill.customer?.phone || '').trim();
+          const custName = String(prefill.customer?.name || 'Khách vãng lai').trim();
+          const custPhone = String(prefill.customer?.phone || '').trim();
           const displayName = custPhone && !custName.includes(custPhone) ? `${custName} (${custPhone})` : custName;
           const custId = isUuid(prefill.customer?.id) ? prefill.customer.id : null;
-          const branchId = isUuid(currentBranchId) ? currentBranchId : (isUuid(prefill.branchId) ? prefill.branchId : null);
+          let branchId = isUuid(currentBranchId) ? currentBranchId : (isUuid(prefill.branchId) ? prefill.branchId : null);
+          if (!branchId && Array.isArray(branches) && branches.length > 0) {
+            const fb = branches.find(b => b.id && b.id !== '00000000-0000-0000-0000-000000000000' && isUuid(b.id));
+            if (fb) branchId = fb.id;
+          }
+          if (!branchId) branchId = '6a473852-3dde-addc-bb57-8d6b00000000';
 
           base44.entities.Invoice.create({
             invoice_code: saleCode,

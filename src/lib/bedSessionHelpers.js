@@ -26,10 +26,10 @@ export function findCustomerActiveSessions(bedSessions = {}, customer = null, ma
   const cCustId = customer?.id || customer?.customer_id;
   const isRealCustomerId = cCustId && cCustId !== 'walk_in' && !customer?.is_guest;
 
-  const cPhone = (customer?.phone || customer?.customer_phone || '').trim();
+  const cPhone = String(customer?.phone || customer?.customer_phone || '').trim();
   const hasValidPhone = cPhone.length >= 7;
 
-  const rawName = (customer?.name || customer?.customer_name || '').trim();
+  const rawName = String(customer?.name || customer?.customer_name || '').trim();
   const cNameLower = rawName.toLowerCase();
   const hasValidName = rawName.length > 1 && 
     cNameLower !== 'khách vãng lai' && 
@@ -57,13 +57,13 @@ export function findCustomerActiveSessions(bedSessions = {}, customer = null, ma
     }
 
     // 4. Trùng số điện thoại khách hàng (kể cả khách vãng lai nếu có SĐT)
-    const sPhone = (s.customer?.phone || s.customer_phone || '').trim();
+    const sPhone = String(s.customer?.phone || s.customer_phone || '').trim();
     if (hasValidPhone && sPhone && sPhone === cPhone) {
       return true;
     }
 
     // 5. Trùng tên khách hàng (nếu tên cụ thể và không phải chữ "Khách vãng lai")
-    const sNameLower = (s.customer?.name || s.customer_name || '').trim().toLowerCase();
+    const sNameLower = String(s.customer?.name || s.customer_name || '').trim().toLowerCase();
     if (hasValidName && sNameLower && sNameLower === cNameLower) {
       return true;
     }
@@ -235,8 +235,8 @@ export function releaseCustomerBedSessions(bedSessions = {}, identifier = {}) {
   const explicitBedIds = new Set(bedIds.filter(Boolean));
   if (bedId) explicitBedIds.add(bedId);
 
-  const cleanPhone = (customerPhone || '').trim();
-  const cleanName = (customerName || '').trim().toLowerCase();
+  const cleanPhone = String(customerPhone || '').trim();
+  const cleanName = String(customerName || '').trim().toLowerCase();
   const isValidName = cleanName.length > 1 && 
     cleanName !== 'khách vãng lai' && 
     cleanName !== 'vãng lai' && 
@@ -261,12 +261,12 @@ export function releaseCustomerBedSessions(bedSessions = {}, identifier = {}) {
     }
     // 4. Trùng số điện thoại
     else if (cleanPhone && cleanPhone.length >= 7) {
-      const sPhone = (session.customer?.phone || session.customer_phone || '').trim();
+      const sPhone = String(session.customer?.phone || session.customer_phone || '').trim();
       if (sPhone && sPhone === cleanPhone) match = true;
     }
     // 5. Trùng tên khách cụ thể
     else if (isValidName) {
-      const sName = (session.customer?.name || session.customer_name || '').trim().toLowerCase();
+      const sName = String(session.customer?.name || session.customer_name || '').trim().toLowerCase();
       if (sName && sName === cleanName) match = true;
     }
 

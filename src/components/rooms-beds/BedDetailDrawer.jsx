@@ -28,7 +28,7 @@ export default function BedDetailDrawer({
 }) {
   const { t } = useT();
   const router = useRouter();
-  const { currentBranchId } = useBranch();
+  const { currentBranchId, branches } = useBranch();
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
@@ -80,8 +80,8 @@ export default function BedDetailDrawer({
     try {
       const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       const customer = activeSession.customer || {};
-      const cleanName = (customer.name || activeSession.customer_name || 'Khách vãng lai').trim();
-      const cleanPhone = (customer.phone || activeSession.customer_phone || '').trim();
+      const cleanName = String(customer.name || activeSession.customer_name || 'Khách vãng lai').trim();
+      const cleanPhone = String(customer.phone || activeSession.customer_phone || '').trim();
       const customerDisplayName = cleanPhone && !cleanName.includes(cleanPhone)
         ? `${cleanName} (${cleanPhone})`
         : cleanName;
@@ -128,12 +128,26 @@ export default function BedDetailDrawer({
       const saleCode = 'HD' + String(Math.floor(100000 + Math.random() * 900000));
       const today = new Date().toISOString().split('T')[0];
 
-      // Xác định branch_id hợp lệ
-      const effectiveBranch = (currentBranchId && currentBranchId !== 'all' && isUuid(currentBranchId))
+      // Xác định branch_id hợp lệ (Supabase Postgres NOT NULL constraint)
+      let effectiveBranch = (currentBranchId && currentBranchId !== 'all' && isUuid(currentBranchId))
         ? currentBranchId
-        : (bed.branch_id && isUuid(bed.branch_id)
-            ? bed.branch_id
-            : (typeof window !== 'undefined' && isUuid(localStorage.getItem('glowpro_branch')) ? localStorage.getItem('glowpro_branch') : null));
+        : (bed.branch_id && isUuid(bed.branch_id) ? bed.branch_id : null);
+
+      if (!effectiveBranch && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('glowpro_branch');
+        if (stored && stored !== 'all' && isUuid(stored)) {
+          effectiveBranch = stored;
+        }
+      }
+
+      if (!effectiveBranch && Array.isArray(branches) && branches.length > 0) {
+        const firstReal = branches.find(b => b.id && b.id !== '00000000-0000-0000-0000-000000000000' && isUuid(b.id));
+        if (firstReal) effectiveBranch = firstReal.id;
+      }
+
+      if (!effectiveBranch) {
+        effectiveBranch = '6a473852-3dde-addc-bb57-8d6b00000000';
+      }
 
       // 3. Tạo ngay hóa đơn tại Thu ngân (POS) trong cơ sở dữ liệu
       let createdInvoice = null;
@@ -159,15 +173,20 @@ export default function BedDetailDrawer({
       }
 
       // 4. Giải phóng TẤT CẢ các giường / phòng của khách này ngay lập tức (không cần check out từng phòng)
-      if (onReleaseCustomerSessions) {
-        await onReleaseCustomerSessions({
-          masterSessionId: activeSession.master_session_id,
-          customerId: validCustomerId,
-          customerPhone: cleanPhone,
-          customerName: cleanName,
-          bedIds: relatedBedIds
-        });
-      } else {
+      try {
+        if (onReleaseCustomerSessions) {
+          await onReleaseCustomerSessions({
+            masterSessionId: activeSession.master_session_id,
+            customerId: validCustomerId,
+            customerPhone: cleanPhone,
+            customerName: cleanName,
+            bedIds: relatedBedIds
+          });
+        } else {
+          onCompleteSession?.(bed.id);
+        }
+      } catch (releaseErr) {
+        console.warn('Lỗi giải phóng phiên giường:', releaseErr);
         onCompleteSession?.(bed.id);
       }
 
@@ -179,7 +198,7 @@ export default function BedDetailDrawer({
             customerId: validCustomerId,
             customerPhone: cleanPhone,
             customerName: cleanName,
-            releasedBedIds
+            releasedBedIds: relatedBedIds
           }
         }));
       }
