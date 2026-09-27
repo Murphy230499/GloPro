@@ -476,56 +476,59 @@ export default function BedDetailDrawer({
             </div>
 
             {/* Drawer Footer Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center gap-2 shrink-0">
+            <div className="p-4 bg-slate-50 border-t border-slate-200/80 space-y-2 shrink-0">
               {isOccupied ? (
                 <>
-                  {/* Bed Transfer Button */}
+                  {/* Primary Row: Checkout POS & Finish / Release Bed */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Checkout POS Button */}
+                    <button
+                      type="button"
+                      disabled={isProcessingCheckout}
+                      onClick={handleGoToPOS}
+                      className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:bg-blue-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer min-w-0"
+                    >
+                      {isProcessingCheckout ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                          <span className="truncate">Đang tạo hoá đơn...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {allConsolidatedServices.length > (activeSession.services?.length || 0)
+                              ? `POS (${allConsolidatedServices.length} món)`
+                              : `${t('rooms_beds.checkout_pos_btn', 'Thanh toán POS')} (${allConsolidatedServices.length || activeSession.services?.length || 1})`}
+                          </span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Finish / Release Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCompleteSession(bed.id);
+                        onClose();
+                      }}
+                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer min-w-0"
+                    >
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{t('rooms_beds.finish_bed_btn', 'Trả giường')}</span>
+                    </button>
+                  </div>
+
+                  {/* Secondary Action: Bed Transfer */}
                   <button
                     type="button"
                     disabled={isProcessingCheckout}
                     onClick={() => setTransferModalOpen(true)}
-                    className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                    className="w-full py-2 px-3 bg-white border border-slate-200/90 hover:bg-slate-100/80 active:scale-[0.98] disabled:opacity-50 text-slate-700 rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
                     title={t('rooms_beds.transfer_bed_title', 'Chuyển giường / phòng')}
                   >
-                    <ArrowRightLeft className="w-4 h-4 text-blue-600" />
-                    <span>{t('rooms_beds.transfer_bed_btn', 'Chuyển giường')}</span>
-                  </button>
-
-                  {/* Checkout POS Button (Consolidated Multi-room) */}
-                  <button
-                    type="button"
-                    disabled={isProcessingCheckout}
-                    onClick={handleGoToPOS}
-                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    {isProcessingCheckout ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Đang tạo hoá đơn...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-4 h-4" />
-                        <span className="truncate">
-                          {allConsolidatedServices.length > (activeSession.services?.length || 0)
-                            ? `Thanh toán POS (${allConsolidatedServices.length} món - Gom các phòng)`
-                            : `${t('rooms_beds.checkout_pos_btn', 'Thanh toán POS')} (${allConsolidatedServices.length || activeSession.services?.length || 1} món)`}
-                        </span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Finish / Release Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onCompleteSession(bed.id);
-                      onClose();
-                    }}
-                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{t('rooms_beds.finish_bed_btn', 'Trả giường')}</span>
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{t('rooms_beds.transfer_bed_btn', 'Chuyển giường / phòng')}</span>
                   </button>
                 </>
               ) : (
