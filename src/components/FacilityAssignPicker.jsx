@@ -12,6 +12,7 @@ import {
   timeStringToMinutes, 
   formatMinutesToTime 
 } from '@/components/appointments/constants';
+import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 import { base44 } from '@/api/base44Client';
 
 /**
@@ -21,6 +22,7 @@ import { base44 } from '@/api/base44Client';
  * Tính năng chính:
  * 1. Kiểm tra thời gian thực trạng thái tại Sơ đồ giường phòng:
  *    - Đang trống (🟢 Available): CÓ THỂ CHỌN
+ *    - Trống có lịch hẹn sắp tới (🟢 Trống đến HH:mm): CÓ THỂ CHỌN nếu đủ thời gian
  *    - Đang bận (🔴 In Progress / Occupied): KHÔNG THỂ CHỌN (Disabled)
  *    - Sắp xong (🟡 Nearly Finished <= 10 phút): KHÔNG THỂ CHỌN (Disabled)
  * 2. Hiển thị badge trạng thái, thời gian dự kiến xong, thông tin khách đang phục vụ.
@@ -53,9 +55,10 @@ export default function FacilityAssignPicker({
   const [rooms, setRooms] = useState([]);
   const [beds, setBeds] = useState([]);
   const [bedSessions, setBedSessions] = useState({});
+  const [appointments, setAppointments] = useState([]);
 
   // 2. Đồng bộ dữ liệu giường, phòng và phiên hoạt động từ Bed/Room Management
-  const syncData = () => {
+  const syncData = async () => {
     try {
       const branchKey = currentBranchId || 'all';
 
@@ -90,6 +93,25 @@ export default function FacilityAssignPicker({
         try { Object.assign(sessionMap, JSON.parse(savedSessions)); } catch (e) {}
       }
       setBedSessions(sessionMap);
+
+      // Load Today Appointments for conflict check
+      let loadedAppts = [];
+      const cachedAppts = localStorage.getItem(`gp_today_appointments_${branchKey}`);
+      if (cachedAppts) {
+        try { loadedAppts = JSON.parse(cachedAppts); } catch (e) {}
+      }
+      if (loadedAppts.length === 0 && base44.entities.Appointment) {
+        base44.entities.Appointment.filter(branchKey === 'all' ? {} : { branch_id: branchKey })
+          .then(res => {
+            if (Array.isArray(res)) {
+              setAppointments(res);
+              localStorage.setItem(`gp_today_appointments_${branchKey}`, JSON.stringify(res));
+            }
+          })
+          .catch(() => {});
+      } else {
+        setAppointments(loadedAppts);
+      }
     } catch (err) {
       console.warn('FacilityAssignPicker syncData error:', err);
     }
@@ -104,6 +126,7 @@ export default function FacilityAssignPicker({
     const handleSyncEvent = () => syncData();
     window.addEventListener('gp_bed_session_checkout_completed', handleSyncEvent);
     window.addEventListener('gp_bed_session_updated', handleSyncEvent);
+    window.addEventListener('gp_appointment_updated', handleSyncEvent);
     window.addEventListener('storage', handleSyncEvent);
 
     // Cập nhật đồng hồ mỗi 15 giây
@@ -116,6 +139,7 @@ export default function FacilityAssignPicker({
     return () => {
       window.removeEventListener('gp_bed_session_checkout_completed', handleSyncEvent);
       window.removeEventListener('gp_bed_session_updated', handleSyncEvent);
+      window.removeEventListener('gp_appointment_updated', handleSyncEvent);
       window.removeEventListener('storage', handleSyncEvent);
       clearInterval(interval);
     };
@@ -126,6 +150,40 @@ export default function FacilityAssignPicker({
     return beds.map(b => {
       const session = bedSessions[b.id];
       if (!session) {
+        // Kiểm tra xem giường này có lịch hẹn nào sắp tới trong ngày không
+        const windowInfo = calculateBedAvailableWindow(b.id, appointments, nowMinutes, BED_BUFFER_MINUTES);
+
+        if (windowInfo.hasNextAppt) {
+          if (windowInfo.availableMinutes <= 0) {
+            // Khách hẹn sắp đến trong vòng 15 phút (hoặc quá giờ hẹn) -> Khóa không cho chọn
+            return {
+              ...b,
+              status: 'nearly_finished',
+              statusLabel: 'Sắp có hẹn',
+              badgeText: `SẮP CÓ HẸN (${windowInfo.availableUntil})`,
+              badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
+              dotClass: 'bg-amber-500 animate-pulse',
+              selectable: false, // Không thể chọn
+              details: `Khách hẹn: ${windowInfo.nextAppt.customer_name || 'Khách đặt trước'} (${windowInfo.availableUntil})`,
+              remainingMinutes: 0
+            };
+          }
+
+          // Giường trống nhưng có hẹn kế tiếp -> Hiển thị thời gian khả dụng
+          return {
+            ...b,
+            status: 'available_window',
+            statusLabel: 'Đang trống',
+            badgeText: `Trống đến ${windowInfo.availableUntil} (~${windowInfo.availableMinutes}p)`,
+            badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+            dotClass: 'bg-emerald-500',
+            selectable: true,
+            details: `Hẹn kế tiếp: ${windowInfo.availableUntil} (${windowInfo.nextAppt.customer_name || 'Khách hẹn'})`,
+            remainingMinutes: windowInfo.availableMinutes,
+            availableUntil: windowInfo.availableUntil
+          };
+        }
+
         return {
           ...b,
           status: 'available',
@@ -134,8 +192,8 @@ export default function FacilityAssignPicker({
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
           dotClass: 'bg-emerald-500',
           selectable: true,
-          details: null,
-          remainingMinutes: null
+          details: 'Trống cả ngày',
+          remainingMinutes: 999
         };
       }
 

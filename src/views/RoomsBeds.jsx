@@ -17,6 +17,7 @@ import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
+import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 
 export default function RoomsBeds() {
   const { t } = useT();
@@ -31,6 +32,7 @@ export default function RoomsBeds() {
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [bedSessions, setBedSessions] = useState({}); // map bed_id -> active session object
   const [loading, setLoading] = useState(true);
 
@@ -95,6 +97,55 @@ export default function RoomsBeds() {
       setServices(sData || []);
       setStaff(stData || []);
       setCustomers(cData || []);
+
+      // Handle Appointments & Conflict Tracking
+      let finalAppts = aData || [];
+      if (!finalAppts || finalAppts.length === 0) {
+        const cachedAppts = localStorage.getItem(`gp_today_appointments_${currentBranchId}`);
+        if (cachedAppts) {
+          try { finalAppts = JSON.parse(cachedAppts); } catch (e) {}
+        }
+      }
+      if (!finalAppts || finalAppts.length === 0) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nowH = new Date().getHours();
+        const nextH = Math.min(20, Math.max(9, nowH + 1));
+        const nextHStr = String(nextH).padStart(2, '0');
+        finalAppts = [
+          {
+            id: 'appt_demo_conflict_1',
+            customer_name: 'Nguyễn Thị Hương',
+            customer_phone: '0912345678',
+            facility_id: 'bed_p1_3',
+            facility_name: 'Giường 3',
+            room_name: 'Phòng 1',
+            date: todayStr,
+            start_time: `${nextHStr}:30`,
+            end_time: `${String(nextH + 1).padStart(2, '0')}:30`,
+            duration_minutes: 60,
+            status: 'confirmed',
+            service_name: 'Chăm sóc da chuyên sâu',
+            price: 500000
+          },
+          {
+            id: 'appt_demo_conflict_2',
+            customer_name: 'Trần Mai Lan',
+            customer_phone: '0987654321',
+            facility_id: 'bed_p2_1',
+            facility_name: 'Giường 1',
+            room_name: 'Phòng 2',
+            date: todayStr,
+            start_time: `${String(Math.min(21, nextH + 2)).padStart(2, '0')}:00`,
+            end_time: `${String(Math.min(22, nextH + 3)).padStart(2, '0')}:00`,
+            duration_minutes: 60,
+            status: 'confirmed',
+            service_name: 'Massage Body & Trị Liệu',
+            price: 450000
+          }
+        ];
+      }
+      setAppointments(finalAppts);
+      localStorage.setItem(`gp_today_appointments_${currentBranchId}`, JSON.stringify(finalAppts));
 
       // Build active bed sessions
       const sessionMap = {};
@@ -189,6 +240,20 @@ export default function RoomsBeds() {
 
   useEffect(() => {
     loadData();
+  }, [currentBranchId]);
+
+  // Listen for external appointment updates (e.g. override, dời giường, tạo lịch mới)
+  useEffect(() => {
+    const handleApptUpdate = () => {
+      const cached = localStorage.getItem(`gp_today_appointments_${currentBranchId}`);
+      if (cached) {
+        try {
+          setAppointments(JSON.parse(cached));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('gp_appointment_updated', handleApptUpdate);
+    return () => window.removeEventListener('gp_appointment_updated', handleApptUpdate);
   }, [currentBranchId]);
 
   // 2. Real-time Clock Timer for Progress & "Sắp trống" (< 10 mins remaining)
@@ -406,6 +471,33 @@ export default function RoomsBeds() {
     return releasedIds;
   };
 
+  // 6.5 Reassign or unassign conflicted appointment (e.g. receptionist overrides bed)
+  const handleReassignAppointment = async (appointmentId, newBedId = null) => {
+    try {
+      const targetBed = newBedId ? beds.find(b => b.id === newBedId) : null;
+      const patchData = {
+        facility_id: newBedId || null,
+        facility_name: targetBed ? targetBed.name : ''
+      };
+
+      if (base44.entities.Appointment) {
+        await base44.entities.Appointment.update(appointmentId, patchData).catch(() => null);
+      }
+
+      setAppointments(prev => {
+        const updated = prev.map(a => (a.id === appointmentId ? { ...a, ...patchData } : a));
+        localStorage.setItem(`gp_today_appointments_${currentBranchId}`, JSON.stringify(updated));
+        return updated;
+      });
+
+      window.dispatchEvent(new CustomEvent('gp_appointment_updated', {
+        detail: { appointmentId, newBedId, facility_name: targetBed?.name || '' }
+      }));
+    } catch (err) {
+      console.error('Error reassigning appointment bed:', err);
+    }
+  };
+
   // 7. Auto-release beds when POS checkout completes
   useEffect(() => {
     const handleCheckoutCompleted = (e) => {
@@ -607,6 +699,13 @@ export default function RoomsBeds() {
                       const isOccupied = Boolean(session);
                       const isNearlyFinished = session?.status === 'nearly_finished';
 
+                      // Check appointment conflict & availability window for unoccupied bed
+                      const now = new Date();
+                      const currentMinsNow = now.getHours() * 60 + now.getMinutes();
+                      const windowInfo = !isOccupied
+                        ? calculateBedAvailableWindow(bed.id, appointments, currentMinsNow, BED_BUFFER_MINUTES)
+                        : null;
+
                       // Colors based on status
                       let borderClass = 'border-emerald-300 hover:border-emerald-400';
                       let badgeClass = 'bg-emerald-100 text-emerald-800';
@@ -623,6 +722,16 @@ export default function RoomsBeds() {
                         badgeClass = 'bg-rose-100 text-rose-800';
                         badgeText = t('rooms_beds.status_occupied', 'ĐANG BẬN');
                         progressFillClass = 'bg-rose-500';
+                      } else if (windowInfo?.hasNextAppt) {
+                        if (windowInfo.availableMinutes <= 0) {
+                          borderClass = 'border-amber-300 hover:border-amber-400 bg-amber-50/20';
+                          badgeClass = 'bg-amber-100 text-amber-900 border border-amber-300/60';
+                          badgeText = `HẸN ${windowInfo.availableUntil}`;
+                        } else {
+                          borderClass = 'border-emerald-300 hover:border-emerald-400';
+                          badgeClass = 'bg-emerald-100 text-emerald-900 border border-emerald-300/60';
+                          badgeText = `TRỐNG ĐẾN ${windowInfo.availableUntil}`;
+                        }
                       }
 
                       return (
@@ -659,6 +768,24 @@ export default function RoomsBeds() {
                                   {t('rooms_beds.end', 'Kết thúc')}: <span className="font-mono text-slate-700">{session.end_time}</span>
                                 </div>
                               </>
+                            ) : windowInfo?.hasNextAppt ? (
+                              <div className="py-0.5 space-y-1.5">
+                                <div className="text-xs font-semibold text-emerald-700 flex items-center justify-between">
+                                  <span>{t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}</span>
+                                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded-full border border-amber-200">
+                                    Còn ~{windowInfo.availableMinutes}p
+                                  </span>
+                                </div>
+                                <div className="text-[11px] bg-slate-50/90 rounded-xl p-2 border border-slate-100 space-y-0.5">
+                                  <div className="font-semibold text-slate-700 flex items-center gap-1.5 truncate">
+                                    <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                    <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt.customer_name || 'Khách đặt trước'}</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 truncate pl-5">
+                                    {windowInfo.nextAppt.service_name || 'Dịch vụ đã đặt'}
+                                  </div>
+                                </div>
+                              </div>
                             ) : (
                               <div className="text-center py-1">
                                 <div className="text-xs font-semibold text-emerald-700">
@@ -675,16 +802,32 @@ export default function RoomsBeds() {
                           <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
                             <div className="flex items-center justify-between text-[11px] text-slate-500">
                               <span>
-                                {t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
+                                {isOccupied ? (
+                                  <>
+                                    {t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
+                                  </>
+                                ) : windowInfo?.hasNextAppt ? (
+                                  <span className="text-amber-800 font-medium">
+                                    Lịch hẹn: <strong>{windowInfo.availableUntil}</strong>
+                                  </span>
+                                ) : (
+                                  <span>{t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">0 {t('common.minutes', 'phút')}</strong></span>
+                                )}
                               </span>
                               <span className="font-bold text-slate-700">
-                                {session?.progress_percent || 0}% ({session?.total_duration_minutes || 0} {t('common.minutes', 'phút')})
+                                {isOccupied ? (
+                                  `${session?.progress_percent || 0}% (${session?.total_duration_minutes || 0} ${t('common.minutes', 'phút')})`
+                                ) : windowInfo?.hasNextAppt ? (
+                                  <span className="text-[10px] text-slate-500 font-normal">(đệm 15p dọn phòng)</span>
+                                ) : (
+                                  <span className="text-emerald-700 font-medium">Trống cả ngày</span>
+                                )}
                               </span>
                             </div>
                             
                             <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ${progressFillClass}`}
+                                className={`h-full rounded-full transition-all duration-500 ${isOccupied ? progressFillClass : 'bg-emerald-500'}`}
                                 style={{ width: `${session ? Math.min(100, Math.max(0, session.progress_percent)) : 0}%` }}
                               />
                             </div>
@@ -918,8 +1061,12 @@ export default function RoomsBeds() {
         customers={customers}
         services={services}
         staff={staff}
+        allBeds={beds}
+        allRooms={rooms}
+        appointments={appointments}
         allBedSessions={enrichedBedSessions}
         onStartServing={handleStartServing}
+        onReassignAppointment={handleReassignAppointment}
       />
     </div>
   );
