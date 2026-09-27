@@ -17,6 +17,7 @@ import BedModal from '@/components/rooms-beds/BedModal';
 import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
+import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 
 // Sample fallback initial rooms
 const INITIAL_DEMO_ROOMS = [
@@ -381,13 +382,52 @@ export default function RoomsBeds() {
     toast.success(t('rooms_beds.started_serving', 'Đã nhận khách vào vị trí'));
   };
 
+  const handleTransferBed = (transferData) => {
+    const { fromBedId, toBedId, targetBed, targetRoom, newServices, startTime } = transferData;
+    const updated = transferBedSession(fromBedId, toBedId, bedSessions, {
+      targetBed,
+      targetRoom,
+      newServices,
+      startTime
+    });
+    setBedSessions(updated);
+    localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updated));
+    toast.success(t('rooms_beds.transfer_bed_success', `Đã chuyển khách sang ${targetBed?.name || 'giường mới'}`));
+  };
+
   const handleCompleteSession = (session) => {
+    const targetBedId = typeof session === 'string' ? session : session?.bed_id;
+    if (!targetBedId) return;
+
     const updated = { ...bedSessions };
-    delete updated[session.bed_id];
+    delete updated[targetBedId];
     setBedSessions(updated);
     localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updated));
     toast.success(t('rooms_beds.bed_freed', 'Đã trả giường thành công'));
   };
+
+  // 7. Auto-release beds when POS checkout completes
+  useEffect(() => {
+    const handleCheckoutCompleted = (e) => {
+      const { masterSessionId, customerId } = e.detail || {};
+      if (!masterSessionId && !customerId) return;
+
+      setBedSessions(prev => {
+        const { updatedSessions, releasedCount } = releaseCustomerBedSessions(prev, {
+          masterSessionId,
+          customerId
+        });
+        if (releasedCount > 0) {
+          localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updatedSessions));
+          toast.success(`Đã thanh toán tại POS và tự động giải phóng ${releasedCount} vị trí`);
+        }
+        return updatedSessions;
+      });
+    };
+
+    window.addEventListener('gp_bed_session_checkout_completed', handleCheckoutCompleted);
+    return () => window.removeEventListener('gp_bed_session_checkout_completed', handleCheckoutCompleted);
+  }, [currentBranchId]);
 
   // 7. Group Beds by Room for Sơ đồ vị trí
   const bedsByRoom = useMemo(() => {
@@ -855,6 +895,12 @@ export default function RoomsBeds() {
         bed={selectedBedForDrawer}
         room={rooms.find(r => r.id === selectedBedForDrawer?.room_id)}
         activeSession={selectedBedForDrawer ? enrichedBedSessions[selectedBedForDrawer.id] : null}
+        allBedSessions={enrichedBedSessions}
+        allBeds={beds}
+        allRooms={rooms}
+        applicableServices={services}
+        staff={staff}
+        onTransferBed={handleTransferBed}
         onCompleteSession={handleCompleteSession}
         onOpenAssignModal={(b) => setQuickAssignBed({ bed: b, room: rooms.find(r => r.id === b.room_id) })}
       />
@@ -868,6 +914,7 @@ export default function RoomsBeds() {
         customers={customers}
         services={services}
         staff={staff}
+        allBedSessions={enrichedBedSessions}
         onStartServing={handleStartServing}
       />
     </div>

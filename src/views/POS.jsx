@@ -332,24 +332,34 @@ export default function POS() {
         sessionStorage.removeItem('gp_pos_prefill_session');
         const prefill = JSON.parse(prefillRaw);
         if (prefill.customer || prefill.services?.length) {
-          const prefillCart = (prefill.services || []).map(s => ({
-            id: Math.random().toString(),
-            name: s.name || 'Dịch vụ',
-            type: 'service',
-            price: s.price || 0,
-            originalPrice: s.price || 0,
-            qty: 1,
-            staff_id: s.staff_id || '',
-            staff_name: s.staff_name || '',
-            facility_id: prefill.facilityId || '',
-            facility_name: prefill.facilityName || '',
-            duration_minutes: s.duration || 30
-          }));
+          const prefillCart = (prefill.services || []).map(s => {
+            const bedName = s.bed_name || prefill.facilityName || '';
+            const roomName = s.room_name || prefill.roomName || '';
+            const displayLocation = roomName && bedName && !bedName.includes(roomName)
+              ? `${bedName} (${roomName})`
+              : (bedName || roomName || '');
+
+            return {
+              id: Math.random().toString(),
+              name: s.name || s.service_name || 'Dịch vụ',
+              type: 'service',
+              price: s.price || 0,
+              originalPrice: s.price || 0,
+              qty: 1,
+              staff_id: s.staff_id || '',
+              staff_name: s.staff_name || '',
+              facility_id: s.bed_id || prefill.facilityId || '',
+              facility_name: displayLocation,
+              duration_minutes: s.duration || s.duration_minutes || 30
+            };
+          });
           handleUpdateSession({
             customer: prefill.customer,
-            cart: prefillCart
+            cart: prefillCart,
+            master_session_id: prefill.masterSessionId || null
           });
-          toast.success(`Đã tải dịch vụ từ ${prefill.facilityName || 'giường'}`);
+          const sourceText = prefill.facilityName ? ` từ ${prefill.facilityName}` : '';
+          toast.success(`Đã tải ${prefillCart.length} dịch vụ${sourceText} vào hoá đơn`);
         }
       }
     } catch (e) {
@@ -1190,6 +1200,21 @@ export default function POS() {
       // ────────────────────────────────────────────────────────────────────
 
       toast.success(`${t('pos.toast_payment_success', 'Thanh toán thành công')} • ${session.saleCode}`);
+
+      // Auto-release bed sessions if this checkout is associated with rooms/beds
+      try {
+        if (session.master_session_id || session.customer?.id) {
+          window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
+            detail: {
+              masterSessionId: session.master_session_id || null,
+              customerId: session.customer?.id || null
+            }
+          }));
+        }
+      } catch (evtErr) {
+        console.warn('Failed to dispatch bed release event:', evtErr);
+      }
+
       closeSession(session.id);
       setCheckoutOpen(false);
     } catch (e) {

@@ -576,6 +576,21 @@ export default function POSInvoiceModal({
       // ─────────────────────────────────────────────────────────────────────
 
       toast.success(`Thanh toán thành công • ${session.saleCode}`);
+
+      // Auto-release bed sessions if this checkout is associated with rooms/beds
+      try {
+        if (session.master_session_id || session.customer?.id) {
+          window.dispatchEvent(new CustomEvent('gp_bed_session_checkout_completed', {
+            detail: {
+              masterSessionId: session.master_session_id || null,
+              customerId: session.customer?.id || null
+            }
+          }));
+        }
+      } catch (evtErr) {
+        console.warn('Failed to dispatch bed release event:', evtErr);
+      }
+
       setCheckoutOpen(false);
       onSaved();
     } catch (e) {

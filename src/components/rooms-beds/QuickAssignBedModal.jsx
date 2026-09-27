@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX, ChevronDown } from 'lucide-react';
+import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX, ChevronDown, Sparkles } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import { formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
 import Avatar from '@/components/Avatar';
 import { formatVND } from '@/lib/format';
+import { findCustomerActiveSessions, generateMasterSessionId } from '@/lib/bedSessionHelpers';
 
 export default function QuickAssignBedModal({
   open,
@@ -14,6 +15,7 @@ export default function QuickAssignBedModal({
   customers = [],
   services = [],
   staff = [],
+  allBedSessions = {},
   onStartServing,
   loading = false
 }) {
@@ -43,6 +45,12 @@ export default function QuickAssignBedModal({
     if (!bed?.applicable_services?.length) return services;
     return services.filter(s => bed.applicable_services.includes(s.id));
   }, [bed, services]);
+
+  // Check if selected customer is currently in another bed session
+  const existingCustomerSessions = React.useMemo(() => {
+    if (!selectedCustomer) return [];
+    return findCustomerActiveSessions(allBedSessions, selectedCustomer);
+  }, [allBedSessions, selectedCustomer]);
 
   useEffect(() => {
     if (open) {
@@ -150,9 +158,15 @@ export default function QuickAssignBedModal({
       };
     });
 
+    // Link into existing master session if customer is already in another bed
+    const masterSessionId = existingCustomerSessions[0]?.master_session_id || generateMasterSessionId();
+
     onStartServing({
       bed_id: bed.id,
+      bed_name: bed.name,
       room_id: bed.room_id || null,
+      room_name: room?.name || '',
+      master_session_id: masterSessionId,
       customer: customerObj,
       customer_id: customerObj.id,
       customer_name: customerObj.name,
@@ -160,7 +174,12 @@ export default function QuickAssignBedModal({
       start_time: startTime,
       end_time: endTime,
       total_duration_minutes: totalDuration,
-      services: enrichedServices,
+      services: enrichedServices.map(s => ({
+        ...s,
+        bed_id: bed.id,
+        bed_name: bed.name,
+        room_name: room?.name || ''
+      })),
       status: 'in_progress',
       created_at: new Date().toISOString()
     });
@@ -220,8 +239,9 @@ export default function QuickAssignBedModal({
 
               {customerMode === 'existing' ? (
                 selectedCustomer ? (
-                  /* Customer Card (Identical to POS Ticket Column) */
-                  <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80">
+                  <>
+                    {/* Customer Card (Identical to POS Ticket Column) */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80">
                     <Avatar src={selectedCustomer.avatar_url} name={selectedCustomer.name} size={36} color="#34D399" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm truncate text-emerald-900">{selectedCustomer.name}</div>
@@ -242,6 +262,22 @@ export default function QuickAssignBedModal({
                       <UserX className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Multi-room linked session smart indicator */}
+                  {existingCustomerSessions.length > 0 && (
+                    <div className="mt-2.5 p-3 rounded-2xl bg-blue-50/90 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5 animate-in fade-in duration-200">
+                      <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-blue-950">
+                          {t('rooms_beds.active_in_other_bed', 'Khách đang phục vụ tại')}: {existingCustomerSessions.map(s => `${s.bed_name}${s.room_name ? ` (${s.room_name})` : ''}`).join(', ')}
+                        </div>
+                        <div className="text-[11px] text-blue-700 mt-0.5">
+                          {t('rooms_beds.multi_room_notice', 'Dịch vụ tại vị trí này sẽ được tự động liên kết chung vào cùng 1 hoá đơn khi thanh toán tại quầy thu ngân.')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
                 ) : (
                   /* Search Input & Floating Dropdown (Does NOT stretch or break layout) */
                   <div className="relative">
