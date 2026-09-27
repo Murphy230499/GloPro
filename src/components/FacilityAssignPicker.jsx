@@ -14,6 +14,7 @@ import {
 } from '@/components/appointments/constants';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 import { base44 } from '@/api/base44Client';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 /**
  * FacilityAssignPicker
@@ -64,7 +65,8 @@ export default function FacilityAssignPicker({
 
       // Load Rooms
       let loadedRooms = [];
-      const savedRooms = localStorage.getItem(`gp_rooms_${branchKey}`);
+      const roomsKey = getTenantStorageKey('gp_rooms', branchKey);
+      const savedRooms = localStorage.getItem(roomsKey);
       if (savedRooms) {
         try { loadedRooms = JSON.parse(savedRooms); } catch (e) {}
       }
@@ -75,8 +77,9 @@ export default function FacilityAssignPicker({
 
       // Load Beds
       let loadedBeds = facilities && facilities.length > 0 ? facilities : [];
+      const bedsKey = getTenantStorageKey('gp_facilities', branchKey);
       if (!loadedBeds || loadedBeds.length === 0) {
-        const savedBeds = localStorage.getItem(`gp_facilities_${branchKey}`);
+        const savedBeds = localStorage.getItem(bedsKey);
         if (savedBeds) {
           try { loadedBeds = JSON.parse(savedBeds); } catch (e) {}
         }
@@ -88,7 +91,8 @@ export default function FacilityAssignPicker({
 
       // Load Active Bed Sessions
       const sessionMap = {};
-      const savedSessions = localStorage.getItem(`gp_active_bed_sessions_${branchKey}`);
+      const sessionsKey = getTenantStorageKey('gp_active_bed_sessions', branchKey);
+      const savedSessions = localStorage.getItem(sessionsKey);
       if (savedSessions) {
         try { Object.assign(sessionMap, JSON.parse(savedSessions)); } catch (e) {}
       }
@@ -96,7 +100,8 @@ export default function FacilityAssignPicker({
 
       // Load Today Appointments for conflict check
       let loadedAppts = [];
-      const cachedAppts = localStorage.getItem(`gp_today_appointments_${branchKey}`);
+      const apptsKey = getTenantStorageKey('gp_today_appointments', branchKey);
+      const cachedAppts = localStorage.getItem(apptsKey);
       if (cachedAppts) {
         try { loadedAppts = JSON.parse(cachedAppts); } catch (e) {}
       }
@@ -105,7 +110,7 @@ export default function FacilityAssignPicker({
           .then(res => {
             if (Array.isArray(res)) {
               setAppointments(res);
-              localStorage.setItem(`gp_today_appointments_${branchKey}`, JSON.stringify(res));
+              localStorage.setItem(apptsKey, JSON.stringify(res));
             }
           })
           .catch(() => {});

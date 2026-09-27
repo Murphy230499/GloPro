@@ -13,6 +13,7 @@ import CatalogColumn from '@/components/pos/CatalogColumn';
 import ReviewQRModal from '@/components/pos/ReviewQRModal';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { useT } from '@/lib/i18n';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 const getCurrentUser = () => {
   try {
@@ -302,7 +303,7 @@ export default function POS() {
       let loadedFac = facData;
       if (!loadedFac || loadedFac.length === 0) {
         try {
-          const cached = localStorage.getItem(`gp_facilities_${currentBranchId}`);
+          const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
           if (cached) loadedFac = JSON.parse(cached);
         } catch (e) {}
       }

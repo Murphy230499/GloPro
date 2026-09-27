@@ -15,6 +15,7 @@ export const TENANT_SCOPED_TABLES = new Set([
   'deposit_policy',
   'deposit_transaction',
   'facility',
+  'room',
   'invoice',
   'loyaltyrule',
   'membership',
@@ -154,13 +155,37 @@ export async function resolveTenantId() {
 }
 
 /**
- * Clears active tenant cache upon user logout.
+ * Returns a tenant-isolated storage key.
+ * e.g. getTenantStorageKey('gp_rooms', branchId) -> 'gp_rooms_TENANT_ID_BRANCH_ID'
+ */
+export function getTenantStorageKey(prefix, suffix = '') {
+  const tid = getSyncTenantId() || 'default';
+  return `${prefix}_${tid}_${suffix}`;
+}
+
+/**
+ * Clears active tenant cache and purges all tenant-specific data from localStorage upon user logout.
  */
 export function clearActiveTenant() {
   inMemoryTenantId = null;
   if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('gp_active_tenant_id');
-    localStorage.removeItem('gp_active_tenant_id');
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_'))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    const sKeys = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_'))) {
+        sKeys.push(k);
+      }
+    }
+    sKeys.forEach(k => sessionStorage.removeItem(k));
   }
 }
 

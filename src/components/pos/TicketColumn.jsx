@@ -15,6 +15,7 @@ import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 import { getNormalizedLogs } from '@/lib/logHelper';
 import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 // TYPE_LABELS are now translated dynamically via getTypeLabel(type, t)
 const TYPE_LABEL_KEYS = {
@@ -89,7 +90,7 @@ export default function TicketColumn({ session, staff, customers, facilities = [
   const effectiveFacilities = React.useMemo(() => {
     if (facilities && facilities.length > 0) return facilities;
     try {
-      const cached = localStorage.getItem('gp_facilities_all') || localStorage.getItem('gp_facilities_');
+      const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', 'all')) || localStorage.getItem(getTenantStorageKey('gp_facilities', ''));
       if (cached) return JSON.parse(cached);
     } catch (e) {}
     return DEFAULT_FACILITIES;

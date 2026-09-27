@@ -18,6 +18,7 @@ import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 export default function RoomsBeds() {
   const { t } = useT();
@@ -66,30 +67,32 @@ export default function RoomsBeds() {
         base44.entities.Appointment ? base44.entities.Appointment.filter(branchFilter).catch(() => []) : Promise.resolve([])
       ]);
 
-      // Handle Rooms
+      // Handle Rooms (Tenant-isolated)
       let finalRooms = rData;
+      const roomsKey = getTenantStorageKey('gp_rooms', currentBranchId);
       if (!finalRooms || finalRooms.length === 0) {
-        const cached = localStorage.getItem(`gp_rooms_${currentBranchId}`);
+        const cached = localStorage.getItem(roomsKey);
         if (cached) {
           try { finalRooms = JSON.parse(cached); } catch (e) {}
         }
         if (!finalRooms || finalRooms.length === 0) {
           finalRooms = INITIAL_DEMO_ROOMS;
-          localStorage.setItem(`gp_rooms_${currentBranchId}`, JSON.stringify(finalRooms));
+          localStorage.setItem(roomsKey, JSON.stringify(finalRooms));
         }
       }
       setRooms(finalRooms);
 
-      // Handle Beds
+      // Handle Beds (Tenant-isolated)
       let finalBeds = fData;
+      const bedsKey = getTenantStorageKey('gp_facilities', currentBranchId);
       if (!finalBeds || finalBeds.length === 0) {
-        const cachedBeds = localStorage.getItem(`gp_facilities_${currentBranchId}`);
+        const cachedBeds = localStorage.getItem(bedsKey);
         if (cachedBeds) {
           try { finalBeds = JSON.parse(cachedBeds); } catch (e) {}
         }
         if (!finalBeds || finalBeds.length === 0) {
           finalBeds = INITIAL_DEMO_BEDS;
-          localStorage.setItem(`gp_facilities_${currentBranchId}`, JSON.stringify(finalBeds));
+          localStorage.setItem(bedsKey, JSON.stringify(finalBeds));
         }
       }
       setBeds(finalBeds);
@@ -98,58 +101,23 @@ export default function RoomsBeds() {
       setStaff(stData || []);
       setCustomers(cData || []);
 
-      // Handle Appointments & Conflict Tracking
+      // Handle Appointments (Tenant-isolated)
       let finalAppts = aData || [];
-      if (!finalAppts || finalAppts.length === 0) {
-        const cachedAppts = localStorage.getItem(`gp_today_appointments_${currentBranchId}`);
+      const apptsKey = getTenantStorageKey('gp_today_appointments', currentBranchId);
+      if (finalAppts && finalAppts.length > 0) {
+        localStorage.setItem(apptsKey, JSON.stringify(finalAppts));
+      } else {
+        const cachedAppts = localStorage.getItem(apptsKey);
         if (cachedAppts) {
           try { finalAppts = JSON.parse(cachedAppts); } catch (e) {}
         }
       }
-      if (!finalAppts || finalAppts.length === 0) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const nowH = new Date().getHours();
-        const nextH = Math.min(20, Math.max(9, nowH + 1));
-        const nextHStr = String(nextH).padStart(2, '0');
-        finalAppts = [
-          {
-            id: 'appt_demo_conflict_1',
-            customer_name: 'Nguyễn Thị Hương',
-            customer_phone: '0912345678',
-            facility_id: 'bed_p1_3',
-            facility_name: 'Giường 3',
-            room_name: 'Phòng 1',
-            date: todayStr,
-            start_time: `${nextHStr}:30`,
-            end_time: `${String(nextH + 1).padStart(2, '0')}:30`,
-            duration_minutes: 60,
-            status: 'confirmed',
-            service_name: 'Chăm sóc da chuyên sâu',
-            price: 500000
-          },
-          {
-            id: 'appt_demo_conflict_2',
-            customer_name: 'Trần Mai Lan',
-            customer_phone: '0987654321',
-            facility_id: 'bed_p2_1',
-            facility_name: 'Giường 1',
-            room_name: 'Phòng 2',
-            date: todayStr,
-            start_time: `${String(Math.min(21, nextH + 2)).padStart(2, '0')}:00`,
-            end_time: `${String(Math.min(22, nextH + 3)).padStart(2, '0')}:00`,
-            duration_minutes: 60,
-            status: 'confirmed',
-            service_name: 'Massage Body & Trị Liệu',
-            price: 450000
-          }
-        ];
-      }
-      setAppointments(finalAppts);
-      localStorage.setItem(`gp_today_appointments_${currentBranchId}`, JSON.stringify(finalAppts));
+      setAppointments(finalAppts || []);
 
-      // Build active bed sessions
+      // Build active bed sessions (Tenant-isolated, strictly from DB or salon's own real sessions)
       const sessionMap = {};
-      const savedSessions = localStorage.getItem(`gp_active_bed_sessions_${currentBranchId}`);
+      const sessionsKey = getTenantStorageKey('gp_active_bed_sessions', currentBranchId);
+      const savedSessions = localStorage.getItem(sessionsKey);
       if (savedSessions) {
         try {
           Object.assign(sessionMap, JSON.parse(savedSessions));
@@ -157,7 +125,6 @@ export default function RoomsBeds() {
       }
 
       // Merge real in-progress appointments from DB
-      const todayISO = new Date().toISOString().split('T')[0];
       (aData || []).forEach(appt => {
         if ((appt.status === 'in_progress' || appt.status === 'checked_in') && appt.facility_id) {
           if (!sessionMap[appt.facility_id]) {
@@ -177,60 +144,9 @@ export default function RoomsBeds() {
         }
       });
 
-      // Default demo sessions if brand new (matches Mockup 3!)
-      if (Object.keys(sessionMap).length === 0) {
-        const now = new Date();
-        const startH = String(Math.max(8, now.getHours() - 1)).padStart(2, '0');
-        const startM = '00';
-        
-        // Bed 1 of Room 1: Nearly finished (Sắp trống)
-        sessionMap['bed_p1_1'] = {
-          id: 'demo_ses_1',
-          bed_id: 'bed_p1_1',
-          customer: { name: 'Hoàng Yến', phone: '0985667845', birthday: '02/12/1999', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-          customer_name: 'Hoàng Yến',
-          customer_phone: '0985667845',
-          start_time: `${startH}:${startM}`,
-          end_time: `${String(Number(startH) + 1).padStart(2, '0')}:15`,
-          total_duration_minutes: 75,
-          services: [
-            { name: 'Cắt tóc nữ', price: 300000, duration: 45, staff_name: 'Minh Tú' },
-            { name: 'Gội thường', price: 100000, duration: 30, staff_name: 'Hoài An' }
-          ]
-        };
-
-        // Bed 2 of Room 1: Occupied (Đang bận)
-        sessionMap['bed_p1_2'] = {
-          id: 'demo_ses_2',
-          bed_id: 'bed_p1_2',
-          customer: { name: 'Nguyễn Văn A', phone: '0901234567' },
-          customer_name: 'Nguyễn Văn A',
-          start_time: `${startH}:${startM}`,
-          end_time: `${String(Number(startH) + 1).padStart(2, '0')}:30`,
-          total_duration_minutes: 90,
-          services: [
-            { name: 'Cắt tóc nam', price: 150000, duration: 30, staff_name: 'Minh Tú' },
-            { name: 'Nhuộm highlight', price: 600000, duration: 60, staff_name: 'Ngọc Anh' }
-          ]
-        };
-
-        // Bed 4 of Room 1: Occupied
-        sessionMap['bed_p1_4'] = {
-          id: 'demo_ses_4',
-          bed_id: 'bed_p1_4',
-          customer: { name: 'Trần Thị B', phone: '0988776655' },
-          customer_name: 'Trần Thị B',
-          start_time: `${startH}:${startM}`,
-          end_time: `${String(Number(startH) + 1).padStart(2, '0')}:00`,
-          total_duration_minutes: 60,
-          services: [
-            { name: 'Gội đầu dưỡng sinh', price: 200000, duration: 60, staff_name: 'Lan Anh' }
-          ]
-        };
-      }
-
+      // No fake hardcoded ghost sessions (clean state for new salons)
       setBedSessions(sessionMap);
-      localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(sessionMap));
+      localStorage.setItem(sessionsKey, JSON.stringify(sessionMap));
     } catch (err) {
       console.error('Error loading rooms and beds:', err);
     } finally {
@@ -245,7 +161,7 @@ export default function RoomsBeds() {
   // Listen for external appointment updates (e.g. override, dời giường, tạo lịch mới)
   useEffect(() => {
     const handleApptUpdate = () => {
-      const cached = localStorage.getItem(`gp_today_appointments_${currentBranchId}`);
+      const cached = localStorage.getItem(getTenantStorageKey('gp_today_appointments', currentBranchId));
       if (cached) {
         try {
           setAppointments(JSON.parse(cached));
@@ -320,7 +236,7 @@ export default function RoomsBeds() {
 
       const updated = [...rooms, newRoom];
       setRooms(updated);
-      localStorage.setItem(`gp_rooms_${currentBranchId}`, JSON.stringify(updated));
+      localStorage.setItem(getTenantStorageKey('gp_rooms', currentBranchId), JSON.stringify(updated));
       setRoomModalOpen(false);
       toast.success(t('rooms_beds.create_room_success', 'Tạo phòng thành công'));
     } catch (e) {
@@ -347,7 +263,7 @@ export default function RoomsBeds() {
 
         const updatedList = beds.map(b => b.id === editingBed.id ? updatedBed : b);
         setBeds(updatedList);
-        localStorage.setItem(`gp_facilities_${currentBranchId}`, JSON.stringify(updatedList));
+        localStorage.setItem(getTenantStorageKey('gp_facilities', currentBranchId), JSON.stringify(updatedList));
         toast.success(t('rooms_beds.update_bed_success', 'Cập nhật vị trí thành công'));
       } else {
         // Create
@@ -367,7 +283,7 @@ export default function RoomsBeds() {
 
         const updatedList = [...beds, newBed];
         setBeds(updatedList);
-        localStorage.setItem(`gp_facilities_${currentBranchId}`, JSON.stringify(updatedList));
+        localStorage.setItem(getTenantStorageKey('gp_facilities', currentBranchId), JSON.stringify(updatedList));
         toast.success(t('rooms_beds.create_bed_success', 'Tạo vị trí thành công'));
       }
 
@@ -387,14 +303,14 @@ export default function RoomsBeds() {
       }
       const updated = beds.filter(b => b.id !== deleteConfirm.id);
       setBeds(updated);
-      localStorage.setItem(`gp_facilities_${currentBranchId}`, JSON.stringify(updated));
+      localStorage.setItem(getTenantStorageKey('gp_facilities', currentBranchId), JSON.stringify(updated));
       
       // Also clean up session if active
       if (bedSessions[deleteConfirm.id]) {
         const clone = { ...bedSessions };
         delete clone[deleteConfirm.id];
         setBedSessions(clone);
-        localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(clone));
+        localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(clone));
       }
 
       toast.success(t('rooms_beds.delete_bed_success', 'Xoá vị trí thành công'));
@@ -412,7 +328,7 @@ export default function RoomsBeds() {
       [newSession.bed_id]: newSession
     };
     setBedSessions(updated);
-    localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updated));
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(updated));
     toast.success(t('rooms_beds.started_serving', 'Đã nhận khách vào vị trí'));
   };
 
@@ -425,7 +341,7 @@ export default function RoomsBeds() {
       startTime
     });
     setBedSessions(updated);
-    localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updated));
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(updated));
     toast.success(t('rooms_beds.transfer_bed_success', `Đã chuyển khách sang ${targetBed?.name || 'giường mới'}`));
   };
 
@@ -436,7 +352,7 @@ export default function RoomsBeds() {
     const updated = { ...bedSessions };
     delete updated[targetBedId];
     setBedSessions(updated);
-    localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updated));
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(updated));
     toast.success(t('rooms_beds.bed_freed', 'Đã trả giường thành công'));
   };
 
@@ -446,7 +362,7 @@ export default function RoomsBeds() {
       const { updatedSessions, releasedBedIds, releasedCount } = releaseCustomerBedSessions(prev, identifier);
       releasedIds = releasedBedIds;
       if (releasedCount > 0) {
-        localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updatedSessions));
+        localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(updatedSessions));
       }
       return updatedSessions;
     });
@@ -488,7 +404,7 @@ export default function RoomsBeds() {
 
       setAppointments(prev => {
         const updated = prev.map(a => (a.id === appointmentId ? { ...a, ...patchData } : a));
-        localStorage.setItem(`gp_today_appointments_${currentBranchId}`, JSON.stringify(updated));
+        localStorage.setItem(getTenantStorageKey('gp_today_appointments', currentBranchId), JSON.stringify(updated));
         return updated;
       });
 
@@ -515,7 +431,7 @@ export default function RoomsBeds() {
           bedIds: releasedBedIds
         });
         if (releasedCount > 0) {
-          localStorage.setItem(`gp_active_bed_sessions_${currentBranchId}`, JSON.stringify(updatedSessions));
+          localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions', currentBranchId), JSON.stringify(updatedSessions));
           toast.success(`Đã thanh toán tại POS và tự động giải phóng ${releasedCount} vị trí`);
         }
         return updatedSessions;

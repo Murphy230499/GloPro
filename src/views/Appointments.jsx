@@ -19,6 +19,7 @@ import AddTimeBlockModal from '@/components/appointments/AddTimeBlockModal';
 import AppointmentTimelineView from '@/components/appointments/AppointmentTimelineView';
 import AppointmentCalendarView from '@/components/appointments/AppointmentCalendarView';
 import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS } from '@/components/appointments/constants';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 const SAMPLE_DEMO_APPOINTMENTS = [
   { id: 'demo_1', customer_name: 'Michael Johnson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:30', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'confirmed' },
@@ -161,7 +162,7 @@ export default function Appointments() {
         let finalRooms = roomData;
         if (!finalRooms || finalRooms.length === 0) {
           if (typeof window !== 'undefined') {
-            const cached = localStorage.getItem(`gp_rooms_${currentBranchId}`);
+            const cached = localStorage.getItem(getTenantStorageKey('gp_rooms', currentBranchId));
             if (cached) {
               try { finalRooms = JSON.parse(cached); } catch (e) {}
             }
@@ -176,7 +177,7 @@ export default function Appointments() {
         let finalBeds = facData;
         if (!finalBeds || finalBeds.length === 0) {
           if (typeof window !== 'undefined') {
-            const cached = localStorage.getItem(`gp_facilities_${currentBranchId}`);
+            const cached = localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
             if (cached) {
               try { finalBeds = JSON.parse(cached); } catch (e) {}
             }
