@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Building2, Plus, Edit2, Trash2, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Check, Clock, User, Phone, CheckCircle2, ShoppingCart, 
-  DoorOpen, Sparkles, Filter, RefreshCw
+  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useBranch } from '@/lib/BranchContext';
@@ -52,7 +52,7 @@ const INITIAL_DEMO_BEDS = [
 
 export default function RoomsBeds() {
   const { t } = useT();
-  const { currentBranchId, branches = [], setCurrentBranchId } = useBranch();
+  const { currentBranchId } = useBranch();
 
   // Active Tab: 'diagram' (Sơ đồ vị trí) | 'settings' (Cài đặt vị trí)
   const [activeTab, setActiveTab] = useState('diagram');
@@ -435,74 +435,52 @@ export default function RoomsBeds() {
   }, [beds, page, pageSize]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 font-body overflow-y-auto">
-      {/* Top Header Bar */}
-      <div className="bg-white border-b border-slate-200/80 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs shrink-0">
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 font-body overflow-y-auto p-4 sm:p-6 space-y-4">
+      {/* Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2.5">
             {t('rooms_beds.title', 'Giường / Phòng')}
           </h1>
-        </div>
-
-        {/* Branch Selector (Mockup 1) */}
-        <div className="flex items-center gap-2">
-          {branches.length > 0 && (
-            <div className="relative">
-              <select
-                value={currentBranchId}
-                onChange={(e) => setCurrentBranchId(e.target.value)}
-                className="pl-3.5 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 appearance-none cursor-pointer shadow-2xs hover:bg-slate-100 transition-colors"
-              >
-                <option value="all">{t('branch.all_branches', 'Tất cả chi nhánh')}</option>
-                {branches.map(b => (
-                  <option key={b.id} value={b.id}>
-                    {t('branch.branch', 'Chi nhánh')}: {b.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          )}
+          <p className="text-xs text-slate-400 mt-0.5">
+            {t('rooms_beds.subtitle', 'Theo dõi trạng thái phòng, giường/ghế phục vụ khách theo thời gian thực')}
+          </p>
         </div>
       </div>
 
-      {/* Sub Tabs Bar (Mockup 1 & 3) */}
-      <div className="bg-white border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0 shadow-2xs">
-        <div className="flex items-center gap-6">
+      {/* Main Navigation Tab Bar (Standard GloPro Module Style) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
+        <div className="flex overflow-x-auto gap-1">
           <button
             type="button"
             onClick={() => setActiveTab('diagram')}
-            className={`py-3.5 text-xs font-bold transition-all relative cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'diagram'
-                ? 'text-blue-600'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-blue-600 text-white shadow-sm font-bold'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {t('rooms_beds.tab_diagram', 'Sơ đồ vị trí')}
-            {activeTab === 'diagram' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
-            )}
+            <LayoutGrid className="w-4 h-4 shrink-0" />
+            <span>{t('rooms_beds.tab_diagram', 'Sơ đồ vị trí')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('settings')}
-            className={`py-3.5 text-xs font-bold transition-all relative cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'settings'
-                ? 'text-blue-600'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-blue-600 text-white shadow-sm font-bold'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {t('rooms_beds.tab_settings', 'Cài đặt vị trí')}
-            {activeTab === 'settings' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
-            )}
+            <Settings className="w-4 h-4 shrink-0" />
+            <span>{t('rooms_beds.tab_settings', 'Cài đặt vị trí')}</span>
           </button>
         </div>
 
-        {/* Legend for Sơ đồ vị trí (Mockup 3 top right) */}
+        {/* Legend for Sơ đồ vị trí */}
         {activeTab === 'diagram' && (
-          <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-600 py-2">
+          <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-600 px-3 py-1">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
               {t('rooms_beds.legend_available', 'Đang trống')}
@@ -520,7 +498,7 @@ export default function RoomsBeds() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
             <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
