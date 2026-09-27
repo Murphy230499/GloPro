@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 
 export default function StaffPickerDropdown({
   staffList = [],
+  staff = [],
   value,
   onChange,
   t,
@@ -18,9 +19,11 @@ export default function StaffPickerDropdown({
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 240, openUp: false });
   const containerRef = useRef(null);
 
+  const actualList = staffList && staffList.length > 0 ? staffList : (staff || []);
+
   const selectedStaffObj = useMemo(() => {
-    return staffList.find(st => st.id === value);
-  }, [staffList, value]);
+    return actualList.find(st => st.id === value);
+  }, [actualList, value]);
 
   const updateCoords = () => {
     if (containerRef.current) {
@@ -75,13 +78,13 @@ export default function StaffPickerDropdown({
   // Group staff by role/position
   const groupedStaff = useMemo(() => {
     const groups = {};
-    staffList.forEach(st => {
+    actualList.forEach(st => {
       const role = st.role_name || st.position || st.role || (t ? t('nav.staff', 'Nhân viên') : 'Nhân viên');
       if (!groups[role]) groups[role] = [];
       groups[role].push(st);
     });
     return groups;
-  }, [staffList, t]);
+  }, [actualList, t]);
 
   return (
     <div className="relative flex-1 min-w-0" ref={containerRef}>

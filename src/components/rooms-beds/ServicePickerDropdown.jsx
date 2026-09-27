@@ -7,6 +7,7 @@ import { formatVND } from '@/lib/format';
 
 export default function ServicePickerDropdown({
   servicesList = [],
+  services = [],
   value,
   onChange,
   t,
@@ -18,9 +19,11 @@ export default function ServicePickerDropdown({
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 280, openUp: false });
   const containerRef = useRef(null);
 
+  const actualList = servicesList && servicesList.length > 0 ? servicesList : (services || []);
+
   const selectedServiceObj = useMemo(() => {
-    return servicesList.find(s => s.id === value);
-  }, [servicesList, value]);
+    return actualList.find(s => s.id === value);
+  }, [actualList, value]);
 
   const updateCoords = () => {
     if (containerRef.current) {
@@ -75,13 +78,13 @@ export default function ServicePickerDropdown({
   // Group services by category
   const groupedServices = useMemo(() => {
     const groups = {};
-    servicesList.forEach(s => {
+    actualList.forEach(s => {
       const cat = (s.category || s.group || (t ? t('catalog.general_category', 'Dịch vụ') : 'Dịch vụ')).toUpperCase();
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(s);
     });
     return groups;
-  }, [servicesList, t]);
+  }, [actualList, t]);
 
   return (
     <div className="relative flex-1 min-w-0" ref={containerRef}>

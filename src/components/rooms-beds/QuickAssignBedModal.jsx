@@ -110,8 +110,6 @@ export default function QuickAssignBedModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showClientSearch]);
 
-  if (!open || !bed) return null;
-
   // Filter customers matching search query (like in Cashier / POS)
   const clientResults = clientQ
     ? customers.filter((c) => 
@@ -262,6 +260,8 @@ export default function QuickAssignBedModal({
     onClose();
   };
 
+  if (!open || !bed) return null;
+
   return (
     <>
       <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
@@ -319,8 +319,8 @@ export default function QuickAssignBedModal({
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-700 truncate">
-                      Khách hẹn: <strong>{availableWindow.nextAppt.customer_name || 'Khách đặt hẹn'}</strong>
-                      {availableWindow.nextAppt.service_name && ` • DV: ${availableWindow.nextAppt.service_name}`}
+                      Khách hẹn: <strong>{availableWindow.nextAppt?.customer_name || 'Khách đặt hẹn'}</strong>
+                      {availableWindow.nextAppt?.service_name && ` • DV: ${availableWindow.nextAppt.service_name}`}
                     </div>
                     {isCurrentlyOverlapping && (
                       <div className="text-[11px] font-semibold text-rose-700 pt-1 border-t border-rose-200 flex items-center gap-1">
@@ -536,20 +536,24 @@ export default function QuickAssignBedModal({
                       {/* Service Picker with Custom Unified Dropdown */}
                       <div className="flex-1 min-w-0">
                         <ServicePickerDropdown
+                          servicesList={applicableServices}
                           services={applicableServices}
                           value={row.service_id}
                           onChange={(val) => handleServiceChange(idx, 'service_id', val)}
                           placeholder={t('rooms_beds.select_service_placeholder', '— Chọn dịch vụ —')}
+                          t={t}
                         />
                       </div>
 
                       {/* Staff Picker with Custom Unified Dropdown */}
                       <div className="w-36 shrink-0">
                         <StaffPickerDropdown
+                          staffList={staff}
                           staff={staff}
                           value={row.staff_id}
                           onChange={(val) => handleServiceChange(idx, 'staff_id', val)}
                           placeholder={t('rooms_beds.select_staff_placeholder', '— Chọn KTV —')}
+                          t={t}
                         />
                       </div>
 

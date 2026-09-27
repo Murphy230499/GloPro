@@ -779,10 +779,10 @@ export default function RoomsBeds() {
                                 <div className="text-[11px] bg-slate-50/90 rounded-xl p-2 border border-slate-100 space-y-0.5">
                                   <div className="font-semibold text-slate-700 flex items-center gap-1.5 truncate">
                                     <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                    <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt.customer_name || 'Khách đặt trước'}</span>
+                                    <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt?.customer_name || 'Khách đặt trước'}</span>
                                   </div>
                                   <div className="text-[10px] text-slate-400 truncate pl-5">
-                                    {windowInfo.nextAppt.service_name || 'Dịch vụ đã đặt'}
+                                    {windowInfo.nextAppt?.service_name || 'Dịch vụ đã đặt'}
                                   </div>
                                 </div>
                               </div>
