@@ -5,6 +5,7 @@ import { Search, Plus, Minus, Trash2, Printer, UserX, CreditCard, X, Edit3, Gift
 import { formatVND } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import StaffAssignPicker from '@/components/StaffAssignPicker';
+import FacilityAssignPicker from '@/components/FacilityAssignPicker';
 import EmptyCart from '@/components/pos/EmptyCart';
 import PackageUsageModal from '@/components/pos/PackageUsageModal';
 import { PROMOTIONS, VOUCHERS, applyDiscountsToCart } from '@/utils/promos';
@@ -902,13 +903,22 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                           </div>
                         )}
 
-                        {x.facility_name && (
-                          <div className="mt-1 flex items-center">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                              🛏️ {x.facility_name}
-                            </span>
+                        {/* Facility (Bed / Room) Assignment Picker */}
+                        <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-slate-100/70">
+                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                            <span>🛏️</span>
+                            <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
+                          </span>
+                          <div className="w-[160px] shrink-0">
+                            <FacilityAssignPicker 
+                              value={x.facility_id || ''} 
+                              onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })} 
+                              facilities={effectiveFacilities}
+                              placeholder="— Chọn vị trí —"
+                              buttonSize="xs"
+                            />
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1114,24 +1124,16 @@ export default function TicketColumn({ session, staff, customers, facilities = [
 
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('appointments.facility', 'Vị trí (Giường / Phòng)')}</label>
-                <div className="relative">
-                  <select
-                    value={editFacilityId}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setEditFacilityId(val);
-                      const fObj = effectiveFacilities.find(f => f.id === val);
-                      setEditFacilityName(fObj?.name || '');
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800 appearance-none cursor-pointer pr-8"
-                  >
-                    <option value="">— {t('rooms_beds.select_facility', 'Chưa chọn vị trí')} —</option>
-                    {effectiveFacilities.map(f => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <FacilityAssignPicker
+                  value={editFacilityId}
+                  onChange={(val, name) => {
+                    setEditFacilityId(val);
+                    setEditFacilityName(name);
+                  }}
+                  facilities={effectiveFacilities}
+                  placeholder={t('rooms_beds.select_facility', '— Chưa chọn vị trí —')}
+                  buttonSize="sm"
+                />
               </div>
             </div>
 

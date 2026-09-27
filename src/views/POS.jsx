@@ -25,6 +25,7 @@ const getCurrentUser = () => {
   return 'Lễ tân';
 };
 import TicketColumn from '@/components/pos/TicketColumn';
+import { DEFAULT_FACILITIES } from '@/components/appointments/constants';
 import CheckoutModal from '@/components/pos/CheckoutModal';
 import NewCustomerModal from '@/components/pos/NewCustomerModal';
 import EmptyCart from '@/components/pos/EmptyCart';
@@ -298,7 +299,17 @@ export default function POS() {
       setPrepaidCards((gc || []).filter((x) => x.is_active !== false));
       setGroups(gr || []);
       setStaff((st || []).filter((x) => x.is_active !== false));
-      setFacilities(facData || []);
+      let loadedFac = facData;
+      if (!loadedFac || loadedFac.length === 0) {
+        try {
+          const cached = localStorage.getItem(`gp_facilities_${currentBranchId}`);
+          if (cached) loadedFac = JSON.parse(cached);
+        } catch (e) {}
+      }
+      if (!loadedFac || loadedFac.length === 0) {
+        loadedFac = DEFAULT_FACILITIES;
+      }
+      setFacilities(loadedFac || []);
       setCustomers(c || []);
       setCustomerTiers(ct || []);
 
