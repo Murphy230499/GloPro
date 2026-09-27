@@ -91,7 +91,24 @@ export default function Appointments() {
   };
 
   // View States
-  const [targetEntity, setTargetEntity] = useState('staff'); // 'staff' | 'facility'
+  const [targetEntity, setTargetEntityState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get('target') || p.get('view') || p.get('tab');
+      if (t === 'facility' || t === 'room' || t === 'bed' || t === 'rooms-beds') return 'facility';
+    }
+    return 'staff';
+  });
+
+  const setTargetEntity = (val) => {
+    setTargetEntityState(val);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('target', val);
+      window.history.replaceState(null, '', url.toString());
+    }
+  };
+
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'calendar' | 'list'
 
   // Filters
