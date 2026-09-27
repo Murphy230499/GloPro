@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors } from 'lucide-react';
+import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import { formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
 import Avatar from '@/components/Avatar';
+import { formatVND } from '@/lib/format';
 
 export default function QuickAssignBedModal({
   open,
@@ -19,10 +20,11 @@ export default function QuickAssignBedModal({
   const { t } = useT();
 
   const [customerMode, setCustomerMode] = useState('existing'); // 'existing' | 'new'
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showClientSearch, setShowClientSearch] = useState(false);
+  const [clientQ, setClientQ] = useState('');
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [customerSearch, setCustomerSearch] = useState('');
 
   const [startTime, setStartTime] = useState(() => {
     const now = new Date();
@@ -48,14 +50,24 @@ export default function QuickAssignBedModal({
       const mm = String(now.getMinutes()).padStart(2, '0');
       setStartTime(`${hh}:${mm}`);
       setSelectedServices([{ service_id: applicableServices[0]?.id || '', staff_id: staff[0]?.id || '' }]);
-      setSelectedCustomerId(customers[0]?.id || '');
+      setSelectedCustomer(null);
+      setShowClientSearch(false);
+      setClientQ('');
+      setCustomerMode('existing');
       setNewCustomerName('');
       setNewCustomerPhone('');
-      setCustomerSearch('');
     }
-  }, [open, bed, applicableServices, customers, staff]);
+  }, [open, bed, applicableServices, staff]);
 
   if (!open || !bed) return null;
+
+  // Filter customers matching search query (like in Cashier / POS)
+  const clientResults = clientQ
+    ? customers.filter((c) => 
+        (c.name || '').toLowerCase().includes(clientQ.toLowerCase()) || 
+        (c.phone || '').includes(clientQ)
+      ).slice(0, 8)
+    : customers.slice(0, 8);
 
   // Calculate total duration & end time
   const totalDuration = selectedServices.reduce((sum, item) => {
@@ -89,10 +101,10 @@ export default function QuickAssignBedModal({
 
     let customerObj = null;
     if (customerMode === 'existing') {
-      customerObj = customers.find(c => c.id === selectedCustomerId);
-      if (!customerObj) {
-        return toast.error(t('rooms_beds.err_select_customer', 'Vui lòng chọn khách hàng'));
+      if (!selectedCustomer) {
+        return toast.error(t('rooms_beds.err_select_customer', 'Vui lòng chọn khách hàng hoặc khách vãng lai'));
       }
+      customerObj = selectedCustomer;
     } else {
       if (!newCustomerName.trim()) {
         return toast.error(t('rooms_beds.err_customer_name', 'Vui lòng nhập tên khách hàng'));
@@ -142,11 +154,6 @@ export default function QuickAssignBedModal({
     onClose();
   };
 
-  const filteredCustomers = customers.filter(c => 
-    (c.name || '').toLowerCase().includes(customerSearch.toLowerCase()) ||
-    (c.phone || '').includes(customerSearch)
-  );
-
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={onClose} />
@@ -175,80 +182,138 @@ export default function QuickAssignBedModal({
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col min-h-0">
           <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
-            {/* Customer Selection Tabs */}
+            {/* Customer Selection (Cashier / POS Style) */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-semibold text-slate-700">
                   {t('rooms_beds.customer', 'Khách hàng')} <span className="text-rose-500">*</span>
                 </label>
-                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-semibold">
+                {customerMode === 'new' && (
                   <button
                     type="button"
                     onClick={() => setCustomerMode('existing')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      customerMode === 'existing' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
                   >
-                    {t('rooms_beds.existing_customer', 'Khách có sẵn')}
+                    ← {t('rooms_beds.back_to_existing_customers', 'Chọn khách có sẵn')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerMode('new')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      customerMode === 'new' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {t('rooms_beds.new_customer', 'Khách mới / Vãng lai')}
-                  </button>
-                </div>
+                )}
               </div>
 
               {customerMode === 'existing' ? (
-                <div className="space-y-2">
+                selectedCustomer ? (
+                  /* Customer Card (Identical to POS Ticket Column) */
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80">
+                    <Avatar src={selectedCustomer.avatar_url} name={selectedCustomer.name} size={36} color="#34D399" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate text-emerald-900">{selectedCustomer.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {selectedCustomer.phone ? `${selectedCustomer.phone} • ` : ''}
+                        {selectedCustomer.points || 0} {t('common.points', 'điểm')} • {t('pos.ticket.total_spent', 'Tổng chi tiêu:')} {formatVND(selectedCustomer.total_spent || 0)}
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setShowClientSearch(true);
+                      }} 
+                      className="text-slate-400 hover:text-rose-500 shrink-0 ml-1 p-1 rounded-lg hover:bg-white/80 transition-colors cursor-pointer"
+                      title={t('pos.ticket.clear_customer', 'Bỏ chọn khách')}
+                    >
+                      <UserX className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : showClientSearch ? (
+                  /* Active Search Input & Results (Identical to POS Ticket Column) */
                   <div className="relative">
-                    <input
-                      type="text"
-                      placeholder={t('rooms_beds.search_customer', 'Tìm khách theo tên hoặc SĐT...')}
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all placeholder:text-slate-400"
-                    />
-                  </div>
-
-                  <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-white custom-scrollbar">
-                    {filteredCustomers.slice(0, 15).map(c => (
-                      <div
-                        key={c.id}
-                        onClick={() => setSelectedCustomerId(c.id)}
-                        className={`flex items-center justify-between p-2.5 hover:bg-slate-50 cursor-pointer transition-colors ${
-                          selectedCustomerId === c.id ? 'bg-blue-50/70' : ''
-                        }`}
+                    <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 mb-2 border border-slate-200">
+                      <Search className="w-4 h-4 text-slate-400" />
+                      <input 
+                        autoFocus 
+                        value={clientQ} 
+                        onChange={(e) => setClientQ(e.target.value)}
+                        placeholder={t('pos.ticket.search_cust_input_placeholder', 'Nhập tên, email hoặc SĐT...')}
+                        className="bg-transparent outline-none text-sm flex-1 text-slate-800" 
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => { setShowClientSearch(false); setClientQ(''); }} 
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Avatar name={c.name} src={c.avatar_url} size="sm" />
-                          <div className="truncate">
-                            <div className="text-xs font-bold text-slate-800 truncate">{c.name}</div>
-                            <div className="text-[11px] text-slate-400">{c.phone || '—'}</div>
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar border border-slate-100 rounded-xl p-1 bg-white">
+                      {/* Khách vãng lai Button */}
+                      <button 
+                        type="button"
+                        onClick={() => { 
+                          setSelectedCustomer({ id: 'walk_in', name: 'Khách vãng lai', phone: '', points: 0, total_spent: 0, is_guest: true }); 
+                          setShowClientSearch(false); 
+                          setClientQ('');
+                        }}
+                        className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 text-left text-sm text-slate-500 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">VL</div>
+                        <span className="font-medium text-slate-700">{t('pos.ticket.walk_in', 'Khách vãng lai')}</span>
+                      </button>
+
+                      {/* Matching Customers */}
+                      {clientResults.map((c) => (
+                        <button 
+                          key={c.id} 
+                          type="button"
+                          onClick={() => { 
+                            setSelectedCustomer(c); 
+                            setShowClientSearch(false); 
+                            setClientQ(''); 
+                          }}
+                          className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 text-left cursor-pointer"
+                        >
+                          <Avatar src={c.avatar_url} name={c.name} size={32} color="#34D399" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate text-slate-800">{c.name}</div>
+                            <div className="text-xs text-slate-400">{c.phone || '—'} • {c.points || 0} {t('common.points', 'điểm')}</div>
                           </div>
+                        </button>
+                      ))}
+
+                      {clientResults.length === 0 && clientQ && (
+                        <div className="text-center py-4 text-xs text-slate-400">
+                          {t('common.no_results', 'Không tìm thấy khách hàng')}
                         </div>
-                        {selectedCustomerId === c.id && (
-                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {filteredCustomers.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('common.no_results', 'Không tìm thấy khách hàng')}
-                      </div>
-                    )}
+                      )}
+                    </div>
+
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setCustomerMode('new');
+                        setNewCustomerName(clientQ);
+                      }} 
+                      className="text-sm text-emerald-600 font-semibold flex items-center gap-1.5 mt-2 hover:underline cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> 
+                      <span>{t('pos.ticket.add_new_customer', 'Thêm khách hàng mới')}</span>
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  /* Inactive Dashed Search Button (Identical to POS Ticket Column) */
+                  <button 
+                    type="button"
+                    onClick={() => setShowClientSearch(true)}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-sm hover:border-emerald-300 hover:text-emerald-600 transition-colors cursor-pointer"
+                  >
+                    <Search className="w-4 h-4" /> 
+                    <span>{t('pos.ticket.search_cust_input_placeholder', 'Nhập tên, email hoặc SĐT khách hàng')}</span>
+                  </button>
+                )
               ) : (
+                /* Add New Customer Form */
                 <div className="space-y-2.5">
                   <input
                     type="text"
+                    autoFocus
                     value={newCustomerName}
                     onChange={(e) => setNewCustomerName(e.target.value)}
                     placeholder={t('rooms_beds.customer_name_placeholder', 'Họ tên khách hàng *')}
@@ -292,7 +357,7 @@ export default function QuickAssignBedModal({
                         <button
                           type="button"
                           onClick={() => handleRemoveServiceRow(idx)}
-                          className="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded-lg"
+                          className="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded-lg cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
