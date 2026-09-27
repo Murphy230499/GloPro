@@ -10,6 +10,37 @@ import { timeStringToMinutes, formatMinutesToTime } from '@/components/appointme
 // Thời gian đệm vệ sinh, thay ga giường giữa 2 lượt khách (15 phút theo cấu hình salon)
 export const BED_BUFFER_MINUTES = 15;
 
+// Ngưỡng quá giờ: sau bao nhiêu phút vượt giờ kết thúc thì coi là "Quá giờ"
+// (0 = ngay khi qua giờ kết thúc là quá giờ)
+export const OVERTIME_THRESHOLD_MINUTES = 0;
+
+/**
+ * Kiểm tra một phiên phục vụ có đang quá giờ hay không
+ * @param {Object} session - Đối tượng phiên với total_duration_minutes, start_time
+ * @param {number} nowMinutes - Phút tính từ 00:00 (mặc định là giờ hiện tại)
+ * @returns {{ isOvertime: boolean, overtimeMinutes: number }}
+ */
+export function checkSessionOvertime(session, nowMinutes = null) {
+  if (!session) return { isOvertime: false, overtimeMinutes: 0 };
+
+  const currentMins = nowMinutes !== null ? nowMinutes : (() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  })();
+
+  const startMins = (session.start_time || '').includes(':')
+    ? parseInt(session.start_time.split(':')[0], 10) * 60 + parseInt(session.start_time.split(':')[1], 10)
+    : 0;
+  const totalDur = Number(session.total_duration_minutes) || 60;
+  const scheduledEndMins = startMins + totalDur;
+
+  const overtimeMinutes = Math.max(0, currentMins - scheduledEndMins - OVERTIME_THRESHOLD_MINUTES);
+  return {
+    isOvertime: overtimeMinutes > 0,
+    overtimeMinutes
+  };
+}
+
 /**
  * Lọc danh sách lịch hẹn hợp lệ trong ngày được xếp vào một giường cụ thể
  */

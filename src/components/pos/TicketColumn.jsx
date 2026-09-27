@@ -861,58 +861,37 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                         </div>
                       </div>
 
-                      {/* Assigned Staff or Direct Assign Picker */}
-                      <div className="mt-2 pt-2 border-t border-slate-100/80">
-                        {x.staff_name ? (
-                          <div className="flex items-center justify-between text-[11px] text-slate-500">
-                            <span className="flex items-center gap-1 font-medium truncate">
-                              <span className="text-slate-400">KTV:</span>
-                              <span className="text-slate-700 font-bold truncate">{x.staff_name}</span>
-                              {x.is_customer_requested && (
-                                <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200/60 px-1.5 py-0.2 rounded font-semibold shrink-0">
-                                  {t('pos.ticket.requested', 'Yêu cầu')}
-                                </span>
-                              )}
-                            </span>
-                            <div className="w-[140px] shrink-0">
-                              <StaffAssignPicker 
-                                staff={staff} 
-                                value={x.staff_id} 
-                                isRequested={x.is_customer_requested} 
-                                onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} 
-                                color="emerald-500" 
-                                placeholder={x.staff_name}
-                                hideRequestedCheckbox={true} 
-                              />
-                            </div>
+                      {/* Staff & Facility Pickers — unified layout */}
+                      <div className="mt-2 pt-2 border-t border-slate-100/80 space-y-1.5">
+                        {/* Staff row */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 font-medium w-[60px] shrink-0 flex items-center gap-1">
+                            <span>👤</span>
+                            <span>KTV:</span>
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <StaffAssignPicker
+                              staff={staff}
+                              value={x.staff_id || ''}
+                              isRequested={x.is_customer_requested || false}
+                              onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })}
+                              color="emerald-500"
+                              placeholder="— Chọn KTV —"
+                              hideRequestedCheckbox={true}
+                            />
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-slate-400 font-medium">{t('pos.ticket.assign_staff', 'KTV thực hiện')}:</span>
-                            <div className="w-[160px] shrink-0">
-                              <StaffAssignPicker 
-                                staff={staff} 
-                                value={x.staff_id || ''} 
-                                isRequested={x.is_customer_requested || false} 
-                                onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} 
-                                color="emerald-500" 
-                                placeholder="— Chọn KTV —"
-                                hideRequestedCheckbox={true} 
-                              />
-                            </div>
-                          </div>
-                        )}
+                        </div>
 
-                        {/* Facility (Bed / Room) Assignment Picker */}
-                        <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-slate-100/70">
-                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                        {/* Facility row */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 font-medium w-[60px] shrink-0 flex items-center gap-1">
                             <span>🛏️</span>
                             <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
                           </span>
-                          <div className="w-[160px] shrink-0">
-                            <FacilityAssignPicker 
-                              value={x.facility_id || ''} 
-                              onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })} 
+                          <div className="flex-1 min-w-0">
+                            <FacilityAssignPicker
+                              value={x.facility_id || ''}
+                              onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
                               facilities={effectiveFacilities}
                               placeholder="— Chọn vị trí —"
                               buttonSize="xs"

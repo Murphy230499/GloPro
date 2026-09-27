@@ -49,11 +49,11 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
   };
 
   return (
-    <div className="relative mt-2">
+    <div className="relative w-full">
       <button
         type="button"
         onClick={handleToggle}
-        className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none ${getFocusBorderClass()} transition-colors`}
+        className={`w-full flex items-center gap-2 px-2.5 h-7 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none ${getFocusBorderClass()} transition-colors cursor-pointer`}
       >
         {selected ? (
           <>

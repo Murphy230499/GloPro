@@ -1,0 +1,108 @@
+import re
+
+with open('src/lib/i18n.jsx', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_keys_vi = """
+    'staff.scheduler.week': 'Tuần',
+    'staff.scheduler.auto_schedule': 'Tự động lập lịch',
+    'staff.scheduler.copy_next_week': 'Sao chép tuần sau',
+    'staff.scheduler.copy_staff': 'Sao chép nhân sự',
+    'staff.scheduler.copy_day': 'Sao chép ca ngày',
+    'staff.scheduler.swap_staff': 'Đổi ca nhân sự',
+    'staff.scheduler.clear_week': 'Xóa lịch tuần này',
+    'staff.scheduler.src_staff': 'Nhân sự nguồn (Sao chép từ)',
+    'staff.scheduler.src_day': 'Ngày nguồn (Sao chép từ)',
+    'staff.scheduler.start_copy': 'Bắt đầu sao chép',
+    'staff.scheduler.loading': 'Đang tải lịch...',
+    'staff.scheduler.staff_column': 'Nhân sự',
+    'staff.scheduler.msg_auto_copy_on': 'Đã BẬT tự động sao chép lịch tuần mới',
+    'staff.scheduler.msg_auto_copy_off': 'Đã TẮT tự động sao chép lịch tuần mới',
+    'staff.scheduler.msg_auto_copy_success': 'Đã tự động sao chép {n} ca xếp từ tuần trước sang tuần này',
+    'staff.scheduler.msg_copy_week_confirm': 'Sao chép toàn bộ lịch xếp ca của tuần hiện tại sang tuần tiếp theo?',
+    'staff.scheduler.msg_copy_week_processing': 'Đang sao chép lịch sang tuần tiếp theo...',
+    'staff.scheduler.msg_copy_week_success': 'Đã sao chép thành công {n} ca xếp sang tuần tiếp theo',
+    'staff.scheduler.msg_copy_err': 'Lỗi sao chép: ',
+    'staff.scheduler.msg_copy_staff_processing': 'Đang sao chép lịch nhân sự...',
+    'staff.scheduler.msg_copy_staff_success': 'Đã sao chép lịch làm việc thành công',
+    'staff.scheduler.msg_copy_day_empty': 'Ngày nguồn ({date}) chưa có lịch làm việc nào để sao chép',
+    'staff.scheduler.msg_copy_day_processing': 'Đang sao chép ca ngày...',
+    'staff.scheduler.msg_copy_day_success': 'Đã sao chép {n} ca từ {d1} sang {n2} ngày',
+    'staff.scheduler.empty_staff': 'Chưa có nhân viên nào trong danh sách. Hãy thêm nhân viên trước.',
+    'staff.scheduler.add_staff_now': 'Thêm nhân viên ngay',
+    'staff.scheduler.empty_template': 'Chưa có mẫu ca làm việc nào. Hãy thêm ít nhất 1 mẫu ca trong phần Quản lý ca.',
+    'staff.scheduler.assign_title': 'Phân ca cho {name}',
+    'staff.scheduler.status_work': 'Trạng thái: Đi làm',
+    'staff.scheduler.status_off': 'Trạng thái: Nghỉ ngơi',
+    'staff.scheduler.shift_label': 'Ca làm việc',
+    'staff.scheduler.shift_placeholder': 'Chọn ca cho nhân viên này',
+    'staff.scheduler.off_reason': 'Lý do nghỉ',
+    'staff.scheduler.off_vacation': 'Nghỉ phép',
+    'staff.scheduler.off_sick': 'Nghỉ ốm',
+    'staff.scheduler.off_personal': 'Việc bận',
+    'staff.scheduler.save_schedule': 'Lưu lịch xếp',
+    'staff.scheduler.saving': 'Đang lưu...',
+    'staff.scheduler.swap_confirm': 'Xác nhận đổi lịch của {n1} và {n2} trong ngày {date}?',
+    'staff.scheduler.swap_processing': 'Đang đổi ca...',
+    'staff.scheduler.swap_success': 'Đổi ca thành công!',
+    'staff.scheduler.clear_confirm': 'Xác nhận xóa TOÀN BỘ lịch làm việc của TẤT CẢ nhân viên trong tuần này?',
+    'staff.scheduler.clear_processing': 'Đang xóa lịch...',
+    'staff.scheduler.clear_success': 'Đã xóa toàn bộ lịch tuần này',
+"""
+
+new_keys_en = """
+    'staff.scheduler.week': 'Week',
+    'staff.scheduler.auto_schedule': 'Auto schedule',
+    'staff.scheduler.copy_next_week': 'Copy to next week',
+    'staff.scheduler.copy_staff': 'Copy staff',
+    'staff.scheduler.copy_day': 'Copy day',
+    'staff.scheduler.swap_staff': 'Swap shifts',
+    'staff.scheduler.clear_week': 'Clear this week',
+    'staff.scheduler.src_staff': 'Source staff (Copy from)',
+    'staff.scheduler.src_day': 'Source day (Copy from)',
+    'staff.scheduler.start_copy': 'Start copying',
+    'staff.scheduler.loading': 'Loading schedule...',
+    'staff.scheduler.staff_column': 'Staff',
+    'staff.scheduler.msg_auto_copy_on': 'Auto copy schedule ENABLED',
+    'staff.scheduler.msg_auto_copy_off': 'Auto copy schedule DISABLED',
+    'staff.scheduler.msg_auto_copy_success': 'Auto copied {n} shifts from last week',
+    'staff.scheduler.msg_copy_week_confirm': 'Copy the entire schedule of current week to next week?',
+    'staff.scheduler.msg_copy_week_processing': 'Copying schedule to next week...',
+    'staff.scheduler.msg_copy_week_success': 'Successfully copied {n} shifts to next week',
+    'staff.scheduler.msg_copy_err': 'Copy error: ',
+    'staff.scheduler.msg_copy_staff_processing': 'Copying staff schedule...',
+    'staff.scheduler.msg_copy_staff_success': 'Schedule copied successfully',
+    'staff.scheduler.msg_copy_day_empty': 'Source day ({date}) has no schedule to copy',
+    'staff.scheduler.msg_copy_day_processing': 'Copying day shift...',
+    'staff.scheduler.msg_copy_day_success': 'Copied {n} shifts from {d1} to {n2} days',
+    'staff.scheduler.empty_staff': 'No staff in the list yet. Add staff first.',
+    'staff.scheduler.add_staff_now': 'Add staff now',
+    'staff.scheduler.empty_template': 'No shift templates yet. Add at least 1 shift template in Shift Management.',
+    'staff.scheduler.assign_title': 'Assign shift for {name}',
+    'staff.scheduler.status_work': 'Status: Working',
+    'staff.scheduler.status_off': 'Status: Day off',
+    'staff.scheduler.shift_label': 'Shift',
+    'staff.scheduler.shift_placeholder': 'Select shift for this staff',
+    'staff.scheduler.off_reason': 'Reason',
+    'staff.scheduler.off_vacation': 'Vacation',
+    'staff.scheduler.off_sick': 'Sick leave',
+    'staff.scheduler.off_personal': 'Personal',
+    'staff.scheduler.save_schedule': 'Save schedule',
+    'staff.scheduler.saving': 'Saving...',
+    'staff.scheduler.swap_confirm': 'Confirm swapping schedule between {n1} and {n2} on {date}?',
+    'staff.scheduler.swap_processing': 'Swapping shifts...',
+    'staff.scheduler.swap_success': 'Shifts swapped successfully!',
+    'staff.scheduler.clear_confirm': 'Confirm clearing ENTIRE schedule for ALL staff this week?',
+    'staff.scheduler.clear_processing': 'Clearing schedule...',
+    'staff.scheduler.clear_success': 'Entire week schedule cleared',
+"""
+
+# Insert into vi
+content = re.sub(r'(\n  vi: {\n)', r'\1' + new_keys_vi + '\n', content)
+# Insert into en
+content = re.sub(r'(\n  en: {\n)', r'\1' + new_keys_en + '\n', content)
+
+with open('src/lib/i18n.jsx', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("Translations for scheduler added successfully!")

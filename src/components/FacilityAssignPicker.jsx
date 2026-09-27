@@ -368,7 +368,7 @@ export default function FacilityAssignPicker({
   };
 
   const btnPadding = buttonSize === 'xs' 
-    ? 'px-2 py-1 text-[11px]' 
+    ? 'px-2.5 py-0 h-7 text-xs' 
     : buttonSize === 'sm' 
     ? 'px-2.5 py-1.5 text-xs' 
     : 'px-3 py-2 text-xs';
@@ -421,8 +421,8 @@ export default function FacilityAssignPicker({
             }`}
             style={{
               top: `${coords.top}px`,
-              left: `${coords.left}px`,
-              width: `${Math.max(coords.width, 320)}px`,
+              left: `${Math.max(8, Math.min(coords.left, window.innerWidth - 420 - 8))}px`,
+              width: `${Math.max(coords.width, 420)}px`,
               maxHeight: '380px'
             }}
           >
@@ -471,21 +471,20 @@ export default function FacilityAssignPicker({
             {/* List Beds by Room */}
             <div className="flex-1 overflow-y-auto p-2 space-y-3 divide-y divide-slate-100">
               {/* Option to clear / unassign */}
-              <button
-                type="button"
-                onClick={handleClear}
-                className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 text-xs text-slate-600 transition-colors text-left cursor-pointer group"
-              >
-                <span className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-slate-600">
-                    ✕
+              {value && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-rose-50 text-xs text-slate-500 hover:text-rose-600 transition-colors text-left cursor-pointer group"
+                >
+                  <span className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-rose-100 flex items-center justify-center text-slate-400 group-hover:text-rose-500 shrink-0 transition-colors">
+                    <X className="w-3.5 h-3.5" />
                   </span>
                   <span className="font-medium text-slate-500 italic">
-                    {t('rooms_beds.unassign_bed', '— Chưa chọn vị trí (Bỏ chọn) —')}
+                    {t('rooms_beds.unassign_bed', '— Bỏ chọn vị trí —')}
                   </span>
-                </span>
-                {!value && <Check className="w-3.5 h-3.5 text-blue-600" />}
-              </button>
+                </button>
+              )}
 
               {groupedBeds.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs">

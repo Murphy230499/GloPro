@@ -17,7 +17,7 @@ import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
-import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
+import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
 
 export default function RoomsBeds() {
   const { t } = useT();
@@ -282,11 +282,12 @@ export default function RoomsBeds() {
       const remainingMins = Math.max(0, endMins - currentMinsNow);
       const progressPercent = Math.min(100, Math.round((elapsedMins / totalDur) * 100));
 
-      // Rule: If remaining <= 10 mins, status = 'nearly_finished' (Sắp trống)!
+      // Rule priority: overtime > nearly_finished > in_progress
       let status = 'in_progress';
-      if (remainingMins <= 10 && remainingMins > 0) {
-        status = 'nearly_finished';
-      } else if (remainingMins === 0 && elapsedMins >= totalDur) {
+      const overtimeCheck = checkSessionOvertime(session, currentMinsNow);
+      if (overtimeCheck.isOvertime) {
+        status = 'overtime';
+      } else if (remainingMins <= 10) {
         status = 'nearly_finished';
       }
 
@@ -295,6 +296,7 @@ export default function RoomsBeds() {
         elapsed_minutes: elapsedMins,
         remaining_minutes: remainingMins,
         progress_percent: progressPercent,
+        overtime_minutes: overtimeCheck.overtimeMinutes,
         status
       };
     });
@@ -650,6 +652,10 @@ export default function RoomsBeds() {
               <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
               {t('rooms_beds.legend_nearly_finished', 'Sắp trống')}
             </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-fuchsia-500" />
+              {t('rooms_beds.legend_overtime', 'Quá giờ')}
+            </span>
           </div>
         )}
       </div>
@@ -698,6 +704,7 @@ export default function RoomsBeds() {
                       const session = enrichedBedSessions[bed.id];
                       const isOccupied = Boolean(session);
                       const isNearlyFinished = session?.status === 'nearly_finished';
+                      const isOvertime = session?.status === 'overtime';
 
                       // Check appointment conflict & availability window for unoccupied bed
                       const now = new Date();
@@ -706,13 +713,20 @@ export default function RoomsBeds() {
                         ? calculateBedAvailableWindow(bed.id, appointments, currentMinsNow, BED_BUFFER_MINUTES)
                         : null;
 
-                      // Colors based on status
+                      // Colors based on status (priority: overtime > nearly_finished > occupied > available)
                       let borderClass = 'border-emerald-300 hover:border-emerald-400';
                       let badgeClass = 'bg-emerald-100 text-emerald-800';
                       let badgeText = t('rooms_beds.status_available', 'ĐANG TRỐNG');
                       let progressFillClass = 'bg-emerald-500';
+                      let cardExtraClass = '';
 
-                      if (isNearlyFinished) {
+                      if (isOvertime) {
+                        borderClass = 'border-fuchsia-500 hover:border-fuchsia-600 shadow-fuchsia-100/60 animate-pulse-border';
+                        badgeClass = 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-300/60';
+                        badgeText = t('rooms_beds.status_overtime', 'QUÁ GIỜ');
+                        progressFillClass = 'bg-fuchsia-500';
+                        cardExtraClass = 'bg-fuchsia-50/30';
+                      } else if (isNearlyFinished) {
                         borderClass = 'border-amber-400 hover:border-amber-500 shadow-amber-100/50';
                         badgeClass = 'bg-amber-100 text-amber-800';
                         badgeText = t('rooms_beds.status_nearly_finished', 'SẮP TRỐNG');
@@ -745,7 +759,7 @@ export default function RoomsBeds() {
                               setQuickAssignBed({ bed, room: group.room });
                             }
                           }}
-                          className={`bg-white rounded-2xl border-2 ${borderClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none min-h-[140px]`}
+                          className={`rounded-2xl border-2 ${borderClass} ${cardExtraClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none min-h-[140px] ${isOccupied && !isOvertime ? 'bg-white' : isOvertime ? '' : 'bg-white'}`}
                         >
                           {/* Card Top: Bed Name + Badge */}
                           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
@@ -765,8 +779,14 @@ export default function RoomsBeds() {
                                 <div className="text-[11px] text-slate-500 font-medium">
                                   {t('rooms_beds.start', 'Bắt đầu')}: <span className="font-mono text-slate-700">{session.start_time}</span>
                                   <span className="mx-2 text-slate-300">|</span>
-                                  {t('rooms_beds.end', 'Kết thúc')}: <span className="font-mono text-slate-700">{session.end_time}</span>
+                                  {t('rooms_beds.end', 'Kết thúc')}: <span className={`font-mono ${isOvertime ? 'text-fuchsia-700 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
                                 </div>
+                                {isOvertime && (
+                                  <div className="flex items-center gap-1 text-[11px] font-bold text-fuchsia-700 bg-fuchsia-100 px-2 py-1 rounded-lg">
+                                    <Clock className="w-3 h-3 shrink-0" />
+                                    <span>Quá giờ: +{session.overtime_minutes} phút</span>
+                                  </div>
+                                )}
                               </>
                             ) : windowInfo?.hasNextAppt ? (
                               <div className="py-0.5 space-y-1.5">
@@ -804,7 +824,7 @@ export default function RoomsBeds() {
                               <span>
                                 {isOccupied ? (
                                   <>
-                                    {t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
+                                    {t('rooms_beds.elapsed', 'Đã qua')}: <strong className={isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}>{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
                                   </>
                                 ) : windowInfo?.hasNextAppt ? (
                                   <span className="text-amber-800 font-medium">
@@ -814,9 +834,11 @@ export default function RoomsBeds() {
                                   <span>{t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">0 {t('common.minutes', 'phút')}</strong></span>
                                 )}
                               </span>
-                              <span className="font-bold text-slate-700">
+                              <span className={`font-bold ${isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}`}>
                                 {isOccupied ? (
-                                  `${session?.progress_percent || 0}% (${session?.total_duration_minutes || 0} ${t('common.minutes', 'phút')})`
+                                  isOvertime
+                                    ? `100% (+${session?.overtime_minutes || 0}p quá giờ)`
+                                    : `${session?.progress_percent || 0}% (${session?.total_duration_minutes || 0} ${t('common.minutes', 'phút')})`
                                 ) : windowInfo?.hasNextAppt ? (
                                   <span className="text-[10px] text-slate-500 font-normal">(đệm 15p dọn phòng)</span>
                                 ) : (
@@ -828,7 +850,7 @@ export default function RoomsBeds() {
                             <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${isOccupied ? progressFillClass : 'bg-emerald-500'}`}
-                                style={{ width: `${session ? Math.min(100, Math.max(0, session.progress_percent)) : 0}%` }}
+                                style={{ width: `${session ? (isOvertime ? 100 : Math.min(100, Math.max(0, session.progress_percent))) : 0}%` }}
                               />
                             </div>
                           </div>

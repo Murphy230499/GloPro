@@ -1,0 +1,484 @@
+[
+  {
+    "id": "P6_HOLD_001",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "mai ghé mần tóc tầm 3h nha xếp thợ nào cũng được",
+    "description": "Hold-out generalization scenario: \"mai ghé mần tóc tầm 3h nha xếp thợ nào cũng được\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_002",
+    "category": "HOLDOUT_CASHIER",
+    "input": "thanh toán cái bill cắt tóc hồi nãy bằng momo quét qr",
+    "description": "Hold-out generalization scenario: \"thanh toán cái bill cắt tóc hồi nãy bằng momo quét qr\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CHECKOUT_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_003",
+    "category": "HOLDOUT_TIP",
+    "input": "khách này bo thêm 100 cành cho thằng em gội đầu",
+    "description": "Hold-out generalization scenario: \"khách này bo thêm 100 cành cho thằng em gội đầu\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_004",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "trong kho còn mấy chai dầu gội bưởi zậy shop",
+    "description": "Hold-out generalization scenario: \"trong kho còn mấy chai dầu gội bưởi zậy shop\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_005",
+    "category": "HOLDOUT_PAYROLL",
+    "input": "lương tháng này của tui được nhiêu zợ",
+    "description": "Hold-out generalization scenario: \"lương tháng này của tui được nhiêu zợ\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_PAYROLL"
+    }
+  },
+  {
+    "id": "P6_HOLD_006",
+    "category": "HOLDOUT_GENERAL",
+    "input": "tổng tiền thu vô hôm nay được bi nhiêu",
+    "description": "Hold-out generalization scenario: \"tổng tiền thu vô hôm nay được bi nhiêu\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_007",
+    "category": "HOLDOUT_CASHIER",
+    "input": "tạo bill gấp cho anh nam gội đầu dưỡng sinh 120k",
+    "description": "Hold-out generalization scenario: \"tạo bill gấp cho anh nam gội đầu dưỡng sinh 120k\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_008",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "hủy lịch của chị phương giúp em đổi qua ngày mốt",
+    "description": "Hold-out generalization scenario: \"hủy lịch của chị phương giúp em đổi qua ngày mốt\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CANCEL_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_009",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "kho còn bao nhiêu hũ hấp dầu collagen",
+    "description": "Hold-out generalization scenario: \"kho còn bao nhiêu hũ hấp dầu collagen\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_010",
+    "category": "HOLDOUT_TIP",
+    "input": "tip 50k cho bé vy làm móng",
+    "description": "Hold-out generalization scenario: \"tip 50k cho bé vy làm móng\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_011",
+    "category": "HOLDOUT_TIP",
+    "input": "doanh thu bữa nay có tính tiền bo của thợ hông",
+    "description": "Hold-out generalization scenario: \"doanh thu bữa nay có tính tiền bo của thợ hông\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_012",
+    "category": "HOLDOUT_GENERAL",
+    "input": "xếp em hoa làm cho khách hương 4h chiều",
+    "description": "Hold-out generalization scenario: \"xếp em hoa làm cho khách hương 4h chiều\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_013",
+    "category": "HOLDOUT_PAYMENT",
+    "input": "chị trang thanh toán tiền mặt 450 nghìn",
+    "description": "Hold-out generalization scenario: \"chị trang thanh toán tiền mặt 450 nghìn\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CHECKOUT_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_014",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "nhập thêm 15 chai dưỡng tóc argan",
+    "description": "Hold-out generalization scenario: \"nhập thêm 15 chai dưỡng tóc argan\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "RECEIVE_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_015",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "kho còn dầu gội ko em",
+    "description": "Hold-out generalization scenario: \"kho còn dầu gội ko em\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_016",
+    "category": "HOLDOUT_GENERAL",
+    "input": "tạo khách mới tên hoàng phúc sđt 0988776655",
+    "description": "Hold-out generalization scenario: \"tạo khách mới tên hoàng phúc sđt 0988776655\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_017",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "cho chị ấy vào lịch mai tầm 2 rưỡi chiều",
+    "description": "Hold-out generalization scenario: \"cho chị ấy vào lịch mai tầm 2 rưỡi chiều\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_018",
+    "category": "HOLDOUT_TIP",
+    "input": "tiền tip này trả riêng bằng tiền mặt nha đừng gộp bill",
+    "description": "Hold-out generalization scenario: \"tiền tip này trả riêng bằng tiền mặt nha đừng gộp bill\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_019",
+    "category": "HOLDOUT_PAYROLL",
+    "input": "tháng này thợ tuấn được thưởng bao nhiêu tiền",
+    "description": "Hold-out generalization scenario: \"tháng này thợ tuấn được thưởng bao nhiêu tiền\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_PAYROLL"
+    }
+  },
+  {
+    "id": "P6_HOLD_020",
+    "category": "HOLDOUT_CASHIER",
+    "input": "in hóa đơn cho khách bàn số 2",
+    "description": "Hold-out generalization scenario: \"in hóa đơn cho khách bàn số 2\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_021",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "khách muốn đổi thợ sang bé bảo",
+    "description": "Hold-out generalization scenario: \"khách muốn đổi thợ sang bé bảo\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_022",
+    "category": "HOLDOUT_CASHIER",
+    "input": "hóa đơn 500k khách đưa 1 củ thối lại 500k",
+    "description": "Hold-out generalization scenario: \"hóa đơn 500k khách đưa 1 củ thối lại 500k\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_023",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "kho chi nhánh đà nẵng còn serum không",
+    "description": "Hold-out generalization scenario: \"kho chi nhánh đà nẵng còn serum không\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_024",
+    "category": "HOLDOUT_REPORTS",
+    "input": "xem tiền bán dịch vụ hôm nay",
+    "description": "Hold-out generalization scenario: \"xem tiền bán dịch vụ hôm nay\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_REVENUE"
+    }
+  },
+  {
+    "id": "P6_HOLD_025",
+    "category": "HOLDOUT_GENERAL",
+    "input": "mai cho c lan qua tầm 3rưỡi nha",
+    "description": "Hold-out generalization scenario: \"mai cho c lan qua tầm 3rưỡi nha\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_026",
+    "category": "HOLDOUT_GENERAL",
+    "input": "thôi khỏi đặt nữa em ơi",
+    "description": "Hold-out generalization scenario: \"thôi khỏi đặt nữa em ơi\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_027",
+    "category": "HOLDOUT_GENERAL",
+    "input": "khách lan số đuôi 888 đổi qua 5h",
+    "description": "Hold-out generalization scenario: \"khách lan số đuôi 888 đổi qua 5h\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_028",
+    "category": "HOLDOUT_TIP",
+    "input": "tip thêm 200k cho thợ minh sau khi tính tiền",
+    "description": "Hold-out generalization scenario: \"tip thêm 200k cho thợ minh sau khi tính tiền\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_029",
+    "category": "HOLDOUT_REPORTS",
+    "input": "doanh thu thuần của tiệm tháng này",
+    "description": "Hold-out generalization scenario: \"doanh thu thuần của tiệm tháng này\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_REVENUE"
+    }
+  },
+  {
+    "id": "P6_HOLD_030",
+    "category": "HOLDOUT_GENERAL",
+    "input": "nhân viên nào đang rảnh tay làm móng liền được",
+    "description": "Hold-out generalization scenario: \"nhân viên nào đang rảnh tay làm móng liền được\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_031",
+    "category": "HOLDOUT_CASHIER",
+    "input": "tạo bill cắt gội sấy 200k cho khách quen",
+    "description": "Hold-out generalization scenario: \"tạo bill cắt gội sấy 200k cho khách quen\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_032",
+    "category": "HOLDOUT_CASHIER",
+    "input": "chuyển khoản 1 triệu tiền hóa đơn",
+    "description": "Hold-out generalization scenario: \"chuyển khoản 1 triệu tiền hóa đơn\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_033",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "kho cảnh báo hết hàng chưa",
+    "description": "Hold-out generalization scenario: \"kho cảnh báo hết hàng chưa\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_034",
+    "category": "HOLDOUT_PAYROLL",
+    "input": "xem lương thực nhận của hoa",
+    "description": "Hold-out generalization scenario: \"xem lương thực nhận của hoa\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_PAYROLL"
+    }
+  },
+  {
+    "id": "P6_HOLD_035",
+    "category": "HOLDOUT_PAYMENT",
+    "input": "khách trả thẻ visa 800k",
+    "description": "Hold-out generalization scenario: \"khách trả thẻ visa 800k\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CHECKOUT_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_036",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "nhập kho 50 tuýp thuốc nhuộm",
+    "description": "Hold-out generalization scenario: \"nhập kho 50 tuýp thuốc nhuộm\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "RECEIVE_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_037",
+    "category": "HOLDOUT_REPORTS",
+    "input": "thợ nào làm doanh số cao nhất tuần này",
+    "description": "Hold-out generalization scenario: \"thợ nào làm doanh số cao nhất tuần này\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_STAFF_REVENUE"
+    }
+  },
+  {
+    "id": "P6_HOLD_038",
+    "category": "HOLDOUT_GENERAL",
+    "input": "hôm nay có bao nhiêu đơn hàng thành công",
+    "description": "Hold-out generalization scenario: \"hôm nay có bao nhiêu đơn hàng thành công\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_039",
+    "category": "HOLDOUT_GENERAL",
+    "input": "tiền mặt trong két hiện tại là bao nhiêu",
+    "description": "Hold-out generalization scenario: \"tiền mặt trong két hiện tại là bao nhiêu\"",
+    "severity": "HIGH",
+    "expected": {}
+  },
+  {
+    "id": "P6_HOLD_040",
+    "category": "HOLDOUT_CASHIER",
+    "input": "cắt tóc nam 80k tạo bill liền nha",
+    "description": "Hold-out generalization scenario: \"cắt tóc nam 80k tạo bill liền nha\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_041",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "cho lan vô lịch ngày kia",
+    "description": "Hold-out generalization scenario: \"cho lan vô lịch ngày kia\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_042",
+    "category": "HOLDOUT_TIP",
+    "input": "tip 300k cho minh chuyển khoản nha",
+    "description": "Hold-out generalization scenario: \"tip 300k cho minh chuyển khoản nha\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_043",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "kho còn bao nhiêu chai xịt dưỡng",
+    "description": "Hold-out generalization scenario: \"kho còn bao nhiêu chai xịt dưỡng\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_044",
+    "category": "HOLDOUT_PAYROLL",
+    "input": "xem hoa hồng tháng 9 của thợ nam",
+    "description": "Hold-out generalization scenario: \"xem hoa hồng tháng 9 của thợ nam\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_PAYROLL"
+    }
+  },
+  {
+    "id": "P6_HOLD_045",
+    "category": "HOLDOUT_PAYMENT",
+    "input": "thanh toán gộp cả tiền tip qua qr 1tr2",
+    "description": "Hold-out generalization scenario: \"thanh toán gộp cả tiền tip qua qr 1tr2\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CHECKOUT_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_046",
+    "category": "HOLDOUT_APPOINTMENT",
+    "input": "tạo lịch mới cho khách hà 10h sáng thứ 7",
+    "description": "Hold-out generalization scenario: \"tạo lịch mới cho khách hà 10h sáng thứ 7\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_APPOINTMENT"
+    }
+  },
+  {
+    "id": "P6_HOLD_047",
+    "category": "HOLDOUT_CASHIER",
+    "input": "hủy bill cũ tạo lại bill mới",
+    "description": "Hold-out generalization scenario: \"hủy bill cũ tạo lại bill mới\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "CREATE_INVOICE"
+    }
+  },
+  {
+    "id": "P6_HOLD_048",
+    "category": "HOLDOUT_TIP",
+    "input": "khách boa 100k ghi phiếu thu hộ",
+    "description": "Hold-out generalization scenario: \"khách boa 100k ghi phiếu thu hộ\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "TIP_OPERATION"
+    }
+  },
+  {
+    "id": "P6_HOLD_049",
+    "category": "HOLDOUT_INVENTORY",
+    "input": "tồn kho sản phẩm dưỡng tóc",
+    "description": "Hold-out generalization scenario: \"tồn kho sản phẩm dưỡng tóc\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "READ_STOCK"
+    }
+  },
+  {
+    "id": "P6_HOLD_050",
+    "category": "HOLDOUT_REPORTS",
+    "input": "chốt sổ doanh thu ngày hôm nay",
+    "description": "Hold-out generalization scenario: \"chốt sổ doanh thu ngày hôm nay\"",
+    "severity": "HIGH",
+    "expected": {
+      "intent": "QUERY_REVENUE"
+    }
+  }
+]

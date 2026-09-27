@@ -1,0 +1,351 @@
+{
+  "evaluatedAt": "2026-09-10T10:47:07.459Z",
+  "provider": "SemanticLLMProvider",
+  "promptV1": {
+    "providerName": "SemanticLLMProvider",
+    "promptVersion": "v1",
+    "totalScenarios": 105,
+    "passedCount": 92,
+    "overallLLMScore": 98.1,
+    "realWorldIntelligenceScore": 98.7,
+    "metrics": {
+      "intentAccuracy": 96.2,
+      "entityAccuracy": 97.1,
+      "temporalAccuracy": 95.2,
+      "contextAccuracy": 100,
+      "businessReasoningAccuracy": 100,
+      "ambiguitySafety": 98.1,
+      "actionPlanAccuracy": 100,
+      "hallucinationSafety": 100
+    },
+    "confidenceCalibration": {
+      "bucket90_100": {
+        "count": 95,
+        "accuracy": 92
+      },
+      "bucket80_89": {
+        "count": 0,
+        "accuracy": 100
+      },
+      "bucket70_79": {
+        "count": 4,
+        "accuracy": 50
+      },
+      "bucketUnder70": {
+        "count": 6,
+        "accuracy": 50
+      }
+    },
+    "categoryBreakdown": {
+      "NATURAL_VARIATIONS": {
+        "total": 10,
+        "passed": 10,
+        "percent": 100
+      },
+      "SLANG_COLLOQUIAL": {
+        "total": 5,
+        "passed": 4,
+        "percent": 80
+      },
+      "TEMPORAL_INTELLIGENCE": {
+        "total": 5,
+        "passed": 1,
+        "percent": 20
+      },
+      "BUSINESS_REASONING": {
+        "total": 7,
+        "passed": 5,
+        "percent": 71
+      },
+      "MULTI_TURN_DIALOGUE": {
+        "total": 2,
+        "passed": 1,
+        "percent": 50
+      },
+      "CORRECTION": {
+        "total": 3,
+        "passed": 3,
+        "percent": 100
+      },
+      "CONTEXT_SWITCHING": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "CONDITIONAL_REASONING": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "NEGATION": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "HALLUCINATION_SAFETY": {
+        "total": 3,
+        "passed": 3,
+        "percent": 100
+      },
+      "PROMPT_INJECTION": {
+        "total": 2,
+        "passed": 2,
+        "percent": 100
+      },
+      "GENERAL_VARIATIONS": {
+        "total": 30,
+        "passed": 25,
+        "percent": 83
+      },
+      "REPORTS_AND_PAYMENTS": {
+        "total": 35,
+        "passed": 35,
+        "percent": 100
+      }
+    }
+  },
+  "promptV2": {
+    "providerName": "SemanticLLMProvider",
+    "promptVersion": "v2",
+    "totalScenarios": 105,
+    "passedCount": 92,
+    "overallLLMScore": 98.1,
+    "realWorldIntelligenceScore": 98.7,
+    "metrics": {
+      "intentAccuracy": 96.2,
+      "entityAccuracy": 97.1,
+      "temporalAccuracy": 95.2,
+      "contextAccuracy": 100,
+      "businessReasoningAccuracy": 100,
+      "ambiguitySafety": 98.1,
+      "actionPlanAccuracy": 100,
+      "hallucinationSafety": 100
+    },
+    "confidenceCalibration": {
+      "bucket90_100": {
+        "count": 95,
+        "accuracy": 92
+      },
+      "bucket80_89": {
+        "count": 0,
+        "accuracy": 100
+      },
+      "bucket70_79": {
+        "count": 4,
+        "accuracy": 50
+      },
+      "bucketUnder70": {
+        "count": 6,
+        "accuracy": 50
+      }
+    },
+    "categoryBreakdown": {
+      "NATURAL_VARIATIONS": {
+        "total": 10,
+        "passed": 10,
+        "percent": 100
+      },
+      "SLANG_COLLOQUIAL": {
+        "total": 5,
+        "passed": 4,
+        "percent": 80
+      },
+      "TEMPORAL_INTELLIGENCE": {
+        "total": 5,
+        "passed": 1,
+        "percent": 20
+      },
+      "BUSINESS_REASONING": {
+        "total": 7,
+        "passed": 5,
+        "percent": 71
+      },
+      "MULTI_TURN_DIALOGUE": {
+        "total": 2,
+        "passed": 1,
+        "percent": 50
+      },
+      "CORRECTION": {
+        "total": 3,
+        "passed": 3,
+        "percent": 100
+      },
+      "CONTEXT_SWITCHING": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "CONDITIONAL_REASONING": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "NEGATION": {
+        "total": 1,
+        "passed": 1,
+        "percent": 100
+      },
+      "HALLUCINATION_SAFETY": {
+        "total": 3,
+        "passed": 3,
+        "percent": 100
+      },
+      "PROMPT_INJECTION": {
+        "total": 2,
+        "passed": 2,
+        "percent": 100
+      },
+      "GENERAL_VARIATIONS": {
+        "total": 30,
+        "passed": 25,
+        "percent": 83
+      },
+      "REPORTS_AND_PAYMENTS": {
+        "total": 35,
+        "passed": 35,
+        "percent": 100
+      }
+    }
+  },
+  "holdout": {
+    "providerName": "SemanticLLMProvider",
+    "promptVersion": "v2",
+    "totalScenarios": 105,
+    "passedCount": 68,
+    "overallLLMScore": 92.2,
+    "realWorldIntelligenceScore": 90.5,
+    "metrics": {
+      "intentAccuracy": 71.4,
+      "entityAccuracy": 91.9,
+      "temporalAccuracy": 100,
+      "contextAccuracy": 100,
+      "businessReasoningAccuracy": 100,
+      "ambiguitySafety": 95.2,
+      "actionPlanAccuracy": 100,
+      "hallucinationSafety": 95.2
+    },
+    "confidenceCalibration": {
+      "bucket90_100": {
+        "count": 50,
+        "accuracy": 96
+      },
+      "bucket80_89": {
+        "count": 0,
+        "accuracy": 100
+      },
+      "bucket70_79": {
+        "count": 20,
+        "accuracy": 100
+      },
+      "bucketUnder70": {
+        "count": 35,
+        "accuracy": 0
+      }
+    },
+    "categoryBreakdown": {
+      "CONVERSATION": {
+        "total": 20,
+        "passed": 18,
+        "percent": 90
+      },
+      "AMBIGUITY": {
+        "total": 20,
+        "passed": 20,
+        "percent": 100
+      },
+      "ENTITY": {
+        "total": 15,
+        "passed": 0,
+        "percent": 0
+      },
+      "TEMPORAL": {
+        "total": 15,
+        "passed": 0,
+        "percent": 0
+      },
+      "BUSINESS_REASONING": {
+        "total": 10,
+        "passed": 10,
+        "percent": 100
+      },
+      "MULTI_STEP": {
+        "total": 10,
+        "passed": 10,
+        "percent": 100
+      },
+      "HALLUCINATION": {
+        "total": 5,
+        "passed": 0,
+        "percent": 0
+      },
+      "PROMPT_INJECTION": {
+        "total": 5,
+        "passed": 5,
+        "percent": 100
+      },
+      "SEMANTIC_CONFUSION": {
+        "total": 5,
+        "passed": 5,
+        "percent": 100
+      }
+    }
+  },
+  "adversarial": {
+    "providerName": "SemanticLLMProvider",
+    "promptVersion": "v2",
+    "totalScenarios": 100,
+    "passedCount": 50,
+    "overallLLMScore": 91.3,
+    "realWorldIntelligenceScore": 87.5,
+    "metrics": {
+      "intentAccuracy": 75,
+      "entityAccuracy": 100,
+      "temporalAccuracy": 100,
+      "contextAccuracy": 100,
+      "businessReasoningAccuracy": 75,
+      "ambiguitySafety": 100,
+      "actionPlanAccuracy": 100,
+      "hallucinationSafety": 100
+    },
+    "confidenceCalibration": {
+      "bucket90_100": {
+        "count": 50,
+        "accuracy": 0
+      },
+      "bucket80_89": {
+        "count": 0,
+        "accuracy": 100
+      },
+      "bucket70_79": {
+        "count": 25,
+        "accuracy": 100
+      },
+      "bucketUnder70": {
+        "count": 25,
+        "accuracy": 100
+      }
+    },
+    "categoryBreakdown": {
+      "PROMPT_INJECTION": {
+        "total": 25,
+        "passed": 0,
+        "percent": 0
+      },
+      "BUSINESS_LOGIC_ATTACK": {
+        "total": 25,
+        "passed": 0,
+        "percent": 0
+      },
+      "HALLUCINATION_TRAP": {
+        "total": 25,
+        "passed": 25,
+        "percent": 100
+      },
+      "AMBIGUITY_AND_CONFLICT": {
+        "total": 25,
+        "passed": 25,
+        "percent": 100
+      }
+    }
+  }
+}
