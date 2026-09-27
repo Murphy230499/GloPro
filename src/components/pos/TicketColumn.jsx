@@ -864,12 +864,12 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                       {/* Staff & Facility Pickers — unified layout */}
                       <div className="mt-2 pt-2 border-t border-slate-100/80 space-y-1.5">
                         {/* Staff row */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-slate-400 font-medium w-[60px] shrink-0 flex items-center gap-1">
-                            <span>👤</span>
-                            <span>KTV:</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 truncate min-w-0">
+                            <span className="shrink-0">👤</span>
+                            <span className="truncate">{x.staff_name || t('pos.ticket.assign_staff', 'KTV thực hiện')}</span>
                           </span>
-                          <div className="flex-1 min-w-0">
+                          <div className="w-[120px] shrink-0">
                             <StaffAssignPicker
                               staff={staff}
                               value={x.staff_id || ''}
@@ -883,17 +883,17 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                         </div>
 
                         {/* Facility row */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-slate-400 font-medium w-[60px] shrink-0 flex items-center gap-1">
-                            <span>🛏️</span>
-                            <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 truncate min-w-0">
+                            <span className="shrink-0">🛏️</span>
+                            <span className="truncate">{x.facility_name || t('rooms_beds.facility_label', 'Vị trí')}</span>
                           </span>
-                          <div className="flex-1 min-w-0">
+                          <div className="w-[120px] shrink-0">
                             <FacilityAssignPicker
                               value={x.facility_id || ''}
                               onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
                               facilities={effectiveFacilities}
-                              placeholder="— Chọn vị trí —"
+                              placeholder="— Chọn —"
                               buttonSize="xs"
                             />
                           </div>
