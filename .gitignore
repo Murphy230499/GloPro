@@ -44,3 +44,5 @@ scratch/
 supabase/.temp/
 supabase/compiled_schema.sql
 
+fix_appts.js
+phase7_0_production_runtime_audit.md
