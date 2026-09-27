@@ -71,7 +71,6 @@ export default function RoomsBeds() {
   const [pageSize, setPageSize] = useState(10);
 
   // Modals state
-  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [bedModalOpen, setBedModalOpen] = useState(false);
   const [editingBed, setEditingBed] = useState(null);
@@ -81,19 +80,6 @@ export default function RoomsBeds() {
   const [selectedBedForDrawer, setSelectedBedForDrawer] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [quickAssignBed, setQuickAssignBed] = useState(null);
-
-  const createMenuRef = useRef(null);
-
-  // Close create menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (createMenuRef.current && !createMenuRef.current.contains(e.target)) {
-        setCreateMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // 1. Initial Load Data
   const loadData = async () => {
@@ -435,17 +421,53 @@ export default function RoomsBeds() {
   }, [beds, page, pageSize]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 font-body overflow-y-auto p-4 sm:p-6 space-y-4">
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-5 font-sans">
+      {/* Page Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
             {t('rooms_beds.title', 'Giường / Phòng')}
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-slate-400 text-sm mt-1">
             {t('rooms_beds.subtitle', 'Theo dõi trạng thái phòng, giường/ghế phục vụ khách theo thời gian thực')}
           </p>
         </div>
+
+        {activeTab === 'settings' ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRoomModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
+            >
+              <Building2 className="w-4 h-4 text-blue-600" />
+              <span>{t('rooms_beds.add_room', 'Thêm phòng')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingBed(null);
+                setBedModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('rooms_beds.add_bed', 'Thêm vị trí')}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => loadData()}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
+              title={t('common.refresh', 'Làm mới')}
+            >
+              <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{t('common.refresh', 'Làm mới')}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Navigation Tab Bar (Standard GloPro Module Style) */}
@@ -508,17 +530,17 @@ export default function RoomsBeds() {
           /* ========================================================================= */
           /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID - MOCKUP 3)                       */
           /* ========================================================================= */
-          <div className="space-y-8 max-w-7xl mx-auto">
+          <div className="space-y-8">
             {bedsByRoom.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+              <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
                 <DoorOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-700">{t('rooms_beds.empty_title', 'Chưa có giường phòng nào')}</h3>
+                <h3 className="text-base font-bold text-slate-900">{t('rooms_beds.empty_title', 'Chưa có giường phòng nào')}</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                   {t('rooms_beds.empty_hint', 'Vui lòng sang tab "Cài đặt vị trí" để tạo phòng và các giường/ghế phục vụ khách.')}
                 </p>
                 <button
                   onClick={() => setActiveTab('settings')}
-                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
                 >
                   {t('rooms_beds.go_to_settings', 'Đến Cài đặt vị trí')}
                 </button>
@@ -528,8 +550,8 @@ export default function RoomsBeds() {
                 <div key={group.room.id} className="space-y-3.5">
                   {/* Room Header */}
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-600" />
+                    <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                       {group.room.name}
                       <span className="text-xs font-normal text-slate-400">({group.beds.length} {t('rooms_beds.unit_bed', 'vị trí')})</span>
                     </h2>
@@ -636,54 +658,12 @@ export default function RoomsBeds() {
           /* ========================================================================= */
           /* TAB 2: CÀI ĐẶT VỊ TRÍ (MANAGEMENT TABLE & MODALS - MOCKUP 1)               */
           /* ========================================================================= */
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden max-w-7xl mx-auto flex flex-col">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
             {/* Table Header Action Bar */}
             <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-bold text-slate-800">{t('rooms_beds.tab_settings', 'Cài đặt vị trí')}</h2>
+                <h2 className="text-base font-bold text-slate-900">{t('rooms_beds.tab_settings', 'Cài đặt vị trí')}</h2>
                 <p className="text-xs text-slate-400 mt-0.5">{t('rooms_beds.settings_desc', 'Quản lý danh sách các phòng và giường/ghế trong salon')}</p>
-              </div>
-
-              {/* + Tạo mới Dropdown Button (Mockup 1 & 2) */}
-              <div className="relative" ref={createMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setCreateMenuOpen(!createMenuOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-200 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>{t('rooms_beds.create_new', 'Tạo mới')}</span>
-                  <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-                </button>
-
-                {createMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateMenuOpen(false);
-                        setRoomModalOpen(true);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-slate-400" />
-                      {t('rooms_beds.add_room', 'Thêm phòng')}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateMenuOpen(false);
-                        setEditingBed(null);
-                        setBedModalOpen(true);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2 border-t border-slate-100"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-slate-400" />
-                      {t('rooms_beds.add_bed', 'Thêm vị trí')}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -692,17 +672,17 @@ export default function RoomsBeds() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <th className="py-3 px-6">{t('rooms_beds.bed_col', 'Giường')}</th>
-                    <th className="py-3 px-6">{t('rooms_beds.room_col', 'Phòng')}</th>
-                    <th className="py-3 px-6">{t('rooms_beds.applicable_services_col', 'Dịch vụ áp dụng')}</th>
-                    <th className="py-3 px-6 text-right">{t('common.actions', 'Thao tác')}</th>
+                    <th className="py-3.5 px-6">{t('rooms_beds.bed_col', 'Giường')}</th>
+                    <th className="py-3.5 px-6">{t('rooms_beds.room_col', 'Phòng')}</th>
+                    <th className="py-3.5 px-6">{t('rooms_beds.applicable_services_col', 'Dịch vụ áp dụng')}</th>
+                    <th className="py-3.5 px-6 text-right">{t('common.actions', 'Thao tác')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {paginatedBeds.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="py-12 text-center text-slate-400">
-                        {t('rooms_beds.no_beds_configured', 'Chưa có vị trí nào được thiết lập. Bấm nút "+ Tạo mới" ở trên để bắt đầu.')}
+                        {t('rooms_beds.no_beds_configured', 'Chưa có vị trí nào được thiết lập. Bấm nút "+ Thêm vị trí" ở góc trên để bắt đầu.')}
                       </td>
                     </tr>
                   ) : (

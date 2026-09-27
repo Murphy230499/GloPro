@@ -110,190 +110,195 @@ export default function BedModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 font-body animate-in fade-in duration-150">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-visible z-10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs font-sans text-slate-800 animate-in fade-in duration-200">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div 
+        className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden z-10 flex flex-col max-h-[90vh] text-left" 
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-          <h2 className="text-base font-bold text-slate-800">
+        <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0">
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
             {isEditing ? t('rooms_beds.edit_bed', 'Chỉnh sửa vị trí') : t('rooms_beds.add_bed', 'Thêm vị trí')}
           </h2>
           <button 
             type="button"
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-full hover:bg-slate-100"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-          {/* Tên Giường */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              {t('rooms_beds.bed_label', 'Giường')} <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              autoFocus
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder={t('rooms_beds.bed_placeholder', 'Nhập tên vị trí (VD: Giường 1)')}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all placeholder:text-slate-400 shadow-2xs"
-            />
-          </div>
-
-          {/* Chọn Phòng */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              {t('rooms_beds.room_label', 'Phòng')} <span className="text-slate-400 font-normal">({t('common.optional', 'Tùy chọn')})</span>
-            </label>
-            <div className="relative">
-              <select
-                value={formData.room_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all appearance-none cursor-pointer shadow-2xs pr-8"
-              >
-                <option value="">— {t('rooms_beds.unassigned_room', 'Chưa phân phòng / Khu vực chung')} —</option>
-                {rooms.map(room => (
-                  <option key={room.id} value={room.id}>{room.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col min-h-0">
+          <div className="p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+            {/* Tên Giường */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {t('rooms_beds.bed_label', 'Tên giường / ghế')} <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                autoFocus
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t('rooms_beds.bed_placeholder', 'Nhập tên vị trí (VD: Giường 1, Ghế Nail 2)')}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all placeholder:text-slate-400"
+              />
             </div>
-          </div>
 
-          {/* Dịch vụ áp dụng Dropdown */}
-          <div className="relative" ref={dropdownRef}>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              {t('rooms_beds.applicable_services', 'Dịch vụ áp dụng')} <span className="text-rose-500">*</span>
-            </label>
-            
-            <button
-              type="button"
-              onClick={() => setServiceDropdownOpen(!serviceDropdownOpen)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm flex items-center justify-between text-left text-slate-800 hover:border-slate-300 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
-            >
-              <span className="truncate">
-                {formData.applicable_services.length === 0
-                  ? t('rooms_beds.select_services_placeholder', 'Chọn dịch vụ áp dụng (mặc định tất cả)')
-                  : formData.applicable_services.length === services.length
-                  ? t('rooms_beds.all_services_selected', 'Đã chọn tất cả dịch vụ')
-                  : `${t('rooms_beds.selected_count', 'Đã chọn')} ${formData.applicable_services.length} ${t('rooms_beds.services_unit', 'dịch vụ')}`}
-              </span>
-              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
-            </button>
-
-            {/* Popup dropdown */}
-            {serviceDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col max-h-72 animate-in fade-in zoom-in-95 duration-100">
-                {/* Search */}
-                <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder={t('rooms_beds.search_services', 'Tìm kiếm dịch vụ...')}
-                      value={serviceSearch}
-                      onChange={(e) => setServiceSearch(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                {/* List with Groups */}
-                <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-                  {/* Select all checkbox */}
-                  <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-800 select-none border-b border-slate-100 pb-2">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                      allSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'
-                    }`}>
-                      {allSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                    <span>{t('rooms_beds.select_all_services', 'Tất cả dịch vụ')}</span>
-                  </label>
-
-                  {Object.entries(servicesByCategory).map(([category, sList]) => (
-                    <div key={category} className="space-y-1">
-                      <div className="text-[11px] font-bold text-slate-400 tracking-wider uppercase px-2 pt-1">
-                        {category}
-                      </div>
-                      <div className="pl-1 space-y-0.5">
-                        {sList.map(s => {
-                          const isSelected = formData.applicable_services.includes(s.id);
-                          return (
-                            <label
-                              key={s.id}
-                              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs text-slate-700 select-none"
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                                isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'
-                              }`}>
-                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                              </div>
-                              <span className="truncate">{s.name}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
+            {/* Chọn Phòng */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {t('rooms_beds.room_label', 'Phòng')} <span className="text-slate-400 font-normal">({t('common.optional', 'Tùy chọn')})</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.room_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all appearance-none cursor-pointer pr-9"
+                >
+                  <option value="">— {t('rooms_beds.unassigned_room', 'Chưa phân phòng / Khu vực chung')} —</option>
+                  {rooms.map(room => (
+                    <option key={room.id} value={room.id}>{room.name}</option>
                   ))}
-
-                  {filteredServices.length === 0 && (
-                    <div className="text-center py-4 text-xs text-slate-400">
-                      {t('common.no_results', 'Không tìm thấy dịch vụ phù hợp')}
-                    </div>
-                  )}
-                </div>
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Switch: Cho phép đặt trùng lịch */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-              <div>
-                <label className="text-xs font-semibold text-slate-800 cursor-pointer block" onClick={() => setFormData(prev => ({ ...prev, allow_overlap: !prev.allow_overlap }))}>
-                  {t('rooms_beds.allow_overlap', 'Cho phép đặt trùng lịch')}
-                </label>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {formData.allow_overlap 
-                    ? t('rooms_beds.overlap_enabled_hint', 'Nhiều khách có thể sử dụng cùng vị trí trong cùng thời điểm.')
-                    : t('rooms_beds.overlap_disabled_hint', 'Hệ thống sẽ cảnh báo khi có lịch hẹn trùng khung giờ trên vị trí này.')}
-                </p>
-              </div>
-
+            {/* Dịch vụ áp dụng Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {t('rooms_beds.applicable_services', 'Dịch vụ áp dụng')} <span className="text-rose-500">*</span>
+              </label>
+              
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, allow_overlap: !prev.allow_overlap }))}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.allow_overlap ? 'bg-blue-600' : 'bg-slate-300'
-                }`}
+                onClick={() => setServiceDropdownOpen(!serviceDropdownOpen)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm flex items-center justify-between text-left text-slate-800 hover:border-slate-300 focus:border-blue-500 transition-all cursor-pointer"
               >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    formData.allow_overlap ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
+                <span className="truncate">
+                  {formData.applicable_services.length === 0
+                    ? t('rooms_beds.select_services_placeholder', 'Chọn dịch vụ áp dụng (mặc định tất cả)')
+                    : formData.applicable_services.length === services.length
+                    ? t('rooms_beds.all_services_selected', 'Đã chọn tất cả dịch vụ')
+                    : `${t('rooms_beds.selected_count', 'Đã chọn')} ${formData.applicable_services.length} ${t('rooms_beds.services_unit', 'dịch vụ')}`}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
               </button>
+
+              {/* Popup dropdown */}
+              {serviceDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col max-h-72 animate-in fade-in zoom-in-95 duration-100">
+                  {/* Search */}
+                  <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder={t('rooms_beds.search_services', 'Tìm kiếm dịch vụ...')}
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* List with Groups */}
+                  <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                    {/* Select all checkbox */}
+                    <label className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-800 select-none border-b border-slate-100 pb-2">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                        allSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'
+                      }`}>
+                        {allSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+                      <span>{t('rooms_beds.select_all_services', 'Tất cả dịch vụ')}</span>
+                    </label>
+
+                    {Object.entries(servicesByCategory).map(([category, sList]) => (
+                      <div key={category} className="space-y-1">
+                        <div className="text-[11px] font-bold text-slate-400 tracking-wider uppercase px-2 pt-1">
+                          {category}
+                        </div>
+                        <div className="pl-1 space-y-0.5">
+                          {sList.map(s => {
+                            const isSelected = formData.applicable_services.includes(s.id);
+                            return (
+                              <label
+                                key={s.id}
+                                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs text-slate-700 select-none"
+                              >
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                                  isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'
+                                }`}>
+                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                </div>
+                                <span className="truncate">{s.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    {filteredServices.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('common.no_results', 'Không tìm thấy dịch vụ phù hợp')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Switch: Cho phép đặt trùng lịch */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 cursor-pointer block" onClick={() => setFormData(prev => ({ ...prev, allow_overlap: !prev.allow_overlap }))}>
+                    {t('rooms_beds.allow_overlap', 'Cho phép đặt trùng lịch')}
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {formData.allow_overlap 
+                      ? t('rooms_beds.overlap_enabled_hint', 'Nhiều khách có thể sử dụng cùng vị trí trong cùng thời điểm.')
+                      : t('rooms_beds.overlap_disabled_hint', 'Hệ thống sẽ cảnh báo khi có lịch hẹn trùng khung giờ trên vị trí này.')}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, allow_overlap: !prev.allow_overlap }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    formData.allow_overlap ? 'bg-blue-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      formData.allow_overlap ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Footer buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          {/* Footer */}
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3 rounded-b-3xl shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
             >
               {t('common.cancel', 'Huỷ bỏ')}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               {loading ? t('common.loading', 'Đang lưu...') : isEditing ? t('common.save', 'Lưu') : t('common.create', 'Tạo')}
             </button>
