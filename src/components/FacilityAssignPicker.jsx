@@ -421,8 +421,8 @@ export default function FacilityAssignPicker({
             }`}
             style={{
               top: `${coords.top}px`,
-              left: `${Math.max(8, Math.min(coords.left, window.innerWidth - 420 - 8))}px`,
-              width: `${Math.max(coords.width, 420)}px`,
+              left: `${Math.max(8, Math.min(coords.left, window.innerWidth - 280 - 8))}px`,
+              width: `${Math.max(coords.width, 280)}px`,
               maxHeight: '380px'
             }}
           >
