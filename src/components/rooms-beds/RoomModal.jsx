@@ -26,14 +26,14 @@ export default function RoomModal({ open, onClose, onSave, loading = false }) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+        <div className="flex items-center justify-between px-6 sm:px-7 py-5 sm:py-6 bg-white border-b border-slate-100 shrink-0 rounded-t-3xl">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-snug">
             {t('rooms_beds.add_room', 'Thêm phòng')}
           </h2>
           <button 
             type="button"
             onClick={onClose} 
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
