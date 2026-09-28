@@ -44,6 +44,8 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         setIsLoadingAuth(false);
         setAuthChecked(true);
+        // Force-refresh tenant resolution immediately so all components have the correct tenant ID
+        resolveTenantId(true).catch(e => console.warn('[AuthContext] onAuthStateChange resolveTenantId warning:', e));
       } else if (event === 'SIGNED_OUT') {
         console.log('[AuthContext] SIGNED_OUT event received, clearing session');
         setUser(null);

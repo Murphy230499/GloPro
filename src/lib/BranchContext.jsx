@@ -33,16 +33,15 @@ export const BranchProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let tid = getSyncTenantId();
-        if (!tid && typeof window !== 'undefined') {
-          tid = await resolveTenantId();
-        }
+  const fetchBranches = async () => {
+    try {
+      let tid = getSyncTenantId();
+      if (!tid && typeof window !== 'undefined') {
+        tid = await resolveTenantId();
+      }
 
-        let list = await base44.entities.Branch.list();
-        let filtered = list.filter(b => b.id !== '00000000-0000-0000-0000-000000000000');
+      let list = await base44.entities.Branch.list();
+      let filtered = list.filter(b => b.id !== '00000000-0000-0000-0000-000000000000');
 
         const hasData = await hasExistingTenantData(tid);
 
@@ -123,8 +122,21 @@ export const BranchProvider = ({ children }) => {
         setBranches([]);
       }
       setLoading(false);
-    })();
-  }, []);
+    };
+
+    useEffect(() => {
+      fetchBranches();
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+          fetchBranches();
+        }
+      });
+
+      return () => {
+        subscription?.unsubscribe();
+      };
+    }, []);
 
   const setBranch = (id) => {
     setCurrentBranchId(id);

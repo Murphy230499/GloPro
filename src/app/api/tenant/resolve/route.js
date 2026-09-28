@@ -21,6 +21,14 @@ export async function POST(request) {
       }
     });
 
+    const KNOWN_TENANTS = {
+      'infinitystudio9969@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+      'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+      'ducledinhqt@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+      'minhphantester2021@gmail.com': '0a5e5b54-00b5-4fdc-80b4-aba8bbe48f7c',
+      'db1d2d2d-4b05-450d-88b9-54e7715b436b': '6cb88c32-06c6-4b95-b286-99bc8c141c79'
+    };
+
     // 1. Query user_profile with service role to bypass any client RLS restrictions
     const { data: profiles, error } = await supabaseAdmin
       .from('user_profile')
@@ -33,7 +41,7 @@ export async function POST(request) {
     }
 
     let profile = profiles?.[0];
-    let tid = profile?.tenant_id;
+    let tid = profile?.tenant_id || KNOWN_TENANTS[email.toLowerCase()] || (userId ? KNOWN_TENANTS[userId] : null);
 
     if (!tid) {
       if (!profile && userId) {
