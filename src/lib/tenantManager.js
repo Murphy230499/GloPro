@@ -54,6 +54,12 @@ export function getSyncTenantId() {
   if (inMemoryTenantId) return inMemoryTenantId;
   if (typeof window !== 'undefined') {
     const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
+    // If the stored tenant id is the known dummy ID from previous bug, purge it immediately
+    if (stored === 'db1d2d2d-4b05-450d-88b9-54e7715b436b' || stored === '3466655b-41ab-4a4e-bf4a-c9deac3ee55e') {
+      sessionStorage.removeItem('gp_active_tenant_id');
+      localStorage.removeItem('gp_active_tenant_id');
+      return null;
+    }
     if (stored) {
       inMemoryTenantId = stored;
       return stored;
@@ -69,17 +75,22 @@ export function getSyncTenantId() {
  * 2. If user is owner or new user without tenant_id -> user.id
  * 3. Auto-persists to user_profile and cache
  */
-export async function resolveTenantId() {
-  const sync = getSyncTenantId();
-  if (sync) return sync;
+export async function resolveTenantId(forceRefresh = false) {
+  if (!forceRefresh) {
+    const sync = getSyncTenantId();
+    if (sync) return sync;
+  }
 
-  if (tenantPromise) return tenantPromise;
+  if (tenantPromise && !forceRefresh) return tenantPromise;
 
   tenantPromise = (async () => {
     try {
       const sessionRes = await supabase.auth.getSession();
       const user = sessionRes.data?.session?.user;
       if (!user) return null;
+
+      let tid = null;
+      let profile = null;
 
       // 1. Try server API /api/tenant/resolve first (has admin privileges to bypass client RLS)
       if (typeof window !== 'undefined' && user.email) {
@@ -109,7 +120,7 @@ export async function resolveTenantId() {
         const { data: profiles, error } = await supabase
           .from('user_profile')
           .select('id, email, role, tenant_id')
-          .eq('email', user.email.toLowerCase())
+          .or(`id.eq.${user.id},email.eq.${user.email.toLowerCase()}`)
           .limit(1);
 
         profile = profiles?.[0];

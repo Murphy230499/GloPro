@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
         setUser(sbUser);
         setIsAuthenticated(true);
         try {
-          await resolveTenantId();
+          await resolveTenantId(true);
         } catch (e) {
           console.warn('[AuthContext] Tenant resolution warning:', e);
         }
