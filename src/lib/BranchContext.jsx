@@ -108,15 +108,11 @@ export const BranchProvider = ({ children }) => {
         }
 
         setBranches(filtered);
-        // Auto-select first branch if still on 'all', empty, or stale ID
-        if ((currentBranchId === 'all' || !currentBranchId || !filtered.some(b => b.id === currentBranchId))) {
-          if (filtered.length > 0) {
-            setCurrentBranchId(filtered[0].id);
-            if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', filtered[0].id);
-          } else {
-            setCurrentBranchId('all');
-            if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', 'all');
-          }
+        // If stored branch ID is not found in the branches list, fallback to 'all' or first branch
+        if (currentBranchId && currentBranchId !== 'all' && !filtered.some(b => b.id === currentBranchId)) {
+          const nextBranch = filtered.length > 0 ? filtered[0].id : 'all';
+          setCurrentBranchId(nextBranch);
+          if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', nextBranch);
         }
       } catch (e) {
         setBranches([]);
