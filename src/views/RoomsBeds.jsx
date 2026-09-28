@@ -92,13 +92,15 @@ export default function RoomsBeds() {
         }
       }
 
-      // If salon has no rooms at all anywhere, initialize demo rooms ONLY for primary branch
+      // If salon has no rooms at all anywhere and has a branch, initialize demo rooms for primary branch
       if (!loadedRooms || loadedRooms.length === 0) {
         const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
           ? branches[0].id
-          : (currentBranchId !== 'all' ? currentBranchId : 'demo_branch');
-        loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
-        localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
+          : (currentBranchId !== 'all' ? currentBranchId : null);
+        if (primaryBranchId) {
+          loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
+          localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
+        }
       }
       setAllRooms(loadedRooms || []);
 
@@ -117,13 +119,15 @@ export default function RoomsBeds() {
         }
       }
 
-      // If salon has no beds at all anywhere, initialize demo beds ONLY for primary branch
+      // If salon has no beds at all anywhere and has a branch, initialize demo beds for primary branch
       if (!loadedBeds || loadedBeds.length === 0) {
         const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
           ? branches[0].id
-          : (currentBranchId !== 'all' ? currentBranchId : 'demo_branch');
-        loadedBeds = INITIAL_DEMO_BEDS.map(b => ({ ...b, branch_id: primaryBranchId }));
-        localStorage.setItem(unifiedBedsKey, JSON.stringify(loadedBeds));
+          : (currentBranchId !== 'all' ? currentBranchId : null);
+        if (primaryBranchId) {
+          loadedBeds = INITIAL_DEMO_BEDS.map(b => ({ ...b, branch_id: primaryBranchId }));
+          localStorage.setItem(unifiedBedsKey, JSON.stringify(loadedBeds));
+        }
       }
       setAllBeds(loadedBeds || []);
 

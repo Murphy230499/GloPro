@@ -104,24 +104,8 @@ export async function resolveTenantId() {
               type: 'Employee',
               tenant_id: tid
             }]);
-
-            // Auto-create "GloPro Demo" branch for this new salon
-            const { data: existingBranches } = await supabase.from('branch').select('id').eq('tenant_id', tid).limit(1);
-            if (!existingBranches || existingBranches.length === 0) {
-              await supabase.from('branch').insert([{
-                name: 'GloPro Demo',
-                address: 'Chi nhánh Demo',
-                phone: '0900 000 000',
-                city: 'Hồ Chí Minh',
-                is_active: true,
-                country: 'Vietnam',
-                currency: 'VND',
-                language: 'vi',
-                tenant_id: tid
-              }]);
-            }
           } catch (e) {
-            console.warn('[TenantManager] Failed to auto-create user_profile or demo branch on signup:', e);
+            console.warn('[TenantManager] Failed to auto-create user_profile on signup:', e);
           }
         } else if (profile.role === 'owner' || !profile.role) {
           tid = user.id;
@@ -152,6 +136,37 @@ export async function resolveTenantId() {
   })();
 
   return tenantPromise;
+}
+
+/**
+ * Checks whether the salon (tenant) already has any existing business data.
+ * Checks core entities: customer, service, appointment, staff, product, invoice, facility, treatment, and non-demo branch.
+ */
+export async function hasExistingTenantData(tenantId) {
+  if (!tenantId) return false;
+  try {
+    const checks = await Promise.allSettled([
+      supabase.from('customer').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('service').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('appointment').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('staff').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('product').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('invoice').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('treatment').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('facility').select('id').eq('tenant_id', tenantId).limit(1),
+      supabase.from('branch').select('id, name').eq('tenant_id', tenantId).neq('name', 'GloPro Demo').limit(1)
+    ]);
+
+    for (const res of checks) {
+      if (res.status === 'fulfilled' && res.value?.data && res.value.data.length > 0) {
+        return true;
+      }
+    }
+    return false;
+  } catch (err) {
+    console.warn('[TenantManager] Error checking existing tenant data:', err);
+    return true; // Safe default
+  }
 }
 
 /**

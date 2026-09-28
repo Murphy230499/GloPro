@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabaseClient';
+import { getSyncTenantId, resolveTenantId, hasExistingTenantData } from '@/lib/tenantManager';
 
 const BranchContext = createContext({
   branches: [],
@@ -34,44 +36,88 @@ export const BranchProvider = ({ children }) => {
   useEffect(() => {
     (async () => {
       try {
+        let tid = getSyncTenantId();
+        if (!tid && typeof window !== 'undefined') {
+          tid = await resolveTenantId();
+        }
+
         let list = await base44.entities.Branch.list();
         let filtered = list.filter(b => b.id !== '00000000-0000-0000-0000-000000000000');
 
-        // If the salon has no branches yet (e.g. newly registered salon), auto-create "GloPro Demo"
-        if (filtered.length === 0) {
-          try {
-            const demoBranch = await base44.entities.Branch.create({
-              name: 'GloPro Demo',
-              address: 'Chi nhánh Demo',
-              phone: '0900 000 000',
-              city: 'Hồ Chí Minh',
-              is_active: true,
-              country: 'Vietnam',
-              currency: 'VND',
-              language: 'vi',
-              working_hours: [
-                { day: 'Thứ 2', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Thứ 3', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Thứ 4', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Thứ 5', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Thứ 6', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Thứ 7', open: '08:00', close: '20:00', enabled: true },
-                { day: 'Chủ Nhật', open: '08:00', close: '20:00', enabled: true }
-              ]
-            });
-            if (demoBranch && demoBranch.id) {
-              filtered = [demoBranch];
+        const hasData = await hasExistingTenantData(tid);
+
+        if (hasData) {
+          // If the account ALREADY HAS DATA, demo branch must NOT be assigned or created.
+          // Clean up any mistakenly auto-created "GloPro Demo" branch for this tenant.
+          const demoBranches = filtered.filter(b => b.name === 'GloPro Demo' || b.address === 'Chi nhánh Demo');
+          if (demoBranches.length > 0) {
+            for (const db of demoBranches) {
+              try {
+                await base44.entities.Branch.delete(db.id);
+              } catch (delErr) {
+                console.warn('[BranchContext] Error removing demo branch from existing account:', delErr);
+              }
             }
-          } catch (createErr) {
-            console.warn('[BranchContext] Error creating GloPro Demo branch:', createErr);
+            filtered = filtered.filter(b => b.name !== 'GloPro Demo' && b.address !== 'Chi nhánh Demo');
+          }
+        } else if (filtered.length === 0) {
+          // ONLY create GloPro Demo if brand new first-time login AND absolutely no existing data
+          let isFirstTime = false;
+          try {
+            const sessionRes = await supabase.auth.getSession();
+            const user = sessionRes.data?.session?.user;
+            if (user) {
+              const onboardKey = `gp_onboarded_${user.id}`;
+              const alreadySeen = localStorage.getItem(onboardKey);
+              if (!alreadySeen) {
+                isFirstTime = true;
+                localStorage.setItem(onboardKey, 'true');
+              }
+            }
+          } catch (e) {
+            isFirstTime = false;
+          }
+
+          if (isFirstTime) {
+            try {
+              const demoBranch = await base44.entities.Branch.create({
+                name: 'GloPro Demo',
+                address: 'Chi nhánh Demo',
+                phone: '0900 000 000',
+                city: 'Hồ Chí Minh',
+                is_active: true,
+                country: 'Vietnam',
+                currency: 'VND',
+                language: 'vi',
+                working_hours: [
+                  { day: 'Thứ 2', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Thứ 3', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Thứ 4', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Thứ 5', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Thứ 6', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Thứ 7', open: '08:00', close: '20:00', enabled: true },
+                  { day: 'Chủ Nhật', open: '08:00', close: '20:00', enabled: true }
+                ]
+              });
+              if (demoBranch && demoBranch.id) {
+                filtered = [demoBranch];
+              }
+            } catch (createErr) {
+              console.warn('[BranchContext] Error creating GloPro Demo branch:', createErr);
+            }
           }
         }
 
         setBranches(filtered);
         // Auto-select first branch if still on 'all', empty, or stale ID
-        if ((currentBranchId === 'all' || !currentBranchId || !filtered.some(b => b.id === currentBranchId)) && filtered.length > 0) {
-          setCurrentBranchId(filtered[0].id);
-          if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', filtered[0].id);
+        if ((currentBranchId === 'all' || !currentBranchId || !filtered.some(b => b.id === currentBranchId))) {
+          if (filtered.length > 0) {
+            setCurrentBranchId(filtered[0].id);
+            if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', filtered[0].id);
+          } else {
+            setCurrentBranchId('all');
+            if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', 'all');
+          }
         }
       } catch (e) {
         setBranches([]);
