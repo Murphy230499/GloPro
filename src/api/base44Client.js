@@ -31,8 +31,20 @@ export async function getCachedPermissions() {
       return 'all';
     }
     const email = session.user.email;
-    const userProfiles = await supabaseClient.entities.UserProfile.list();
-    const found = userProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+    let found = null;
+    const cachedProfile = sessionStorage.getItem('gp_active_profile');
+    if (cachedProfile) {
+      try {
+        const parsed = JSON.parse(cachedProfile);
+        if (parsed?.email?.toLowerCase() === email.toLowerCase()) {
+          found = parsed;
+        }
+      } catch (e) {}
+    }
+    if (!found) {
+      const userProfiles = await supabaseClient.entities.UserProfile.list().catch(() => []);
+      found = userProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+    }
 
     if (!found) {
       return 'all';

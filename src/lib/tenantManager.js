@@ -81,15 +81,40 @@ export async function resolveTenantId() {
       const user = sessionRes.data?.session?.user;
       if (!user) return null;
 
-      // 1. Query user_profile
-      const { data: profiles, error } = await supabase
-        .from('user_profile')
-        .select('id, email, role, tenant_id')
-        .eq('email', user.email.toLowerCase())
-        .limit(1);
+      // 1. Try server API /api/tenant/resolve first (has admin privileges to bypass client RLS)
+      if (typeof window !== 'undefined' && user.email) {
+        try {
+          const apiRes = await fetch('/api/tenant/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email.toLowerCase(), userId: user.id })
+          });
+          if (apiRes.ok) {
+            const apiData = await apiRes.json();
+            if (apiData.tenantId) {
+              tid = apiData.tenantId;
+              if (apiData.profile) {
+                profile = apiData.profile;
+                sessionStorage.setItem('gp_active_profile', JSON.stringify(apiData.profile));
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[TenantManager] Server tenant resolve failed, falling back to direct query:', apiErr);
+        }
+      }
 
-      let profile = profiles?.[0];
-      let tid = profile?.tenant_id;
+      // 2. Fallback to client-side user_profile query if API was unavailable
+      if (!tid) {
+        const { data: profiles, error } = await supabase
+          .from('user_profile')
+          .select('id, email, role, tenant_id')
+          .eq('email', user.email.toLowerCase())
+          .limit(1);
+
+        profile = profiles?.[0];
+        tid = profile?.tenant_id;
+      }
 
       if (!tid) {
         if (!profile) {
