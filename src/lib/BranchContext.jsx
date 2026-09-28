@@ -19,6 +19,11 @@ export const BranchProvider = ({ children }) => {
   const [currentBranchId, setCurrentBranchId] = useState(() => {
     if (typeof window === 'undefined') return 'all';
     let stored = localStorage.getItem('glowpro_branch');
+    // If stored branch was an old demo branch or stale, clear it
+    if (stored === '55e8441d-9dc0-4d16-9a72-24a88a6f9704' || stored === '37a44557-5d1c-4f18-bc45-42073d6552be' || stored === 'demo_branch') {
+      localStorage.removeItem('glowpro_branch');
+      stored = 'all';
+    }
     if (stored && stored !== 'all') {
       if (stored.length === 24) {
         const hex = stored + '00000000';
@@ -65,7 +70,8 @@ export const BranchProvider = ({ children }) => {
           try {
             const sessionRes = await supabase.auth.getSession();
             const user = sessionRes.data?.session?.user;
-            if (user) {
+            const email = user?.email?.toLowerCase();
+            if (user && email !== 'infinitystudio9969@gmail.com' && email !== 'duclivegiolinh@gmail.com' && email !== 'ducledinhqt@gmail.com' && tid !== '6cb88c32-06c6-4b95-b286-99bc8c141c79') {
               const onboardKey = `gp_onboarded_${user.id}`;
               const alreadySeen = localStorage.getItem(onboardKey);
               if (!alreadySeen) {
