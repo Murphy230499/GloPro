@@ -54,6 +54,35 @@ export function getSyncTenantId() {
   if (inMemoryTenantId) return inMemoryTenantId;
   if (typeof window !== 'undefined') {
     const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
+    
+    // Check logged in user email in Supabase auth local storage to immediately link known tenant
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.includes('auth-token')) {
+          const item = localStorage.getItem(k);
+          if (item) {
+            const parsed = JSON.parse(item);
+            const email = parsed?.user?.email?.toLowerCase();
+            const uid = parsed?.user?.id;
+            if (email && KNOWN_TENANT_MAP[email]) {
+              const tid = KNOWN_TENANT_MAP[email];
+              inMemoryTenantId = tid;
+              sessionStorage.setItem('gp_active_tenant_id', tid);
+              localStorage.setItem('gp_active_tenant_id', tid);
+              return tid;
+            } else if (uid && KNOWN_TENANT_MAP[uid]) {
+              const tid = KNOWN_TENANT_MAP[uid];
+              inMemoryTenantId = tid;
+              sessionStorage.setItem('gp_active_tenant_id', tid);
+              localStorage.setItem('gp_active_tenant_id', tid);
+              return tid;
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
     // If the stored tenant id is the known dummy ID from previous bug, self-heal immediately to the real salon
     if (stored === 'db1d2d2d-4b05-450d-88b9-54e7715b436b' || stored === '3466655b-41ab-4a4e-bf4a-c9deac3ee55e') {
       const restored = '6cb88c32-06c6-4b95-b286-99bc8c141c79';
