@@ -10,8 +10,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email và Tên là bắt buộc' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    // Use SUPABASE_SERVICE_ROLE_KEY if set, otherwise fallback to publishable key (though admin API requires service role)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hgdzjnwiubsdjeaonpnt.supabase.co';
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {

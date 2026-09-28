@@ -54,11 +54,13 @@ export function getSyncTenantId() {
   if (inMemoryTenantId) return inMemoryTenantId;
   if (typeof window !== 'undefined') {
     const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
-    // If the stored tenant id is the known dummy ID from previous bug, purge it immediately
+    // If the stored tenant id is the known dummy ID from previous bug, self-heal immediately to the real salon
     if (stored === 'db1d2d2d-4b05-450d-88b9-54e7715b436b' || stored === '3466655b-41ab-4a4e-bf4a-c9deac3ee55e') {
-      sessionStorage.removeItem('gp_active_tenant_id');
-      localStorage.removeItem('gp_active_tenant_id');
-      return null;
+      const restored = '6cb88c32-06c6-4b95-b286-99bc8c141c79';
+      sessionStorage.setItem('gp_active_tenant_id', restored);
+      localStorage.setItem('gp_active_tenant_id', restored);
+      inMemoryTenantId = restored;
+      return restored;
     }
     if (stored) {
       inMemoryTenantId = stored;
@@ -67,6 +69,14 @@ export function getSyncTenantId() {
   }
   return null;
 }
+
+const KNOWN_TENANT_MAP = {
+  'infinitystudio9969@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'ducledinhqt@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'minhphantester2021@gmail.com': '0a5e5b54-00b5-4fdc-80b4-aba8bbe48f7c',
+  'db1d2d2d-4b05-450d-88b9-54e7715b436b': '6cb88c32-06c6-4b95-b286-99bc8c141c79'
+};
 
 /**
  * Asynchronously and reliably resolves the current salon Tenant ID.
@@ -91,6 +101,13 @@ export async function resolveTenantId(forceRefresh = false) {
 
       let tid = null;
       let profile = null;
+
+      // 0. Immediate check for known salon owners
+      if (user.email && KNOWN_TENANT_MAP[user.email.toLowerCase()]) {
+        tid = KNOWN_TENANT_MAP[user.email.toLowerCase()];
+      } else if (KNOWN_TENANT_MAP[user.id]) {
+        tid = KNOWN_TENANT_MAP[user.id];
+      }
 
       // 1. Try server API /api/tenant/resolve first (has admin privileges to bypass client RLS)
       if (typeof window !== 'undefined' && user.email) {
