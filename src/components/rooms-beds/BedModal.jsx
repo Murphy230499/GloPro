@@ -18,7 +18,8 @@ export default function BedModal({
     name: '',
     room_id: '',
     applicable_services: [],
-    allow_overlap: false
+    allow_overlap: false,
+    cleaning_duration: 10
   });
 
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
@@ -31,14 +32,16 @@ export default function BedModal({
         name: editingItem.name || '',
         room_id: editingItem.room_id || '',
         applicable_services: editingItem.applicable_services || [],
-        allow_overlap: Boolean(editingItem.allow_overlap)
+        allow_overlap: Boolean(editingItem.allow_overlap),
+        cleaning_duration: editingItem.cleaning_duration !== undefined ? editingItem.cleaning_duration : 10
       });
     } else {
       setFormData({
         name: '',
         room_id: rooms[0]?.id || '',
         applicable_services: [],
-        allow_overlap: false
+        allow_overlap: false,
+        cleaning_duration: 10
       });
     }
     setServiceDropdownOpen(false);
@@ -105,7 +108,8 @@ export default function BedModal({
     onSave({
       ...formData,
       name: formData.name.trim(),
-      room_id: formData.room_id || null
+      room_id: formData.room_id || null,
+      cleaning_duration: Math.max(0, parseInt(formData.cleaning_duration, 10) || 0)
     });
   };
 
@@ -281,6 +285,53 @@ export default function BedModal({
                     }`}
                   />
                 </button>
+              </div>
+            </div>
+
+            {/* Cấu hình: Thời gian dọn dẹp sau khi trả giường */}
+            <div className="pt-2">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-800 block">
+                      {t('rooms_beds.cleaning_duration_title', 'Thời gian dọn dẹp sau khi trả giường')}
+                    </label>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {t('rooms_beds.cleaning_duration_hint', 'Khi trả phòng, giường sẽ tự động chuyển sang trạng thái Đang dọn dẹp trước khi chuyển sang Đang trống.')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  {[0, 5, 10, 15, 20, 30].map(mins => {
+                    const isSelected = Number(formData.cleaning_duration) === mins;
+                    return (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, cleaning_duration: mins }))}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {mins === 0 ? t('rooms_beds.clean_immediate', '0p (Trống ngay)') : `${mins} ${t('common.minutes', 'phút')}`}
+                      </button>
+                    );
+                  })}
+                  <div className="flex items-center gap-1 ml-auto">
+                    <input
+                      type="number"
+                      min="0"
+                      max="120"
+                      value={formData.cleaning_duration}
+                      onChange={e => setFormData(prev => ({ ...prev, cleaning_duration: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
+                      className="w-16 px-2 py-1 text-xs text-center font-bold bg-white border border-slate-200 rounded-lg focus:outline-blue-500"
+                    />
+                    <span className="text-xs text-slate-400 font-medium">phút</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

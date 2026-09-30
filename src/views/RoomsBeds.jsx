@@ -17,6 +17,9 @@ import BedModal from '@/components/rooms-beds/BedModal';
 import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
+import BedHoverCard from '@/components/rooms-beds/BedHoverCard';
+import BedTransferModal from '@/components/rooms-beds/BedTransferModal';
+import POSInvoiceModal from '@/components/POSInvoiceModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
 import { getTenantStorageKey, resolveTenantId } from '@/lib/tenantManager';
@@ -25,7 +28,8 @@ import {
   parseRoomFromFacility, 
   encodeRoomToFacility, 
   parseBedFromFacility, 
-  encodeBedToFacility 
+  encodeBedToFacility,
+  calculateCleaningCountdown
 } from '@/lib/roomBedDbHelper';
 
 export default function RoomsBeds() {
@@ -72,6 +76,21 @@ export default function RoomsBeds() {
   const [selectedBedForDrawer, setSelectedBedForDrawer] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [quickAssignBed, setQuickAssignBed] = useState(null);
+
+  // Hover Card states
+  const [hoveredBedId, setHoveredBedId] = useState(null);
+  const hoverTimeoutRef = useRef(null);
+
+  // Transfer Modal
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferSource, setTransferSource] = useState(null);
+
+  // Direct POS Invoice Modal
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+
+  // Status Filter for Diagram
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // 1. Initial Load Data
   const loadData = async () => {
@@ -331,14 +350,32 @@ export default function RoomsBeds() {
     return () => window.removeEventListener('gp_rooms_changed', handleRoomsChanged);
   }, []);
 
-  // 2. Real-time Clock Timer for Progress & "Sắp trống" (< 10 mins remaining)
+  // 2. Real-time Clock Timer for Progress & Auto-clean expiration
   const [currentTick, setCurrentTick] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTick(Date.now());
+      const now = Date.now();
+      setCurrentTick(now);
+
+      // Check auto-expiration for cleaning beds
+      let hasExpired = false;
+      const clone = { ...bedSessions };
+      Object.entries(clone).forEach(([bId, sess]) => {
+        if (sess?.status === 'cleaning') {
+          const cleanInfo = calculateCleaningCountdown(sess, now);
+          if (cleanInfo.isFinished) {
+            delete clone[bId];
+            hasExpired = true;
+          }
+        }
+      });
+      if (hasExpired) {
+        setBedSessions(clone);
+        localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+      }
     }, 15000);
     return () => clearInterval(timer);
-  }, []);
+  }, [bedSessions]);
 
   // Compute live session stats for visible beds only
   const enrichedBedSessions = useMemo(() => {
@@ -347,24 +384,40 @@ export default function RoomsBeds() {
     const currentMinsNow = now.getHours() * 60 + now.getMinutes();
     const visibleBedIds = new Set(beds.map(b => b.id));
 
+    // 1. Process active bed sessions
     Object.entries(bedSessions).forEach(([bedId, session]) => {
       if (!session || !visibleBedIds.has(bedId)) return;
+
+      if (session.status === 'cleaning') {
+        const cleanInfo = calculateCleaningCountdown(session, currentTick);
+        res[bedId] = {
+          ...session,
+          status: 'cleaning',
+          cleaning_info: cleanInfo
+        };
+        return;
+      }
+
       const startMins = timeStringToMinutes(session.start_time);
       const totalDur = session.total_duration_minutes || 60;
       const endMins = startMins + totalDur;
 
-      // Elapsed minutes
       const elapsedMins = Math.max(0, currentMinsNow - startMins);
       const remainingMins = Math.max(0, endMins - currentMinsNow);
       const progressPercent = Math.min(100, Math.round((elapsedMins / totalDur) * 100));
 
-      // Rule priority: overtime > nearly_finished > in_progress
-      let status = 'in_progress';
-      const overtimeCheck = checkSessionOvertime(session, currentMinsNow);
-      if (overtimeCheck.isOvertime) {
-        status = 'overtime';
-      } else if (remainingMins <= 10) {
-        status = 'nearly_finished';
+      let status = session.status || 'in_progress';
+      if (status === 'waiting') {
+        // Keeps 'waiting' until technician starts serving
+      } else {
+        const overtimeCheck = checkSessionOvertime(session, currentMinsNow);
+        if (overtimeCheck.isOvertime) {
+          status = 'overtime';
+        } else if (remainingMins <= 10) {
+          status = 'nearly_finished';
+        } else {
+          status = 'in_progress';
+        }
       }
 
       res[bedId] = {
@@ -372,13 +425,42 @@ export default function RoomsBeds() {
         elapsed_minutes: elapsedMins,
         remaining_minutes: remainingMins,
         progress_percent: progressPercent,
-        overtime_minutes: overtimeCheck.overtimeMinutes,
+        overtime_minutes: Math.max(0, currentMinsNow - endMins),
         status
       };
     });
 
+    // 2. Scan appointments for unoccupied beds to identify 'reserved' status
+    beds.forEach(bed => {
+      if (res[bed.id]) return; // already has active session
+      // Check if there is an upcoming appointment for this bed today
+      const upcomingAppt = appointments.find(a => 
+        (a.facility_id === bed.id || a.services?.[0]?.facility_id === bed.id) &&
+        a.status !== 'cancelled' && a.status !== 'completed'
+      );
+      if (upcomingAppt) {
+        res[bed.id] = {
+          bed_id: bed.id,
+          status: 'reserved',
+          appointment: upcomingAppt,
+          customer: { name: upcomingAppt.customer_name, phone: upcomingAppt.customer_phone },
+          customer_name: upcomingAppt.customer_name,
+          customer_phone: upcomingAppt.customer_phone,
+          start_time: upcomingAppt.start_time || '08:00',
+          end_time: upcomingAppt.end_time || '09:00',
+          services: [{
+            service_name: upcomingAppt.service_name || 'Dịch vụ đã đặt trước',
+            staff_name: upcomingAppt.staff_name || '',
+            price: upcomingAppt.price || 0
+          }],
+          elapsed_minutes: 0,
+          progress_percent: 0
+        };
+      }
+    });
+
     return res;
-  }, [bedSessions, beds, currentTick]);
+  }, [bedSessions, beds, currentTick, appointments]);
 
   // 3. Handlers for Room
   const handleCreateRoom = async (roomData) => {
@@ -674,6 +756,178 @@ export default function RoomsBeds() {
     }
   };
 
+  // Trả phòng: kiểm tra thời gian dọn dẹp -> chuyển sang 'cleaning' hoặc 'available'
+  const handleReleaseBed = (bed, session) => {
+    if (!bed?.id) return;
+    const clone = { ...bedSessions };
+    const cleanDuration = bed.cleaning_duration !== undefined ? bed.cleaning_duration : 10;
+
+    if (cleanDuration > 0) {
+      clone[bed.id] = {
+        ...(session || {}),
+        bed_id: bed.id,
+        bed_name: bed.name,
+        room_id: bed.room_id || null,
+        status: 'cleaning',
+        cleaning_started_at: Date.now(),
+        cleaning_duration_minutes: cleanDuration,
+        customer_name: session?.customer_name || 'Khách trước'
+      };
+      setBedSessions(clone);
+      localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+      toast.success(`Vị trí ${bed.name} đã chuyển sang trạng thái Đang dọn dẹp (${cleanDuration} phút)`);
+    } else {
+      delete clone[bed.id];
+      setBedSessions(clone);
+      localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+      toast.success(`Đã trả vị trí ${bed.name} thành công`);
+    }
+
+    setHoveredBedId(null);
+    setDrawerOpen(false);
+  };
+
+  // Hoàn tất dọn dẹp ngay: chuyển về 'available'
+  const handleFinishCleaning = (bed) => {
+    if (!bed?.id) return;
+    const clone = { ...bedSessions };
+    delete clone[bed.id];
+    setBedSessions(clone);
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+    toast.success(`Vị trí ${bed.name} đã hoàn tất dọn dẹp, sẵn sàng đón khách`);
+    setHoveredBedId(null);
+  };
+
+  // Bắt đầu phục vụ ngay từ trạng thái 'waiting'
+  const handleStartServingNow = (bed, session) => {
+    if (!bed?.id) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const nowTimeStr = `${hh}:${mm}`;
+
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const dur = session?.total_duration_minutes || 60;
+    const endMins = nowMins + dur;
+    const newEndTime = formatMinutesToTime(endMins);
+
+    const updatedSession = {
+      ...(session || {}),
+      status: 'in_progress',
+      start_time: nowTimeStr,
+      end_time: newEndTime,
+      service_start_time: nowTimeStr
+    };
+
+    const clone = {
+      ...bedSessions,
+      [bed.id]: updatedSession
+    };
+    setBedSessions(clone);
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+    toast.success(`Đã bắt đầu phục vụ tại ${bed.name}`);
+    setHoveredBedId(null);
+  };
+
+  // Mở popup thanh toán trực tiếp qua POSInvoiceModal
+  const handleOpenCheckout = (bed, session) => {
+    if (!session) return;
+    const customer = session.customer || {
+      name: session.customer_name || 'Khách vãng lai',
+      phone: session.customer_phone || ''
+    };
+
+    const initialCart = (session.services || []).map((s, idx) => ({
+      id: s.service_id || `srv_${idx}`,
+      name: s.service_name || 'Dịch vụ',
+      price: s.is_from_package ? 0 : (s.price || 0),
+      qty: 1,
+      staff_id: s.staff_id || null,
+      staff_name: s.staff_name || '',
+      facility_id: bed.id,
+      facility_name: bed.name,
+      customer_package_id: s.customer_package_id || null,
+      customer_treatment_id: s.customer_treatment_id || null,
+      package_name: s.package_name || null,
+      is_from_package: Boolean(s.is_from_package)
+    }));
+
+    setInvoiceData({
+      customer,
+      initialCart,
+      bed,
+      session
+    });
+    setInvoiceModalOpen(true);
+    setHoveredBedId(null);
+    setDrawerOpen(false);
+  };
+
+  // Callback sau khi lưu hoá đơn POS thành công
+  const handleInvoiceSaved = () => {
+    if (invoiceData?.bed) {
+      handleReleaseBed(invoiceData.bed, invoiceData.session);
+    }
+    setInvoiceModalOpen(false);
+    setInvoiceData(null);
+  };
+
+  // Xác nhận chuyển phòng / giường
+  const handleConfirmTransfer = (sourceBed, targetBed, session) => {
+    if (!sourceBed || !targetBed) return;
+    const clone = { ...bedSessions };
+
+    clone[targetBed.id] = {
+      ...(session || {}),
+      bed_id: targetBed.id,
+      bed_name: targetBed.name,
+      room_id: targetBed.room_id || null
+    };
+
+    const cleanDuration = sourceBed.cleaning_duration !== undefined ? sourceBed.cleaning_duration : 10;
+    if (cleanDuration > 0) {
+      clone[sourceBed.id] = {
+        bed_id: sourceBed.id,
+        bed_name: sourceBed.name,
+        room_id: sourceBed.room_id || null,
+        status: 'cleaning',
+        cleaning_started_at: Date.now(),
+        cleaning_duration_minutes: cleanDuration,
+        customer_name: 'Dọn sau chuyển giường'
+      };
+    } else {
+      delete clone[sourceBed.id];
+    }
+
+    setBedSessions(clone);
+    localStorage.setItem(getTenantStorageKey('gp_active_bed_sessions'), JSON.stringify(clone));
+    toast.success(`Đã chuyển khách từ ${sourceBed.name} sang ${targetBed.name}`);
+    setTransferModalOpen(false);
+    setTransferSource(null);
+  };
+
+  // Hover handlers với delay trơn tru
+  const handleBedMouseEnter = (bedId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredBedId(bedId);
+  };
+
+  const handleBedMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredBedId(null);
+    }, 250);
+  };
+
+  const handleHoverCardMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
   // 6.5 Reassign or unassign conflicted appointment (e.g. receptionist overrides bed)
   const handleReassignAppointment = async (appointmentId, newBedId = null) => {
     try {
@@ -727,8 +981,44 @@ export default function RoomsBeds() {
     return () => window.removeEventListener('gp_bed_session_checkout_completed', handleCheckoutCompleted);
   }, [currentBranchId]);
 
-  // 7. Group Beds by Room for Sơ đồ vị trí
+  // Status Counts for Quick Filter
+  const statusCounts = useMemo(() => {
+    const counts = {
+      all: beds.length,
+      available: 0,
+      waiting: 0,
+      reserved: 0,
+      in_progress: 0,
+      nearly_finished: 0,
+      overtime: 0,
+      cleaning: 0
+    };
+    beds.forEach(bed => {
+      const sess = enrichedBedSessions[bed.id];
+      if (!sess) {
+        counts.available++;
+      } else {
+        const st = sess.status;
+        if (counts[st] !== undefined) {
+          counts[st]++;
+        } else {
+          counts.in_progress++;
+        }
+      }
+    });
+    return counts;
+  }, [beds, enrichedBedSessions]);
+
+  // 7. Group Beds by Room for Sơ đồ vị trí (filtered by statusFilter)
   const bedsByRoom = useMemo(() => {
+    const filteredBeds = statusFilter === 'all'
+      ? beds
+      : beds.filter(bed => {
+          const sess = enrichedBedSessions[bed.id];
+          if (statusFilter === 'available') return !sess;
+          return sess?.status === statusFilter;
+        });
+
     const roomMap = {};
     // Seed with existing rooms
     rooms.forEach(r => {
@@ -742,14 +1032,14 @@ export default function RoomsBeds() {
       beds: []
     };
 
-    beds.forEach(bed => {
+    filteredBeds.forEach(bed => {
       const rId = bed.room_id && roomMap[bed.room_id] ? bed.room_id : unassignedRoomKey;
       roomMap[rId].beds.push(bed);
     });
 
-    // Filter out unassigned if empty
-    return Object.values(roomMap).filter(group => group.beds.length > 0 || group.room.id !== unassignedRoomKey);
-  }, [rooms, beds, t]);
+    // Filter out empty rooms if a specific status filter is active
+    return Object.values(roomMap).filter(group => group.beds.length > 0 || (statusFilter === 'all' && group.room.id !== unassignedRoomKey));
+  }, [rooms, beds, enrichedBedSessions, statusFilter, t]);
 
   // 8. Pagination for Settings Table
   const totalPages = Math.max(1, Math.ceil(beds.length / pageSize));
@@ -872,20 +1162,67 @@ export default function RoomsBeds() {
           /* ========================================================================= */
           /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID - MOCKUP 3)                       */
           /* ========================================================================= */
-          <div className="space-y-8">
+          <div className="space-y-6">
+            {/* Status Quick Filter Bar */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: 'all', label: 'Tất cả', count: statusCounts.all },
+                { id: 'available', label: 'Đang trống', count: statusCounts.available, dot: 'bg-emerald-500' },
+                { id: 'waiting', label: 'Chờ phục vụ', count: statusCounts.waiting, dot: 'bg-blue-500' },
+                { id: 'reserved', label: 'Đặt trước', count: statusCounts.reserved, dot: 'bg-amber-500' },
+                { id: 'in_progress', label: 'Đang bận', count: statusCounts.in_progress, dot: 'bg-rose-500' },
+                { id: 'nearly_finished', label: 'Sắp trống', count: statusCounts.nearly_finished, dot: 'bg-amber-400' },
+                { id: 'overtime', label: 'Quá giờ', count: statusCounts.overtime, dot: 'bg-fuchsia-500' },
+                { id: 'cleaning', label: 'Đang dọn dẹp', count: statusCounts.cleaning, dot: 'bg-teal-500' },
+              ].map(tab => {
+                const isActive = statusFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setStatusFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer border ${
+                      isActive
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab.dot && <span className={`w-2 h-2 rounded-full ${tab.dot}`} />}
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             {bedsByRoom.length === 0 ? (
               <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
                 <DoorOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900">{t('rooms_beds.empty_title', 'Chưa có giường phòng nào')}</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  {t('rooms_beds.empty_hint', 'Vui lòng sang tab "Cài đặt vị trí" để tạo phòng và các giường/ghế phục vụ khách.')}
+                  {statusFilter !== 'all' 
+                    ? `Không có vị trí nào đang ở trạng thái này.` 
+                    : t('rooms_beds.empty_hint', 'Vui lòng sang tab "Cài đặt vị trí" để tạo phòng và các giường/ghế phục vụ khách.')}
                 </p>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
-                >
-                  {t('rooms_beds.go_to_settings', 'Đến Cài đặt vị trí')}
-                </button>
+                {statusFilter !== 'all' ? (
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                  >
+                    Xem tất cả trạng thái
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
+                  >
+                    {t('rooms_beds.go_to_settings', 'Đến Cài đặt vị trí')}
+                  </button>
+                )}
               </div>
             ) : (
               bedsByRoom.map(group => (
@@ -962,6 +1299,9 @@ export default function RoomsBeds() {
                       {group.beds.map(bed => {
                       const session = enrichedBedSessions[bed.id];
                       const isOccupied = Boolean(session);
+                      const isCleaning = session?.status === 'cleaning';
+                      const isWaiting = session?.status === 'waiting';
+                      const isReserved = session?.status === 'reserved';
                       const isNearlyFinished = session?.status === 'nearly_finished';
                       const isOvertime = session?.status === 'overtime';
 
@@ -972,14 +1312,29 @@ export default function RoomsBeds() {
                         ? calculateBedAvailableWindow(bed.id, appointments, currentMinsNow, BED_BUFFER_MINUTES)
                         : null;
 
-                      // Colors based on status (priority: overtime > nearly_finished > occupied > available)
+                      // Colors based on status
                       let borderClass = 'border-emerald-300 hover:border-emerald-400';
                       let badgeClass = 'bg-emerald-100 text-emerald-800';
                       let badgeText = t('rooms_beds.status_available', 'ĐANG TRỐNG');
                       let progressFillClass = 'bg-emerald-500';
                       let cardExtraClass = '';
 
-                      if (isOvertime) {
+                      if (isCleaning) {
+                        borderClass = 'border-teal-400 hover:border-teal-500 bg-teal-50/20';
+                        badgeClass = 'bg-teal-100 text-teal-800 border border-teal-300/60';
+                        badgeText = 'ĐANG DỌN DẸP';
+                        progressFillClass = 'bg-teal-500';
+                      } else if (isWaiting) {
+                        borderClass = 'border-blue-400 hover:border-blue-500 bg-blue-50/20';
+                        badgeClass = 'bg-blue-100 text-blue-800 border border-blue-300/60';
+                        badgeText = 'CHỜ PHỤC VỤ';
+                        progressFillClass = 'bg-blue-500';
+                      } else if (isReserved) {
+                        borderClass = 'border-amber-400 hover:border-amber-500 bg-amber-50/20';
+                        badgeClass = 'bg-amber-100 text-amber-800 border border-amber-300/60';
+                        badgeText = 'ĐẶT TRƯỚC';
+                        progressFillClass = 'bg-amber-500';
+                      } else if (isOvertime) {
                         borderClass = 'border-fuchsia-500 hover:border-fuchsia-600 shadow-fuchsia-100/60 animate-pulse-border';
                         badgeClass = 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-300/60';
                         badgeText = t('rooms_beds.status_overtime', 'QUÁ GIỜ');
@@ -1010,108 +1365,171 @@ export default function RoomsBeds() {
                       return (
                         <div
                           key={bed.id}
-                          onClick={() => {
-                            if (isOccupied) {
-                              setSelectedBedForDrawer(bed);
-                              setDrawerOpen(true);
-                            } else {
-                              setQuickAssignBed({ bed, room: group.room });
-                            }
-                          }}
-                          className={`rounded-2xl border-2 ${borderClass} ${cardExtraClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none min-h-[140px] ${isOccupied && !isOvertime ? 'bg-white' : isOvertime ? '' : 'bg-white'}`}
+                          className="relative"
+                          onMouseEnter={() => handleBedMouseEnter(bed.id)}
+                          onMouseLeave={handleBedMouseLeave}
                         >
-                          {/* Card Top: Bed Name + Badge */}
-                          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                            <span className="font-bold text-slate-800 text-sm">{bed.name}</span>
-                            <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${badgeClass}`}>
-                              {badgeText}
-                            </span>
-                          </div>
+                          {/* Hover Popover Card */}
+                          {hoveredBedId === bed.id && session && (
+                            <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
+                              <BedHoverCard
+                                bed={bed}
+                                room={group.room}
+                                session={session}
+                                status={session.status}
+                                cleaningInfo={session.cleaning_info}
+                                onTransferRoom={(b, s) => {
+                                  setTransferSource({ bed: b, room: group.room, session: s });
+                                  setTransferModalOpen(true);
+                                  setHoveredBedId(null);
+                                }}
+                                onStartServing={(b, s) => handleStartServingNow(b, s)}
+                                onCheckout={(b, s) => handleOpenCheckout(b, s)}
+                                onReleaseBed={(b, s) => handleReleaseBed(b, s)}
+                                onFinishCleaning={(b) => handleFinishCleaning(b)}
+                                onMouseEnter={handleHoverCardMouseEnter}
+                                onMouseLeave={handleBedMouseLeave}
+                              />
+                            </div>
+                          )}
 
-                          {/* Card Middle: Content */}
-                          <div className="py-2.5 space-y-1.5 flex-1 flex flex-col justify-center">
-                            {isOccupied ? (
-                              <>
-                                <div className="text-xs font-semibold text-slate-800 truncate">
-                                  {t('rooms_beds.customer', 'Khách Hàng')}: <span className="text-slate-900">{session.customer?.name || session.customer_name || t('rooms_beds.walk_in_customer', 'Khách vãng lai')}</span>
-                                </div>
-                                <div className="text-[11px] text-slate-500 font-medium">
-                                  {t('rooms_beds.start', 'Bắt đầu')}: <span className="font-mono text-slate-700">{session.start_time}</span>
-                                  <span className="mx-2 text-slate-300">|</span>
-                                  {t('rooms_beds.end', 'Kết thúc')}: <span className={`font-mono ${isOvertime ? 'text-fuchsia-700 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
-                                </div>
-                                {isOvertime && (
-                                  <div className="flex items-center gap-1 text-[11px] font-bold text-fuchsia-700 bg-fuchsia-100 px-2 py-1 rounded-lg">
-                                    <Clock className="w-3 h-3 shrink-0" />
-                                    <span>Quá giờ: +{session.overtime_minutes} phút</span>
+                          <div
+                            onClick={() => {
+                              if (isCleaning) {
+                                if (window.confirm(`Vị trí ${bed.name} đang được dọn dẹp (${session.cleaning_info?.remainingMinutes || 0} phút còn lại). Bạn có muốn hoàn tất dọn dẹp ngay?`)) {
+                                  handleFinishCleaning(bed);
+                                }
+                                return;
+                              }
+                              if (isOccupied && !isReserved) {
+                                setSelectedBedForDrawer(bed);
+                                setDrawerOpen(true);
+                              } else {
+                                setQuickAssignBed({ bed, room: group.room });
+                              }
+                            }}
+                            className={`rounded-2xl border-2 ${borderClass} ${cardExtraClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none min-h-[140px] bg-white`}
+                          >
+                            {/* Card Top: Bed Name + Badge */}
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                              <span className="font-bold text-slate-800 text-sm">{bed.name}</span>
+                              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${badgeClass}`}>
+                                {badgeText}
+                              </span>
+                            </div>
+
+                            {/* Card Middle: Content */}
+                            <div className="py-2.5 space-y-1.5 flex-1 flex flex-col justify-center">
+                              {isCleaning ? (
+                                <div className="py-1 space-y-1">
+                                  <div className="text-xs font-semibold text-teal-800 flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-teal-600 animate-pulse shrink-0" />
+                                    <span>Vệ sinh & dọn phòng</span>
                                   </div>
-                                )}
-                              </>
-                            ) : windowInfo?.hasNextAppt ? (
-                              <div className="py-0.5 space-y-1.5">
-                                <div className="text-xs font-semibold text-emerald-700 flex items-center justify-between">
-                                  <span>{t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}</span>
-                                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded-full border border-amber-200">
-                                    Còn ~{windowInfo.availableMinutes}p
+                                  <div className="text-[11px] text-slate-500">
+                                    Còn lại: <strong className="text-teal-700 font-mono">{session.cleaning_info?.remainingMinutes || 0} phút</strong>
+                                  </div>
+                                </div>
+                              ) : isOccupied ? (
+                                <>
+                                  <div className="text-xs font-semibold text-slate-800 truncate">
+                                    {t('rooms_beds.customer', 'Khách Hàng')}: <span className="text-slate-900">{session.customer?.name || session.customer_name || t('rooms_beds.walk_in_customer', 'Khách vãng lai')}</span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 font-medium">
+                                    {t('rooms_beds.start', 'Bắt đầu')}: <span className="font-mono text-slate-700">{session.start_time}</span>
+                                    <span className="mx-2 text-slate-300">|</span>
+                                    {t('rooms_beds.end', 'Kết thúc')}: <span className={`font-mono ${isOvertime ? 'text-fuchsia-700 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
+                                  </div>
+                                  {isOvertime && (
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-fuchsia-700 bg-fuchsia-100 px-2 py-1 rounded-lg">
+                                      <Clock className="w-3 h-3 shrink-0" />
+                                      <span>Quá giờ: +{session.overtime_minutes} phút</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : windowInfo?.hasNextAppt ? (
+                                <div className="py-0.5 space-y-1.5">
+                                  <div className="text-xs font-semibold text-emerald-700 flex items-center justify-between">
+                                    <span>{t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}</span>
+                                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded-full border border-amber-200">
+                                      Còn ~{windowInfo.availableMinutes}p
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] bg-slate-50/90 rounded-xl p-2 border border-slate-100 space-y-0.5">
+                                    <div className="font-semibold text-slate-700 flex items-center gap-1.5 truncate">
+                                      <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt?.customer_name || 'Khách đặt trước'}</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 truncate pl-5">
+                                      {windowInfo.nextAppt?.service_name || 'Dịch vụ đã đặt'}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-center py-1">
+                                  <div className="text-xs font-semibold text-emerald-700">
+                                    {t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    {t('rooms_beds.start', 'Bắt đầu')}: --:--  •  {t('rooms_beds.end', 'Kết thúc')}: --:--
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Card Bottom: Elapsed & Progress Bar */}
+                            {isCleaning ? (
+                              <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                  <span>Đang dọn dẹp</span>
+                                  <span className="font-bold text-teal-700 font-mono">
+                                    {session.cleaning_info?.remainingSeconds ? `${Math.floor(session.cleaning_info.remainingSeconds / 60)}:${String(session.cleaning_info.remainingSeconds % 60).padStart(2, '0')}` : `${session.cleaning_info?.remainingMinutes || 0}p`}
                                   </span>
                                 </div>
-                                <div className="text-[11px] bg-slate-50/90 rounded-xl p-2 border border-slate-100 space-y-0.5">
-                                  <div className="font-semibold text-slate-700 flex items-center gap-1.5 truncate">
-                                    <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                    <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt?.customer_name || 'Khách đặt trước'}</span>
-                                  </div>
-                                  <div className="text-[10px] text-slate-400 truncate pl-5">
-                                    {windowInfo.nextAppt?.service_name || 'Dịch vụ đã đặt'}
-                                  </div>
+                                <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500 bg-teal-500"
+                                    style={{ width: `${session.cleaning_info?.progressPercent || 50}%` }}
+                                  />
                                 </div>
                               </div>
                             ) : (
-                              <div className="text-center py-1">
-                                <div className="text-xs font-semibold text-emerald-700">
-                                  {t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}
+                              <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                  <span>
+                                    {isOccupied ? (
+                                      <>
+                                        {t('rooms_beds.elapsed', 'Đã qua')}: <strong className={isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}>{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
+                                      </>
+                                    ) : windowInfo?.hasNextAppt ? (
+                                      <span className="text-amber-800 font-medium">
+                                        Lịch hẹn: <strong>{windowInfo.availableUntil}</strong>
+                                      </span>
+                                    ) : (
+                                      <span>{t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">0 {t('common.minutes', 'phút')}</strong></span>
+                                    )}
+                                  </span>
+                                  <span className={`font-bold ${isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}`}>
+                                    {isOccupied ? (
+                                      isOvertime
+                                        ? `100% (+${session?.overtime_minutes || 0}p quá giờ)`
+                                        : `${session?.progress_percent || 0}% (${session?.total_duration_minutes || 0} ${t('common.minutes', 'phút')})`
+                                    ) : windowInfo?.hasNextAppt ? (
+                                      <span className="text-[10px] text-slate-500 font-normal">(đệm 15p dọn phòng)</span>
+                                    ) : (
+                                      <span className="text-emerald-700 font-medium">Trống cả ngày</span>
+                                    )}
+                                  </span>
                                 </div>
-                                <div className="text-[11px] text-slate-400 mt-0.5">
-                                  {t('rooms_beds.start', 'Bắt đầu')}: --:--  •  {t('rooms_beds.end', 'Kết thúc')}: --:--
+                                
+                                <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${isOccupied ? progressFillClass : 'bg-emerald-500'}`}
+                                    style={{ width: `${session ? (isOvertime ? 100 : Math.min(100, Math.max(0, session.progress_percent))) : 0}%` }}
+                                  />
                                 </div>
                               </div>
                             )}
-                          </div>
-
-                          {/* Card Bottom: Elapsed & Progress Bar */}
-                          <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
-                            <div className="flex items-center justify-between text-[11px] text-slate-500">
-                              <span>
-                                {isOccupied ? (
-                                  <>
-                                    {t('rooms_beds.elapsed', 'Đã qua')}: <strong className={isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}>{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
-                                  </>
-                                ) : windowInfo?.hasNextAppt ? (
-                                  <span className="text-amber-800 font-medium">
-                                    Lịch hẹn: <strong>{windowInfo.availableUntil}</strong>
-                                  </span>
-                                ) : (
-                                  <span>{t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">0 {t('common.minutes', 'phút')}</strong></span>
-                                )}
-                              </span>
-                              <span className={`font-bold ${isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}`}>
-                                {isOccupied ? (
-                                  isOvertime
-                                    ? `100% (+${session?.overtime_minutes || 0}p quá giờ)`
-                                    : `${session?.progress_percent || 0}% (${session?.total_duration_minutes || 0} ${t('common.minutes', 'phút')})`
-                                ) : windowInfo?.hasNextAppt ? (
-                                  <span className="text-[10px] text-slate-500 font-normal">(đệm 15p dọn phòng)</span>
-                                ) : (
-                                  <span className="text-emerald-700 font-medium">Trống cả ngày</span>
-                                )}
-                              </span>
-                            </div>
-                            
-                            <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${isOccupied ? progressFillClass : 'bg-emerald-500'}`}
-                                style={{ width: `${session ? (isOvertime ? 100 : Math.min(100, Math.max(0, session.progress_percent))) : 0}%` }}
-                              />
-                            </div>
                           </div>
                         </div>
                       );
@@ -1344,8 +1762,21 @@ export default function RoomsBeds() {
         allRooms={rooms}
         applicableServices={services}
         staff={staff}
-        onTransferBed={handleTransferBed}
-        onCompleteSession={handleCompleteSession}
+        onTransferBed={(data) => {
+          if (data?.fromBedId && data?.toBedId) {
+            handleTransferBed(data);
+          } else if (selectedBedForDrawer) {
+            const r = rooms.find(rm => rm.id === selectedBedForDrawer.room_id);
+            setTransferSource({ bed: selectedBedForDrawer, room: r, session: enrichedBedSessions[selectedBedForDrawer.id] });
+            setTransferModalOpen(true);
+          }
+        }}
+        onCompleteSession={(bedId) => {
+          const b = beds.find(x => x.id === bedId) || selectedBedForDrawer;
+          const sess = b ? enrichedBedSessions[b.id] : null;
+          handleReleaseBed(b, sess);
+        }}
+        onDirectCheckout={(bed, session) => handleOpenCheckout(bed, session)}
         onReleaseCustomerSessions={handleReleaseCustomerSessions}
         onOpenAssignModal={(b) => setQuickAssignBed({ bed: b, room: rooms.find(r => r.id === b.room_id) })}
       />
@@ -1366,6 +1797,36 @@ export default function RoomsBeds() {
         onStartServing={handleStartServing}
         onReassignAppointment={handleReassignAppointment}
       />
+
+      {/* 6. Modal Chuyển phòng / giường */}
+      <BedTransferModal
+        open={transferModalOpen}
+        onClose={() => {
+          setTransferModalOpen(false);
+          setTransferSource(null);
+        }}
+        sourceBed={transferSource?.bed}
+        sourceRoom={transferSource?.room}
+        session={transferSource?.session}
+        allRooms={allRooms}
+        allBeds={allBeds}
+        activeBedSessions={bedSessions}
+        onConfirmTransfer={handleConfirmTransfer}
+      />
+
+      {/* 7. Modal Tạo Hoá Đơn Trực Tiếp (POS Checkout) */}
+      {invoiceModalOpen && invoiceData && (
+        <POSInvoiceModal
+          open={invoiceModalOpen}
+          customer={invoiceData.customer}
+          initialCart={invoiceData.initialCart}
+          onClose={() => {
+            setInvoiceModalOpen(false);
+            setInvoiceData(null);
+          }}
+          onSaved={handleInvoiceSaved}
+        />
+      )}
     </div>
   );
 }

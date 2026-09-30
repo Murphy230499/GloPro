@@ -49,6 +49,9 @@ export function parseBedFromFacility(fac, bedRoomMap = {}) {
   
   const overlapTag = services.find(s => typeof s === 'string' && s.startsWith('__overlap__:'));
   const allowOverlap = overlapTag ? overlapTag === '__overlap__:true' : false;
+
+  const cleaningTag = services.find(s => typeof s === 'string' && s.startsWith('__cleaning_time__:'));
+  const cleaningDuration = cleaningTag ? parseInt(cleaningTag.replace('__cleaning_time__:', ''), 10) || 0 : 0;
   
   const cleanServices = services.filter(s => typeof s === 'string' && !s.startsWith('__'));
   
@@ -56,6 +59,7 @@ export function parseBedFromFacility(fac, bedRoomMap = {}) {
     ...fac,
     room_id: dbRoomId || bedRoomMap[fac.id] || null,
     allow_overlap: allowOverlap,
+    cleaning_duration: cleaningDuration,
     applicable_services: cleanServices
   };
 }
@@ -70,6 +74,9 @@ export function encodeBedToFacility(bed) {
   if (bed.allow_overlap) {
     tags.push('__overlap__:true');
   }
+  if (bed.cleaning_duration !== undefined && bed.cleaning_duration !== null) {
+    tags.push(`__cleaning_time__:${bed.cleaning_duration}`);
+  }
   
   return {
     id: bed.id,
@@ -79,3 +86,29 @@ export function encodeBedToFacility(bed) {
     is_active: bed.is_active !== false
   };
 }
+
+/**
+ * Calculates remaining cleaning time for a session in 'cleaning' status
+ */
+export function calculateCleaningCountdown(session, nowTimestamp = Date.now()) {
+  if (!session || session.status !== 'cleaning' || !session.cleaning_started_at) {
+    return { isCleaning: false, remainingSeconds: 0, progressPercent: 0, isFinished: true };
+  }
+
+  const durationMs = (session.cleaning_duration_minutes || 10) * 60 * 1000;
+  const elapsedMs = Math.max(0, nowTimestamp - session.cleaning_started_at);
+  const remainingMs = Math.max(0, durationMs - elapsedMs);
+
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  const remainingMinutes = Math.ceil(remainingSeconds / 60);
+  const progressPercent = Math.min(100, Math.round((elapsedMs / durationMs) * 100));
+
+  return {
+    isCleaning: true,
+    remainingSeconds,
+    remainingMinutes,
+    progressPercent,
+    isFinished: remainingMs <= 0
+  };
+}
+

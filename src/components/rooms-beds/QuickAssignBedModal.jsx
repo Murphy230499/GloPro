@@ -17,6 +17,7 @@ import {
 import ServicePickerDropdown from './ServicePickerDropdown';
 import StaffPickerDropdown from './StaffPickerDropdown';
 import BedConflictOverrideModal from './BedConflictOverrideModal';
+import PackageUsageModal from '@/components/pos/PackageUsageModal';
 
 export default function QuickAssignBedModal({
   open,
@@ -43,6 +44,7 @@ export default function QuickAssignBedModal({
   const [clientQ, setClientQ] = useState('');
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [showPackageModal, setShowPackageModal] = useState(false);
   const customerPickerRef = useRef(null);
 
   // Conflict modal states
@@ -160,8 +162,32 @@ export default function QuickAssignBedModal({
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleApplyPackageItems = (selectedItems) => {
+    const newItems = selectedItems.map(item => {
+      const svc = services.find(s => s.name === item.name || s.id === item.id);
+      return {
+        service_id: svc?.id || item.id,
+        service_name: item.name,
+        price: 0,
+        duration_minutes: Number(svc?.duration_minutes || svc?.duration || 30),
+        staff_id: staff[0]?.id || '',
+        is_from_package: true,
+        customer_package_id: item.customer_package_id || null,
+        customer_treatment_id: item.customer_treatment_id || null,
+        package_name: item.package_name || ''
+      };
+    });
+
+    setSelectedServices(prev => {
+      const cleaned = prev.filter(r => Boolean(r.service_id));
+      return [...cleaned, ...newItems];
+    });
+    setShowPackageModal(false);
+    toast.success('Đã áp dụng dịch vụ từ gói / liệu trình của khách');
+  };
+
+  const handleSubmit = (targetStatus = 'in_progress', e = null) => {
+    if (e && e.preventDefault) e.preventDefault();
 
     let customerObj = null;
     if (customerMode === 'existing') {
@@ -192,11 +218,15 @@ export default function QuickAssignBedModal({
       const stObj = staff.find(st => st.id === item.staff_id) || {};
       return {
         service_id: item.service_id,
-        service_name: sObj.name || '',
-        price: sObj.price || 0,
-        duration_minutes: sObj.duration_minutes || sObj.duration || 30,
+        service_name: item.service_name || sObj.name || '',
+        price: item.is_from_package ? 0 : (item.price ?? sObj.price ?? 0),
+        duration_minutes: item.duration_minutes || sObj.duration_minutes || sObj.duration || 30,
         staff_id: item.staff_id || null,
-        staff_name: stObj.full_name || stObj.name || ''
+        staff_name: stObj.full_name || stObj.name || '',
+        is_from_package: Boolean(item.is_from_package),
+        customer_package_id: item.customer_package_id || null,
+        customer_treatment_id: item.customer_treatment_id || null,
+        package_name: item.package_name || ''
       };
     });
 
@@ -222,7 +252,8 @@ export default function QuickAssignBedModal({
         bed_name: currentBed.name,
         room_name: room?.name || ''
       })),
-      status: 'in_progress',
+      status: targetStatus, // 'waiting' or 'in_progress'
+      service_start_time: targetStatus === 'in_progress' ? startTime : null,
       created_at: new Date().toISOString()
     };
 
@@ -516,18 +547,33 @@ export default function QuickAssignBedModal({
 
               {/* Services & Staff Assignment */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700">
-                    {t('rooms_beds.services_served', 'Dịch vụ & Kỹ thuật viên')} <span className="text-rose-500">*</span>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <label className="text-xs font-bold text-slate-800">
+                    Chọn dịch vụ và kĩ thuật viên <span className="text-rose-500">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleAddServiceRow}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{t('rooms_beds.add_service_btn', 'Thêm dịch vụ')}</span>
-                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {/* Nút dùng Gói / Liệu trình đã mua của khách */}
+                    {selectedCustomer?.id && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPackageModal(true)}
+                        className="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Dùng Gói / Liệu trình</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleAddServiceRow}
+                      className="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                      title={t('rooms_beds.add_service_btn', 'Thêm dịch vụ')}
+                    >
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5">
@@ -535,14 +581,23 @@ export default function QuickAssignBedModal({
                     <div key={idx} className="flex items-center gap-2 p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200/80">
                       {/* Service Picker with Custom Unified Dropdown */}
                       <div className="flex-1 min-w-0">
-                        <ServicePickerDropdown
-                          servicesList={applicableServices}
-                          services={applicableServices}
-                          value={row.service_id}
-                          onChange={(val) => handleServiceChange(idx, 'service_id', val)}
-                          placeholder={t('rooms_beds.select_service_placeholder', '— Chọn dịch vụ —')}
-                          t={t}
-                        />
+                        {row.is_from_package ? (
+                          <div className="px-3 py-2 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center justify-between">
+                            <span className="truncate">{row.service_name}</span>
+                            <span className="text-[10px] bg-emerald-200/70 text-emerald-900 px-1.5 py-0.5 rounded font-bold shrink-0">
+                              {row.package_name || 'Gói/Liệu trình'} (0 ₫)
+                            </span>
+                          </div>
+                        ) : (
+                          <ServicePickerDropdown
+                            servicesList={applicableServices}
+                            services={applicableServices}
+                            value={row.service_id}
+                            onChange={(val) => handleServiceChange(idx, 'service_id', val)}
+                            placeholder={t('rooms_beds.select_service_placeholder', '— Chọn dịch vụ —')}
+                            t={t}
+                          />
+                        )}
                       </div>
 
                       {/* Staff Picker with Custom Unified Dropdown */}
@@ -558,7 +613,7 @@ export default function QuickAssignBedModal({
                       </div>
 
                       {/* Remove Row Button */}
-                      {selectedServices.length > 1 && (
+                      {(selectedServices.length > 1 || row.is_from_package) && (
                         <button
                           type="button"
                           onClick={() => handleRemoveServiceRow(idx)}
@@ -573,60 +628,70 @@ export default function QuickAssignBedModal({
                 </div>
               </div>
 
-              {/* Time Settings */}
-              <div className="bg-blue-50/60 rounded-2xl p-4 border border-blue-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                  <div>
-                    <span className="font-semibold text-slate-700">{t('rooms_beds.start_time', 'Giờ vào')}:</span>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="ml-2 px-2.5 py-1 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-700 outline-none focus:border-blue-500"
-                    />
-                  </div>
+              {/* Time Settings: 2 Pill Boxes Matching Mockup */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {/* Giờ vào box */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50/60 border border-blue-200 rounded-2xl">
+                  <span className="text-xs font-bold text-blue-700">Giờ vào:</span>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-blue-700 outline-none text-right cursor-pointer"
+                  />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-slate-600">
-                    {t('rooms_beds.estimated_duration', 'Thời lượng')}: <span className="font-bold text-slate-800">{totalDuration} {t('common.minutes', 'phút')}</span>
-                  </div>
-                  <div className="bg-white px-3 py-1.5 rounded-xl border border-blue-200 font-bold text-blue-700">
-                    {t('rooms_beds.estimated_finish', 'Xong lúc')}: {endTime}
-                  </div>
+                {/* Kết thúc box */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-rose-50/60 border border-rose-200 rounded-2xl">
+                  <span className="text-xs font-bold text-rose-700">Kết thúc:</span>
+                  <span className="text-xs font-bold text-rose-700">{endTime}</span>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3 rounded-b-3xl shrink-0">
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between gap-2 rounded-b-3xl shrink-0">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               >
                 {t('common.cancel', 'Huỷ bỏ')}
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 ${
-                  isCurrentlyOverlapping 
-                    ? 'bg-amber-600 hover:bg-amber-700' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isCurrentlyOverlapping && <AlertTriangle className="w-4 h-4 shrink-0" />}
-                <span>
-                  {loading 
-                    ? t('common.loading', 'Đang xử lý...') 
-                    : isCurrentlyOverlapping 
-                    ? 'Tiếp tục (Kiểm tra xung đột)' 
-                    : t('rooms_beds.start_serving_btn', 'Bắt đầu phục vụ')}
-                </span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Nút 1: Chờ phục vụ (Xanh dương) */}
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit('waiting', e)}
+                  disabled={loading}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {t('rooms_beds.waiting_service', 'Chờ phục vụ')}
+                </button>
+
+                {/* Nút 2: Bắt đầu phục vụ (Xanh lá) */}
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit('in_progress', e)}
+                  disabled={loading}
+                  className={`px-5 py-2.5 text-xs font-bold text-white rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 ${
+                    isCurrentlyOverlapping 
+                      ? 'bg-amber-600 hover:bg-amber-700' 
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  {isCurrentlyOverlapping && <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
+                  <span>
+                    {loading 
+                      ? t('common.loading', 'Đang xử lý...') 
+                      : isCurrentlyOverlapping 
+                      ? 'Tiếp tục (Kiểm tra xung đột)' 
+                      : t('rooms_beds.start_serving_btn', 'Bắt đầu phục vụ')}
+                  </span>
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -674,6 +739,15 @@ export default function QuickAssignBedModal({
             }
             onClose();
           }}
+        />
+      )}
+
+      {/* Modal Chọn Gói / Liệu trình đã mua của khách hàng */}
+      {showPackageModal && selectedCustomer && (
+        <PackageUsageModal
+          customerId={selectedCustomer.id}
+          onClose={() => setShowPackageModal(false)}
+          onSelect={handleApplyPackageItems}
         />
       )}
     </>

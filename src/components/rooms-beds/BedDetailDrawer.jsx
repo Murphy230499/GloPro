@@ -24,7 +24,8 @@ export default function BedDetailDrawer({
   onCompleteSession,
   onReleaseCustomerSessions,
   onTransferBed,
-  onOpenAssignModal
+  onOpenAssignModal,
+  onDirectCheckout
 }) {
   const { t } = useT();
   const router = useRouter();
@@ -75,6 +76,12 @@ export default function BedDetailDrawer({
 
   const handleGoToPOS = async () => {
     if (!activeSession || isProcessingCheckout) return;
+
+    if (onDirectCheckout) {
+      onDirectCheckout(bed, activeSession);
+      onClose();
+      return;
+    }
     setIsProcessingCheckout(true);
 
     try {
