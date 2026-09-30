@@ -14,6 +14,7 @@ import ReviewQRModal from '@/components/pos/ReviewQRModal';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { useT } from '@/lib/i18n';
 import { getTenantStorageKey } from '@/lib/tenantManager';
+import { isRoomFacility } from '@/lib/roomBedDbHelper';
 
 const getCurrentUser = () => {
   try {
@@ -300,12 +301,12 @@ export default function POS() {
       setPrepaidCards((gc || []).filter((x) => x.is_active !== false));
       setGroups(gr || []);
       setStaff((st || []).filter((x) => x.is_active !== false));
-      let loadedFac = facData;
+      let loadedFac = (facData || []).filter(f => !isRoomFacility(f));
       if (!loadedFac || loadedFac.length === 0) {
         try {
           const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
                          localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
-          if (cached) loadedFac = JSON.parse(cached);
+          if (cached) loadedFac = (JSON.parse(cached) || []).filter(f => !isRoomFacility(f));
         } catch (e) {}
       }
       if (!loadedFac || loadedFac.length === 0) {

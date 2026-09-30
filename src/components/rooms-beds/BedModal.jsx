@@ -60,7 +60,7 @@ export default function BedModal({
 
   if (!open) return null;
 
-  const isEditing = Boolean(editingItem);
+  const isEditing = Boolean(editingItem && editingItem.id);
 
   // Group services by category
   const filteredServices = services.filter(s =>

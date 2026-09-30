@@ -4,6 +4,7 @@ import { useT } from '@/lib/i18n';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { useBranch } from '@/lib/BranchContext';
+import { isRoomFacility } from '@/lib/roomBedDbHelper';
 
 export default function FacilityManagementModal({ open, onClose, services = [], onFacilityChange }) {
   const { t } = useT();
@@ -21,7 +22,7 @@ export default function FacilityManagementModal({ open, onClose, services = [], 
       setDbError(false);
       const branchFilter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
       const data = await base44.entities.Facility.filter(branchFilter);
-      setFacilities(data || []);
+      setFacilities((data || []).filter(f => !isRoomFacility(f)));
     } catch (err) {
       console.warn('Facility table may not exist yet:', err?.message || err);
       // Table likely doesn\'t exist — show setup prompt, not an error toast

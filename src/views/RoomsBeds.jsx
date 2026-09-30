@@ -20,6 +20,13 @@ import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
 import { getTenantStorageKey, resolveTenantId } from '@/lib/tenantManager';
+import { 
+  isRoomFacility, 
+  parseRoomFromFacility, 
+  encodeRoomToFacility, 
+  parseBedFromFacility, 
+  encodeBedToFacility 
+} from '@/lib/roomBedDbHelper';
 
 export default function RoomsBeds() {
   const { t } = useT();
@@ -82,7 +89,12 @@ export default function RoomsBeds() {
         base44.entities.Appointment ? base44.entities.Appointment.filter(branchFilter).catch(() => []) : Promise.resolve([])
       ]);
 
-      // 1. Rooms: Load master tenant list
+      // Separate fData into dbRooms and dbBeds
+      const dbRoomFacilities = (fData || []).filter(isRoomFacility);
+      const dbBedFacilities = (fData || []).filter(f => !isRoomFacility(f));
+      const parsedDbRooms = dbRoomFacilities.map(parseRoomFromFacility).filter(Boolean);
+
+      // 1. Rooms: Load master tenant list (prioritizing DB)
       let loadedRooms = null;
       const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
       const cachedUnifiedRooms = localStorage.getItem(unifiedRoomsKey) ||
@@ -97,19 +109,35 @@ export default function RoomsBeds() {
         }
       }
 
-      // If salon has never initialized rooms anywhere and has a branch, initialize demo rooms for primary branch
-      if (loadedRooms === null) {
+      if (parsedDbRooms.length > 0) {
+        // DB is primary source of truth. Keep any local unsynced rooms
+        const dbRoomIds = new Set(parsedDbRooms.map(r => r.id));
+        const unsyncedRooms = (loadedRooms || []).filter(r => !dbRoomIds.has(r.id));
+        loadedRooms = [...parsedDbRooms, ...unsyncedRooms];
+      } else if (loadedRooms === null) {
+        // If salon has never initialized rooms anywhere and has a branch, initialize demo rooms for primary branch
         const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
           ? branches[0].id
           : (currentBranchId !== 'all' ? currentBranchId : null);
         if (primaryBranchId) {
           loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
-          localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
-          localStorage.setItem('gp_rooms', JSON.stringify(loadedRooms));
+          if (base44.entities.Facility) {
+            for (const r of loadedRooms) {
+              base44.entities.Facility.create(encodeRoomToFacility(r)).catch(() => null);
+            }
+          }
         } else {
           loadedRooms = [];
         }
+      } else if (loadedRooms && loadedRooms.length > 0) {
+        // DB had no rooms yet, sync local rooms to database
+        if (base44.entities.Facility) {
+          for (const r of loadedRooms) {
+            base44.entities.Facility.create(encodeRoomToFacility(r)).catch(() => null);
+          }
+        }
       }
+
       setAllRooms(loadedRooms || []);
       if (loadedRooms && loadedRooms.length > 0) {
         localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
@@ -142,23 +170,22 @@ export default function RoomsBeds() {
       });
 
       let loadedBeds = [];
-      if (fData && fData.length > 0) {
+      if (dbBedFacilities && dbBedFacilities.length > 0) {
         const cachedById = new Map(cachedBeds.map(b => [b.id, b]));
-        loadedBeds = fData.map(fb => {
+        loadedBeds = dbBedFacilities.map(fb => {
+          const parsedBed = parseBedFromFacility(fb, bedRoomMap);
           const cached = cachedById.get(fb.id);
-          const assignedRoomId = bedRoomMap[fb.id] !== undefined
-            ? bedRoomMap[fb.id]
-            : (cached?.room_id !== undefined ? cached.room_id : fb.room_id || null);
+          const assignedRoomId = (parsedBed.room_id !== undefined && parsedBed.room_id !== null)
+            ? parsedBed.room_id
+            : (bedRoomMap[fb.id] !== undefined
+                ? bedRoomMap[fb.id]
+                : (cached?.room_id !== undefined ? cached.room_id : null));
 
           return {
             ...fb,
             ...(cached || {}),
-            id: fb.id,
-            name: fb.name || cached?.name,
-            branch_id: fb.branch_id || cached?.branch_id,
-            room_id: assignedRoomId,
-            allow_overlap: cached?.allow_overlap ?? fb.allow_overlap ?? false,
-            applicable_services: fb.applicable_services?.length ? fb.applicable_services : (cached?.applicable_services || [])
+            ...parsedBed,
+            room_id: assignedRoomId
           };
         });
 
@@ -183,8 +210,20 @@ export default function RoomsBeds() {
           : (currentBranchId !== 'all' ? currentBranchId : null);
         if (primaryBranchId) {
           loadedBeds = INITIAL_DEMO_BEDS.map(b => ({ ...b, branch_id: primaryBranchId }));
+          if (base44.entities.Facility) {
+            for (const b of loadedBeds) {
+              base44.entities.Facility.create(encodeBedToFacility(b)).catch(() => null);
+            }
+          }
           localStorage.setItem(unifiedBedsKey, JSON.stringify(loadedBeds));
           localStorage.setItem('gp_facilities', JSON.stringify(loadedBeds));
+        }
+      } else if (loadedBeds && loadedBeds.length > 0 && dbBedFacilities.length === 0) {
+        // Sync local beds to database
+        if (base44.entities.Facility) {
+          for (const b of loadedBeds) {
+            base44.entities.Facility.create(encodeBedToFacility(b)).catch(() => null);
+          }
         }
       }
 
@@ -357,8 +396,10 @@ export default function RoomsBeds() {
         display_order: allRooms.length + 1
       };
 
-      if (base44.entities.Room) {
-        await base44.entities.Room.create(newRoom).catch(() => null);
+      if (base44.entities.Facility) {
+        await base44.entities.Facility.create(encodeRoomToFacility(newRoom)).catch(err => {
+          console.error('Failed to create room in database:', err);
+        });
       }
 
       const updated = [...allRooms, newRoom];
@@ -375,24 +416,24 @@ export default function RoomsBeds() {
 
   const handleUpdateRoom = async (roomId, roomData) => {
     try {
+      let updatedRoom = null;
       const updated = allRooms.map(r => {
         if (r.id === roomId) {
-          return {
+          updatedRoom = {
             ...r,
             name: (roomData.name || r.name).trim(),
             color: roomData.color || r.color || '#3B82F6',
             branch_id: roomData.branch_id !== undefined ? roomData.branch_id : r.branch_id
           };
+          return updatedRoom;
         }
         return r;
       });
 
-      if (base44.entities.Room) {
-        await base44.entities.Room.update(roomId, {
-          name: (roomData.name || '').trim(),
-          color: roomData.color,
-          branch_id: roomData.branch_id
-        }).catch(() => null);
+      if (updatedRoom && base44.entities.Facility) {
+        await base44.entities.Facility.update(roomId, encodeRoomToFacility(updatedRoom)).catch(err => {
+          console.error('Failed to update room in database:', err);
+        });
       }
 
       setAllRooms(updated);
@@ -407,8 +448,10 @@ export default function RoomsBeds() {
 
   const handleDeleteRoom = async (roomId) => {
     try {
-      if (base44.entities.Room) {
-        await base44.entities.Room.delete(roomId).catch(() => null);
+      if (base44.entities.Facility) {
+        await base44.entities.Facility.delete(roomId).catch(err => {
+          console.error('Failed to delete room from database:', err);
+        });
       }
 
       const updatedRooms = allRooms.filter(r => r.id !== roomId);
@@ -435,11 +478,8 @@ export default function RoomsBeds() {
 
         if (base44.entities.Facility) {
           for (const b of affectedBeds) {
-            base44.entities.Facility.update(b.id, {
-              name: b.name,
-              applicable_services: b.applicable_services || [],
-              branch_id: b.branch_id
-            }).catch(() => null);
+            const unassignedBed = { ...b, room_id: null };
+            base44.entities.Facility.update(b.id, encodeBedToFacility(unassignedBed)).catch(() => null);
           }
         }
       }
@@ -459,7 +499,10 @@ export default function RoomsBeds() {
       let bedRoomMap = {};
       try { bedRoomMap = JSON.parse(localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map') || '{}'); } catch (e) {}
 
-      if (editingBed) {
+      // Notice: editingBed can be { room_id: group.room.id } without an id when clicking "Thêm vị trí" in diagram
+      const isExistingBed = Boolean(editingBed && editingBed.id);
+
+      if (isExistingBed) {
         // Update
         const targetBranchId = roomObj?.branch_id || editingBed.branch_id || (currentBranchId !== 'all' ? currentBranchId : null);
         const updatedBed = {
@@ -472,12 +515,9 @@ export default function RoomsBeds() {
         };
 
         if (base44.entities.Facility) {
-          await base44.entities.Facility.update(editingBed.id, {
-            name: updatedBed.name,
-            applicable_services: updatedBed.applicable_services,
-            branch_id: updatedBed.branch_id,
-            is_active: true
-          }).catch(() => null);
+          await base44.entities.Facility.update(editingBed.id, encodeBedToFacility(updatedBed)).catch(err => {
+            console.error('Failed to update bed in database:', err);
+          });
         }
 
         const updatedList = allBeds.map(b => b.id === editingBed.id ? updatedBed : b);
@@ -492,7 +532,7 @@ export default function RoomsBeds() {
         toast.success(t('rooms_beds.update_bed_success', 'Cập nhật vị trí thành công'));
       } else {
         // Create
-        const targetBranchId = roomObj?.branch_id || ((currentBranchId && currentBranchId !== 'all')
+        const targetBranchId = roomObj?.branch_id || editingBed?.branch_id || ((currentBranchId && currentBranchId !== 'all')
           ? currentBranchId
           : (branches && branches.length > 0 && branches[0].id !== 'all' ? branches[0].id : null));
 
@@ -500,7 +540,7 @@ export default function RoomsBeds() {
         const newBed = {
           id: bedUuid,
           name: bedData.name,
-          room_id: bedData.room_id || null,
+          room_id: bedData.room_id || editingBed?.room_id || null,
           branch_id: targetBranchId,
           applicable_services: bedData.applicable_services || [],
           allow_overlap: bedData.allow_overlap,
@@ -508,13 +548,9 @@ export default function RoomsBeds() {
         };
 
         if (base44.entities.Facility) {
-          await base44.entities.Facility.create({
-            id: newBed.id,
-            name: newBed.name,
-            applicable_services: newBed.applicable_services,
-            branch_id: newBed.branch_id,
-            is_active: true
-          }).catch(() => null);
+          await base44.entities.Facility.create(encodeBedToFacility(newBed)).catch(err => {
+            console.error('Failed to create bed in database:', err);
+          });
         }
 
         const updatedList = [...allBeds, newBed];
@@ -532,6 +568,7 @@ export default function RoomsBeds() {
       setBedModalOpen(false);
       setEditingBed(null);
     } catch (e) {
+      console.error('Error saving bed:', e);
       toast.error(t('rooms_beds.err_save_bed', 'Lỗi khi lưu vị trí'));
     }
   };

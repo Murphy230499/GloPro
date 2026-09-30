@@ -15,6 +15,7 @@ import {
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 import { base44 } from '@/api/base44Client';
 import { getTenantStorageKey } from '@/lib/tenantManager';
+import { isRoomFacility } from '@/lib/roomBedDbHelper';
 
 /**
  * FacilityAssignPicker
@@ -97,7 +98,7 @@ export default function FacilityAssignPicker({
       if (branchKey && branchKey !== 'all') {
         loadedBeds = loadedBeds.filter(b => !b.branch_id || b.branch_id === branchKey);
       }
-      setBeds(loadedBeds);
+      setBeds(loadedBeds.filter(b => !isRoomFacility(b)));
 
       // Load Active Bed Sessions
       const sessionMap = {};

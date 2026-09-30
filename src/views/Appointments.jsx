@@ -20,6 +20,7 @@ import AppointmentTimelineView from '@/components/appointments/AppointmentTimeli
 import AppointmentCalendarView from '@/components/appointments/AppointmentCalendarView';
 import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS } from '@/components/appointments/constants';
 import { getTenantStorageKey } from '@/lib/tenantManager';
+import { isRoomFacility, parseRoomFromFacility, parseBedFromFacility } from '@/lib/roomBedDbHelper';
 
 const SAMPLE_DEMO_APPOINTMENTS = [
   { id: 'demo_1', customer_name: 'Michael Johnson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:30', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'confirmed' },
@@ -158,8 +159,12 @@ export default function Appointments() {
         const stMap = Object.fromEntries((st || []).map((s) => [s.id, s]));
         const srvMap = Object.fromEntries((srv || []).map((s) => [s.id, s]));
 
+        // Separate facData into rooms and beds
+        const dbRooms = (facData || []).filter(isRoomFacility).map(parseRoomFromFacility).filter(Boolean);
+        const dbBeds = (facData || []).filter(f => !isRoomFacility(f)).map(f => parseBedFromFacility(f));
+
         // Rooms data from DB or cache or INITIAL_DEMO_ROOMS
-        let finalRooms = roomData;
+        let finalRooms = dbRooms.length > 0 ? dbRooms : roomData;
         if (!finalRooms || finalRooms.length === 0) {
           if (typeof window !== 'undefined') {
             const cached = localStorage.getItem(getTenantStorageKey('gp_rooms')) ||
@@ -178,13 +183,16 @@ export default function Appointments() {
         const roomMap = Object.fromEntries((finalRooms || []).map((r) => [r.id, r]));
 
         // Beds / Facilities data from DB or cache or INITIAL_DEMO_BEDS
-        let finalBeds = facData;
+        let finalBeds = dbBeds.length > 0 ? dbBeds : [];
         if (!finalBeds || finalBeds.length === 0) {
           if (typeof window !== 'undefined') {
             const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
                            localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
             if (cached) {
-              try { finalBeds = JSON.parse(cached); } catch (e) {}
+              try { 
+                const parsed = JSON.parse(cached);
+                finalBeds = (parsed || []).filter(b => !isRoomFacility(b));
+              } catch (e) {}
             }
           }
           if (!finalBeds || finalBeds.length === 0) {
