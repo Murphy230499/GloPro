@@ -6,14 +6,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 
 export async function POST(request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const email = body.email;
-    const userId = body.userId;
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-    }
-
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -21,37 +13,56 @@ export async function POST(request) {
       }
     });
 
-    const KNOWN_TENANTS = {
-      'infinitystudio9969@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
-      'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
-      'ducledinhqt@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
-      'minhphantester2021@gmail.com': '0a5e5b54-00b5-4fdc-80b4-aba8bbe48f7c',
-      'db1d2d2d-4b05-450d-88b9-54e7715b436b': '6cb88c32-06c6-4b95-b286-99bc8c141c79'
-    };
+    let verifiedUserId = null;
+    let verifiedEmail = null;
 
-    // 1. Query user_profile with service role to bypass any client RLS restrictions
-    const { data: profiles, error } = await supabaseAdmin
-      .from('user_profile')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .limit(1);
+    // 1. Authenticate caller via JWT token in Authorization header if present
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '').trim();
+      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+      if (!userError && userData?.user) {
+        verifiedUserId = userData.user.id;
+        verifiedEmail = userData.user.email?.toLowerCase();
+      }
+    }
 
+    // 2. Fallback to request body if no token provided (client initial handshake)
+    const body = await request.json().catch(() => ({}));
+    const targetEmail = verifiedEmail || body.email?.toLowerCase();
+    const targetUserId = verifiedUserId || body.userId;
+
+    if (!targetEmail && !targetUserId) {
+      return NextResponse.json({ error: 'Valid session or user identifier required' }, { status: 400 });
+    }
+
+    // 3. Query user_profile
+    let query = supabaseAdmin.from('user_profile').select('*');
+    if (targetUserId) {
+      query = query.or(`id.eq.${targetUserId},email.eq.${targetEmail || ''}`);
+    } else {
+      query = query.eq('email', targetEmail);
+    }
+
+    const { data: profiles, error } = await query.limit(1);
     if (error) {
       console.warn('[TenantAPI] Supabase query error:', error);
     }
 
     let profile = profiles?.[0];
-    let tid = profile?.tenant_id || KNOWN_TENANTS[email.toLowerCase()] || (userId ? KNOWN_TENANTS[userId] : null);
+    let tid = profile?.tenant_id;
 
+    // 4. Auto-provision profile/tenant for brand new salon owners
     if (!tid) {
-      if (!profile && userId) {
-        tid = userId;
+      if (!profile && targetUserId && targetEmail) {
+        tid = targetUserId;
         try {
           const { data: newProfile } = await supabaseAdmin
             .from('user_profile')
             .insert([{
-              email: email.toLowerCase(),
-              full_name: email.split('@')[0],
+              id: targetUserId,
+              email: targetEmail,
+              full_name: targetEmail.split('@')[0],
               role: 'owner',
               status: 'active',
               type: 'Employee',
@@ -64,7 +75,7 @@ export async function POST(request) {
           console.warn('[TenantAPI] Profile create fallback:', e);
         }
       } else if (profile && !profile.tenant_id) {
-        tid = userId || profile.id;
+        tid = targetUserId || profile.id;
         try {
           await supabaseAdmin
             .from('user_profile')
@@ -78,7 +89,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      tenantId: tid || userId,
+      tenantId: tid || targetUserId,
       profile: profile || null
     });
   } catch (err) {

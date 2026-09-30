@@ -5,8 +5,15 @@ import { supabase } from './supabaseClient';
  */
 export const TENANT_SCOPED_TABLES = new Set([
   'appointment',
+  'bookingsetting',
   'branch',
+  'cashvoucher',
+  'cashvouchertype',
   'customer',
+  'customer_gifts',
+  'customer_package',
+  'customer_segments_auto',
+  'customer_treatment',
   'customergroup',
   'customersegment',
   'customertier',
@@ -15,33 +22,41 @@ export const TENANT_SCOPED_TABLES = new Set([
   'deposit_policy',
   'deposit_transaction',
   'facility',
-  'room',
+  'inventory_receipt_items',
+  'inventory_receipts',
+  'inventory_suppliers',
+  'inventory_transfer_items',
+  'inventory_transfers',
   'invoice',
   'loyaltyrule',
   'membership',
+  'package_usage_history',
   'prepaidcard',
   'product',
   'productcombo',
+  'promo_usages',
+  'promotions',
+  'revenuebonusrule',
+  'role_permissions',
+  'roles',
+  'room',
   'service',
   'servicecombo',
   'servicegroup',
   'servicepackage',
-  'treatment',
   'shift',
   'shifttemplate',
   'staff',
+  'staff_leaves',
   'staffattendance',
+  'staffcommissionconfig',
   'staffcommissionrule',
   'staffgroup',
   'staffschedule',
-  'cashvoucher',
-  'cashvouchertype',
-  'bookingsetting',
-  'customer_package',
-  'customer_treatment',
+  'treatment',
+  'user',
   'user_profile',
-  'role_permissions',
-  'roles'
+  'vouchers'
 ]);
 
 let inMemoryTenantId = null;
@@ -269,7 +284,7 @@ export function clearActiveTenant() {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_'))) {
+      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_') || k.startsWith('glopro_'))) {
         keysToRemove.push(k);
       }
     }
@@ -278,7 +293,7 @@ export function clearActiveTenant() {
     const sKeys = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const k = sessionStorage.key(i);
-      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_'))) {
+      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_') || k.startsWith('glopro_'))) {
         sKeys.push(k);
       }
     }

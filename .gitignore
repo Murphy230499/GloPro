@@ -43,6 +43,7 @@ scratch/
 # Supabase temp config
 supabase/.temp/
 supabase/compiled_schema.sql
+supabase/backups/
 
 fix_appts.js
 phase7_0_production_runtime_audit.md

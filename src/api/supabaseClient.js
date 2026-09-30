@@ -18,8 +18,11 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
-        if (!queryObj || queryObj.tenant_id === undefined) {
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid && tableName !== 'bookingsetting') {
+          throw new Error(`[Security Exception] Query blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
+        if (tid && (!queryObj || queryObj.tenant_id === undefined)) {
           request = request.eq('tenant_id', tid);
         }
       }
@@ -62,8 +65,13 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
-        request = request.eq('tenant_id', tid);
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid && tableName !== 'bookingsetting') {
+          throw new Error(`[Security Exception] Query blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
+        if (tid) {
+          request = request.eq('tenant_id', tid);
+        }
       }
       
       let query = {};
@@ -133,8 +141,13 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
-        request = request.eq('tenant_id', tid);
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid && tableName !== 'bookingsetting') {
+          throw new Error(`[Security Exception] Query blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
+        if (tid) {
+          request = request.eq('tenant_id', tid);
+        }
       }
 
       const { data, error } = await request.single();
@@ -160,6 +173,9 @@ const createEntityAdapter = (tableName) => {
         let tid = getSyncTenantId();
         if (!tid && typeof window !== 'undefined') {
           tid = await resolveTenantId();
+        }
+        if (!tid && tableName !== 'appointment') {
+          throw new Error(`[Security Exception] Create blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
         }
         if (tid) p.tenant_id = tid;
       }
@@ -265,6 +281,11 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid) {
+          throw new Error(`[Security Exception] BulkCreate blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
+      }
       const ps = payloads.map(payload => {
         const p = { ...payload };
         if (tid && TENANT_SCOPED_TABLES.has(tableName) && !p.tenant_id) {
@@ -315,7 +336,10 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid) {
+          throw new Error(`[Security Exception] Update blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
         p.tenant_id = tid;
       }
 
@@ -385,7 +409,10 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid) {
+          throw new Error(`[Security Exception] Delete blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
         request = request.eq('tenant_id', tid);
       }
 
@@ -404,7 +431,10 @@ const createEntityAdapter = (tableName) => {
       if (!tid && typeof window !== 'undefined') {
         tid = await resolveTenantId();
       }
-      if (tid && TENANT_SCOPED_TABLES.has(tableName)) {
+      if (TENANT_SCOPED_TABLES.has(tableName)) {
+        if (!tid) {
+          throw new Error(`[Security Exception] DeleteMany blocked: Table '${tableName}' requires an active tenant context, but tenant_id is missing.`);
+        }
         request = request.eq('tenant_id', tid);
       }
 

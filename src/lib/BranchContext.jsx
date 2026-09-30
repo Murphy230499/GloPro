@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/lib/supabaseClient';
-import { getSyncTenantId, resolveTenantId, hasExistingTenantData } from '@/lib/tenantManager';
+import { getSyncTenantId, resolveTenantId, hasExistingTenantData, getTenantStorageKey } from '@/lib/tenantManager';
 
 const BranchContext = createContext({
   branches: [],
@@ -18,9 +18,11 @@ export const BranchProvider = ({ children }) => {
   const [branches, setBranches] = useState([]);
   const [currentBranchId, setCurrentBranchId] = useState(() => {
     if (typeof window === 'undefined') return 'all';
-    let stored = localStorage.getItem('glowpro_branch');
+    const key = getTenantStorageKey('glowpro_branch');
+    let stored = localStorage.getItem(key) || localStorage.getItem('glowpro_branch');
     // If stored branch was an old demo branch or stale, clear it
     if (stored === '55e8441d-9dc0-4d16-9a72-24a88a6f9704' || stored === '37a44557-5d1c-4f18-bc45-42073d6552be' || stored === 'demo_branch') {
+      localStorage.removeItem(key);
       localStorage.removeItem('glowpro_branch');
       stored = 'all';
     }
@@ -28,10 +30,10 @@ export const BranchProvider = ({ children }) => {
       if (stored.length === 24) {
         const hex = stored + '00000000';
         stored = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
-        localStorage.setItem('glowpro_branch', stored);
+        localStorage.setItem(key, stored);
       } else if (stored.length === 28 && stored.split('-').length === 5) { // Recover corrupted UUID from previous bug
         stored = stored + '00000000';
-        localStorage.setItem('glowpro_branch', stored);
+        localStorage.setItem(key, stored);
       }
     }
     return stored || 'all';
@@ -142,7 +144,11 @@ export const BranchProvider = ({ children }) => {
 
   const setBranch = (id) => {
     setCurrentBranchId(id);
-    if (typeof window !== 'undefined') localStorage.setItem('glowpro_branch', id);
+    if (typeof window !== 'undefined') {
+      const key = getTenantStorageKey('glowpro_branch');
+      localStorage.setItem(key, id);
+      localStorage.setItem('glowpro_branch', id);
+    }
   };
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
