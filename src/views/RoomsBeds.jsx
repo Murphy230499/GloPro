@@ -19,7 +19,7 @@ import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
 import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
-import { getTenantStorageKey } from '@/lib/tenantManager';
+import { getTenantStorageKey, resolveTenantId } from '@/lib/tenantManager';
 
 export default function RoomsBeds() {
   const { t } = useT();
@@ -70,6 +70,7 @@ export default function RoomsBeds() {
   const loadData = async () => {
     try {
       setLoading(true);
+      await resolveTenantId().catch(() => null);
       const branchFilter = currentBranchId === 'all' ? {} : { branch_id: currentBranchId };
 
       const [rData, fData, sData, stData, cData, aData] = await Promise.all([
@@ -84,7 +85,9 @@ export default function RoomsBeds() {
       // 1. Rooms: Load master tenant list
       let loadedRooms = null;
       const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
-      const cachedUnifiedRooms = localStorage.getItem(unifiedRoomsKey);
+      const cachedUnifiedRooms = localStorage.getItem(unifiedRoomsKey) ||
+                                 localStorage.getItem('gp_rooms') ||
+                                 localStorage.getItem('gp_rooms_default_');
       if (cachedUnifiedRooms !== null) {
         try { loadedRooms = JSON.parse(cachedUnifiedRooms); } catch (e) {}
       } else {
@@ -102,25 +105,75 @@ export default function RoomsBeds() {
         if (primaryBranchId) {
           loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
           localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
+          localStorage.setItem('gp_rooms', JSON.stringify(loadedRooms));
         } else {
           loadedRooms = [];
         }
       }
       setAllRooms(loadedRooms || []);
+      if (loadedRooms && loadedRooms.length > 0) {
+        localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
+        localStorage.setItem('gp_rooms', JSON.stringify(loadedRooms));
+      }
 
-      // 2. Beds: Load master tenant list
-      let loadedBeds = fData && fData.length > 0 ? fData : [];
+      // 2. Beds: Load master tenant list and merge with cached room assignments
       const unifiedBedsKey = getTenantStorageKey('gp_facilities');
-      if (loadedBeds.length === 0) {
-        const cachedUnifiedBeds = localStorage.getItem(unifiedBedsKey);
-        if (cachedUnifiedBeds) {
-          try { loadedBeds = JSON.parse(cachedUnifiedBeds); } catch (e) {}
-        } else {
-          const legacyBeds = localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
-          if (legacyBeds) {
-            try { loadedBeds = JSON.parse(legacyBeds); } catch (e) {}
-          }
+      const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+
+      let cachedBeds = [];
+      const rawCachedBeds = localStorage.getItem(unifiedBedsKey) ||
+                            localStorage.getItem('gp_facilities') ||
+                            localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
+      if (rawCachedBeds) {
+        try { cachedBeds = JSON.parse(rawCachedBeds); } catch (e) {}
+      }
+
+      let bedRoomMap = {};
+      const rawBedRoomMap = localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map');
+      if (rawBedRoomMap) {
+        try { bedRoomMap = JSON.parse(rawBedRoomMap); } catch (e) {}
+      }
+
+      // Populate bedRoomMap from cachedBeds if not already present
+      cachedBeds.forEach(b => {
+        if (b.id && b.room_id !== undefined && bedRoomMap[b.id] === undefined) {
+          bedRoomMap[b.id] = b.room_id;
         }
+      });
+
+      let loadedBeds = [];
+      if (fData && fData.length > 0) {
+        const cachedById = new Map(cachedBeds.map(b => [b.id, b]));
+        loadedBeds = fData.map(fb => {
+          const cached = cachedById.get(fb.id);
+          const assignedRoomId = bedRoomMap[fb.id] !== undefined
+            ? bedRoomMap[fb.id]
+            : (cached?.room_id !== undefined ? cached.room_id : fb.room_id || null);
+
+          return {
+            ...fb,
+            ...(cached || {}),
+            id: fb.id,
+            name: fb.name || cached?.name,
+            branch_id: fb.branch_id || cached?.branch_id,
+            room_id: assignedRoomId,
+            allow_overlap: cached?.allow_overlap ?? fb.allow_overlap ?? false,
+            applicable_services: fb.applicable_services?.length ? fb.applicable_services : (cached?.applicable_services || [])
+          };
+        });
+
+        // Keep local beds that haven't synced to backend yet
+        cachedBeds.forEach(cb => {
+          if (cb.id && !loadedBeds.some(b => b.id === cb.id)) {
+            const assignedRoomId = bedRoomMap[cb.id] !== undefined ? bedRoomMap[cb.id] : cb.room_id;
+            loadedBeds.push({ ...cb, room_id: assignedRoomId });
+          }
+        });
+      } else {
+        loadedBeds = cachedBeds.map(b => ({
+          ...b,
+          room_id: bedRoomMap[b.id] !== undefined ? bedRoomMap[b.id] : b.room_id
+        }));
       }
 
       // If salon has no beds at all anywhere and has a branch, initialize demo beds for primary branch
@@ -131,9 +184,19 @@ export default function RoomsBeds() {
         if (primaryBranchId) {
           loadedBeds = INITIAL_DEMO_BEDS.map(b => ({ ...b, branch_id: primaryBranchId }));
           localStorage.setItem(unifiedBedsKey, JSON.stringify(loadedBeds));
+          localStorage.setItem('gp_facilities', JSON.stringify(loadedBeds));
         }
       }
+
       setAllBeds(loadedBeds || []);
+      if (loadedBeds && loadedBeds.length > 0) {
+        localStorage.setItem(unifiedBedsKey, JSON.stringify(loadedBeds));
+        localStorage.setItem('gp_facilities', JSON.stringify(loadedBeds));
+      }
+      if (Object.keys(bedRoomMap).length > 0) {
+        localStorage.setItem(bedRoomMapKey, JSON.stringify(bedRoomMap));
+        localStorage.setItem('gp_bed_room_map', JSON.stringify(bedRoomMap));
+      }
 
       setServices(sData || []);
       setStaff(stData || []);
@@ -301,6 +364,7 @@ export default function RoomsBeds() {
       const updated = [...allRooms, newRoom];
       setAllRooms(updated);
       localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updated));
+      localStorage.setItem('gp_rooms', JSON.stringify(updated));
       window.dispatchEvent(new Event('gp_rooms_changed'));
       return newRoom;
     } catch (e) {
@@ -333,6 +397,7 @@ export default function RoomsBeds() {
 
       setAllRooms(updated);
       localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updated));
+      localStorage.setItem('gp_rooms', JSON.stringify(updated));
       window.dispatchEvent(new Event('gp_rooms_changed'));
     } catch (e) {
       console.error('Error updating room:', e);
@@ -349,6 +414,7 @@ export default function RoomsBeds() {
       const updatedRooms = allRooms.filter(r => r.id !== roomId);
       setAllRooms(updatedRooms);
       localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updatedRooms));
+      localStorage.setItem('gp_rooms', JSON.stringify(updatedRooms));
 
       // Unassign any beds belonging to this deleted room
       const affectedBeds = allBeds.filter(b => b.room_id === roomId);
@@ -356,10 +422,24 @@ export default function RoomsBeds() {
         const updatedBeds = allBeds.map(b => b.room_id === roomId ? { ...b, room_id: null, room_name: null } : b);
         setAllBeds(updatedBeds);
         localStorage.setItem(getTenantStorageKey('gp_facilities'), JSON.stringify(updatedBeds));
+        localStorage.setItem('gp_facilities', JSON.stringify(updatedBeds));
+
+        const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+        let bedRoomMap = {};
+        try { bedRoomMap = JSON.parse(localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map') || '{}'); } catch (e) {}
+        affectedBeds.forEach(b => {
+          bedRoomMap[b.id] = null;
+        });
+        localStorage.setItem(bedRoomMapKey, JSON.stringify(bedRoomMap));
+        localStorage.setItem('gp_bed_room_map', JSON.stringify(bedRoomMap));
 
         if (base44.entities.Facility) {
           for (const b of affectedBeds) {
-            base44.entities.Facility.update(b.id, { room_id: null }).catch(() => null);
+            base44.entities.Facility.update(b.id, {
+              name: b.name,
+              applicable_services: b.applicable_services || [],
+              branch_id: b.branch_id
+            }).catch(() => null);
           }
         }
       }
@@ -374,27 +454,44 @@ export default function RoomsBeds() {
   // 4. Handlers for Bed
   const handleSaveBed = async (bedData) => {
     try {
+      const roomObj = allRooms.find(r => r.id === bedData.room_id);
+      const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+      let bedRoomMap = {};
+      try { bedRoomMap = JSON.parse(localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map') || '{}'); } catch (e) {}
+
       if (editingBed) {
         // Update
+        const targetBranchId = roomObj?.branch_id || editingBed.branch_id || (currentBranchId !== 'all' ? currentBranchId : null);
         const updatedBed = {
           ...editingBed,
           name: bedData.name,
           room_id: bedData.room_id || null,
+          branch_id: targetBranchId,
           applicable_services: bedData.applicable_services || [],
           allow_overlap: bedData.allow_overlap
         };
 
         if (base44.entities.Facility) {
-          await base44.entities.Facility.update(editingBed.id, updatedBed).catch(() => null);
+          await base44.entities.Facility.update(editingBed.id, {
+            name: updatedBed.name,
+            applicable_services: updatedBed.applicable_services,
+            branch_id: updatedBed.branch_id,
+            is_active: true
+          }).catch(() => null);
         }
 
         const updatedList = allBeds.map(b => b.id === editingBed.id ? updatedBed : b);
         setAllBeds(updatedList);
         localStorage.setItem(getTenantStorageKey('gp_facilities'), JSON.stringify(updatedList));
+        localStorage.setItem('gp_facilities', JSON.stringify(updatedList));
+
+        bedRoomMap[editingBed.id] = bedData.room_id || null;
+        localStorage.setItem(bedRoomMapKey, JSON.stringify(bedRoomMap));
+        localStorage.setItem('gp_bed_room_map', JSON.stringify(bedRoomMap));
+
         toast.success(t('rooms_beds.update_bed_success', 'Cập nhật vị trí thành công'));
       } else {
         // Create
-        const roomObj = allRooms.find(r => r.id === bedData.room_id);
         const targetBranchId = roomObj?.branch_id || ((currentBranchId && currentBranchId !== 'all')
           ? currentBranchId
           : (branches && branches.length > 0 && branches[0].id !== 'all' ? branches[0].id : null));
@@ -411,12 +508,24 @@ export default function RoomsBeds() {
         };
 
         if (base44.entities.Facility) {
-          await base44.entities.Facility.create(newBed).catch(() => null);
+          await base44.entities.Facility.create({
+            id: newBed.id,
+            name: newBed.name,
+            applicable_services: newBed.applicable_services,
+            branch_id: newBed.branch_id,
+            is_active: true
+          }).catch(() => null);
         }
 
         const updatedList = [...allBeds, newBed];
         setAllBeds(updatedList);
         localStorage.setItem(getTenantStorageKey('gp_facilities'), JSON.stringify(updatedList));
+        localStorage.setItem('gp_facilities', JSON.stringify(updatedList));
+
+        bedRoomMap[newBed.id] = newBed.room_id || null;
+        localStorage.setItem(bedRoomMapKey, JSON.stringify(bedRoomMap));
+        localStorage.setItem('gp_bed_room_map', JSON.stringify(bedRoomMap));
+
         toast.success(t('rooms_beds.create_bed_success', 'Tạo vị trí thành công'));
       }
 
@@ -437,6 +546,14 @@ export default function RoomsBeds() {
       const updated = allBeds.filter(b => b.id !== deleteConfirm.id);
       setAllBeds(updated);
       localStorage.setItem(getTenantStorageKey('gp_facilities'), JSON.stringify(updated));
+      localStorage.setItem('gp_facilities', JSON.stringify(updated));
+
+      const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+      let bedRoomMap = {};
+      try { bedRoomMap = JSON.parse(localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map') || '{}'); } catch (e) {}
+      delete bedRoomMap[deleteConfirm.id];
+      localStorage.setItem(bedRoomMapKey, JSON.stringify(bedRoomMap));
+      localStorage.setItem('gp_bed_room_map', JSON.stringify(bedRoomMap));
       
       // Also clean up session if active
       if (bedSessions[deleteConfirm.id]) {
