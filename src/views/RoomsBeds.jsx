@@ -79,6 +79,7 @@ export default function RoomsBeds() {
 
   // Hover Card states
   const [hoveredBedId, setHoveredBedId] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ placement: 'top', align: 'center' });
   const hoverTimeoutRef = useRef(null);
 
   // Transfer Modal
@@ -906,12 +907,32 @@ export default function RoomsBeds() {
     setTransferSource(null);
   };
 
-  // Hover handlers với delay trơn tru
-  const handleBedMouseEnter = (bedId) => {
+  // Hover handlers với delay trơn tru và chống che khuất (smart popover positioning)
+  const handleBedMouseEnter = (bedId, event) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+
+    if (event?.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceAbove = rect.top;
+      const spaceBelow = window.innerHeight - rect.bottom;
+
+      // Nếu phía trên không đủ không gian (< 380px) và phía dưới rộng hơn -> tự động lật xuống dưới
+      const placement = (spaceAbove < 380 && spaceBelow > spaceAbove) ? 'bottom' : 'top';
+
+      // Chống tràn màn hình cạnh trái hoặc cạnh phải
+      let align = 'center';
+      if (rect.left < 200) {
+        align = 'left';
+      } else if (window.innerWidth - rect.right < 200) {
+        align = 'right';
+      }
+
+      setHoverPosition({ placement, align });
+    }
+
     setHoveredBedId(bedId);
   };
 
@@ -1366,12 +1387,22 @@ export default function RoomsBeds() {
                         <div
                           key={bed.id}
                           className="relative"
-                          onMouseEnter={() => handleBedMouseEnter(bed.id)}
+                          onMouseEnter={(e) => handleBedMouseEnter(bed.id, e)}
                           onMouseLeave={handleBedMouseLeave}
                         >
-                          {/* Hover Popover Card */}
+                          {/* Hover Popover Card (Hiển thị thông minh chống che khuất) */}
                           {hoveredBedId === bed.id && session && (
-                            <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
+                            <div className={`absolute z-[100] pointer-events-auto ${
+                              hoverPosition.placement === 'bottom'
+                                ? 'top-[calc(100%+8px)]'
+                                : 'bottom-[calc(100%+8px)]'
+                            } ${
+                              hoverPosition.align === 'left'
+                                ? 'left-0'
+                                : hoverPosition.align === 'right'
+                                ? 'right-0'
+                                : 'left-1/2 -translate-x-1/2'
+                            }`}>
                               <BedHoverCard
                                 bed={bed}
                                 room={group.room}

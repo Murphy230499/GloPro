@@ -120,7 +120,7 @@ export default function BedHoverCard({
     <div 
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="w-[340px] sm:w-[370px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150"
+      className="w-[360px] sm:w-[390px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150"
       style={{ filter: 'drop-shadow(0 20px 25px rgba(15, 23, 42, 0.15))' }}
     >
       {/* 1. Header: Room | Bed + Status Badge */}
@@ -250,8 +250,8 @@ export default function BedHoverCard({
         </>
       )}
 
-      {/* 5. Action Buttons (Footer) */}
-      <div className="pt-3 flex items-center justify-between gap-1.5">
+      {/* 5. Action Buttons (Footer - 3-column robust grid, never breaks layout) */}
+      <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 w-full">
         {/* Nút 1: Chuyển phòng */}
         <button
           type="button"
@@ -259,10 +259,11 @@ export default function BedHoverCard({
             e.stopPropagation();
             onTransferRoom?.(bed, session);
           }}
-          className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-blue-400 text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+          className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+          title={t('rooms_beds.transfer_room', 'Chuyển phòng')}
         >
-          <ArrowRightLeft className="w-3.5 h-3.5" />
-          <span>{t('rooms_beds.transfer_room', 'Chuyển phòng')}</span>
+          <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{t('rooms_beds.transfer_room', 'Chuyển phòng')}</span>
         </button>
 
         {/* Nút 2: Action chính theo trạng thái */}
@@ -273,10 +274,11 @@ export default function BedHoverCard({
               e.stopPropagation();
               onFinishCleaning?.(bed, session);
             }}
-            className="flex-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            title={t('rooms_beds.finish_clean_now', 'Xong dọn dẹp')}
           >
-            <Check className="w-3.5 h-3.5" />
-            <span>{t('rooms_beds.finish_clean_now', 'Xong dọn dẹp')}</span>
+            <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
+            <span className="truncate">{t('rooms_beds.finish_clean_now', 'Xong dọn')}</span>
           </button>
         ) : (status === 'waiting' || status === 'reserved') ? (
           <button
@@ -285,10 +287,11 @@ export default function BedHoverCard({
               e.stopPropagation();
               onStartServing?.(bed, session);
             }}
-            className="flex-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            title={t('rooms_beds.start_serving', 'Bắt đầu phục vụ')}
           >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>{t('rooms_beds.start_serving', 'Bắt đầu phục vụ')}</span>
+            <Play className="w-3.5 h-3.5 shrink-0 fill-current" />
+            <span className="truncate">{status === 'waiting' ? 'Phục vụ ngay' : 'Bắt đầu'}</span>
           </button>
         ) : (
           <button
@@ -297,10 +300,11 @@ export default function BedHoverCard({
               e.stopPropagation();
               onCheckout?.(bed, session);
             }}
-            className="flex-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            title={t('rooms_beds.checkout', 'Thanh toán')}
           >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>{t('rooms_beds.checkout', 'Thanh toán')}</span>
+            <CreditCard className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{t('rooms_beds.checkout', 'Thanh toán')}</span>
           </button>
         )}
 
@@ -311,10 +315,11 @@ export default function BedHoverCard({
             e.stopPropagation();
             onReleaseBed?.(bed, session);
           }}
-          className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+          className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+          title={t('rooms_beds.release_bed', 'Trả phòng')}
         >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>{t('rooms_beds.release_bed', 'Trả phòng')}</span>
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{t('rooms_beds.release_bed', 'Trả phòng')}</span>
         </button>
       </div>
     </div>
