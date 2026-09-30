@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/Layout';
 import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS, formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
 import RoomModal from '@/components/rooms-beds/RoomModal';
+import RoomManagerModal from '@/components/rooms-beds/RoomManagerModal';
 import BedModal from '@/components/rooms-beds/BedModal';
 import DeleteConfirmModal from '@/components/rooms-beds/DeleteConfirmModal';
 import BedDetailDrawer from '@/components/rooms-beds/BedDetailDrawer';
@@ -34,12 +35,12 @@ export default function RoomsBeds() {
   // Filtered views strictly for current selected branch
   const rooms = useMemo(() => {
     if (!currentBranchId || currentBranchId === 'all') return allRooms;
-    return allRooms.filter(r => r.branch_id === currentBranchId);
+    return allRooms.filter(r => !r.branch_id || r.branch_id === currentBranchId);
   }, [allRooms, currentBranchId]);
 
   const beds = useMemo(() => {
     if (!currentBranchId || currentBranchId === 'all') return allBeds;
-    return allBeds.filter(b => b.branch_id === currentBranchId);
+    return allBeds.filter(b => !b.branch_id || b.branch_id === currentBranchId);
   }, [allBeds, currentBranchId]);
 
   const [services, setServices] = useState([]);
@@ -55,6 +56,7 @@ export default function RoomsBeds() {
 
   // Modals state
   const [roomModalOpen, setRoomModalOpen] = useState(false);
+  const [editingRoomForModal, setEditingRoomForModal] = useState(null);
   const [bedModalOpen, setBedModalOpen] = useState(false);
   const [editingBed, setEditingBed] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: '', id: null, title: '' });
@@ -80,26 +82,28 @@ export default function RoomsBeds() {
       ]);
 
       // 1. Rooms: Load master tenant list
-      let loadedRooms = [];
+      let loadedRooms = null;
       const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
       const cachedUnifiedRooms = localStorage.getItem(unifiedRoomsKey);
-      if (cachedUnifiedRooms) {
+      if (cachedUnifiedRooms !== null) {
         try { loadedRooms = JSON.parse(cachedUnifiedRooms); } catch (e) {}
       } else {
         const legacyRooms = localStorage.getItem(getTenantStorageKey('gp_rooms', currentBranchId));
-        if (legacyRooms) {
+        if (legacyRooms !== null) {
           try { loadedRooms = JSON.parse(legacyRooms); } catch (e) {}
         }
       }
 
-      // If salon has no rooms at all anywhere and has a branch, initialize demo rooms for primary branch
-      if (!loadedRooms || loadedRooms.length === 0) {
+      // If salon has never initialized rooms anywhere and has a branch, initialize demo rooms for primary branch
+      if (loadedRooms === null) {
         const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
           ? branches[0].id
           : (currentBranchId !== 'all' ? currentBranchId : null);
         if (primaryBranchId) {
           loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
           localStorage.setItem(unifiedRoomsKey, JSON.stringify(loadedRooms));
+        } else {
+          loadedRooms = [];
         }
       }
       setAllRooms(loadedRooms || []);
@@ -207,6 +211,24 @@ export default function RoomsBeds() {
     return () => window.removeEventListener('gp_appointment_updated', handleApptUpdate);
   }, [currentBranchId]);
 
+  // Listen for room changes across views
+  useEffect(() => {
+    const handleRoomsChanged = () => {
+      const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
+      const cachedRooms = localStorage.getItem(unifiedRoomsKey);
+      if (cachedRooms) {
+        try { setAllRooms(JSON.parse(cachedRooms)); } catch (e) {}
+      }
+      const unifiedBedsKey = getTenantStorageKey('gp_facilities');
+      const cachedBeds = localStorage.getItem(unifiedBedsKey);
+      if (cachedBeds) {
+        try { setAllBeds(JSON.parse(cachedBeds)); } catch (e) {}
+      }
+    };
+    window.addEventListener('gp_rooms_changed', handleRoomsChanged);
+    return () => window.removeEventListener('gp_rooms_changed', handleRoomsChanged);
+  }, []);
+
   // 2. Real-time Clock Timer for Progress & "Sắp trống" (< 10 mins remaining)
   const [currentTick, setCurrentTick] = useState(Date.now());
   useEffect(() => {
@@ -257,15 +279,17 @@ export default function RoomsBeds() {
   }, [bedSessions, beds, currentTick]);
 
   // 3. Handlers for Room
-  const handleCreateRoom = async (roomName) => {
+  const handleCreateRoom = async (roomData) => {
     try {
-      const targetBranchId = (currentBranchId && currentBranchId !== 'all')
+      const roomObj = typeof roomData === 'string' ? { name: roomData } : (roomData || {});
+      const targetBranchId = roomObj.branch_id || ((currentBranchId && currentBranchId !== 'all')
         ? currentBranchId
-        : (branches && branches.length > 0 && branches[0].id !== 'all' ? branches[0].id : null);
+        : (branches && branches.length > 0 && branches[0].id !== 'all' ? branches[0].id : null));
 
       const newRoom = {
-        id: `room_${Date.now()}`,
-        name: roomName,
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? `room_${crypto.randomUUID().slice(0, 8)}` : `room_${Date.now()}`,
+        name: (roomObj.name || '').trim(),
+        color: roomObj.color || '#3B82F6',
         branch_id: targetBranchId,
         display_order: allRooms.length + 1
       };
@@ -277,10 +301,73 @@ export default function RoomsBeds() {
       const updated = [...allRooms, newRoom];
       setAllRooms(updated);
       localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updated));
-      setRoomModalOpen(false);
-      toast.success(t('rooms_beds.create_room_success', 'Tạo phòng thành công'));
+      window.dispatchEvent(new Event('gp_rooms_changed'));
+      return newRoom;
     } catch (e) {
-      toast.error('Lỗi khi tạo phòng');
+      console.error('Error creating room:', e);
+      throw e;
+    }
+  };
+
+  const handleUpdateRoom = async (roomId, roomData) => {
+    try {
+      const updated = allRooms.map(r => {
+        if (r.id === roomId) {
+          return {
+            ...r,
+            name: (roomData.name || r.name).trim(),
+            color: roomData.color || r.color || '#3B82F6',
+            branch_id: roomData.branch_id !== undefined ? roomData.branch_id : r.branch_id
+          };
+        }
+        return r;
+      });
+
+      if (base44.entities.Room) {
+        await base44.entities.Room.update(roomId, {
+          name: (roomData.name || '').trim(),
+          color: roomData.color,
+          branch_id: roomData.branch_id
+        }).catch(() => null);
+      }
+
+      setAllRooms(updated);
+      localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updated));
+      window.dispatchEvent(new Event('gp_rooms_changed'));
+    } catch (e) {
+      console.error('Error updating room:', e);
+      throw e;
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    try {
+      if (base44.entities.Room) {
+        await base44.entities.Room.delete(roomId).catch(() => null);
+      }
+
+      const updatedRooms = allRooms.filter(r => r.id !== roomId);
+      setAllRooms(updatedRooms);
+      localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updatedRooms));
+
+      // Unassign any beds belonging to this deleted room
+      const affectedBeds = allBeds.filter(b => b.room_id === roomId);
+      if (affectedBeds.length > 0) {
+        const updatedBeds = allBeds.map(b => b.room_id === roomId ? { ...b, room_id: null, room_name: null } : b);
+        setAllBeds(updatedBeds);
+        localStorage.setItem(getTenantStorageKey('gp_facilities'), JSON.stringify(updatedBeds));
+
+        if (base44.entities.Facility) {
+          for (const b of affectedBeds) {
+            base44.entities.Facility.update(b.id, { room_id: null }).catch(() => null);
+          }
+        }
+      }
+
+      window.dispatchEvent(new Event('gp_rooms_changed'));
+    } catch (e) {
+      console.error('Error deleting room:', e);
+      throw e;
     }
   };
 
@@ -530,41 +617,41 @@ export default function RoomsBeds() {
           </p>
         </div>
 
-        {activeTab === 'settings' ? (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setRoomModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
-            >
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span>{t('rooms_beds.add_room', 'Thêm phòng')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingBed(null);
-                setBedModalOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t('rooms_beds.add_bed', 'Thêm vị trí')}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => loadData()}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
-              title={t('common.refresh', 'Làm mới')}
-            >
-              <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{t('common.refresh', 'Làm mới')}</span>
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => loadData()}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
+            title={t('common.refresh', 'Làm mới')}
+          >
+            <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{t('common.refresh', 'Làm mới')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEditingRoomForModal(null);
+              setRoomModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-xs transition-colors cursor-pointer"
+          >
+            <Building2 className="w-4 h-4 text-blue-600" />
+            <span>{t('rooms_beds.manage_rooms', 'Quản lý phòng')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEditingBed(null);
+              setBedModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('rooms_beds.add_bed', 'Thêm vị trí')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Navigation Tab Bar (Standard GloPro Module Style) */}
@@ -652,8 +739,11 @@ export default function RoomsBeds() {
                   {/* Room Header */}
                   <div className="flex items-center justify-between">
                     <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                      {group.room.name}
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
+                        style={{ backgroundColor: group.room.color || '#3B82F6' }}
+                      />
+                      <span>{group.room.name}</span>
                       {currentBranchId === 'all' && group.room.branch_id && (
                         <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-lg">
                           {branches.find(b => b.id === group.room.branch_id)?.name || 'Chi nhánh'}
@@ -661,11 +751,61 @@ export default function RoomsBeds() {
                       )}
                       <span className="text-xs font-normal text-slate-400">({group.beds.length} {t('rooms_beds.unit_bed', 'vị trí')})</span>
                     </h2>
+
+                    {group.room.id !== '__unassigned' && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingBed({ room_id: group.room.id });
+                            setBedModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          title={t('rooms_beds.add_bed_to_room', 'Thêm vị trí vào phòng này')}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">{t('rooms_beds.add_bed', 'Thêm vị trí')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingRoomForModal(group.room);
+                            setRoomModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title={t('rooms_beds.edit_room', 'Chỉnh sửa phòng')}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Bed Cards Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {group.beds.map(bed => {
+                  {/* Bed Cards Grid or Empty State */}
+                  {group.beds.length === 0 ? (
+                    <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 flex flex-col items-center justify-center text-center py-7">
+                      <DoorOpen className="w-7 h-7 text-slate-300 mb-1.5" />
+                      <p className="text-xs font-semibold text-slate-600">
+                        {t('rooms_beds.room_empty_beds', 'Phòng chưa có vị trí (giường / ghế)')}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {t('rooms_beds.room_empty_hint', 'Bấm nút bên dưới để thêm vị trí cho phòng này')}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBed({ room_id: group.room.id });
+                          setBedModalOpen(true);
+                        }}
+                        className="mt-3 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{t('rooms_beds.add_bed', 'Thêm vị trí')}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {group.beds.map(bed => {
                       const session = enrichedBedSessions[bed.id];
                       const isOccupied = Boolean(session);
                       const isNearlyFinished = session?.status === 'nearly_finished';
@@ -823,6 +963,7 @@ export default function RoomsBeds() {
                       );
                     })}
                   </div>
+                )}
                 </div>
               ))
             )}
@@ -996,12 +1137,21 @@ export default function RoomsBeds() {
         )}
       </div>
 
-      {/* MODALS */}
-      {/* 1. Modal Thêm phòng */}
-      <RoomModal
+      {/* 1. Modal Quản lý phòng (Tạo mới, sửa, xoá phòng) */}
+      <RoomManagerModal
         open={roomModalOpen}
-        onClose={() => setRoomModalOpen(false)}
-        onSave={handleCreateRoom}
+        onClose={() => {
+          setRoomModalOpen(false);
+          setEditingRoomForModal(null);
+        }}
+        branchId={currentBranchId}
+        branches={branches}
+        allRooms={allRooms}
+        allBeds={allBeds}
+        onSaveRoom={handleCreateRoom}
+        onUpdateRoom={handleUpdateRoom}
+        onDeleteRoom={handleDeleteRoom}
+        initialEditingRoom={editingRoomForModal}
       />
 
       {/* 2. Modal Thêm/Sửa Giường */}
