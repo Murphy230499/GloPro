@@ -25,6 +25,7 @@ export default function BedHoverCard({
   session,
   status = 'in_progress', // 'waiting' | 'reserved' | 'nearly_finished' | 'in_progress' | 'overtime' | 'cleaning'
   cleaningInfo = null,
+  staff = [],
   onTransferRoom,
   onStartServing,
   onCheckout,
@@ -109,6 +110,57 @@ export default function BedHoverCard({
         price: session?.price || 0
       }];
 
+  // Extract all distinct technicians working on this bed
+  const assignedStaffList = React.useMemo(() => {
+    const map = new Map();
+    (servicesList || []).forEach(svc => {
+      const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
+      const sId = svc.staff_id || svc.staff?.id;
+      if (!sId && !sName) return;
+
+      const matched = (staff || []).find(st => 
+        (sId && st.id === sId) || 
+        (sName && (st.full_name === sName || st.name === sName))
+      );
+
+      const key = matched?.id || sId || sName;
+      const finalName = matched?.full_name || matched?.name || sName;
+      const finalAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
+      const finalColor = svc.staff_color || matched?.avatar_color || '#3B82F6';
+
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          name: finalName,
+          avatar_url: finalAvatar,
+          color: finalColor,
+          services: [svc.service_name || svc.name || 'Dịch vụ']
+        });
+      } else {
+        map.get(key).services.push(svc.service_name || svc.name || 'Dịch vụ');
+      }
+    });
+
+    // Fallback to session level staff
+    if (map.size === 0 && (session?.staff_name || session?.staff_id)) {
+      const sName = session?.staff_name || '';
+      const matched = (staff || []).find(st => 
+        (session?.staff_id && st.id === session.staff_id) || 
+        (sName && (st.full_name === sName || st.name === sName))
+      );
+      const key = matched?.id || session?.staff_id || sName;
+      map.set(key, {
+        id: key,
+        name: matched?.full_name || matched?.name || sName,
+        avatar_url: matched?.avatar_url || null,
+        color: matched?.avatar_color || '#3B82F6',
+        services: []
+      });
+    }
+
+    return Array.from(map.values());
+  }, [servicesList, session, staff]);
+
   // Time metrics
   const startTime = session?.start_time || '08:00';
   const endTime = session?.end_time || '09:15';
@@ -191,28 +243,87 @@ export default function BedHoverCard({
             </div>
           </div>
 
-          {/* 3. Services List */}
-          <div className="py-2.5 space-y-2 border-b border-slate-100 max-h-[140px] overflow-y-auto custom-scrollbar">
-            {servicesList.map((svc, idx) => (
-              <div key={idx} className="flex items-start justify-between text-xs gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-slate-800 truncate">
-                    {svc.service_name || svc.name}
-                    {svc.is_from_package && (
-                      <span className="ml-1 text-[10px] text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded font-normal">
-                        Gói
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
-                    {svc.staff_name || svc.staff?.name || 'Chưa gán KTV'}
+          {/* 3. Services List & Technicians with Avatars */}
+          <div className="py-2.5 border-b border-slate-100">
+            {/* Header: Service count & Multi-Staff summary */}
+            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
+              <span className="uppercase tracking-wider">
+                Dịch vụ & KTV ({servicesList.length})
+              </span>
+              {assignedStaffList.length > 1 ? (
+                <div className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 font-bold">
+                  <span>{assignedStaffList.length} KTV phối hợp</span>
+                  <div className="flex -space-x-1.5">
+                    {assignedStaffList.map((st, i) => (
+                      <Avatar
+                        key={i}
+                        src={st.avatar_url}
+                        name={st.name}
+                        size={18}
+                        ring
+                        color={st.color}
+                        title={`${st.name} (${st.services.join(', ')})`}
+                      />
+                    ))}
                   </div>
                 </div>
-                <div className="font-bold text-slate-900 shrink-0">
-                  {svc.is_from_package ? '0 ₫' : formatVND(svc.price || 0)}
-                </div>
-              </div>
-            ))}
+              ) : assignedStaffList.length === 1 ? (
+                <span className="text-slate-500 font-normal">1 KTV phụ trách</span>
+              ) : null}
+            </div>
+
+            {/* List of services with individual staff avatar */}
+            <div className="space-y-2 max-h-[145px] overflow-y-auto custom-scrollbar pr-0.5">
+              {servicesList.map((svc, idx) => {
+                const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
+                const matched = (staff || []).find(st => 
+                  (svc.staff_id && st.id === svc.staff_id) || 
+                  (sName && (st.full_name === sName || st.name === sName))
+                );
+                const staffAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
+                const staffName = matched?.full_name || matched?.name || sName;
+                const staffColor = svc.staff_color || matched?.avatar_color || '#3B82F6';
+
+                return (
+                  <div key={idx} className="flex items-start justify-between text-xs gap-2 p-2 rounded-xl bg-slate-50/80 border border-slate-100/90 hover:bg-slate-50 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-slate-800 truncate">
+                        {svc.service_name || svc.name}
+                        {svc.is_from_package && (
+                          <span className="ml-1 text-[10px] text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded font-normal">
+                            Gói
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Technician with Avatar */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {staffName ? (
+                          <div className="inline-flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
+                            <Avatar
+                              src={staffAvatar}
+                              name={staffName}
+                              size={18}
+                              color={staffColor}
+                              className="shrink-0"
+                            />
+                            <span className="font-medium text-slate-700 truncate max-w-[150px]" title={staffName}>
+                              {staffName}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">Chưa gán KTV</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="font-bold text-slate-900 shrink-0 text-right pt-0.5">
+                      {svc.is_from_package ? '0 ₫' : formatVND(svc.price || 0)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* 4. Timeline & Progress Bar */}

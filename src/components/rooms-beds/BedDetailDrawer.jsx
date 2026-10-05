@@ -401,12 +401,21 @@ export default function BedDetailDrawer({
                             <div className="font-bold text-xs text-slate-800 truncate">{srv.name || srv.service_name}</div>
                             <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
                               <span>{srv.duration || srv.duration_minutes || 30} {t('common.minutes', 'phút')}</span>
-                              {srv.staff_name && (
-                                <>
-                                  <span className="text-slate-300">•</span>
-                                  <span className="text-blue-600 font-medium">{t('rooms_beds.staff_tag', 'KTV')}: {srv.staff_name}</span>
-                                </>
-                              )}
+                              {srv.staff_name && (() => {
+                                const sName = srv.staff_name;
+                                const matched = (staff || []).find(st => (srv.staff_id && st.id === srv.staff_id) || (st.full_name === sName || st.name === sName));
+                                const avatar = srv.staff_avatar || matched?.avatar_url || null;
+                                const color = srv.staff_color || matched?.avatar_color || '#3B82F6';
+                                return (
+                                  <>
+                                    <span className="text-slate-300">•</span>
+                                    <div className="inline-flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-200/80">
+                                      <Avatar src={avatar} name={sName} size={16} color={color} />
+                                      <span className="text-slate-700 font-medium">{sName}</span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
                           <div className="font-bold text-xs text-slate-800 shrink-0">

@@ -20,6 +20,7 @@ import QuickAssignBedModal from '@/components/rooms-beds/QuickAssignBedModal';
 import BedHoverCard from '@/components/rooms-beds/BedHoverCard';
 import BedTransferModal from '@/components/rooms-beds/BedTransferModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
+import Avatar from '@/components/Avatar';
 import { transferBedSession, releaseCustomerBedSessions } from '@/lib/bedSessionHelpers';
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow, checkSessionOvertime } from '@/lib/bedConflictHelper';
 import { getTenantStorageKey, resolveTenantId } from '@/lib/tenantManager';
@@ -1383,6 +1384,57 @@ export default function RoomsBeds() {
                         }
                       }
 
+                      // Extract staff members working on this bed
+                      const bedStaffList = (() => {
+                        if (!session) return [];
+                        const map = new Map();
+                        (session.services || []).forEach(svc => {
+                          const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
+                          const sId = svc.staff_id || svc.staff?.id;
+                          if (!sId && !sName) return;
+
+                          const matched = (staff || []).find(st => 
+                            (sId && st.id === sId) || 
+                            (sName && (st.full_name === sName || st.name === sName))
+                          );
+
+                          const key = matched?.id || sId || sName;
+                          const finalName = matched?.full_name || matched?.name || sName;
+                          const finalAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
+                          const finalColor = svc.staff_color || matched?.avatar_color || '#3B82F6';
+
+                          if (!map.has(key)) {
+                            map.set(key, {
+                              id: key,
+                              name: finalName,
+                              avatar_url: finalAvatar,
+                              color: finalColor,
+                              services: [svc.service_name || svc.name || 'Dịch vụ']
+                            });
+                          } else {
+                            map.get(key).services.push(svc.service_name || svc.name || 'Dịch vụ');
+                          }
+                        });
+
+                        if (map.size === 0 && (session.staff_name || session.staff_id)) {
+                          const sName = session.staff_name || '';
+                          const matched = (staff || []).find(st => 
+                            (session.staff_id && st.id === session.staff_id) || 
+                            (sName && (st.full_name === sName || st.name === sName))
+                          );
+                          const key = matched?.id || session.staff_id || sName;
+                          map.set(key, {
+                            id: key,
+                            name: matched?.full_name || matched?.name || sName,
+                            avatar_url: matched?.avatar_url || null,
+                            color: matched?.avatar_color || '#3B82F6',
+                            services: []
+                          });
+                        }
+
+                        return Array.from(map.values());
+                      })();
+
                       return (
                         <div
                           key={bed.id}
@@ -1409,6 +1461,7 @@ export default function RoomsBeds() {
                                 session={session}
                                 status={session.status}
                                 cleaningInfo={session.cleaning_info}
+                                staff={staff}
                                 onTransferRoom={(b, s) => {
                                   setTransferSource({ bed: b, room: group.room, session: s });
                                   setTransferModalOpen(true);
@@ -1466,6 +1519,55 @@ export default function RoomsBeds() {
                                   <div className="text-xs font-semibold text-slate-800 truncate">
                                     {t('rooms_beds.customer', 'Khách Hàng')}: <span className="text-slate-900">{session.customer?.name || session.customer_name || t('rooms_beds.walk_in_customer', 'Khách vãng lai')}</span>
                                   </div>
+
+                                  {/* Staff display with avatar */}
+                                  <div className="flex items-center gap-1.5 py-0.5 min-w-0">
+                                    <span className="text-[11px] text-slate-400 font-medium shrink-0">KTV:</span>
+                                    {bedStaffList.length === 1 ? (
+                                      <div className="flex items-center gap-1.5 min-w-0 bg-slate-50 border border-slate-200/70 px-2 py-0.5 rounded-lg max-w-full">
+                                        <Avatar
+                                          src={bedStaffList[0].avatar_url}
+                                          name={bedStaffList[0].name}
+                                          size={18}
+                                          color={bedStaffList[0].color}
+                                          className="shrink-0"
+                                        />
+                                        <span className="text-xs font-semibold text-slate-700 truncate" title={bedStaffList[0].name}>
+                                          {bedStaffList[0].name}
+                                        </span>
+                                      </div>
+                                    ) : bedStaffList.length > 1 ? (
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <div className="flex -space-x-2 shrink-0">
+                                          {bedStaffList.slice(0, 3).map((st, i) => (
+                                            <Avatar
+                                              key={i}
+                                              src={st.avatar_url}
+                                              name={st.name}
+                                              size={20}
+                                              ring
+                                              color={st.color}
+                                              title={`${st.name} (${st.services.join(', ')})`}
+                                            />
+                                          ))}
+                                          {bedStaffList.length > 3 && (
+                                            <div 
+                                              className="w-5 h-5 rounded-full bg-slate-700 text-white font-bold text-[9px] flex items-center justify-center ring-2 ring-white shrink-0"
+                                              title={bedStaffList.slice(3).map(s => s.name).join(', ')}
+                                            >
+                                              +{bedStaffList.length - 3}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <span className="text-xs font-semibold text-blue-700 truncate" title={bedStaffList.map(s => s.name).join(', ')}>
+                                          {bedStaffList.length} KTV phối hợp
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 italic">Chưa gán</span>
+                                    )}
+                                  </div>
+
                                   <div className="text-[11px] text-slate-500 font-medium">
                                     {t('rooms_beds.start', 'Bắt đầu')}: <span className="font-mono text-slate-700">{session.start_time}</span>
                                     <span className="mx-2 text-slate-300">|</span>

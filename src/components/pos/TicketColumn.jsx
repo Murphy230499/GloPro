@@ -752,24 +752,64 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                     </div>
                   
                   {/* Package Services */}
-                  <div className="p-2 space-y-0">
+                  <div className="p-3 space-y-2.5">
                     {entries.map(({ item: x, index: i }, idx) => (
-                      <div key={i} className="flex items-start justify-between p-4 bg-white">
-                        <div className="flex-1 pr-4 flex flex-col gap-3">
-                          <div className="font-medium text-[16px] text-slate-800">{x.name}</div>
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-slate-500 text-[14px] shrink-0">{x.qty * 30} {t('common.minutes', 'phút')} &bull;</span>
-                            <div className="w-[190px] -mt-1.5">
-                              <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} color="slate-600" hideRequestedCheckbox={true} />
+                      <div key={i} className="p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:border-slate-200/80 transition-all">
+                        {/* Top: Name, duration, price */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-sm text-slate-800 truncate" title={x.name}>
+                              {x.name}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-medium mt-0.5 flex items-center gap-1">
+                              <span>⏱️</span>
+                              <span>{x.qty * 30} {t('common.minutes', 'phút')}</span>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end">
-                          <div className="flex items-center gap-1.5 mt-1">
+                          <div className="text-right shrink-0">
                             {x.originalPrice > x.price && (
-                              <span className="text-[15px] text-slate-400 line-through">{formatVND(x.originalPrice * x.qty)}</span>
+                              <span className="text-[11px] text-slate-400 line-through mr-1.5 leading-none">{formatVND(x.originalPrice * x.qty)}</span>
                             )}
-                            <span className="font-medium text-[15px] text-slate-800">{formatVND((x.price || 0) * (x.qty || 1))}</span>
+                            <span className="font-extrabold text-sm text-emerald-600 leading-none">{formatVND((x.price || 0) * (x.qty || 1))}</span>
+                          </div>
+                        </div>
+
+                        {/* Staff & Facility Pickers — unified layout */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-1.5">
+                          {/* Staff row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1 shrink-0">
+                              <span>👤</span>
+                              <span>{t('pos.ticket.assign_staff', 'KTV')}:</span>
+                            </span>
+                            <div className="w-[220px] max-w-[72%] shrink-0">
+                              <StaffAssignPicker
+                                staff={staff}
+                                value={x.staff_id || ''}
+                                isRequested={x.is_customer_requested || false}
+                                onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })}
+                                color="emerald-500"
+                                placeholder="— Chọn KTV —"
+                                hideRequestedCheckbox={true}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Facility row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1 shrink-0">
+                              <span>🛏️</span>
+                              <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
+                            </span>
+                            <div className="w-[220px] max-w-[72%] shrink-0">
+                              <FacilityAssignPicker
+                                value={x.facility_id || ''}
+                                onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
+                                facilities={effectiveFacilities}
+                                placeholder="— Chọn vị trí —"
+                                buttonSize="xs"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1283,7 +1323,7 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                               <span className="font-medium text-xs text-slate-700 truncate max-w-[240px]">{x.name}</span>
                               <span className="text-[10px] text-slate-400 font-semibold shrink-0">x{x.qty}</span>
                             </div>
-                            <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} color="emerald-500" />
+                            <StaffAssignPicker staff={staff} value={x.staff_id} isRequested={x.is_customer_requested} onChange={(id, name, req) => updateCart(i, { staff_id: id, staff_name: name, is_customer_requested: req })} color="emerald-500" placeholder="— Chọn KTV —" />
                           </div>
                         ))}
                       </div>

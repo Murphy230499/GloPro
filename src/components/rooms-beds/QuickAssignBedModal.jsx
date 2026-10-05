@@ -235,6 +235,8 @@ export default function QuickAssignBedModal({
         duration_minutes: item.duration_minutes || sObj.duration_minutes || sObj.duration || 30,
         staff_id: item.staff_id || null,
         staff_name: stObj.full_name || stObj.name || '',
+        staff_avatar: stObj.avatar_url || stObj.photo_url || stObj.avatar || null,
+        staff_color: stObj.avatar_color || '#3B82F6',
         is_from_package: Boolean(item.is_from_package),
         customer_package_id: item.customer_package_id || null,
         customer_treatment_id: item.customer_treatment_id || null,

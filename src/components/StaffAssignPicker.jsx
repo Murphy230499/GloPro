@@ -11,7 +11,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
   const staffList = staff || [];
   const selected = staffList.find((s) => s.id === value);
   const selectedName = selected ? (selected.full_name || selected.name || 'Nhân viên') : '';
-  const displayPlaceholder = placeholder || t('pos.ticket.select_staff_placeholder', '— Phân KTV —');
+  const displayPlaceholder = placeholder || t('rooms_beds.select_staff', '— Chọn KTV —');
 
   const handleToggle = (e) => {
     if (open) {
@@ -25,10 +25,17 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
     // Dropdown is max-h-56 which is 224px. We need around 240px space.
     const openUp = spaceBelow < 245 && spaceAbove > spaceBelow;
 
+    // Ensure dropdown stays within viewport bounds horizontally
+    const menuWidth = Math.max(rect.width, 220);
+    let left = rect.left;
+    if (left + menuWidth > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - menuWidth - 12);
+    }
+
     setCoords({
       top: openUp ? rect.top - 4 : rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
+      left,
+      width: menuWidth,
       openUp
     });
     setOpen(true);
@@ -53,17 +60,19 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
       <button
         type="button"
         onClick={handleToggle}
-        className={`w-full flex items-center gap-2 px-2.5 h-7 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none ${getFocusBorderClass()} transition-colors cursor-pointer`}
+        className={`w-full flex items-center justify-between gap-1.5 px-2.5 h-7.5 sm:h-8 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none ${getFocusBorderClass()} transition-colors cursor-pointer select-none text-left`}
       >
-        {selected ? (
-          <>
-            <Avatar src={selected.avatar_url} name={selectedName} size={20} color={selected.avatar_color} />
-            <span className="font-medium truncate">{selectedName}</span>
-          </>
-        ) : (
-          <span className="text-slate-400">{displayPlaceholder}</span>
-        )}
-        <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-400 shrink-0 mr-1" />
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {selected ? (
+            <>
+              <Avatar src={selected.avatar_url} name={selectedName} size={18} color={selected.avatar_color} />
+              <span className="font-semibold text-slate-700 truncate">{selectedName}</span>
+            </>
+          ) : (
+            <span className="text-slate-400 truncate whitespace-nowrap">{displayPlaceholder}</span>
+          )}
+        </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 ml-1 transition-transform ${open ? 'rotate-180 text-emerald-600' : ''}`} />
       </button>
       {selected && !hideRequestedCheckbox && (
         <label className="flex items-center gap-1.5 cursor-pointer select-none pl-1 mt-1.5 mb-0.5 py-0.5 group">
@@ -84,7 +93,7 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
             style={{
               top: `${coords.top}px`,
               left: `${coords.left}px`,
-              minWidth: `${Math.max(coords.width, 240)}px`
+              width: `${coords.width}px`
             }}
           >
             <button
