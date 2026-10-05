@@ -1384,11 +1384,16 @@ export default function RoomsBeds() {
                         }
                       }
 
-                      // Extract staff members working on this bed
+                      // Extract staff members assigned strictly to this bed position
                       const bedStaffList = (() => {
                         if (!session) return [];
                         const map = new Map();
-                        (session.services || []).forEach(svc => {
+                        // Only include services assigned to this specific bed
+                        const bedServices = (session.services || []).filter(svc => 
+                          !svc.bed_id || String(svc.bed_id) === String(bed.id)
+                        );
+
+                        bedServices.forEach(svc => {
                           const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
                           const sId = svc.staff_id || svc.staff?.id;
                           if (!sId && !sName) return;
@@ -1416,6 +1421,7 @@ export default function RoomsBeds() {
                           }
                         });
 
+                        // Fallback to session level staff if services did not specify staff
                         if (map.size === 0 && (session.staff_name || session.staff_id)) {
                           const sName = session.staff_name || '';
                           const matched = (staff || []).find(st => 
@@ -1433,6 +1439,24 @@ export default function RoomsBeds() {
                         }
 
                         return Array.from(map.values());
+                      })();
+
+                      // Staff assigned to upcoming appointment for this bed
+                      const upcomingStaff = (() => {
+                        if (!windowInfo?.nextAppt) return null;
+                        const appt = windowInfo.nextAppt;
+                        const sName = appt.staff_name || '';
+                        const sId = appt.staff_id;
+                        if (!sId && !sName) return null;
+                        const matched = (staff || []).find(st => 
+                          (sId && st.id === sId) || 
+                          (sName && (st.full_name === sName || st.name === sName))
+                        );
+                        return {
+                          name: matched?.full_name || matched?.name || sName,
+                          avatar_url: matched?.avatar_url || null,
+                          color: matched?.avatar_color || '#3B82F6'
+                        };
                       })();
 
                       return (
@@ -1520,52 +1544,33 @@ export default function RoomsBeds() {
                                     {t('rooms_beds.customer', 'Khách Hàng')}: <span className="text-slate-900">{session.customer?.name || session.customer_name || t('rooms_beds.walk_in_customer', 'Khách vãng lai')}</span>
                                   </div>
 
-                                  {/* Staff display with avatar */}
-                                  <div className="flex items-center gap-1.5 py-0.5 min-w-0">
-                                    <span className="text-[11px] text-slate-400 font-medium shrink-0">KTV:</span>
-                                    {bedStaffList.length === 1 ? (
-                                      <div className="flex items-center gap-1.5 min-w-0 bg-slate-50 border border-slate-200/70 px-2 py-0.5 rounded-lg max-w-full">
-                                        <Avatar
-                                          src={bedStaffList[0].avatar_url}
-                                          name={bedStaffList[0].name}
-                                          size={18}
-                                          color={bedStaffList[0].color}
-                                          className="shrink-0"
-                                        />
-                                        <span className="text-xs font-semibold text-slate-700 truncate" title={bedStaffList[0].name}>
-                                          {bedStaffList[0].name}
-                                        </span>
-                                      </div>
-                                    ) : bedStaffList.length > 1 ? (
-                                      <div className="flex items-center gap-1.5 min-w-0">
-                                        <div className="flex -space-x-2 shrink-0">
-                                          {bedStaffList.slice(0, 3).map((st, i) => (
+                                  {/* Thẻ nhân viên được xếp vào vị trí này */}
+                                  <div className="py-0.5 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                      <span className="text-[11px] text-slate-400 font-medium shrink-0">KTV:</span>
+                                      {bedStaffList.length === 0 ? (
+                                        <span className="text-[11px] text-slate-400 italic">Chưa gán</span>
+                                      ) : (
+                                        bedStaffList.map((st) => (
+                                          <div
+                                            key={st.id}
+                                            className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-2xs max-w-full transition-colors"
+                                            title={`${st.name}${st.services?.length ? ` - ${st.services.join(', ')}` : ''}`}
+                                          >
                                             <Avatar
-                                              key={i}
                                               src={st.avatar_url}
                                               name={st.name}
-                                              size={20}
-                                              ring
+                                              size={18}
                                               color={st.color}
-                                              title={`${st.name} (${st.services.join(', ')})`}
+                                              className="shrink-0"
                                             />
-                                          ))}
-                                          {bedStaffList.length > 3 && (
-                                            <div 
-                                              className="w-5 h-5 rounded-full bg-slate-700 text-white font-bold text-[9px] flex items-center justify-center ring-2 ring-white shrink-0"
-                                              title={bedStaffList.slice(3).map(s => s.name).join(', ')}
-                                            >
-                                              +{bedStaffList.length - 3}
-                                            </div>
-                                          )}
-                                        </div>
-                                        <span className="text-xs font-semibold text-blue-700 truncate" title={bedStaffList.map(s => s.name).join(', ')}>
-                                          {bedStaffList.length} KTV phối hợp
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[11px] text-slate-400 italic">Chưa gán</span>
-                                    )}
+                                            <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]">
+                                              {st.name}
+                                            </span>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
                                   </div>
 
                                   <div className="text-[11px] text-slate-500 font-medium">
@@ -1593,8 +1598,21 @@ export default function RoomsBeds() {
                                       <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                       <span>Hẹn {windowInfo.availableUntil}: {windowInfo.nextAppt?.customer_name || 'Khách đặt trước'}</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-400 truncate pl-5">
-                                      {windowInfo.nextAppt?.service_name || 'Dịch vụ đã đặt'}
+                                    <div className="text-[10px] text-slate-400 truncate pl-5 flex items-center justify-between gap-1">
+                                      <span className="truncate">{windowInfo.nextAppt?.service_name || 'Dịch vụ đã đặt'}</span>
+                                      {upcomingStaff && (
+                                        <div className="inline-flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200/80 shadow-2xs shrink-0" title={`KTV xếp vị trí: ${upcomingStaff.name}`}>
+                                          <Avatar
+                                            src={upcomingStaff.avatar_url}
+                                            name={upcomingStaff.name}
+                                            size={14}
+                                            color={upcomingStaff.color}
+                                          />
+                                          <span className="font-semibold text-slate-700 text-[10px] truncate max-w-[90px]">
+                                            {upcomingStaff.name}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

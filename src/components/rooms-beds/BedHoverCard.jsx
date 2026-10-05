@@ -101,14 +101,17 @@ export default function BedHoverCard({
   const customerPhone = session?.customer_phone || customer.phone || '—';
   const customerDob = customer.dob || customer.birthday || '—';
 
-  // Services list
-  const servicesList = session?.services && session.services.length > 0
-    ? session.services
-    : [{
-        service_name: session?.service_name || 'Dịch vụ tổng hợp',
-        staff_name: session?.staff_name || 'KTV Salon',
-        price: session?.price || 0
-      }];
+  // Services list specifically assigned to this bed
+  const servicesList = React.useMemo(() => {
+    const raw = session?.services && session.services.length > 0
+      ? session.services
+      : [{
+          service_name: session?.service_name || 'Dịch vụ tổng hợp',
+          staff_name: session?.staff_name || 'KTV Salon',
+          price: session?.price || 0
+        }];
+    return raw.filter(svc => !svc.bed_id || String(svc.bed_id) === String(bed.id));
+  }, [session, bed.id]);
 
   // Extract all distinct technicians working on this bed
   const assignedStaffList = React.useMemo(() => {
@@ -248,28 +251,44 @@ export default function BedHoverCard({
             {/* Header: Service count & Multi-Staff summary */}
             <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
               <span className="uppercase tracking-wider">
-                Dịch vụ & KTV ({servicesList.length})
+                Nhân viên xếp vào vị trí ({assignedStaffList.length})
               </span>
               {assignedStaffList.length > 1 ? (
-                <div className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 font-bold">
-                  <span>{assignedStaffList.length} KTV phối hợp</span>
-                  <div className="flex -space-x-1.5">
-                    {assignedStaffList.map((st, i) => (
-                      <Avatar
-                        key={i}
-                        src={st.avatar_url}
-                        name={st.name}
-                        size={18}
-                        ring
-                        color={st.color}
-                        title={`${st.name} (${st.services.join(', ')})`}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+                  {assignedStaffList.length} KTV phối hợp
+                </span>
               ) : assignedStaffList.length === 1 ? (
                 <span className="text-slate-500 font-normal">1 KTV phụ trách</span>
               ) : null}
+            </div>
+
+            {/* Thẻ nhân viên được xếp vào vị trí này */}
+            {assignedStaffList.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                {assignedStaffList.map((st) => (
+                  <div 
+                    key={st.id} 
+                    className="inline-flex items-center gap-1.5 bg-blue-50/70 border border-blue-200/70 px-2 py-1 rounded-xl text-xs shadow-2xs"
+                    title={`${st.name}: ${st.services.join(', ')}`}
+                  >
+                    <Avatar
+                      src={st.avatar_url}
+                      name={st.name}
+                      size={18}
+                      color={st.color}
+                      className="shrink-0"
+                    />
+                    <span className="font-bold text-slate-800 text-[11px] truncate max-w-[120px]">
+                      {st.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Header dịch vụ */}
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              Dịch vụ thực hiện ({servicesList.length})
             </div>
 
             {/* List of services with individual staff avatar */}
