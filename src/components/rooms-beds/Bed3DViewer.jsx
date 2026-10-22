@@ -290,7 +290,7 @@ export default function Bed3DViewer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('all');
   const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'front' | 'cashier'
-  const [themeMode, setThemeMode] = useState('boutique'); // 'boutique' (Sáng ấm tự nhiên) | 'dark' (Obsidian Luxury)
+  const [themeMode, setThemeMode] = useState('dark'); // Mặc định chế độ tối Obsidian Luxury theo yêu cầu
   const [hoveredBed, setHoveredBed] = useState(null);
   const [isAutoTour, setIsAutoTour] = useState(false);
   const [webglError, setWebglError] = useState(false);
@@ -319,94 +319,94 @@ export default function Bed3DViewer({
     return { total, occupied, available, overtime };
   }, [bedsByRoom, bedSessions]);
 
-  // Sinh mô hình 3D Nhân vật Khách hàng nằm thư giãn làm dịch vụ
+  // Sinh mô hình 3D Nhân vật Khách hàng nằm thư giãn làm dịch vụ (Được nâng cao lộ rõ khuôn mặt, mắt thư giãn & chăn spa)
   const createCustomerFigure = (session, isDark) => {
     const custGroup = new THREE.Group();
     custGroup.name = `customer_avatar_${session?.id || 'active'}`;
 
-    // 1. Chăn Spa cao cấp phủ từ ngực đến chân khách hàng
+    // 1. Chăn Spa cao cấp phủ từ ngực đến chân khách hàng (Màu trắng ngà sang trọng nổi bật)
     const blanketMat = new THREE.MeshStandardMaterial({
-      color: isDark ? 0x334155 : 0xffffff,
-      roughness: 0.6,
+      color: isDark ? 0xe2e8f0 : 0xffffff,
+      roughness: 0.5,
       metalness: 0.05
     });
-    const blanketGeo = new THREE.BoxGeometry(1.22, 0.18, 1.35);
+    const blanketGeo = new THREE.BoxGeometry(1.24, 0.26, 1.45);
     const blanketMesh = new THREE.Mesh(blanketGeo, blanketMat);
-    blanketMesh.position.set(0, 1.05, 0.18);
+    blanketMesh.position.set(0, 1.12, 0.22);
     blanketMesh.castShadow = true;
     blanketMesh.receiveShadow = true;
     custGroup.add(blanketMesh);
 
-    // Nếp gấp viền chăn ngực sang trọng
+    // Nếp gấp viền chăn ngực sang trọng với dải màu Sky Blue spa cao cấp
     const cuffMat = new THREE.MeshStandardMaterial({
-      color: isDark ? 0x475569 : 0xf1f5f9,
-      roughness: 0.5,
-      metalness: 0.1
+      color: 0x0ea5e9, // Sky Blue spa luxury accent
+      roughness: 0.4,
+      metalness: 0.15
     });
-    const cuffGeo = new THREE.BoxGeometry(1.24, 0.05, 0.22);
+    const cuffGeo = new THREE.BoxGeometry(1.26, 0.08, 0.22);
     const cuffMesh = new THREE.Mesh(cuffGeo, cuffMat);
-    cuffMesh.position.set(0, 1.14, -0.42);
+    cuffMesh.position.set(0, 1.24, -0.44);
     custGroup.add(cuffMesh);
 
     // 2. Phần vai & ngực khách hàng lộ ra phía trên chăn
     const skinMat = new THREE.MeshStandardMaterial({
-      color: 0xf5d0b5, // Warm natural healthy skin tone
-      roughness: 0.55,
+      color: 0xf6d4be, // Natural healthy spa skin tone
+      roughness: 0.5,
       metalness: 0.05
     });
-    const shouldersGeo = new THREE.CylinderGeometry(0.14, 0.15, 0.55, 16);
+    const shouldersGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.65, 16);
     const shouldersMesh = new THREE.Mesh(shouldersGeo, skinMat);
     shouldersMesh.rotation.z = Math.PI / 2;
-    shouldersMesh.position.set(0, 1.05, -0.56);
+    shouldersMesh.position.set(0, 1.18, -0.56);
     custGroup.add(shouldersMesh);
 
-    // 3. Đầu và khuôn mặt thư giãn gối trên gối nằm
-    const headGeo = new THREE.SphereGeometry(0.135, 24, 24);
+    // 3. Đầu và khuôn mặt thư giãn nằm gối đầu rõ ràng
+    const headGeo = new THREE.SphereGeometry(0.16, 24, 24);
     const headMesh = new THREE.Mesh(headGeo, skinMat);
-    headMesh.position.set(0, 1.09, -0.82);
-    headMesh.scale.set(0.92, 0.85, 1.0);
+    headMesh.position.set(0, 1.26, -0.82);
+    headMesh.scale.set(0.95, 0.9, 1.05);
     headMesh.castShadow = true;
     custGroup.add(headMesh);
 
     // Khăn quấn đầu spa / turban thư giãn (Spa Turban Wrap)
     const turbanMat = new THREE.MeshStandardMaterial({
       color: 0xf8fafc,
-      roughness: 0.7,
-      metalness: 0.02
+      roughness: 0.6
     });
-    const turbanGeo = new THREE.TorusGeometry(0.138, 0.045, 16, 24);
+    const turbanGeo = new THREE.TorusGeometry(0.16, 0.055, 16, 24);
     const turbanMesh = new THREE.Mesh(turbanGeo, turbanMat);
     turbanMesh.rotation.x = Math.PI / 6;
-    turbanMesh.position.set(0, 1.13, -0.85);
+    turbanMesh.position.set(0, 1.32, -0.86);
     custGroup.add(turbanMesh);
 
-    const turbanCapGeo = new THREE.SphereGeometry(0.11, 16, 16);
+    const turbanCapGeo = new THREE.SphereGeometry(0.14, 16, 16);
     const turbanCap = new THREE.Mesh(turbanCapGeo, turbanMat);
-    turbanCap.position.set(0, 1.11, -0.92);
+    turbanCap.position.set(0, 1.30, -0.94);
     custGroup.add(turbanCap);
 
     // Mặt nạ mắt thư giãn / đệm mắt spa (Aesthetic Eye Mask)
     const maskMat = new THREE.MeshStandardMaterial({
-      color: 0x0ea5e9, // Sky Blue soothing mask
-      roughness: 0.3,
-      metalness: 0.15
+      color: 0x0284c7, // Sky Blue soothing mask
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.25,
+      roughness: 0.2
     });
-    const maskGeo = new THREE.BoxGeometry(0.16, 0.035, 0.06);
+    const maskGeo = new THREE.BoxGeometry(0.20, 0.045, 0.08);
     const maskMesh = new THREE.Mesh(maskGeo, maskMat);
-    maskMesh.position.set(0, 1.14, -0.78);
+    maskMesh.position.set(0, 1.33, -0.76);
     custGroup.add(maskMesh);
 
     // 4. Hai cánh tay nằm duỗi tự nhiên thư thái hai bên
-    const leftArmGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.72, 12);
+    const leftArmGeo = new THREE.CylinderGeometry(0.055, 0.05, 0.75, 12);
     const leftArm = new THREE.Mesh(leftArmGeo, skinMat);
     leftArm.rotation.x = Math.PI / 2;
-    leftArm.position.set(-0.54, 1.02, -0.15);
+    leftArm.position.set(-0.56, 1.12, -0.15);
     custGroup.add(leftArm);
 
-    const rightArmGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.72, 12);
+    const rightArmGeo = new THREE.CylinderGeometry(0.055, 0.05, 0.75, 12);
     const rightArm = new THREE.Mesh(rightArmGeo, skinMat);
     rightArm.rotation.x = Math.PI / 2;
-    rightArm.position.set(0.54, 1.02, -0.15);
+    rightArm.position.set(0.56, 1.12, -0.15);
     custGroup.add(rightArm);
 
     return custGroup;
@@ -736,11 +736,11 @@ export default function Bed3DViewer({
       roughness: 0.45,
       metalness: 0.02
     });
-    const pillowGeo = new THREE.CylinderGeometry(0.38, 0.38, 1.1, 32);
+    const pillowGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.1, 32);
     const pillow = new THREE.Mesh(pillowGeo, pillowMat);
     pillow.rotation.z = Math.PI / 2;
     pillow.position.set(0, 1.02, -0.85);
-    pillow.scale.set(1, 0.45, 1);
+    pillow.scale.set(1, 0.35, 1.2);
     pillow.castShadow = true;
     group.add(pillow);
 
@@ -1093,32 +1093,26 @@ export default function Bed3DViewer({
             </button>
           </div>
         ` : isOccupied ? `
-          <!-- Khách hàng -->
-          <div class="flex items-center gap-2.5 py-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
-            <div class="relative w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-md ${
-              isDark ? 'bg-slate-800 text-sky-400 border border-white/15' : 'bg-sky-50 text-sky-700 border border-sky-200'
-            }">
-              ${customerName ? customerName.charAt(0).toUpperCase() : 'K'}
-            </div>
-            <div class="min-w-0 flex-1">
+          <!-- Khách hàng (Không hiển thị avatar tròn) -->
+          <div class="py-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
+            <div class="flex items-center justify-between gap-2">
               <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${customerName}</h4>
-              <div class="flex items-center gap-2 text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-0.5">
-                <span class="flex items-center gap-1">
+              ${customerPhone !== '—' ? `
+                <div class="flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'} shrink-0">
                   ${svgPhone}
                   <span>${customerPhone}</span>
-                </span>
-                ${customerDob !== '—' ? `
-                  <span class="text-slate-500">•</span>
-                  <span class="flex items-center gap-1">
-                    ${svgCalendar}
-                    <span>${customerDob}</span>
-                  </span>
-                ` : ''}
-              </div>
+                </div>
+              ` : ''}
             </div>
+            ${customerDob !== '—' ? `
+              <div class="flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-1">
+                ${svgCalendar}
+                <span>Ngày sinh: ${customerDob}</span>
+              </div>
+            ` : ''}
           </div>
 
-          <!-- KTV xếp vào vị trí -->
+          <!-- KTV xếp vào vị trí (Không hiển thị avatar tròn) -->
           <div class="py-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
             <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1.5">
               <span>Nhân viên xếp vào vị trí (${assignedStaffList.length})</span>
@@ -1134,13 +1128,10 @@ export default function Bed3DViewer({
             ${assignedStaffList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5">
                 ${assignedStaffList.map(st => `
-                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl text-xs border ${
-                    isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-sky-50/70 border-sky-200/70 text-slate-800'
+                  <div class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold border ${
+                    isDark ? 'bg-sky-500/10 border-sky-500/30 text-sky-300' : 'bg-sky-50 border-sky-200 text-sky-700'
                   }">
-                    <div class="w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] text-white shrink-0" style="background: ${st.color || '#0ea5e9'}">
-                      ${st.name ? st.name.charAt(0).toUpperCase() : 'K'}
-                    </div>
-                    <span class="font-bold text-[11px] truncate max-w-[120px]">${st.name}</span>
+                    <span class="text-[11px] truncate max-w-[140px]">${st.name}</span>
                   </div>
                 `).join('')}
               </div>
@@ -1335,9 +1326,14 @@ export default function Bed3DViewer({
     div.onmouseenter = () => {
       updatePopupPlacement(div);
       div.classList.add('is-hovered');
+      div.style.zIndex = '999999';
+      if (div.parentNode) {
+        div.parentNode.appendChild(div);
+      }
     };
     div.onmouseleave = () => {
       div.classList.remove('is-hovered');
+      div.style.zIndex = '10';
     };
 
     div.onclick = (e) => {
@@ -1487,8 +1483,13 @@ export default function Bed3DViewer({
               if (id === bId) {
                 updatePopupPlacement(item.labelObj.element);
                 item.labelObj.element.classList.add('is-hovered');
+                item.labelObj.element.style.zIndex = '999999';
+                if (item.labelObj.element.parentNode) {
+                  item.labelObj.element.parentNode.appendChild(item.labelObj.element);
+                }
               } else if (!item.labelObj.element.matches(':hover')) {
                 item.labelObj.element.classList.remove('is-hovered');
+                item.labelObj.element.style.zIndex = '10';
               }
             }
           });
@@ -1496,6 +1497,7 @@ export default function Bed3DViewer({
           bedMeshesRef.current.forEach(item => {
             if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
               item.labelObj.element.classList.remove('is-hovered');
+              item.labelObj.element.style.zIndex = '10';
             }
           });
         }
@@ -1505,6 +1507,7 @@ export default function Bed3DViewer({
         bedMeshesRef.current.forEach(item => {
           if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
             item.labelObj.element.classList.remove('is-hovered');
+            item.labelObj.element.style.zIndex = '10';
           }
         });
       }
@@ -1516,6 +1519,7 @@ export default function Bed3DViewer({
       bedMeshesRef.current.forEach(item => {
         if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
           item.labelObj.element.classList.remove('is-hovered');
+          item.labelObj.element.style.zIndex = '10';
         }
       });
     };
@@ -2073,7 +2077,8 @@ export default function Bed3DViewer({
 
       // 4. Biển tên phòng gắn trên đỉnh vách ngăn kiến trúc (Clean Architectural Room Signage)
       const roomBadgeDom = document.createElement('div');
-      roomBadgeDom.className = 'select-none pointer-events-none transform -translate-y-1';
+      roomBadgeDom.className = 'room-spatial-badge select-none pointer-events-none transform -translate-y-1';
+      roomBadgeDom.style.zIndex = '1';
       roomBadgeDom.innerHTML = `
         <div class="px-3 py-1 rounded-xl shadow-lg backdrop-blur-xl flex items-center gap-2 border ${
           isDark 
@@ -2269,6 +2274,10 @@ export default function Bed3DViewer({
 
       {/* Scoped CSS cho Thẻ Không gian 3D & Hiệu ứng Hover nở rộng thông tin thích ứng thông minh */}
       <style>{`
+        .room-spatial-badge {
+          z-index: 1 !important;
+          pointer-events: none !important;
+        }
         .bed-spatial-container {
           position: relative;
           display: inline-flex;
@@ -2276,11 +2285,11 @@ export default function Bed3DViewer({
           justify-content: center;
           pointer-events: auto;
           user-select: none;
-          z-index: 20;
+          z-index: 10;
         }
         .bed-spatial-container:hover,
         .bed-spatial-container.is-hovered {
-          z-index: 1000;
+          z-index: 999999 !important;
         }
         .bed-spatial-pill {
           display: inline-flex;
@@ -2307,7 +2316,7 @@ export default function Bed3DViewer({
           transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
                       transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
                       visibility 0.22s;
-          z-index: 1001;
+          z-index: 999999 !important;
         }
 
         /* 1. Mặc định / Phía trên (placement-top) */
