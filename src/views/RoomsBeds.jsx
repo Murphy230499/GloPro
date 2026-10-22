@@ -1,12 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   Building2, Plus, Edit2, Trash2, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Check, Clock, User, Phone, CheckCircle2, ShoppingCart, 
-  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings, Calendar
+  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings, Calendar, Box
 } from 'lucide-react';
 import BedTimelineView from '@/components/rooms-beds/BedTimelineView';
+
+const Bed3DViewer = dynamic(() => import('@/components/rooms-beds/Bed3DViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[620px] rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center gap-3 text-slate-400">
+      <div className="w-8 h-8 border-3 border-slate-700 border-t-blue-500 rounded-full animate-spin" />
+      <span className="text-xs font-semibold text-slate-300">Đang khởi tạo không gian 3D...</span>
+    </div>
+  )
+});
 import { aggregateBedTimelineEvents, getTodayDateString, isSameDay } from '@/lib/bedTimelineHelper';
 import { useT } from '@/lib/i18n';
 import { useBranch } from '@/lib/BranchContext';
@@ -1282,7 +1293,7 @@ export default function RoomsBeds() {
           </button>
         </div>
 
-        {/* View Switcher for Sơ đồ vị trí: [Lưới | Timeline] */}
+        {/* View Switcher for Sơ đồ vị trí: [Lưới | Timeline | 3D] */}
         {activeTab === 'diagram' && (
           <div className="flex items-center gap-2">
             <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
@@ -1311,6 +1322,19 @@ export default function RoomsBeds() {
                 <Clock className="w-3.5 h-3.5" />
                 <span>{t('rooms_beds.view_timeline', 'Timeline')}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setDiagramViewMode('3d')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  diagramViewMode === '3d'
+                    ? 'bg-white text-slate-900 shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Box className="w-3.5 h-3.5 text-blue-600" />
+                <span>{t('rooms_beds.view_3d', 'Sơ đồ 3D')}</span>
+              </button>
             </div>
           </div>
         )}
@@ -1325,9 +1349,19 @@ export default function RoomsBeds() {
           </div>
         ) : activeTab === 'diagram' ? (
           /* ========================================================================= */
-          /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID HOẶC TIMELINE VIEW)               */
+          /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID, TIMELINE HOẶC 3D VIEW)          */
           /* ========================================================================= */
-          diagramViewMode === 'timeline' ? (
+          diagramViewMode === '3d' ? (
+            <div className="space-y-4">
+              <Bed3DViewer
+                bedsByRoom={bedsByRoom}
+                bedSessions={enrichedBedSessions}
+                onSelectBed={(bed) => {
+                  setSelectedBedForDrawer(bed);
+                }}
+              />
+            </div>
+          ) : diagramViewMode === 'timeline' ? (
             <div className="space-y-4">
               {/* Thanh điều khiển ngày & bộ lọc phòng cho Timeline (Giao diện hiện đại) */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
