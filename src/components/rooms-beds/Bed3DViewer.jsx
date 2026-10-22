@@ -268,7 +268,7 @@ export default function Bed3DViewer({
   // Trạng thái giao diện
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('all');
-  const [cameraMode, setCameraMode] = useState('entrance'); // 'entrance' | 'iso' | 'top' | 'cashier'
+  const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'cashier'
   const [themeMode, setThemeMode] = useState('boutique'); // 'boutique' (Sáng ấm tự nhiên) | 'dark' (Obsidian Luxury)
   const [hoveredBed, setHoveredBed] = useState(null);
   const [isAutoTour, setIsAutoTour] = useState(false);
@@ -628,7 +628,7 @@ export default function Bed3DViewer({
 
     // 2. Camera setup: Góc quay Isometric điện ảnh (FOV 32)
     const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 1000);
-    camera.position.set(0, 7.5, 25);
+    camera.position.set(0, 24, 38);
     cameraRef.current = camera;
 
     // 3. WebGL Renderer an toàn với try/catch
@@ -857,6 +857,11 @@ export default function Bed3DViewer({
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
+
+    // Dọn dẹp an toàn toàn bộ các thẻ DOM CSS2D cũ để tránh lặp trùng lặp
+    if (labelRendererRef.current?.domElement) {
+      labelRendererRef.current.domElement.replaceChildren();
+    }
 
     // Dọn dẹp an toàn các mesh cũ
     bedMeshesRef.current.forEach((item) => {
@@ -1266,28 +1271,6 @@ export default function Bed3DViewer({
       spotLight.position.set(0, 4.6, 0);
       roomGroup.add(spotLight);
 
-      // 4. Biển tên phòng nổi phía trước (CSS2D Room Header)
-      const roomBadgeDom = document.createElement('div');
-      roomBadgeDom.className = 'select-none pointer-events-none transform -translate-y-2';
-      roomBadgeDom.innerHTML = `
-        <div class="px-4 py-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl flex items-center gap-2.5 border ${
-          isDark 
-            ? 'bg-slate-950/90 text-white border-white/15' 
-            : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-slate-300'
-        }">
-          <div class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></div>
-          <span class="text-xs font-black tracking-wider uppercase">${room.name || 'Phòng Spa'}</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${
-            isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
-          }">
-            ${beds.length} vị trí
-          </span>
-        </div>
-      `;
-      const roomBadgeObj = new CSS2DObject(roomBadgeDom);
-      roomBadgeObj.position.set(0, 2.9, -roomD / 2 + 0.3);
-      roomGroup.add(roomBadgeObj);
-
       scene.add(roomGroup);
 
       // 5. Bố trí các giường / ghế bên trong phòng
@@ -1329,16 +1312,6 @@ export default function Bed3DViewer({
   }, [bedsByRoom, bedSessions, waitingGuests, themeMode, t, onOpenCashier]);
 
   // Điều khiển góc quay Camera
-  const handleStoreEntranceView = () => {
-    if (!controlsRef.current || !cameraRef.current) return;
-    const lPos = lobbyPosRef.current;
-    controlsRef.current.target.set(0, 1.2, lPos.z - 3);
-    cameraRef.current.position.set(0, 6.2, lPos.z + 10);
-    controlsRef.current.update();
-    setCameraMode('entrance');
-    setIsAutoTour(false);
-  };
-
   const handleResetCamera = () => {
     if (!controlsRef.current || !cameraRef.current) return;
     controlsRef.current.target.set(0, 0, 0);
@@ -1381,7 +1354,7 @@ export default function Bed3DViewer({
     setSelectedRoomId(roomId);
     if (!controlsRef.current || !cameraRef.current) return;
     if (roomId === 'all') {
-      handleStoreEntranceView();
+      handleResetCamera();
       return;
     }
 
@@ -1535,21 +1508,6 @@ export default function Bed3DViewer({
       <div className={`absolute bottom-4 right-4 flex items-center gap-1.5 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl pointer-events-auto border z-10 ${
         isDark ? 'bg-slate-950/85 border-white/10 text-white' : 'bg-white/95 border-slate-200/90 text-slate-800'
       }`}>
-        {/* Nút Góc Lối Vào Tiệm (Store Walk-in) */}
-        <button
-          type="button"
-          onClick={handleStoreEntranceView}
-          title="🏪 Góc nhìn cửa vào tiệm (Store Walk-in)"
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            cameraMode === 'entrance' 
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-              : isDark ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-          }`}
-        >
-          <Store className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Cửa vào tiệm</span>
-        </button>
-
         {/* Nút Xem Quầy Thu Ngân & Sảnh Chờ (Focus Cashier & Lounge) */}
         <button
           type="button"
