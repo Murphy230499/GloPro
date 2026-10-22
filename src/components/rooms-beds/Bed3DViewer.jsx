@@ -9,9 +9,11 @@ import {
   Sparkles, Compass, Maximize2, Minimize2,
   Sun, Moon, Eye, CreditCard, Store, Play, Pause,
   RefreshCw, CheckCircle2, ChevronRight,
-  X, Users, Coffee, Clock, Phone, ArrowRight, Plus
+  X, Users, Coffee, Clock, Phone, ArrowRight, Plus,
+  ArrowRightLeft, LogOut
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { formatVND } from '@/lib/format';
 
 // Bảng màu trạng thái chuẩn GloPro (Tuân thủ nghiêm ngặt quy tắc No-Purple, tối ưu thẩm mỹ cao cấp)
 const STATUS_THEME = {
@@ -246,7 +248,13 @@ export default function Bed3DViewer({
   onSelectBed = () => {},
   onOpenCashier = () => {},
   waitingGuests = [],
-  onAssignGuest = () => {}
+  onAssignGuest = () => {},
+  staff = [],
+  onTransferRoom = () => {},
+  onStartServing = () => {},
+  onCheckout = () => {},
+  onReleaseBed = () => {},
+  onFinishCleaning = () => {}
 }) {
   const { t } = useT();
   const mountRef = useRef(null);
@@ -266,6 +274,17 @@ export default function Bed3DViewer({
   const contactShadowTexRef = useRef(null);
   const animFlightRef = useRef(null);
   const cameraModeRef = useRef('iso');
+  const callbacksRef = useRef({});
+  callbacksRef.current = {
+    staff,
+    onTransferRoom,
+    onStartServing,
+    onCheckout,
+    onReleaseBed,
+    onFinishCleaning,
+    onSelectBed,
+    onAssignGuest
+  };
 
   // Trạng thái giao diện
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -827,115 +846,451 @@ export default function Bed3DViewer({
     }
 
     // Hitbox vô hình bắt click/hover
-    const hitboxGeo = new THREE.BoxGeometry(2.8, 2.2, 3.4);
+    const hitboxGeo = new THREE.BoxGeometry(2.8, 2.6, 3.4);
     const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
-    hitbox.position.y = 1.0;
+    hitbox.position.y = 1.3;
     hitbox.userData = { isBedHitbox: true, bedId: bed.id, bedData: bed };
     group.add(hitbox);
 
     return { group, ledMesh, haloMesh, hitbox };
   };
 
-  // Tạo Floating Spatial Card bằng CSS2D
+  // Tạo Floating Spatial Card bằng CSS2D (Mặc định hiển thị pill gọn gàng, hover hiển thị đầy đủ thông tin & action)
   const createBedCSS2DElement = (bed, room, session) => {
     const statusKey = session ? (session.status || 'in_progress') : 'available';
     const cfg = STATUS_THEME[statusKey] || STATUS_THEME.available;
     const isOccupied = Boolean(session);
     const isDark = themeMode === 'dark';
 
-    const div = document.createElement('div');
-    div.className = 'select-none pointer-events-auto transform transition-all duration-300 hover:scale-105';
-    div.style.transform = 'translate3d(0, 0, 0)';
+    // SVG icons cho thẻ nổi 3D
+    const svgBuilding = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
+    const svgClock = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+    const svgPhone = `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+    const svgCalendar = `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
+    const svgTransfer = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>`;
+    const svgPlay = `<svg class="w-3.5 h-3.5 shrink-0 fill-current" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
+    const svgCreditCard = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
+    const svgLogout = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>`;
+    const svgSparkles = `<svg class="w-5 h-5 animate-pulse shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`;
+    const svgCheck = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const svgPlus = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
 
-    let cardHtml = '';
-    if (isOccupied) {
-      const customerName = session.customer_name || t('rooms_beds.guest', 'Khách vãng lai');
-      const techName = session.technician_name || t('rooms_beds.unassigned_staff', 'Chưa chọn KTV');
-      const serviceName = (session.services && session.services[0]?.name) || session.service_name || t('rooms_beds.standard_service', 'Dịch vụ Spa');
-      const progressPercent = Math.min(100, Math.max(0, session.progress_percent || 0));
-      const isOver = session.status === 'overtime';
-      const remainingMins = session.remaining_minutes ?? 0;
-      const initialLetter = customerName.charAt(0).toUpperCase();
+    // Trích xuất dữ liệu khách hàng
+    const customer = session?.customer || {};
+    const customerName = session?.customer_name || customer.name || (isOccupied ? t('rooms_beds.guest', 'Khách vãng lai') : '');
+    const customerPhone = session?.customer_phone || customer.phone || '—';
+    const customerDob = customer.dob || customer.birthday || '—';
 
-      cardHtml = `
-        <div class="group relative rounded-2xl p-3 shadow-2xl backdrop-blur-2xl transition-all duration-300 min-w-[220px] max-w-[260px] cursor-pointer text-left border ${
-          isDark 
-            ? 'bg-slate-950/90 text-white border-white/10 hover:border-blue-500/80 hover:shadow-blue-500/20' 
-            : 'bg-white/95 text-slate-900 border-slate-200/90 hover:border-blue-500/80 hover:shadow-slate-300/60'
-        }">
-          <!-- Glowing Top Accent Line -->
-          <div class="absolute -top-[1px] left-4 right-4 h-[2px] rounded-full" style="background: ${cfg.colorStr}; box-shadow: 0 0 10px ${cfg.colorStr};"></div>
+    // Danh sách dịch vụ thực hiện trên giường này
+    const rawServices = (session?.services && session.services.length > 0)
+      ? session.services
+      : session?.service_name
+        ? [{
+            service_name: session.service_name,
+            staff_name: session.technician_name || session.staff_name || '',
+            staff_id: session.technician_id || session.staff_id,
+            price: session.price || 0
+          }]
+        : [{
+            service_name: t('rooms_beds.standard_service', 'Dịch vụ Spa'),
+            staff_name: session?.technician_name || '',
+            price: session?.price || 0
+          }];
 
-          <!-- Header Row -->
-          <div class="flex items-center justify-between gap-2 pb-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
-            <div class="flex items-center gap-1.5">
-              <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: ${cfg.colorStr}"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2" style="background: ${cfg.colorStr}"></span>
-              </span>
-              <span class="text-xs font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}">${bed.name || 'Vị trí'}</span>
-            </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border tracking-wide uppercase ${cfg.cssBadge}">
-              ${cfg.label}
-            </span>
-          </div>
+    const servicesList = rawServices.filter(svc => !svc.bed_id || String(svc.bed_id) === String(bed.id));
 
-          <!-- Customer Info -->
-          <div class="mt-2.5 flex items-center gap-2.5">
-            <div class="relative w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-md ${
-              isDark ? 'bg-gradient-to-tr from-slate-800 to-slate-700 text-blue-400 border border-white/15' : 'bg-gradient-to-tr from-blue-50 to-blue-100 text-blue-700 border border-blue-200'
-            }">
-              ${initialLetter}
-              <svg class="absolute -inset-0.5 w-9 h-9 -rotate-90 pointer-events-none" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="16" fill="none" stroke="${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}" stroke-width="2.5" />
-                <circle cx="18" cy="18" r="16" fill="none" stroke="${cfg.colorStr}" stroke-width="2.5" stroke-dasharray="100" stroke-dashoffset="${100 - progressPercent}" stroke-linecap="round" />
-              </svg>
-            </div>
+    // Tập hợp KTV phụ trách
+    const staffMap = new Map();
+    servicesList.forEach(svc => {
+      const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
+      const sId = svc.staff_id || svc.staff?.id;
+      if (!sId && !sName) return;
 
-            <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}">
-                ${customerName}
-              </div>
-              <div class="text-[11px] truncate flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}">
-                <span class="font-medium">KTV:</span>
-                <span class="font-semibold text-sky-500 dark:text-sky-400">${techName}</span>
-              </div>
-            </div>
-          </div>
+      const matched = (callbacksRef.current.staff || []).find(st =>
+        (sId && st.id === sId) ||
+        (sName && (st.full_name === sName || st.name === sName))
+      );
 
-          <!-- Service Tag & Timer -->
-          <div class="mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] ${isDark ? 'border-white/5' : 'border-slate-100'}">
-            <span class="font-medium text-slate-400 truncate max-w-[130px]">
-              ${serviceName}
-            </span>
-            <span class="font-bold text-[10px] px-1.5 py-0.5 rounded-md ${
-              isOver 
-                ? 'bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/30' 
-                : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700'
-            }">
-              ${isOver ? 'Quá giờ' : `Còn ${remainingMins}p`}
-            </span>
-          </div>
-        </div>
-      `;
-    } else {
-      cardHtml = `
-        <div class="rounded-xl px-2.5 py-1 shadow-md backdrop-blur-xl border flex items-center gap-1.5 cursor-pointer transition-all duration-200 hover:scale-105 ${
-          isDark 
-            ? 'bg-slate-950/85 text-white border-white/10 hover:border-emerald-500/50' 
-            : 'bg-white/95 text-slate-800 border-slate-200/90 hover:border-emerald-500/50 shadow-sm'
-        }">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
-          <span class="text-xs font-bold tracking-tight">${bed.name || 'Vị trí'}</span>
-        </div>
-      `;
+      const key = matched?.id || sId || sName;
+      const finalName = matched?.full_name || matched?.name || sName;
+      const finalColor = svc.staff_color || matched?.avatar_color || '#0ea5e9';
+
+      if (!staffMap.has(key)) {
+        staffMap.set(key, { name: finalName, color: finalColor, count: 1 });
+      }
+    });
+
+    if (staffMap.size === 0 && (session?.technician_name || session?.staff_name)) {
+      const sName = session.technician_name || session.staff_name;
+      const matched = (callbacksRef.current.staff || []).find(st =>
+        (st.full_name === sName || st.name === sName)
+      );
+      staffMap.set(sName, {
+        name: matched?.full_name || matched?.name || sName,
+        color: matched?.avatar_color || '#0ea5e9',
+        count: 1
+      });
     }
 
-    div.innerHTML = cardHtml;
+    const assignedStaffList = Array.from(staffMap.values());
+
+    // Thời gian và tiến độ
+    const startTime = session?.start_time || '08:00';
+    const endTime = session?.end_time || '09:15';
+    const elapsedMins = session?.elapsed_minutes ?? 0;
+    const remainingMins = session?.remaining_minutes ?? 0;
+    const progressPercent = Math.min(100, Math.max(0, session?.progress_percent ?? 0));
+    const overtimeMins = session?.overtime_minutes ?? 0;
+    const isOver = statusKey === 'overtime';
+    const isWaiting = statusKey === 'waiting';
+    const isCleaning = statusKey === 'cleaning';
+    const cleaningInfo = session?.cleaning_info || null;
+
+    const div = document.createElement('div');
+    div.className = 'bed-spatial-container select-none pointer-events-auto';
+    div.setAttribute('data-bed-id', bed.id);
+
+    div.innerHTML = `
+      <!-- 1. Trạng thái Pill gọn gàng mặc định (Không che khuất không gian 3D) -->
+      <div class="bed-spatial-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl cursor-pointer transition-all duration-200 ${
+        isDark 
+          ? 'bg-slate-950/85 text-white border-white/15 hover:border-sky-500/50' 
+          : 'bg-white/95 text-slate-800 border-slate-200/90 hover:border-sky-500/50 shadow-md'
+      }">
+        <span class="relative flex h-2 w-2 shrink-0">
+          ${isOccupied && !isWaiting ? `<span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: ${cfg.colorStr}"></span>` : ''}
+          <span class="relative inline-flex rounded-full h-2 w-2" style="background: ${cfg.colorStr}"></span>
+        </span>
+        <span class="text-xs font-bold tracking-tight">${bed.name || 'Vị trí'}</span>
+        ${isOccupied ? `
+          <span class="text-[10px] font-medium ${isOver ? 'text-rose-400 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}">
+            · ${isOver ? 'Quá giờ' : isCleaning ? 'Đang dọn' : isWaiting ? 'Chờ KTV' : `Còn ${remainingMins}p`}
+          </span>
+        ` : ''}
+      </div>
+
+      <!-- 2. Thẻ Popup Chi Tiết Khi Hover (Đầy đủ thông tin như ở dạng lưới) -->
+      <div class="bed-spatial-card w-[330px] sm:w-[350px] rounded-2xl p-3.5 shadow-2xl backdrop-blur-2xl border text-left cursor-default ${
+        isDark 
+          ? 'bg-slate-950/95 text-white border-white/15' 
+          : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-2xl'
+      }" style="filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.45));">
+        <!-- Glowing Top Accent Line -->
+        <div class="absolute -top-[1px] left-4 right-4 h-[2px] rounded-full" style="background: ${cfg.colorStr}; box-shadow: 0 0 10px ${cfg.colorStr};"></div>
+
+        <!-- Header: Tên phòng | Tên giường + Badge trạng thái -->
+        <div class="flex items-center justify-between pb-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
+          <div class="flex items-center gap-1.5 text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">
+            ${svgBuilding}
+            <span>${room?.name || 'Phòng'} | ${bed.name || 'Vị trí'}</span>
+          </div>
+          <span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border uppercase ${cfg.cssBadge}">
+            ${cfg.label}
+          </span>
+        </div>
+
+        ${isCleaning ? `
+          <!-- Khi ở trạng thái Đang Dọn Dẹp -->
+          <div class="py-3 space-y-2.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+                ${svgSparkles}
+              </div>
+              <div>
+                <h4 class="text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}">Vệ sinh & Thay ga gối</h4>
+                <p class="text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-0.5">
+                  Thời gian quy định: <span class="font-bold text-teal-400">${session?.cleaning_duration_minutes || bed.cleaning_duration || 10} phút</span>
+                </p>
+              </div>
+            </div>
+            <div class="space-y-1 pt-1">
+              <div class="flex items-center justify-between text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}">
+                <span>Đang dọn dẹp...</span>
+                <span class="font-bold text-teal-400">
+                  ${cleaningInfo ? `Còn ${cleaningInfo.remainingMinutes} phút` : 'Đang xử lý'}
+                </span>
+              </div>
+              <div class="w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}">
+                <div class="h-full bg-teal-500 rounded-full transition-all duration-500" style="width: ${cleaningInfo?.progressPercent || 50}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pt-2.5 border-t ${isDark ? 'border-white/10' : 'border-slate-100'} grid grid-cols-3 gap-1.5 w-full">
+            <button
+              type="button"
+              data-action="transfer"
+              class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl border flex items-center justify-center gap-1 cursor-pointer transition-colors ${
+                isDark ? 'border-sky-500/40 text-sky-400 hover:bg-sky-500/10' : 'border-sky-300 text-sky-600 hover:bg-sky-50'
+              }"
+              title="Chuyển phòng"
+            >
+              ${svgTransfer}
+              <span class="truncate">Chuyển</span>
+            </button>
+            <button
+              type="button"
+              data-action="main"
+              class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center gap-1 cursor-pointer shadow-md transition-colors"
+              title="Xong dọn dẹp"
+            >
+              ${svgCheck}
+              <span class="truncate">Xong dọn</span>
+            </button>
+            <button
+              type="button"
+              data-action="release"
+              class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl border flex items-center justify-center gap-1 cursor-pointer transition-colors ${
+                isDark ? 'border-rose-500/40 text-rose-400 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'
+              }"
+              title="Trả phòng"
+            >
+              ${svgLogout}
+              <span class="truncate">Trả giường</span>
+            </button>
+          </div>
+        ` : isOccupied ? `
+          <!-- Khách hàng -->
+          <div class="flex items-center gap-2.5 py-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
+            <div class="relative w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-md ${
+              isDark ? 'bg-slate-800 text-sky-400 border border-white/15' : 'bg-sky-50 text-sky-700 border border-sky-200'
+            }">
+              ${customerName ? customerName.charAt(0).toUpperCase() : 'K'}
+            </div>
+            <div class="min-w-0 flex-1">
+              <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${customerName}</h4>
+              <div class="flex items-center gap-2 text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-0.5">
+                <span class="flex items-center gap-1">
+                  ${svgPhone}
+                  <span>${customerPhone}</span>
+                </span>
+                ${customerDob !== '—' ? `
+                  <span class="text-slate-500">•</span>
+                  <span class="flex items-center gap-1">
+                    ${svgCalendar}
+                    <span>${customerDob}</span>
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- KTV xếp vào vị trí -->
+          <div class="py-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1.5">
+              <span>Nhân viên xếp vào vị trí (${assignedStaffList.length})</span>
+              ${assignedStaffList.length > 1 ? `
+                <span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-full border border-sky-500/20">
+                  ${assignedStaffList.length} KTV phối hợp
+                </span>
+              ` : assignedStaffList.length === 1 ? `
+                <span class="text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'} font-normal">1 KTV phụ trách</span>
+              ` : ''}
+            </div>
+
+            ${assignedStaffList.length > 0 ? `
+              <div class="flex flex-wrap gap-1.5">
+                ${assignedStaffList.map(st => `
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl text-xs border ${
+                    isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-sky-50/70 border-sky-200/70 text-slate-800'
+                  }">
+                    <div class="w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] text-white shrink-0" style="background: ${st.color || '#0ea5e9'}">
+                      ${st.name ? st.name.charAt(0).toUpperCase() : 'K'}
+                    </div>
+                    <span class="font-bold text-[11px] truncate max-w-[120px]">${st.name}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="text-[11px] italic ${isDark ? 'text-slate-500' : 'text-slate-400'}">Chưa phân công KTV</div>
+            `}
+          </div>
+
+          <!-- Dịch vụ thực hiện -->
+          <div class="py-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
+            <div class="text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1.5">
+              Dịch vụ thực hiện (${servicesList.length})
+            </div>
+            <div class="space-y-1.5 max-h-[105px] overflow-y-auto pr-1">
+              ${servicesList.map(svc => `
+                <div class="flex items-center justify-between text-xs p-1.5 rounded-xl ${
+                  isDark ? 'bg-white/5 border border-white/5' : 'bg-slate-50/90 border border-slate-100'
+                }">
+                  <div class="min-w-0 flex-1 pr-2">
+                    <div class="font-semibold truncate ${isDark ? 'text-white' : 'text-slate-800'}">
+                      ${svc.service_name || svc.name || 'Dịch vụ'}
+                      ${svc.is_from_package ? `<span class="ml-1 text-[9px] px-1 py-0.2 rounded font-normal bg-emerald-500/15 text-emerald-400">Gói</span>` : ''}
+                    </div>
+                    ${svc.staff_name ? `
+                      <div class="text-[10px] text-sky-400 truncate mt-0.5">KTV: ${svc.staff_name}</div>
+                    ` : ''}
+                  </div>
+                  <div class="font-bold shrink-0 text-right ${isDark ? 'text-slate-200' : 'text-slate-900'}">
+                    ${svc.is_from_package ? '0 ₫' : formatVND(svc.price || 0)}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Timeline & Tiến độ -->
+          <div class="py-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'} space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}">
+              <div class="flex items-center gap-1.5">
+                ${svgClock}
+                <span>Bắt đầu: <strong class="${isDark ? 'text-slate-200' : 'text-slate-700'}">${startTime}</strong></span>
+                <span class="opacity-40">|</span>
+                <span>Kết thúc: <strong class="${isDark ? 'text-slate-200' : 'text-slate-700'}">${endTime}</strong></span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}">
+              <span>Đã qua: <strong class="${isDark ? 'text-slate-200' : 'text-slate-700'}">${elapsedMins} phút</strong></span>
+              <span>
+                ${isOver ? `
+                  <strong class="text-rose-500 dark:text-rose-400">100% (quá ${overtimeMins} phút)</strong>
+                ` : isWaiting ? `
+                  <strong class="text-sky-500 dark:text-sky-400">0% (Đang chờ)</strong>
+                ` : `
+                  <strong class="${isDark ? 'text-slate-200' : 'text-slate-700'}">${progressPercent}%</strong>
+                `}
+              </span>
+            </div>
+            <div class="w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}">
+              <div class="h-full rounded-full transition-all duration-300" style="width: ${isWaiting ? 10 : progressPercent}%; background: ${cfg.colorStr}; box-shadow: 0 0 8px ${cfg.colorStr};"></div>
+            </div>
+          </div>
+
+          <!-- Action Buttons (3 cột chuẩn mực) -->
+          <div class="pt-2.5 grid grid-cols-3 gap-1.5 w-full">
+            <button
+              type="button"
+              data-action="transfer"
+              class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl border flex items-center justify-center gap-1 cursor-pointer transition-colors ${
+                isDark ? 'border-sky-500/40 text-sky-400 hover:bg-sky-500/10' : 'border-sky-300 text-sky-600 hover:bg-sky-50'
+              }"
+              title="Chuyển phòng"
+            >
+              ${svgTransfer}
+              <span class="truncate">Chuyển</span>
+            </button>
+
+            ${(isWaiting || statusKey === 'reserved') ? `
+              <button
+                type="button"
+                data-action="main"
+                class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 cursor-pointer shadow-md transition-colors"
+                title="Bắt đầu phục vụ"
+              >
+                ${svgPlay}
+                <span class="truncate">${isWaiting ? 'Phục vụ' : 'Bắt đầu'}</span>
+              </button>
+            ` : `
+              <button
+                type="button"
+                data-action="main"
+                class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 cursor-pointer shadow-md transition-colors"
+                title="Thanh toán"
+              >
+                ${svgCreditCard}
+                <span class="truncate">Thanh toán</span>
+              </button>
+            `}
+
+            <button
+              type="button"
+              data-action="release"
+              class="w-full min-w-0 px-2 py-2 text-[11px] font-bold rounded-xl border flex items-center justify-center gap-1 cursor-pointer transition-colors ${
+                isDark ? 'border-rose-500/40 text-rose-400 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'
+              }"
+              title="Trả phòng"
+            >
+              ${svgLogout}
+              <span class="truncate">Trả giường</span>
+            </button>
+          </div>
+        ` : `
+          <!-- Vị trí đang trống -->
+          <div class="py-3 text-center space-y-1">
+            <div class="text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}">
+              Vị trí đang trống
+            </div>
+            <div class="text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}">
+              Sẵn sàng tiếp nhận khách hàng mới
+            </div>
+          </div>
+          <div class="pt-2 border-t ${isDark ? 'border-white/10' : 'border-slate-100'}">
+            <button
+              type="button"
+              data-action="assign"
+              class="w-full py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20 transition-all active:scale-95"
+            >
+              ${svgPlus}
+              <span>Xếp chỗ / Đặt trước</span>
+            </button>
+          </div>
+        `}
+      </div>
+    `;
+
+    // Gắn sự kiện tương tác
+    const btnTransfer = div.querySelector('[data-action="transfer"]');
+    if (btnTransfer) {
+      btnTransfer.onclick = (e) => {
+        e.stopPropagation();
+        callbacksRef.current.onTransferRoom?.(bed, session);
+      };
+    }
+
+    const btnMain = div.querySelector('[data-action="main"]');
+    if (btnMain) {
+      btnMain.onclick = (e) => {
+        e.stopPropagation();
+        if (statusKey === 'cleaning') {
+          callbacksRef.current.onFinishCleaning?.(bed, session);
+        } else if (statusKey === 'waiting' || statusKey === 'reserved') {
+          callbacksRef.current.onStartServing?.(bed, session);
+        } else {
+          callbacksRef.current.onCheckout?.(bed, session);
+        }
+      };
+    }
+
+    const btnRelease = div.querySelector('[data-action="release"]');
+    if (btnRelease) {
+      btnRelease.onclick = (e) => {
+        e.stopPropagation();
+        callbacksRef.current.onReleaseBed?.(bed, session);
+      };
+    }
+
+    const btnAssign = div.querySelector('[data-action="assign"]');
+    if (btnAssign) {
+      btnAssign.onclick = (e) => {
+        e.stopPropagation();
+        callbacksRef.current.onSelectBed?.(bed);
+      };
+    }
+
+    const pillEl = div.querySelector('.bed-spatial-pill');
+    if (pillEl) {
+      pillEl.onclick = (e) => {
+        e.stopPropagation();
+        callbacksRef.current.onSelectBed?.(bed);
+      };
+    }
+
+    const cardEl = div.querySelector('.bed-spatial-card');
+    if (cardEl) {
+      cardEl.onclick = (e) => {
+        if (!e.target.closest('button')) {
+          e.stopPropagation();
+          callbacksRef.current.onSelectBed?.(bed);
+        }
+      };
+    }
+
     div.onclick = (e) => {
       e.stopPropagation();
-      onSelectBed(bed);
     };
 
     return div;
@@ -1065,12 +1420,43 @@ export default function Bed3DViewer({
         const hit = intersects[0].object;
         renderer.domElement.style.cursor = 'pointer';
         if (hit.userData.isBedHitbox) {
+          const bId = hit.userData.bedId;
           setHoveredBed(hit.userData.bedData);
+          bedMeshesRef.current.forEach((item, id) => {
+            if (item.labelObj && item.labelObj.element) {
+              if (id === bId) {
+                item.labelObj.element.classList.add('is-hovered');
+              } else if (!item.labelObj.element.matches(':hover')) {
+                item.labelObj.element.classList.remove('is-hovered');
+              }
+            }
+          });
+        } else {
+          bedMeshesRef.current.forEach(item => {
+            if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
+              item.labelObj.element.classList.remove('is-hovered');
+            }
+          });
         }
       } else {
         renderer.domElement.style.cursor = 'default';
         setHoveredBed(null);
+        bedMeshesRef.current.forEach(item => {
+          if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
+            item.labelObj.element.classList.remove('is-hovered');
+          }
+        });
       }
+    };
+
+    const handlePointerLeave = () => {
+      renderer.domElement.style.cursor = 'default';
+      setHoveredBed(null);
+      bedMeshesRef.current.forEach(item => {
+        if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
+          item.labelObj.element.classList.remove('is-hovered');
+        }
+      });
     };
 
     const handlePointerDown = (e) => {
@@ -1106,6 +1492,7 @@ export default function Bed3DViewer({
     const domEl = labelRenderer.domElement;
     domEl.addEventListener('pointermove', handlePointerMove);
     domEl.addEventListener('pointerdown', handlePointerDown);
+    domEl.addEventListener('pointerleave', handlePointerLeave);
 
     // 9. Animation Loop (hỗ trợ Auto-Tour quay chậm)
     const animate = () => {
@@ -1143,6 +1530,7 @@ export default function Bed3DViewer({
       resizeObserver.disconnect();
       domEl.removeEventListener('pointermove', handlePointerMove);
       domEl.removeEventListener('pointerdown', handlePointerDown);
+      domEl.removeEventListener('pointerleave', handlePointerLeave);
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       if (animFlightRef.current) cancelAnimationFrame(animFlightRef.current);
       if (renderer.domElement && container.contains(renderer.domElement)) {
@@ -1677,7 +2065,7 @@ export default function Bed3DViewer({
         });
       });
     });
-  }, [bedsByRoom, bedSessions, waitingGuests, themeMode, t, onOpenCashier]);
+  }, [bedsByRoom, bedSessions, waitingGuests, themeMode, t, onOpenCashier, staff]);
 
   // Tính toán tọa độ Camera & Target theo từng View Mode và Vị trí (Toàn cửa hàng hoặc Từng phòng)
   const getCameraCoordinates = (roomId, mode) => {
@@ -1817,6 +2205,66 @@ export default function Bed3DViewer({
         ? 'fixed inset-0 z-50 rounded-none h-screen w-screen border-none' 
         : 'h-[690px] border-slate-200/80 dark:border-slate-800'
     } ${isDark ? 'bg-[#090d16]' : 'bg-[#f8fafc]'}`}>
+
+      {/* Scoped CSS cho Thẻ Không gian 3D & Hiệu ứng Hover nở rộng thông tin */}
+      <style>{`
+        .bed-spatial-container {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: auto;
+          user-select: none;
+          z-index: 20;
+        }
+        .bed-spatial-container:hover,
+        .bed-spatial-container.is-hovered {
+          z-index: 1000;
+        }
+        .bed-spatial-pill {
+          display: inline-flex;
+          align-items: center;
+          transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          opacity: 1;
+          transform: scale(1);
+          pointer-events: auto;
+        }
+        .bed-spatial-container:hover .bed-spatial-pill,
+        .bed-spatial-container.is-hovered .bed-spatial-pill {
+          opacity: 0;
+          transform: scale(0.92);
+          pointer-events: none;
+        }
+        .bed-spatial-card {
+          position: absolute;
+          bottom: -10px;
+          left: 50%;
+          transform: translate(-50%, 6px) scale(0.95);
+          opacity: 0;
+          pointer-events: none;
+          visibility: hidden;
+          transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      visibility 0.22s;
+          z-index: 1001;
+        }
+        .bed-spatial-container:hover .bed-spatial-card,
+        .bed-spatial-container.is-hovered .bed-spatial-card {
+          opacity: 1;
+          pointer-events: auto;
+          visibility: visible;
+          transform: translate(-50%, 0) scale(1);
+        }
+        .bed-spatial-card::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: -20px;
+          right: -20px;
+          height: 35px;
+          pointer-events: auto;
+        }
+      `}</style>
 
       {/* Canvas Three.js & CSS2D */}
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />

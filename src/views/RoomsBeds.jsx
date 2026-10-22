@@ -1393,9 +1393,18 @@ export default function RoomsBeds() {
                   bedsByRoom={bedsByRoom}
                   bedSessions={enrichedBedSessions}
                   waitingGuests={waitingGuests}
+                  staff={staff}
                   onSelectBed={(bed) => {
                     setSelectedBedForDrawer(bed);
                   }}
+                  onTransferRoom={(b, s, r) => {
+                    setTransferSource({ bed: b, room: r, session: s });
+                    setTransferModalOpen(true);
+                  }}
+                  onStartServing={(b, s) => handleStartServingNow(b, s)}
+                  onCheckout={(b, s) => handleOpenCheckout(b, s)}
+                  onReleaseBed={(b, s) => handleReleaseBed(b, s)}
+                  onFinishCleaning={(b) => handleFinishCleaning(b)}
                   onAssignGuest={(guest) => {
                     if (guest?.appointment) {
                       const availableBed = beds.find(b => !enrichedBedSessions[b.id]);
