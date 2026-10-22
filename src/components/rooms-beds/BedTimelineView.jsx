@@ -184,29 +184,29 @@ export default function BedTimelineView({
     <div className="relative flex flex-col bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden select-none">
       
       {/* 1. Header Toolbar phụ: Chú thích loại khách & Vạch thời gian */}
-      <div className="px-5 py-3 bg-slate-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+      <div className="px-5 py-3 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="font-bold text-slate-700 flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-slate-500" />
-            Chú giải ca phục vụ:
+            Chú giải ca:
           </span>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded bg-sky-100 border border-sky-400" />
-            <span className="text-slate-600 font-medium">Khách đặt trước (Appointment)</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200/80 text-sky-800 text-[11px] font-semibold">
+            <span className="w-2 h-2 rounded-full bg-sky-500" />
+            <span>Khách đặt trước (Appointment)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-400" />
-            <span className="text-slate-600 font-medium">Khách vãng lai / Trực tiếp (Walk-in)</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Khách vãng lai / Trực tiếp (Walk-in)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded bg-rose-100 border border-rose-400" />
-            <span className="text-slate-600 font-medium">Ca làm quá giờ (Overtime)</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-800 text-[11px] font-semibold">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span>Ca làm quá giờ (Overtime)</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-500 text-[11px]">
-          <Info className="w-3.5 h-3.5 text-slate-400" />
-          <span>Click vào ô trống để <b>Tiếp nhận khách</b> vào giường này</span>
+        <div className="flex items-center gap-2 text-slate-500 text-[11px] bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs">
+          <Info className="w-3.5 h-3.5 text-blue-500" />
+          <span>Click vào khung giờ trống để <b>Tiếp nhận khách</b> vào giường</span>
         </div>
       </div>
 
@@ -216,11 +216,14 @@ export default function BedTimelineView({
         {/* CỘT CỐ ĐỊNH TRÁI: Danh sách Phòng & Giường (Width: 240px) */}
         <div className="w-[240px] shrink-0 border-r border-slate-200 bg-slate-50/50 flex flex-col z-20">
           
-          {/* Header góc trên bên trái */}
-          <div className="h-12 px-4 border-b border-slate-200 bg-slate-100/80 flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>Phòng & Giường</span>
-            <span className="text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-              {beds.length} giường
+          {/* Header góc trên bên trái (chiều cao h-14 đồng bộ với thước đo giờ) */}
+          <div className="h-14 px-4 border-b border-slate-200/90 bg-slate-50/90 backdrop-blur-xs flex items-center justify-between text-xs font-bold text-slate-800">
+            <div className="flex items-center gap-2">
+              <DoorOpen className="w-4 h-4 text-blue-600" />
+              <span>Phòng & Giường</span>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
+              {beds.length} vị trí
             </span>
           </div>
 
@@ -291,40 +294,59 @@ export default function BedTimelineView({
         {/* KHU VỰC CUỘN NGANG TRỤC THỜI GIAN (X-Axis & Timeline Content) */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           
-          {/* Header Giờ (Scroll đồng bộ) */}
+          {/* Header Giờ (Scroll đồng bộ, chiều cao h-14, thiết kế hiện đại) */}
           <div 
             ref={headerScrollRef}
-            className="h-12 border-b border-slate-200 bg-slate-100/80 overflow-x-hidden shrink-0 relative"
+            className="h-14 border-b border-slate-200/90 bg-slate-50/90 backdrop-blur-xs overflow-x-hidden shrink-0 relative"
           >
             <div 
               className="h-full flex" 
               style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
             >
-              {timelineSlots.map((slot, idx) => (
-                <div 
-                  key={slot.time}
-                  style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
-                  className={`h-full border-r border-slate-200/80 shrink-0 px-2 flex flex-col justify-center ${
-                    slot.minutes % 60 === 0 ? 'bg-slate-100/40 font-bold text-slate-800' : 'text-slate-500 font-medium'
-                  }`}
-                >
-                  <span className="text-xs">{slot.time}</span>
-                  <span className="text-[9px] text-slate-400">
-                    {slot.minutes % 60 === 0 ? 'Đúng giờ' : '+30p'}
-                  </span>
-                </div>
-              ))}
+              {timelineSlots.map((slot, idx) => {
+                const isHour = slot.minutes % 60 === 0;
+                return (
+                  <div 
+                    key={slot.time}
+                    style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
+                    className={`h-full shrink-0 px-2.5 flex flex-col justify-center select-none transition-colors ${
+                      isHour 
+                        ? 'border-r border-slate-200 bg-slate-100/50' 
+                        : 'border-r border-slate-200/40 bg-transparent'
+                    }`}
+                  >
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-xs tracking-tight ${
+                        isHour ? 'font-bold text-slate-900' : 'font-medium text-slate-500'
+                      }`}>
+                        {slot.time}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`h-1 rounded-full ${
+                        isHour ? 'w-3 bg-blue-600' : 'w-1.5 bg-slate-300'
+                      }`} />
+                      <span className={`text-[9px] font-medium ${isHour ? 'text-blue-700 font-bold' : 'text-slate-400'}`}>
+                        {isHour ? ':00' : ':30'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Vạch đỏ chỉ giờ thực tại Header */}
+            {/* Vạch đỏ chỉ giờ thực tại Header (Capsule dạ quang đẹp mắt) */}
             {currentLineLeftPx !== null && (
               <div 
-                className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-30 pointer-events-none"
+                className="absolute top-0 bottom-0 z-40 pointer-events-none transition-all duration-300"
                 style={{ left: `${currentLineLeftPx}px` }}
               >
-                <div className="absolute top-1 -left-7 px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-bold rounded shadow">
-                  {formatMinutesToString(currentMinutes)}
+                {/* Floating Glow Pill */}
+                <div className="absolute top-2.5 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full shadow-md shadow-rose-500/30 ring-2 ring-white whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                  <span>{formatMinutesToString(currentMinutes)}</span>
                 </div>
+                <div className="w-0.5 h-full bg-rose-500 mx-auto" />
               </div>
             )}
           </div>
@@ -339,12 +361,14 @@ export default function BedTimelineView({
               className="relative" 
               style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
             >
-              {/* Vạch đỏ chỉ giờ hiện tại chạy dọc toàn bộ timeline */}
+              {/* Vạch đỏ chỉ giờ hiện tại chạy dọc toàn bộ timeline với hiệu ứng viền bóng mờ */}
               {currentLineLeftPx !== null && (
                 <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-rose-500/80 z-20 pointer-events-none"
+                  className="absolute top-0 bottom-0 z-20 pointer-events-none transition-all duration-300"
                   style={{ left: `${currentLineLeftPx}px` }}
-                />
+                >
+                  <div className="w-0.5 h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.45)]" />
+                </div>
               )}
 
               {/* Render từng nhóm phòng & giường */}
@@ -372,29 +396,34 @@ export default function BedTimelineView({
                           className="h-16 border-b border-slate-100 flex relative group"
                         >
                           {/* Lưới các slot 30 phút rỗng */}
-                          {timelineSlots.slice(0, -1).map((slot, sIdx) => (
-                            <div 
-                              key={slot.time}
-                              onClick={() => {
-                                if (onEmptySlotClick) {
-                                  onEmptySlotClick({
-                                    bed,
-                                    room,
-                                    time: slot.time,
-                                    minutes: slot.minutes
-                                  });
-                                }
-                              }}
-                              style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
-                              title={`Bấm để tiếp nhận khách vào ${bed.name} lúc ${slot.time}`}
-                              className="h-full border-r border-slate-100 shrink-0 hover:bg-pink-50/30 transition-colors cursor-pointer relative"
-                            >
-                              {/* Icon cộng mờ khi hover vào slot trống */}
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
-                                <Plus className="w-3.5 h-3.5 text-pink-600" />
+                          {timelineSlots.slice(0, -1).map((slot, sIdx) => {
+                            const isHour = slot.minutes % 60 === 0;
+                            return (
+                              <div 
+                                key={slot.time}
+                                onClick={() => {
+                                  if (onEmptySlotClick) {
+                                    onEmptySlotClick({
+                                      bed,
+                                      room,
+                                      time: slot.time,
+                                      minutes: slot.minutes
+                                    });
+                                  }
+                                }}
+                                style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
+                                title={`Bấm để tiếp nhận khách vào ${bed.name} lúc ${slot.time}`}
+                                className={`h-full shrink-0 transition-colors cursor-pointer relative hover:bg-blue-50/40 ${
+                                  isHour ? 'border-r border-slate-200/70' : 'border-r border-slate-100'
+                                }`}
+                              >
+                                {/* Icon cộng mờ khi hover vào slot trống */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
+                                  <Plus className="w-4 h-4 text-blue-600" />
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
 
                           {/* Render các khối sự kiện của giường */}
                           {events.map(event => {

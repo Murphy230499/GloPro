@@ -1257,41 +1257,15 @@ export default function RoomsBeds() {
         <div className="flex overflow-x-auto gap-1">
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('diagram');
-              setDiagramViewMode('grid');
-            }}
+            onClick={() => setActiveTab('diagram')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'diagram' && diagramViewMode === 'grid'
+              activeTab === 'diagram'
                 ? 'bg-blue-600 text-white shadow-sm font-bold'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
             <LayoutGrid className="w-4 h-4 shrink-0" />
             <span>{t('rooms_beds.tab_diagram', 'Sơ đồ vị trí')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('diagram');
-              setDiagramViewMode('timeline');
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'diagram' && diagramViewMode === 'timeline'
-                ? 'bg-blue-600 text-white shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-            }`}
-          >
-            <Clock className="w-4 h-4 shrink-0" />
-            <span>{t('rooms_beds.view_timeline', 'Timeline theo giường')}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              activeTab === 'diagram' && diagramViewMode === 'timeline'
-                ? 'bg-white/20 text-white'
-                : 'bg-blue-100 text-blue-700'
-            }`}>
-              Mới
-            </span>
           </button>
 
           <button
@@ -1355,65 +1329,89 @@ export default function RoomsBeds() {
           /* ========================================================================= */
           diagramViewMode === 'timeline' ? (
             <div className="space-y-4">
-              {/* Thanh điều khiển ngày & bộ lọc phòng cho Timeline */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePrevDay}
-                    className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
-                    title="Ngày trước"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
+              {/* Thanh điều khiển ngày & bộ lọc phòng cho Timeline (Giao diện hiện đại) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Cụm điều hướng ngày Trước / Hôm nay / Sau */}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/70">
+                    <button
+                      type="button"
+                      onClick={handlePrevDay}
+                      className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                      title="Ngày trước"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={handleToday}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-                      isSameDay(selectedTimelineDate, getTodayDateString())
-                        ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    Hôm nay
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleToday}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isSameDay(selectedTimelineDate, getTodayDateString())
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                      }`}
+                    >
+                      Hôm nay
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={handleNextDay}
-                    className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
-                    title="Ngày sau"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleNextDay}
+                      className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                      title="Ngày sau"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
 
-                  <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
-                    <Calendar className="w-4 h-4 text-slate-400" />
+                  {/* Hiển thị ngày được format đẹp mắt kèm native picker overlay */}
+                  <div className="relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer group">
+                    <Calendar className="w-4 h-4 text-blue-600 shrink-0 group-hover:scale-105 transition-transform" />
+                    <span className="text-xs font-bold text-slate-800">
+                      {isSameDay(selectedTimelineDate, getTodayDateString()) ? 'Hôm nay • ' : ''}
+                      {(() => {
+                        try {
+                          const [y, m, d] = selectedTimelineDate.split('-').map(Number);
+                          const dateObj = new Date(y, m - 1, d);
+                          const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                          return `${days[dateObj.getDay()]}, ${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
+                        } catch (e) {
+                          return selectedTimelineDate;
+                        }
+                      })()}
+                    </span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-blue-600 transition-colors">
+                      ▼
+                    </span>
                     <input
                       type="date"
                       value={selectedTimelineDate}
                       onChange={(e) => e.target.value && setSelectedTimelineDate(e.target.value)}
-                      className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                {/* Bộ lọc phòng */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold pl-1">
                     <Filter className="w-3.5 h-3.5 text-slate-400" />
                     <span>Lọc phòng:</span>
                   </div>
-                  <select
-                    value={timelineRoomFilter}
-                    onChange={(e) => setTimelineRoomFilter(e.target.value)}
-                    className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-                  >
-                    <option value="all">Tất cả phòng ({rooms.length})</option>
-                    {rooms.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={timelineRoomFilter}
+                      onChange={(e) => setTimelineRoomFilter(e.target.value)}
+                      className="text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all appearance-none"
+                    >
+                      <option value="all">Tất cả phòng ({rooms.length})</option>
+                      {rooms.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
