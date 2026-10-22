@@ -1573,11 +1573,20 @@ export default function RoomsBeds() {
                 eventsByBedId={timelineEventsByBedId}
                 bedSessions={enrichedBedSessions}
                 appointments={appointments}
+                staff={staff}
                 selectedDate={selectedTimelineDate}
                 selectedRoomId={timelineRoomFilter}
                 onSelectEvent={handleTimelineSelectEvent}
                 onEmptySlotClick={handleTimelineEmptySlotClick}
                 onBedClick={handleTimelineBedClick}
+                onTransferRoom={(bed, session, room) => {
+                  setTransferSource({ bed, room, session });
+                  setTransferModalOpen(true);
+                }}
+                onStartServing={(bed, session) => handleStartServingNow(bed, session)}
+                onCheckout={(bed, session) => handleOpenCheckout(bed, session)}
+                onReleaseBed={(bed, session) => handleReleaseBed(bed, session)}
+                onFinishCleaning={(bed) => handleFinishCleaning(bed)}
               />
             </div>
           ) : (
