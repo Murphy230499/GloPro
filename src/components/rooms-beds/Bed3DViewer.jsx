@@ -300,8 +300,321 @@ export default function Bed3DViewer({
     return { total, occupied, available, overtime };
   }, [bedsByRoom, bedSessions]);
 
-  // Sinh mô hình 3D Giường Spa Cao Cấp (Luxury Contoured Bed Model with Treatment Lamp)
-  const createLuxuryBedModel = (bed, statusConfig, shadowTex) => {
+  // Sinh mô hình 3D Nhân vật Khách hàng nằm thư giãn làm dịch vụ
+  const createCustomerFigure = (session, isDark) => {
+    const custGroup = new THREE.Group();
+    custGroup.name = `customer_avatar_${session?.id || 'active'}`;
+
+    // 1. Chăn Spa cao cấp phủ từ ngực đến chân khách hàng
+    const blanketMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x334155 : 0xffffff,
+      roughness: 0.6,
+      metalness: 0.05
+    });
+    const blanketGeo = new THREE.BoxGeometry(1.22, 0.18, 1.35);
+    const blanketMesh = new THREE.Mesh(blanketGeo, blanketMat);
+    blanketMesh.position.set(0, 1.05, 0.18);
+    blanketMesh.castShadow = true;
+    blanketMesh.receiveShadow = true;
+    custGroup.add(blanketMesh);
+
+    // Nếp gấp viền chăn ngực sang trọng
+    const cuffMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x475569 : 0xf1f5f9,
+      roughness: 0.5,
+      metalness: 0.1
+    });
+    const cuffGeo = new THREE.BoxGeometry(1.24, 0.05, 0.22);
+    const cuffMesh = new THREE.Mesh(cuffGeo, cuffMat);
+    cuffMesh.position.set(0, 1.14, -0.42);
+    custGroup.add(cuffMesh);
+
+    // 2. Phần vai & ngực khách hàng lộ ra phía trên chăn
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xf5d0b5, // Warm natural healthy skin tone
+      roughness: 0.55,
+      metalness: 0.05
+    });
+    const shouldersGeo = new THREE.CylinderGeometry(0.14, 0.15, 0.55, 16);
+    const shouldersMesh = new THREE.Mesh(shouldersGeo, skinMat);
+    shouldersMesh.rotation.z = Math.PI / 2;
+    shouldersMesh.position.set(0, 1.05, -0.56);
+    custGroup.add(shouldersMesh);
+
+    // 3. Đầu và khuôn mặt thư giãn gối trên gối nằm
+    const headGeo = new THREE.SphereGeometry(0.135, 24, 24);
+    const headMesh = new THREE.Mesh(headGeo, skinMat);
+    headMesh.position.set(0, 1.09, -0.82);
+    headMesh.scale.set(0.92, 0.85, 1.0);
+    headMesh.castShadow = true;
+    custGroup.add(headMesh);
+
+    // Khăn quấn đầu spa / turban thư giãn (Spa Turban Wrap)
+    const turbanMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.7,
+      metalness: 0.02
+    });
+    const turbanGeo = new THREE.TorusGeometry(0.138, 0.045, 16, 24);
+    const turbanMesh = new THREE.Mesh(turbanGeo, turbanMat);
+    turbanMesh.rotation.x = Math.PI / 6;
+    turbanMesh.position.set(0, 1.13, -0.85);
+    custGroup.add(turbanMesh);
+
+    const turbanCapGeo = new THREE.SphereGeometry(0.11, 16, 16);
+    const turbanCap = new THREE.Mesh(turbanCapGeo, turbanMat);
+    turbanCap.position.set(0, 1.11, -0.92);
+    custGroup.add(turbanCap);
+
+    // Mặt nạ mắt thư giãn / đệm mắt spa (Aesthetic Eye Mask)
+    const maskMat = new THREE.MeshStandardMaterial({
+      color: 0x0ea5e9, // Sky Blue soothing mask
+      roughness: 0.3,
+      metalness: 0.15
+    });
+    const maskGeo = new THREE.BoxGeometry(0.16, 0.035, 0.06);
+    const maskMesh = new THREE.Mesh(maskGeo, maskMat);
+    maskMesh.position.set(0, 1.14, -0.78);
+    custGroup.add(maskMesh);
+
+    // 4. Hai cánh tay nằm duỗi tự nhiên thư thái hai bên
+    const leftArmGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.72, 12);
+    const leftArm = new THREE.Mesh(leftArmGeo, skinMat);
+    leftArm.rotation.x = Math.PI / 2;
+    leftArm.position.set(-0.54, 1.02, -0.15);
+    custGroup.add(leftArm);
+
+    const rightArmGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.72, 12);
+    const rightArm = new THREE.Mesh(rightArmGeo, skinMat);
+    rightArm.rotation.x = Math.PI / 2;
+    rightArm.position.set(0.54, 1.02, -0.15);
+    custGroup.add(rightArm);
+
+    return custGroup;
+  };
+
+  // Sinh mô hình 3D Nhân vật Kỹ thuật viên ngồi ghế xoay thao tác dịch vụ
+  const createTechnicianFigure = (session, isDark) => {
+    const techGroup = new THREE.Group();
+    techGroup.name = `technician_avatar_${session?.id || 'active'}`;
+    // Đặt KTV ngồi trên ghế xoay bên cạnh hông giường phía trên (cạnh bàn tinh dầu)
+    techGroup.position.set(1.08, 0, -0.25);
+    // Hướng nhìn và tư thế hơi xoay và nghiêng người về phía giường và đầu khách
+    techGroup.rotation.y = -Math.PI * 0.62;
+
+    const chromeMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.9,
+      roughness: 0.15
+    });
+
+    // -------------------------------------------------------------
+    // A. GHẾ XOAY SALON / SPA ERGONOMIC STOOL
+    // -------------------------------------------------------------
+    const stoolGroup = new THREE.Group();
+
+    // 1. Đế 5 chấu có bánh xe di chuyển
+    const hubMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.08, 0.05, 16),
+      chromeMat
+    );
+    hubMesh.position.y = 0.05;
+    stoolGroup.add(hubMesh);
+
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.2 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * 2 * Math.PI) / 5;
+      const legGeo = new THREE.BoxGeometry(0.24, 0.02, 0.035);
+      const legMesh = new THREE.Mesh(legGeo, legMat);
+      legMesh.position.set(Math.cos(angle) * 0.12, 0.045, Math.sin(angle) * 0.12);
+      legMesh.rotation.y = -angle;
+      stoolGroup.add(legMesh);
+
+      const wheelMesh = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), wheelMat);
+      wheelMesh.position.set(Math.cos(angle) * 0.23, 0.022, Math.sin(angle) * 0.23);
+      stoolGroup.add(wheelMesh);
+    }
+
+    // 2. Trục nâng hơi ben thủy lực kim loại
+    const pistonMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 0.42, 16),
+      chromeMat
+    );
+    pistonMesh.position.y = 0.24;
+    stoolGroup.add(pistonMesh);
+
+    // 3. Đệm ngồi tròn bọc da cao cấp
+    const seatMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x0f172a : 0x1e293b,
+      roughness: 0.35,
+      metalness: 0.1
+    });
+    const seatMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.23, 0.24, 0.07, 24),
+      seatMat
+    );
+    seatMesh.position.y = 0.48;
+    seatMesh.castShadow = true;
+    stoolGroup.add(seatMesh);
+
+    techGroup.add(stoolGroup);
+
+    // -------------------------------------------------------------
+    // B. NHÂN VẬT KỸ THUẬT VIÊN NGỒI LÀM DỊCH VỤ
+    // -------------------------------------------------------------
+    const bodyGroup = new THREE.Group();
+
+    // Vật liệu da & đồng phục chuẩn GloPro
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xf5d0b5,
+      roughness: 0.55,
+      metalness: 0.05
+    });
+
+    // Đồng phục Spa màu Xanh Navy / GloPro Blue thanh lịch
+    const uniformMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x0284c7 : 0x0369a1, // GloPro Professional Blue
+      roughness: 0.45,
+      metalness: 0.1
+    });
+
+    const pantsMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x0f172a : 0x1e293b, // Deep Charcoal Navy Pants
+      roughness: 0.6
+    });
+
+    // 1. Chân & Đầu gối ngồi trên ghế
+    const thighGeo = new THREE.CylinderGeometry(0.06, 0.055, 0.28, 14);
+    const leftThigh = new THREE.Mesh(thighGeo, pantsMat);
+    leftThigh.rotation.x = Math.PI / 2.2;
+    leftThigh.position.set(-0.08, 0.49, 0.12);
+    bodyGroup.add(leftThigh);
+
+    const rightThigh = new THREE.Mesh(thighGeo, pantsMat);
+    rightThigh.rotation.x = Math.PI / 2.2;
+    rightThigh.position.set(0.08, 0.49, 0.12);
+    bodyGroup.add(rightThigh);
+
+    // Cẳng chân từ đầu gối xuống sàn
+    const calfGeo = new THREE.CylinderGeometry(0.048, 0.042, 0.36, 14);
+    const leftCalf = new THREE.Mesh(calfGeo, pantsMat);
+    leftCalf.position.set(-0.08, 0.25, 0.24);
+    bodyGroup.add(leftCalf);
+
+    const rightCalf = new THREE.Mesh(calfGeo, pantsMat);
+    rightCalf.position.set(0.08, 0.25, 0.24);
+    bodyGroup.add(rightCalf);
+
+    // Giày salon trắng chuyên nghiệp
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+    const shoeGeo = new THREE.BoxGeometry(0.07, 0.05, 0.13);
+    const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+    leftShoe.position.set(-0.08, 0.05, 0.27);
+    bodyGroup.add(leftShoe);
+
+    const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+    rightShoe.position.set(0.08, 0.05, 0.27);
+    bodyGroup.add(rightShoe);
+
+    // 2. Thân trên & Áo đồng phục (Tư thế ngồi hơi nghiêng về phía trước để chăm sóc khách)
+    const upperBodyGroup = new THREE.Group();
+    upperBodyGroup.position.set(0, 0.54, 0.02);
+    upperBodyGroup.rotation.x = 0.16;
+
+    // Thân áo
+    const torsoMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.38, 0.2),
+      uniformMat
+    );
+    torsoMesh.position.y = 0.19;
+    torsoMesh.castShadow = true;
+    upperBodyGroup.add(torsoMesh);
+
+    // Viền cổ áo trắng
+    const collarMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.04, 0.21),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+    );
+    collarMesh.position.set(0, 0.37, 0);
+    upperBodyGroup.add(collarMesh);
+
+    // Bảng tên nhân viên vàng nhỏ trên ngực trái
+    const badgeMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.025, 0.01),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 })
+    );
+    badgeMesh.position.set(-0.09, 0.27, 0.105);
+    upperBodyGroup.add(badgeMesh);
+
+    // 3. Cánh tay & Bàn tay thao tác dịch vụ (Arms extended forward towards treatment zone)
+    const armMat = uniformMat;
+    const gloveMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8, // Găng tay trị liệu spa xanh ngọc tiệt trùng
+      roughness: 0.2,
+      metalness: 0.1
+    });
+
+    // Cánh tay trái
+    const lUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.22, 12), armMat);
+    lUpperArm.position.set(-0.20, 0.25, 0.06);
+    lUpperArm.rotation.x = 0.55;
+    upperBodyGroup.add(lUpperArm);
+
+    const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.22, 12), gloveMat);
+    lForearm.position.set(-0.16, 0.14, 0.22);
+    lForearm.rotation.x = 1.35;
+    lForearm.rotation.z = -0.25;
+    upperBodyGroup.add(lForearm);
+
+    // Cánh tay phải
+    const rUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.22, 12), armMat);
+    rUpperArm.position.set(0.20, 0.25, 0.06);
+    rUpperArm.rotation.x = 0.55;
+    upperBodyGroup.add(rUpperArm);
+
+    const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.22, 12), gloveMat);
+    rForearm.position.set(0.16, 0.14, 0.22);
+    rForearm.rotation.x = 1.35;
+    rForearm.rotation.z = 0.25;
+    upperBodyGroup.add(rForearm);
+
+    // 4. Cổ & Đầu & Tóc bới gọn gàng
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 12), skinMat);
+    neckMesh.position.y = 0.41;
+    upperBodyGroup.add(neckMesh);
+
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.115, 20, 20), skinMat);
+    headMesh.position.y = 0.51;
+    headMesh.castShadow = true;
+    upperBodyGroup.add(headMesh);
+
+    // Tóc bới cao gọn gàng chuyên nghiệp (Chignon Bun)
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.8 });
+    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.12, 18, 18), hairMat);
+    hairCap.position.set(0, 0.53, -0.02);
+    upperBodyGroup.add(hairCap);
+
+    const bunMesh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 14), hairMat);
+    bunMesh.position.set(0, 0.57, -0.11);
+    upperBodyGroup.add(bunMesh);
+
+    // Khẩu trang y tế / spa trắng sạch sẽ
+    const maskMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.055, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+    );
+    maskMesh.position.set(0, 0.49, 0.09);
+    upperBodyGroup.add(maskMesh);
+
+    bodyGroup.add(upperBodyGroup);
+    techGroup.add(bodyGroup);
+
+    return techGroup;
+  };
+
+  // Sinh mô hình 3D Giường Spa Cao Cấp (Luxury Contoured Bed Model with Treatment Lamp & Avatars)
+  const createLuxuryBedModel = (bed, statusConfig, shadowTex, session = null) => {
     const group = new THREE.Group();
     group.name = `luxury_bed_${bed.id}`;
 
@@ -491,8 +804,30 @@ export default function Bed3DViewer({
 
     group.add(lampGroup);
 
+    // 10. Hiển thị nhân vật Khách hàng & Nhân viên phục vụ khi vị trí đang bận, sắp hoàn thành hoặc quá giờ
+    const statusKey = session ? (session.status || 'in_progress') : 'available';
+    const isOccupied = statusKey === 'in_progress' || statusKey === 'nearly_finished' || statusKey === 'overtime';
+    const isWaiting = statusKey === 'waiting';
+
+    // A. Nhân vật Khách hàng đại diện nằm trên giường làm dịch vụ
+    if ((isOccupied || isWaiting) && session) {
+      const customerFigure = createCustomerFigure(session, isDark);
+      group.add(customerFigure);
+    }
+
+    // B. Nhân vật Nhân viên đại diện ngồi ghế xoay thao tác dịch vụ
+    if (isOccupied && session) {
+      const techName = session.technician_name || session.staff_name || session.employee_name;
+      const hasTech = Boolean(techName && !techName.toLowerCase().includes('chưa') && techName !== 'Unassigned');
+      // Hiển thị KTV khi có nhân viên phục vụ hoặc trong ca làm dịch vụ
+      if (hasTech || !techName) {
+        const technicianFigure = createTechnicianFigure(session, isDark);
+        group.add(technicianFigure);
+      }
+    }
+
     // Hitbox vô hình bắt click/hover
-    const hitboxGeo = new THREE.BoxGeometry(2.6, 2.2, 3.4);
+    const hitboxGeo = new THREE.BoxGeometry(2.8, 2.2, 3.4);
     const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
     hitbox.position.y = 1.0;
@@ -1316,7 +1651,7 @@ export default function Bed3DViewer({
         const statusKey = sess ? (sess.status || 'in_progress') : 'available';
         const cfg = STATUS_THEME[statusKey] || STATUS_THEME.available;
 
-        const { group: bedGroup, ledMesh, haloMesh, hitbox } = createLuxuryBedModel(bed, cfg, shadowTex);
+        const { group: bedGroup, ledMesh, haloMesh, hitbox } = createLuxuryBedModel(bed, cfg, shadowTex, sess);
 
         const bX = roomX + (bIdx - (bedCols - 1) / 2) * bedSpacingX;
         const bZ = roomZ + bedZOffset;
