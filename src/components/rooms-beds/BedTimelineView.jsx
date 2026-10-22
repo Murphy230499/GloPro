@@ -43,8 +43,7 @@ export default function BedTimelineView({
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
   const hoverTimerRef = useRef(null);
 
-  const headerScrollRef = useRef(null);
-  const bodyScrollRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   const isToday = isSameDay(selectedDate, getTodayDateString());
 
@@ -66,25 +65,15 @@ export default function BedTimelineView({
 
   // 3. Tự động cuộn đến khung giờ hiện tại khi mở giao diện
   useEffect(() => {
-    if (bodyScrollRef.current) {
+    if (scrollContainerRef.current) {
       const now = new Date();
       const nowMins = now.getHours() * 60 + now.getMinutes();
       // Cuộn để khung giờ hiện tại nằm lùi lại 30 phút cho dễ nhìn
       const scrollMins = Math.max(0, nowMins - TIMELINE_START_MINUTES - 30);
       const scrollPx = (scrollMins / SLOT_INTERVAL_MINUTES) * DEFAULT_SLOT_WIDTH_PX;
-      bodyScrollRef.current.scrollLeft = scrollPx;
-      if (headerScrollRef.current) {
-        headerScrollRef.current.scrollLeft = scrollPx;
-      }
+      scrollContainerRef.current.scrollLeft = scrollPx;
     }
   }, []);
-
-  // Đồng bộ thanh cuộn giữa header và body
-  const handleBodyScroll = () => {
-    if (headerScrollRef.current && bodyScrollRef.current) {
-      headerScrollRef.current.scrollLeft = bodyScrollRef.current.scrollLeft;
-    }
-  };
 
   // 4. Lọc và nhóm Giường theo Phòng
   const filteredRooms = useMemo(() => {
@@ -210,97 +199,41 @@ export default function BedTimelineView({
         </div>
       </div>
 
-      {/* 2. Bảng Timeline chính gồm Cột Cố định Giường và Lưới Giờ Cuộn Ngang */}
-      <div className="flex flex-1 min-h-[520px] max-h-[720px] overflow-hidden">
-        
-        {/* CỘT CỐ ĐỊNH TRÁI: Danh sách Phòng & Giường (Width: 240px) */}
-        <div className="w-[240px] shrink-0 border-r border-slate-200 bg-slate-50/50 flex flex-col z-20">
-          
-          {/* Header góc trên bên trái (chiều cao h-14 đồng bộ với thước đo giờ) */}
-          <div className="h-14 px-4 border-b border-slate-200/90 bg-slate-50/90 backdrop-blur-xs flex items-center justify-between text-xs font-bold text-slate-800">
-            <div className="flex items-center gap-2">
-              <DoorOpen className="w-4 h-4 text-blue-600" />
-              <span>Phòng & Giường</span>
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
-              {beds.length} vị trí
-            </span>
-          </div>
-
-          {/* Danh sách phòng & giường (cuộn đồng bộ theo trục dọc) */}
-          <div className="flex-1 overflow-hidden overflow-y-auto divide-y divide-slate-100">
-            {filteredRooms.map(room => {
-              const roomBeds = bedsByRoom[room.id] || [];
-              if (roomBeds.length === 0) return null;
-
-              return (
-                <div key={room.id} className="bg-white">
-                  {/* Tiêu đề phòng */}
-                  <div className="px-3.5 py-2 bg-slate-100/60 border-b border-slate-200/60 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                      <DoorOpen className="w-3.5 h-3.5 text-pink-600" />
-                      {room.name}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium">
-                      {roomBeds.length} giường
-                    </span>
-                  </div>
-
-                  {/* Danh sách các giường trong phòng */}
-                  {roomBeds.map(bed => (
-                    <div 
-                      key={bed.id}
-                      onClick={() => onBedClick && onBedClick(bed, room)}
-                      className="h-16 px-3.5 py-2 border-b border-slate-100 flex flex-col justify-center hover:bg-slate-50/80 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-slate-900 truncate">
-                          {bed.name}
-                        </span>
-                        {getBedStatusBadge(bed)}
-                      </div>
-                      <span className="text-[10px] text-slate-400 truncate mt-0.5">
-                        {bed.display_name || bed.code || `${room.name} • ${bed.name}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-
-            {/* Giường chưa phân phòng nếu có */}
-            {bedsByRoom['__unassigned'] && bedsByRoom['__unassigned'].length > 0 && (
-              <div className="bg-white">
-                <div className="px-3.5 py-2 bg-slate-100/60 border-b border-slate-200/60">
-                  <span className="text-xs font-bold text-slate-700">Chưa gán phòng</span>
-                </div>
-                {bedsByRoom['__unassigned'].map(bed => (
-                  <div 
-                    key={bed.id}
-                    onClick={() => onBedClick && onBedClick(bed, null)}
-                    className="h-16 px-3.5 py-2 border-b border-slate-100 flex flex-col justify-center hover:bg-slate-50 cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-800 truncate">{bed.name}</span>
-                      {getBedStatusBadge(bed)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* KHU VỰC CUỘN NGANG TRỤC THỜI GIAN (X-Axis & Timeline Content) */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          
-          {/* Header Giờ (Scroll đồng bộ, chiều cao h-14, thiết kế hiện đại) */}
-          <div 
-            ref={headerScrollRef}
-            className="h-14 border-b border-slate-200/90 bg-slate-50/90 backdrop-blur-xs overflow-x-hidden shrink-0 relative"
-          >
+      {/* 2. Bảng Timeline chính (Hợp nhất 1 container cuộn duy nhất: Giường & Timeline cuộn cùng nhau) */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-auto relative bg-white min-h-[520px] max-h-[720px] select-none"
+      >
+        <div 
+          className="min-w-max relative"
+          style={{ width: `${240 + totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
+        >
+          {/* Vạch đỏ chỉ giờ hiện tại chạy dọc toàn bộ chiều cao của bảng timeline */}
+          {currentLineLeftPx !== null && (
             <div 
-              className="h-full flex" 
+              className="absolute top-0 bottom-0 z-15 pointer-events-none transition-all duration-300"
+              style={{ left: `${240 + currentLineLeftPx}px` }}
+            >
+              <div className="w-0.5 h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.45)]" />
+            </div>
+          )}
+
+          {/* HÀNG HEADER DÍNH TRÊN CÙNG (Sticky Top Header Row) */}
+          <div className="sticky top-0 z-30 flex h-14 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/90">
+            {/* Ô góc trên bên trái: Phòng & Giường (Dính cả Top lẫn Left) */}
+            <div className="w-[240px] shrink-0 sticky left-0 z-40 bg-slate-50/95 backdrop-blur-xs border-r border-slate-200 px-4 flex items-center justify-between text-xs font-bold text-slate-800 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+              <div className="flex items-center gap-2">
+                <DoorOpen className="w-4 h-4 text-blue-600" />
+                <span>Phòng & Giường</span>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-0.5 rounded-full border border-slate-200 shadow-2xs">
+                {beds.length} vị trí
+              </span>
+            </div>
+
+            {/* Thước đo giờ trục X (bên phải góc cố định) */}
+            <div 
+              className="flex relative"
               style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
             >
               {timelineSlots.map((slot, idx) => {
@@ -333,176 +266,282 @@ export default function BedTimelineView({
                   </div>
                 );
               })}
-            </div>
 
-            {/* Vạch đỏ chỉ giờ thực tại Header (Capsule dạ quang đẹp mắt) */}
-            {currentLineLeftPx !== null && (
-              <div 
-                className="absolute top-0 bottom-0 z-40 pointer-events-none transition-all duration-300"
-                style={{ left: `${currentLineLeftPx}px` }}
-              >
-                {/* Floating Glow Pill */}
-                <div className="absolute top-2.5 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full shadow-md shadow-rose-500/30 ring-2 ring-white whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                  <span>{formatMinutesToString(currentMinutes)}</span>
-                </div>
-                <div className="w-0.5 h-full bg-rose-500 mx-auto" />
-              </div>
-            )}
-          </div>
-
-          {/* Lưới các giường và sự kiện (Cuộn dọc & ngang) */}
-          <div 
-            ref={bodyScrollRef}
-            onScroll={handleBodyScroll}
-            className="flex-1 overflow-auto relative bg-white"
-          >
-            <div 
-              className="relative" 
-              style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
-            >
-              {/* Vạch đỏ chỉ giờ hiện tại chạy dọc toàn bộ timeline với hiệu ứng viền bóng mờ */}
+              {/* Viên capsule hiển thị giờ thực tại Header */}
               {currentLineLeftPx !== null && (
                 <div 
-                  className="absolute top-0 bottom-0 z-20 pointer-events-none transition-all duration-300"
+                  className="absolute top-0 bottom-0 z-40 pointer-events-none transition-all duration-300"
                   style={{ left: `${currentLineLeftPx}px` }}
                 >
-                  <div className="w-0.5 h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.45)]" />
+                  <div className="absolute top-2.5 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full shadow-md shadow-rose-500/30 ring-2 ring-white whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                    <span>{formatMinutesToString(currentMinutes)}</span>
+                  </div>
+                  <div className="w-0.5 h-full bg-rose-500 mx-auto" />
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* Render từng nhóm phòng & giường */}
-              {filteredRooms.map(room => {
-                const roomBeds = bedsByRoom[room.id] || [];
-                if (roomBeds.length === 0) return null;
+          {/* THÂN BẢNG: CÁC NHÓM PHÒNG & GIƯỜNG (Mỗi hàng gắn liền cả Cột Tên Giường và Lưới Timeline) */}
+          {filteredRooms.map(room => {
+            const roomBeds = bedsByRoom[room.id] || [];
+            if (roomBeds.length === 0) return null;
 
-                return (
-                  <div key={room.id} className="relative">
-                    
-                    {/* Hàng Header ngăn cách phòng */}
-                    <div className="h-8 bg-slate-50/90 border-b border-slate-200/60 flex items-center px-4 sticky left-0 z-10">
-                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        {room.name}
-                      </span>
-                    </div>
+            return (
+              <div key={room.id} className="relative">
+                {/* Hàng Tiêu đề Phòng */}
+                <div className="flex h-8 bg-slate-100/80 border-b border-slate-200/80">
+                  <div className="w-[240px] shrink-0 sticky left-0 z-20 bg-slate-100/95 border-r border-slate-200/80 px-3.5 flex items-center justify-between shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                      <DoorOpen className="w-3.5 h-3.5 text-blue-600" />
+                      {room.name}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                      {roomBeds.length} giường
+                    </span>
+                  </div>
+                  <div className="flex-1 bg-slate-100/40 flex items-center px-4">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      {room.name}
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Hàng timeline của từng giường */}
-                    {roomBeds.map(bed => {
-                      const events = eventsByBedId[bed.id] || [];
+                {/* Danh sách các Giường trong Phòng: Mỗi giường là 1 flex row duy nhất */}
+                {roomBeds.map(bed => {
+                  const events = eventsByBedId[bed.id] || [];
 
-                      return (
-                        <div 
-                          key={bed.id}
-                          className="h-16 border-b border-slate-100 flex relative group"
-                        >
-                          {/* Lưới các slot 30 phút rỗng */}
-                          {timelineSlots.slice(0, -1).map((slot, sIdx) => {
-                            const isHour = slot.minutes % 60 === 0;
-                            return (
-                              <div 
-                                key={slot.time}
-                                onClick={() => {
-                                  if (onEmptySlotClick) {
-                                    onEmptySlotClick({
-                                      bed,
-                                      room,
-                                      time: slot.time,
-                                      minutes: slot.minutes
-                                    });
-                                  }
-                                }}
-                                style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
-                                title={`Bấm để tiếp nhận khách vào ${bed.name} lúc ${slot.time}`}
-                                className={`h-full shrink-0 transition-colors cursor-pointer relative hover:bg-blue-50/40 ${
-                                  isHour ? 'border-r border-slate-200/70' : 'border-r border-slate-100'
-                                }`}
-                              >
-                                {/* Icon cộng mờ khi hover vào slot trống */}
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
-                                  <Plus className="w-4 h-4 text-blue-600" />
-                                </div>
+                  return (
+                    <div 
+                      key={bed.id}
+                      className="flex h-16 border-b border-slate-100 hover:bg-slate-50/30 transition-colors group"
+                    >
+                      {/* Cột Tên Giường (Sticky Left) */}
+                      <div 
+                        onClick={() => onBedClick && onBedClick(bed, room)}
+                        className="w-[240px] shrink-0 sticky left-0 z-10 bg-white group-hover:bg-slate-50/90 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-semibold text-slate-900 truncate">
+                            {bed.name}
+                          </span>
+                          {getBedStatusBadge(bed)}
+                        </div>
+                        <span className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {bed.display_name || bed.code || `${room.name} • ${bed.name}`}
+                        </span>
+                      </div>
+
+                      {/* Lưới Timeline của Giường này */}
+                      <div 
+                        className="relative shrink-0 flex"
+                        style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
+                      >
+                        {/* Các slot 30 phút rỗng */}
+                        {timelineSlots.slice(0, -1).map((slot, sIdx) => {
+                          const isHour = slot.minutes % 60 === 0;
+                          return (
+                            <div 
+                              key={slot.time}
+                              onClick={() => {
+                                if (onEmptySlotClick) {
+                                  onEmptySlotClick({
+                                    bed,
+                                    room,
+                                    time: slot.time,
+                                    minutes: slot.minutes
+                                  });
+                                }
+                              }}
+                              style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
+                              title={`Bấm để tiếp nhận khách vào ${bed.name} lúc ${slot.time}`}
+                              className={`h-full shrink-0 transition-colors cursor-pointer relative hover:bg-blue-50/40 ${
+                                isHour ? 'border-r border-slate-200/70' : 'border-r border-slate-100'
+                              }`}
+                            >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
+                                <Plus className="w-4 h-4 text-blue-600" />
                               </div>
-                            );
-                          })}
+                            </div>
+                          );
+                        })}
 
-                          {/* Render các khối sự kiện của giường */}
-                          {events.map(event => {
-                            const pos = calculateTimelinePosition(event, TIMELINE_START_MINUTES, DEFAULT_SLOT_WIDTH_PX, SLOT_INTERVAL_MINUTES);
-                            if (!pos.isVisible) return null;
+                        {/* Các khối sự kiện */}
+                        {events.map(event => {
+                          const pos = calculateTimelinePosition(event, TIMELINE_START_MINUTES, DEFAULT_SLOT_WIDTH_PX, SLOT_INTERVAL_MINUTES);
+                          if (!pos.isVisible) return null;
 
-                            const isWalkIn = event.type === 'walk_in';
-                            const isOvertime = event.is_overtime;
+                          const isWalkIn = event.type === 'walk_in';
+                          const isOvertime = event.is_overtime;
 
-                            // Theme màu theo loại sự kiện (Tuân thủ nguyên tắc không dùng màu tím)
-                            let cardTheme = isWalkIn
-                              ? 'bg-emerald-50/95 border-emerald-300 text-emerald-950 hover:bg-emerald-100/90 hover:border-emerald-400 shadow-xs'
-                              : 'bg-sky-50/95 border-sky-300 text-sky-950 hover:bg-sky-100/90 hover:border-sky-400 shadow-xs';
+                          let cardTheme = isWalkIn
+                            ? 'bg-emerald-50/95 border-emerald-300 text-emerald-950 hover:bg-emerald-100/90 hover:border-emerald-400 shadow-xs'
+                            : 'bg-sky-50/95 border-sky-300 text-sky-950 hover:bg-sky-100/90 hover:border-sky-400 shadow-xs';
 
-                            if (isOvertime) {
-                              cardTheme = 'bg-rose-50/95 border-rose-400 text-rose-950 hover:bg-rose-100 shadow-xs animate-pulse ring-1 ring-rose-300';
-                            }
+                          if (isOvertime) {
+                            cardTheme = 'bg-rose-50/95 border-rose-400 text-rose-950 hover:bg-rose-100 shadow-xs animate-pulse ring-1 ring-rose-300';
+                          }
 
-                            return (
-                              <div
-                                key={event.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (onSelectEvent) onSelectEvent(event, bed, room);
-                                }}
-                                onMouseEnter={(e) => handleEventMouseEnter(e, event)}
-                                onMouseLeave={handleEventMouseLeave}
-                                style={{
-                                  left: `${pos.left}px`,
-                                  width: `${pos.width}px`
-                                }}
-                                className={`absolute top-1.5 bottom-1.5 rounded-xl border p-2 flex flex-col justify-between overflow-hidden cursor-pointer transition-all z-10 ${cardTheme}`}
-                              >
-                                {/* Dòng 1: Badge phân loại + Tên khách + Giờ */}
-                                <div className="flex items-center justify-between gap-1.5 overflow-hidden">
-                                  <div className="flex items-center gap-1 truncate">
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase shrink-0 ${
-                                      isWalkIn ? 'bg-emerald-200/70 text-emerald-800' : 'bg-sky-200/70 text-sky-800'
-                                    }`}>
-                                      {event.typeLabel}
-                                    </span>
-                                    <span className="font-bold text-xs truncate">
-                                      {event.customer_name}
-                                    </span>
-                                  </div>
-
-                                  <span className="text-[10px] font-semibold opacity-80 shrink-0 flex items-center gap-0.5">
-                                    <Clock className="w-2.5 h-2.5" />
-                                    {event.start_time} - {event.end_time}
+                          return (
+                            <div
+                              key={event.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSelectEvent) onSelectEvent(event, bed, room);
+                              }}
+                              onMouseEnter={(e) => handleEventMouseEnter(e, event)}
+                              onMouseLeave={handleEventMouseLeave}
+                              style={{
+                                left: `${pos.left}px`,
+                                width: `${pos.width}px`
+                              }}
+                              className={`absolute top-1.5 bottom-1.5 rounded-xl border p-2 flex flex-col justify-between overflow-hidden cursor-pointer transition-all z-10 ${cardTheme}`}
+                            >
+                              {/* Dòng 1: Badge + Tên khách + Giờ */}
+                              <div className="flex items-center justify-between gap-1.5 overflow-hidden">
+                                <div className="flex items-center gap-1 truncate">
+                                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase shrink-0 ${
+                                    isWalkIn ? 'bg-emerald-200/70 text-emerald-800' : 'bg-sky-200/70 text-sky-800'
+                                  }`}>
+                                    {event.typeLabel}
+                                  </span>
+                                  <span className="font-bold text-xs truncate">
+                                    {event.customer_name}
                                   </span>
                                 </div>
 
-                                {/* Dòng 2: KTV phụ trách + Dịch vụ */}
-                                <div className="flex items-center justify-between text-[11px] opacity-90 truncate gap-2">
-                                  <div className="flex items-center gap-1 truncate font-medium">
-                                    <Scissors className="w-3 h-3 shrink-0 opacity-70" />
-                                    <span className="truncate">{event.service_name}</span>
-                                  </div>
+                                <span className="text-[10px] font-semibold opacity-80 shrink-0 flex items-center gap-0.5">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  {event.start_time} - {event.end_time}
+                                </span>
+                              </div>
 
-                                  <div className="flex items-center gap-1 shrink-0 text-[10px] bg-white/60 px-1.5 py-0.5 rounded-md font-semibold border border-black/5">
-                                    <User className="w-2.5 h-2.5" />
-                                    <span className="truncate max-w-[70px]">{event.staff_name}</span>
-                                  </div>
+                              {/* Dòng 2: KTV phụ trách + Dịch vụ */}
+                              <div className="flex items-center justify-between text-[11px] opacity-90 truncate gap-2">
+                                <div className="flex items-center gap-1 truncate font-medium">
+                                  <Scissors className="w-3 h-3 shrink-0 opacity-70" />
+                                  <span className="truncate">{event.service_name}</span>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0 text-[10px] bg-white/60 px-1.5 py-0.5 rounded-md font-semibold border border-black/5">
+                                  <User className="w-2.5 h-2.5" />
+                                  <span className="truncate max-w-[70px]">{event.staff_name}</span>
                                 </div>
                               </div>
-                            );
-                          })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
 
-                        </div>
-                      );
-                    })}
+          {/* Giường chưa phân phòng nếu có */}
+          {bedsByRoom['__unassigned'] && bedsByRoom['__unassigned'].length > 0 && (
+            <div className="relative">
+              <div className="flex h-8 bg-slate-100/80 border-b border-slate-200/80">
+                <div className="w-[240px] shrink-0 sticky left-0 z-20 bg-slate-100/95 border-r border-slate-200/80 px-3.5 flex items-center justify-between shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                  <span className="text-xs font-bold text-slate-700">Chưa gán phòng</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {bedsByRoom['__unassigned'].length} giường
+                  </span>
+                </div>
+                <div className="flex-1 bg-slate-100/40 flex items-center px-4">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Chưa gán phòng
+                  </span>
+                </div>
+              </div>
+
+              {bedsByRoom['__unassigned'].map(bed => {
+                const events = eventsByBedId[bed.id] || [];
+                return (
+                  <div 
+                    key={bed.id}
+                    className="flex h-16 border-b border-slate-100 hover:bg-slate-50/30 transition-colors group"
+                  >
+                    <div 
+                      onClick={() => onBedClick && onBedClick(bed, null)}
+                      className="w-[240px] shrink-0 sticky left-0 z-10 bg-white group-hover:bg-slate-50/90 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-semibold text-slate-800 truncate">{bed.name}</span>
+                        {getBedStatusBadge(bed)}
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative shrink-0 flex"
+                      style={{ width: `${totalGridWidthPx + DEFAULT_SLOT_WIDTH_PX}px` }}
+                    >
+                      {timelineSlots.slice(0, -1).map((slot, sIdx) => {
+                        const isHour = slot.minutes % 60 === 0;
+                        return (
+                          <div 
+                            key={slot.time}
+                            onClick={() => {
+                              if (onEmptySlotClick) {
+                                onEmptySlotClick({
+                                  bed,
+                                  room: null,
+                                  time: slot.time,
+                                  minutes: slot.minutes
+                                });
+                              }
+                            }}
+                            style={{ width: `${DEFAULT_SLOT_WIDTH_PX}px` }}
+                            className={`h-full shrink-0 transition-colors cursor-pointer relative hover:bg-blue-50/40 ${
+                              isHour ? 'border-r border-slate-200/70' : 'border-r border-slate-100'
+                            }`}
+                          >
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
+                              <Plus className="w-4 h-4 text-blue-600" />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {events.map(event => {
+                        const pos = calculateTimelinePosition(event, TIMELINE_START_MINUTES, DEFAULT_SLOT_WIDTH_PX, SLOT_INTERVAL_MINUTES);
+                        if (!pos.isVisible) return null;
+                        const isWalkIn = event.type === 'walk_in';
+                        return (
+                          <div 
+                            key={event.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectEvent) onSelectEvent(event, bed, null);
+                            }}
+                            onMouseEnter={(e) => handleEventMouseEnter(e, event)}
+                            onMouseLeave={handleEventMouseLeave}
+                            style={{ left: `${pos.left}px`, width: `${pos.width}px` }}
+                            className={`absolute top-1.5 bottom-1.5 rounded-xl border p-2 flex flex-col justify-between overflow-hidden cursor-pointer transition-all z-10 ${
+                              isWalkIn ? 'bg-emerald-50/95 border-emerald-300 text-emerald-950' : 'bg-sky-50/95 border-sky-300 text-sky-950'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-xs truncate">{event.customer_name}</span>
+                              <span className="text-[10px] opacity-80">{event.start_time} - {event.end_time}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] opacity-90 truncate">
+                              <span className="truncate">{event.service_name}</span>
+                              <span className="truncate max-w-[70px] text-[10px]">{event.staff_name}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
-
             </div>
-          </div>
-        </div>
+          )}
 
+        </div>
       </div>
 
       {/* 3. Popover Tooltip khi Hover vào Event */}
