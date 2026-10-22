@@ -201,7 +201,7 @@ export default function Layout({ children }) {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto flex flex-col relative" id="main-content">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col relative" id="main-content">
           <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-28 md:px-8 md:py-6 grow flex flex-col bg-[hsl(var(--background))]">
             <ErrorBoundary>
               {children}

@@ -16,16 +16,18 @@ import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 import { useT } from '@/lib/i18n';
 
 export default function POSInvoiceModal({
-  open, customer, initialCart = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
+  open, customer, initialCart = [], facilities = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
   const { t } = useT();
   const { currentBranchId, branches } = useBranch();
   // POS tab and search states
   useEffect(() => {
+    if (!open) return;
+    const orig = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = orig || 'unset';
     };
-  }, []);
+  }, [open]);
 
   const [catalogTab, setCatalogTab] = useState('service');
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -47,6 +49,7 @@ export default function POSInvoiceModal({
   const [groups, setGroups] = useState([]);
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [loadedFacilities, setLoadedFacilities] = useState([]);
 
   // Session state (equivalent to cashier active session)
   const [session, setSession] = useState(null);
@@ -74,8 +77,9 @@ export default function POSInvoiceModal({
       safeFilter('PrepaidCard', filter),
       base44.entities.ServiceGroup.list().catch(() => []),
       safeFilter('Staff', filter),
-      base44.entities.Customer.list().catch(() => [])
-    ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c]) => {
+      base44.entities.Customer.list().catch(() => []),
+      safeFilter('Facility', filter)
+    ]).then(([s, p, pk, t, sc, pc, gc, gr, st, c, fac]) => {
       setServices(s.filter(x => x.is_active));
       setProducts(p.filter(x => x.is_active));
       setPackages(pk.filter(x => x.is_active));
@@ -86,6 +90,7 @@ export default function POSInvoiceModal({
       setGroups(gr);
       setStaff(st.filter(x => x.is_active));
       setCustomers(c);
+      setLoadedFacilities(fac || []);
 
       const allCatalog = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
       setSession(prev => {
@@ -127,10 +132,16 @@ export default function POSInvoiceModal({
         name: item.name,
         type: item.type || 'service',
         price: item.price,
-        originalPrice: item.price,
+        originalPrice: item.originalPrice !== undefined ? item.originalPrice : item.price,
         qty: item.qty || 1,
         staff_id: item.staff_id || '',
         staff_name: item.staff_name || '',
+        facility_id: item.facility_id || null,
+        facility_name: item.facility_name || '',
+        customer_package_id: item.customer_package_id || null,
+        customer_treatment_id: item.customer_treatment_id || null,
+        package_name: item.package_name || null,
+        is_from_package: Boolean(item.is_from_package),
         color: item.color || '',
         image_url: item.image_url || item.image || '',
         duration_minutes: item.duration_minutes || item.duration || 0
@@ -599,27 +610,29 @@ export default function POSInvoiceModal({
     setPaying(false);
   };
 
+  const effectiveFacs = facilities && facilities.length > 0 ? facilities : loadedFacilities;
+
   const modalContent = (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-3 bg-slate-950/65 backdrop-blur-xs animate-in fade-in duration-200 pointer-events-auto select-none"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto select-none overflow-hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div 
-        className="bg-slate-50 rounded-3xl w-full max-w-[500px] lg:max-w-[1360px] h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-in slide-in-from-bottom-4 duration-300 select-auto relative"
+        className="bg-slate-50 rounded-3xl w-full max-w-[96vw] xl:max-w-[1320px] h-[92vh] max-h-[880px] flex flex-col overflow-hidden shadow-2xl border border-slate-200/90 animate-in zoom-in-95 duration-200 select-auto relative mx-auto my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Top Header Row */}
-        <div className="bg-white px-5 py-2.5 flex justify-between items-center border-b border-slate-100 shrink-0">
+        <div className="bg-white px-5 py-3 flex justify-between items-center border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-500" />
-            <h2 className="text-[15px] font-extrabold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn')}</h2>
+            <h2 className="text-base font-extrabold text-slate-800">{t('pos.invoice.create_direct', 'Tạo Hóa Đơn Trực Tiếp')}</h2>
           </div>
           <button 
             onClick={onClose} 
-            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-650 transition-colors"
+            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-650 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -630,7 +643,7 @@ export default function POSInvoiceModal({
         {/* DESKTOP (lg+): Catalog bên trái, Ticket bên phải */}
         <div className="hidden lg:flex flex-1 overflow-hidden min-h-0">
           {/* Left panel: CatalogColumn */}
-          <div className="flex-1 overflow-y-auto flex flex-col bg-white min-w-0">
+          <div className="flex-1 min-h-0 flex flex-col bg-white min-w-0 overflow-hidden">
             <CatalogColumn
               tab={catalogTab}
               setTab={setCatalogTab}
@@ -651,11 +664,12 @@ export default function POSInvoiceModal({
           </div>
 
           {/* Right panel: TicketColumn */}
-          <div className="w-[450px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100 shrink-0">
+          <div className="w-[390px] xl:w-[440px] bg-slate-50/50 flex flex-col overflow-hidden border-l border-slate-100 shrink-0 min-h-0">
             <TicketColumn
               session={session}
               staff={staff}
               customers={customers}
+              facilities={effectiveFacs}
               onUpdate={handleUpdateSession}
               onPickCustomer={(c) => handleUpdateSession({ customer: c })}
               onClearCustomer={() => handleUpdateSession({ customer: null })}
@@ -676,6 +690,7 @@ export default function POSInvoiceModal({
               session={session}
               staff={staff}
               customers={customers}
+              facilities={effectiveFacs}
               onUpdate={handleUpdateSession}
               onPickCustomer={(c) => handleUpdateSession({ customer: c })}
               onClearCustomer={() => handleUpdateSession({ customer: null })}
