@@ -34,10 +34,6 @@ export default function BedHoverCard({
   onMouseEnter,
   onMouseLeave
 }) {
-  const { t } = useT();
-
-  if (!bed || (!session && status !== 'reserved')) return null;
-
   // Determine Status Badge Config
   const getStatusBadge = () => {
     switch (status) {
@@ -103,6 +99,7 @@ export default function BedHoverCard({
 
   // Services list specifically assigned to this bed
   const servicesList = React.useMemo(() => {
+    if (!bed) return [];
     const raw = session?.services && session.services.length > 0
       ? session.services
       : [{
@@ -111,7 +108,7 @@ export default function BedHoverCard({
           price: session?.price || 0
         }];
     return raw.filter(svc => !svc.bed_id || String(svc.bed_id) === String(bed.id));
-  }, [session, bed.id]);
+  }, [session, bed?.id]);
 
   // Extract all distinct technicians working on this bed
   const assignedStaffList = React.useMemo(() => {
@@ -163,6 +160,8 @@ export default function BedHoverCard({
 
     return Array.from(map.values());
   }, [servicesList, session, staff]);
+
+  if (!bed || (!session && status !== 'reserved')) return null;
 
   // Time metrics
   const startTime = session?.start_time || '08:00';

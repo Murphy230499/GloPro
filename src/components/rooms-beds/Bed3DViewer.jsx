@@ -692,16 +692,25 @@ export default function Bed3DViewer({
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Dọn dẹp
-    bedMeshesRef.current.forEach(({ group, labelObj }) => {
-      if (labelObj) group.remove(labelObj);
-      scene.remove(group);
+    // Dọn dẹp an toàn các mesh cũ
+    bedMeshesRef.current.forEach((item) => {
+      const g = item?.group || item?.mesh;
+      if (g) {
+        if (item?.labelObj) {
+          try { g.remove(item.labelObj); } catch (_) {}
+        }
+        try { scene.remove(g); } catch (_) {}
+      }
     });
     bedMeshesRef.current.clear();
     roomPositionsRef.current.clear();
 
-    const oldRooms = scene.children.filter(c => c.name && c.name.startsWith('room_arch_'));
-    oldRooms.forEach(r => scene.remove(r));
+    const oldRooms = scene.children.filter(c => c && c.name && typeof c.name === 'string' && c.name.startsWith('room_arch_'));
+    oldRooms.forEach(r => {
+      if (r) {
+        try { scene.remove(r); } catch (_) {}
+      }
+    });
 
     if (!bedsByRoom || bedsByRoom.length === 0) return;
 
@@ -826,6 +835,7 @@ export default function Bed3DViewer({
 
         bedMeshesRef.current.set(bed.id, {
           mesh: bedGroup,
+          group: bedGroup,
           ledMesh,
           haloMesh,
           labelObj: bedLabelObj,

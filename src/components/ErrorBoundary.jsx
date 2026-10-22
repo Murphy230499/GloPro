@@ -38,9 +38,15 @@ export default class ErrorBoundary extends React.Component {
           <h3 className="text-base font-bold text-white mb-1">
             Không thể tải nội dung phần này
           </h3>
-          <p className="text-xs text-slate-400 max-w-md mb-4">
+          <p className="text-xs text-slate-400 max-w-md mb-3">
             Đã xảy ra lỗi tạm thời khi hiển thị giao diện. Các phần khác của hệ thống vẫn hoạt động bình thường.
           </p>
+          {this.state.error && (
+            <div className="text-left font-mono text-xs bg-black/60 border border-rose-500/30 text-rose-300 p-3 rounded-xl max-w-xl w-full mb-4 overflow-auto max-h-48 select-text">
+              <div className="font-bold text-rose-400 mb-1">{this.state.error.name}: {this.state.error.message}</div>
+              <div className="text-[10px] text-slate-400 whitespace-pre-wrap">{this.state.error.stack}</div>
+            </div>
+          )}
           <button
             type="button"
             onClick={this.handleReset}
