@@ -900,7 +900,7 @@ export default function Bed3DViewer({
   };
 
   // Tạo Floating Spatial Card bằng CSS2D (Mặc định hiển thị pill gọn gàng, hover hiển thị đầy đủ thông tin & action)
-  const createBedCSS2DElement = (bed, room, session) => {
+  const createBedCSS2DElement = (bed, room, session, roomIdx) => {
     const statusKey = session ? (session.status || 'in_progress') : 'available';
     const cfg = STATUS_THEME[statusKey] || STATUS_THEME.available;
     const isOccupied = Boolean(session);
@@ -910,7 +910,7 @@ export default function Bed3DViewer({
     const svgBuilding = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
     const svgClock = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
     const svgPhone = `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
-    const svgCalendar = `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
+    const svgCalendar = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
     const svgTransfer = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>`;
     const svgPlay = `<svg class="w-3.5 h-3.5 shrink-0 fill-current" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
     const svgCreditCard = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
@@ -997,6 +997,20 @@ export default function Bed3DViewer({
     const div = document.createElement('div');
     div.className = 'bed-spatial-container select-none pointer-events-auto';
     div.setAttribute('data-bed-id', bed.id);
+    div.setAttribute('data-room-id', room?.id || '');
+    div.setAttribute('data-room-name', room?.name || '');
+    div.setAttribute('data-room-idx', String(roomIdx ?? ''));
+
+    const isActiveRoom = selectedRoomId !== 'all' && (
+      selectedRoomId === room?.id ||
+      selectedRoomId === room?.name ||
+      selectedRoomId === `idx_${roomIdx}` ||
+      (room?.id && String(selectedRoomId) === String(room?.id)) ||
+      (room?.name && String(selectedRoomId) === String(room?.name))
+    );
+    if (isActiveRoom) {
+      div.classList.add('is-active-room');
+    }
 
     div.innerHTML = `
       <!-- 1. Trạng thái Pill gọn gàng mặc định (Không che khuất không gian 3D) -->
@@ -1011,7 +1025,7 @@ export default function Bed3DViewer({
         </span>
         <span class="text-xs font-bold tracking-tight">${bed.name || 'Vị trí'}</span>
         ${isOccupied ? `
-          <span class="text-[10px] font-medium ${isOver ? 'text-rose-400 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}">
+          <span class="bed-pill-subtext text-[10px] font-medium ${isOver ? 'text-rose-400 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}">
             · ${isOver ? 'Quá giờ' : isCleaning ? 'Đang dọn' : isWaiting ? 'Chờ KTV' : `Còn ${remainingMins}p`}
           </span>
         ` : ''}
@@ -2217,7 +2231,7 @@ export default function Bed3DViewer({
         bedGroup.position.set(bX, 0.25, bZ);
 
         // Gắn Floating CSS2D Card
-        const bedCardDom = createBedCSS2DElement(bed, room, sess);
+        const bedCardDom = createBedCSS2DElement(bed, room, sess, roomIdx);
         const bedLabelObj = new CSS2DObject(bedCardDom);
         bedLabelObj.position.set(0, 2.5, 0);
         bedGroup.add(bedLabelObj);
@@ -2334,6 +2348,31 @@ export default function Bed3DViewer({
     animateCameraFlight(coords.target, coords.position);
   };
 
+  // Đồng bộ trạng thái hiển thị subtext (thời gian còn lại / chờ KTV) theo phòng đang chọn
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const bedContainers = mountRef.current.querySelectorAll('.bed-spatial-container');
+    bedContainers.forEach(container => {
+      const rId = container.getAttribute('data-room-id');
+      const rName = container.getAttribute('data-room-name');
+      const rIdx = container.getAttribute('data-room-idx');
+
+      const isActive = selectedRoomId !== 'all' && (
+        selectedRoomId === rId ||
+        selectedRoomId === rName ||
+        selectedRoomId === `idx_${rIdx}` ||
+        (rId && String(selectedRoomId) === String(rId)) ||
+        (rName && String(selectedRoomId) === String(rName))
+      );
+
+      if (isActive) {
+        container.classList.add('is-active-room');
+      } else {
+        container.classList.remove('is-active-room');
+      }
+    });
+  }, [selectedRoomId, bedsByRoom, bedSessions]);
+
   const handleFocusCashier = () => {
     handleSwitchViewMode('cashier');
   };
@@ -2371,11 +2410,16 @@ export default function Bed3DViewer({
   const isDark = themeMode === 'dark';
 
   return (
-    <div className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl font-sans ${
-      isFullscreen 
-        ? 'fixed inset-0 z-50 rounded-none h-screen w-screen border-none' 
-        : 'h-[690px] border-slate-200/80 dark:border-slate-800'
-    } ${isDark ? 'bg-[#090d16]' : 'bg-[#f8fafc]'}`}>
+    <div 
+      data-selected-room={selectedRoomId}
+      className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl font-sans ${
+        selectedRoomId === 'all' ? 'view-mode-all-rooms' : 'view-mode-room-focus'
+      } ${
+        isFullscreen 
+          ? 'fixed inset-0 z-50 rounded-none h-screen w-screen border-none' 
+          : 'h-[690px] border-slate-200/80 dark:border-slate-800'
+      } ${isDark ? 'bg-[#090d16]' : 'bg-[#f8fafc]'}`}
+    >
 
       {/* Scoped CSS cho Thẻ Không gian 3D & Hiệu ứng Hover nở rộng thông tin thích ứng thông minh */}
       <style>{`
@@ -2412,6 +2456,19 @@ export default function Bed3DViewer({
           transform: scale(1.05);
           border-color: rgba(56, 189, 248, 0.7);
           box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Khi view toàn bộ cửa hàng: chỉ hiện chấm màu trạng thái và tên vị trí, ẩn subtext (thời gian còn lại, chờ KTV, v.v.) */
+        .view-mode-all-rooms .bed-pill-subtext {
+          display: none !important;
+        }
+
+        /* Khi xem theo phòng: chỉ hiện subtext cho các giường thuộc phòng đang được chọn */
+        .view-mode-room-focus .bed-spatial-container:not(.is-active-room) .bed-pill-subtext {
+          display: none !important;
+        }
+        .view-mode-room-focus .bed-spatial-container.is-active-room .bed-pill-subtext {
+          display: inline !important;
         }
         .bed-spatial-card {
           position: absolute;
