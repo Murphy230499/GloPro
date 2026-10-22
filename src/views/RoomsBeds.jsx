@@ -1365,6 +1365,9 @@ export default function RoomsBeds() {
                   onSelectBed={(bed) => {
                     setSelectedBedForDrawer(bed);
                   }}
+                  onOpenCashier={() => {
+                    setInvoiceModalOpen(true);
+                  }}
                 />
               </React.Suspense>
             </div>
