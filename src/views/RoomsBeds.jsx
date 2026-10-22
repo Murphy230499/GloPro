@@ -1431,66 +1431,19 @@ export default function RoomsBeds() {
             </div>
           ) : (
           <div className="space-y-6">
-            {/* Status Quick Filter Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {[
-                { id: 'all', label: 'Tất cả', count: statusCounts.all },
-                { id: 'available', label: 'Đang trống', count: statusCounts.available, dot: 'bg-emerald-500' },
-                { id: 'waiting', label: 'Chờ phục vụ', count: statusCounts.waiting, dot: 'bg-blue-500' },
-                { id: 'reserved', label: 'Đặt trước', count: statusCounts.reserved, dot: 'bg-amber-500' },
-                { id: 'in_progress', label: 'Đang bận', count: statusCounts.in_progress, dot: 'bg-rose-500' },
-                { id: 'nearly_finished', label: 'Sắp trống', count: statusCounts.nearly_finished, dot: 'bg-amber-400' },
-                { id: 'overtime', label: 'Quá giờ', count: statusCounts.overtime, dot: 'bg-fuchsia-500' },
-                { id: 'cleaning', label: 'Đang dọn dẹp', count: statusCounts.cleaning, dot: 'bg-teal-500' },
-              ].map(tab => {
-                const isActive = statusFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setStatusFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer border ${
-                      isActive
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {tab.dot && <span className={`w-2 h-2 rounded-full ${tab.dot}`} />}
-                    <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
             {bedsByRoom.length === 0 ? (
               <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
                 <DoorOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900">{t('rooms_beds.empty_title', 'Chưa có giường phòng nào')}</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  {statusFilter !== 'all' 
-                    ? `Không có vị trí nào đang ở trạng thái này.` 
-                    : t('rooms_beds.empty_hint', 'Vui lòng sang tab "Cài đặt vị trí" để tạo phòng và các giường/ghế phục vụ khách.')}
+                  {t('rooms_beds.empty_hint', 'Vui lòng sang tab "Cài đặt vị trí" để tạo phòng và các giường/ghế phục vụ khách.')}
                 </p>
-                {statusFilter !== 'all' ? (
-                  <button
-                    onClick={() => setStatusFilter('all')}
-                    className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer"
-                  >
-                    Xem tất cả trạng thái
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    className="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
-                  >
-                    {t('rooms_beds.go_to_settings', 'Đến Cài đặt vị trí')}
-                  </button>
-                )}
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
+                >
+                  {t('rooms_beds.go_to_settings', 'Đến Cài đặt vị trí')}
+                </button>
               </div>
             ) : (
               bedsByRoom.map(group => (
