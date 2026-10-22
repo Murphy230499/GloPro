@@ -575,6 +575,17 @@ export default function FacilityAssignPicker({
         </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-1">
+          {value && !hideClear && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              title={t('common.clear', 'Bỏ chọn')}
+              className="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <X className="w-3 h-3 stroke-[2.5]" />
+            </span>
+          )}
           <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? 'rotate-180 text-blue-600' : ''}`} />
         </div>
       </button>

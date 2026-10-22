@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, X } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { useT } from '@/lib/i18n';
 
@@ -72,7 +72,24 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
             <span className="text-slate-400 truncate whitespace-nowrap">{displayPlaceholder}</span>
           )}
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 ml-1 transition-transform ${open ? 'rotate-180 text-emerald-600' : ''}`} />
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {selected && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange('', '', false);
+                setOpen(false);
+              }}
+              title={t('common.clear', 'Bỏ chọn')}
+              className="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <X className="w-3 h-3 stroke-[2.5]" />
+            </span>
+          )}
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180 text-emerald-600' : ''}`} />
+        </div>
       </button>
       {selected && !hideRequestedCheckbox && (
         <label className="flex items-center gap-1.5 cursor-pointer select-none pl-1 mt-1.5 mb-0.5 py-0.5 group">
