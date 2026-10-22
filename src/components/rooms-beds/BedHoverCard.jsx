@@ -34,6 +34,8 @@ export default function BedHoverCard({
   onMouseEnter,
   onMouseLeave
 }) {
+  const { t } = useT();
+
   // Determine Status Badge Config
   const getStatusBadge = () => {
     switch (status) {
