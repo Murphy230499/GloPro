@@ -40,7 +40,7 @@ const DEFAULT_DEMO_STAFF = [
   { id: 'st_7', full_name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' }
 ];
 
-export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose }) {
+export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, align = 'right' }) {
   const todayISO = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
@@ -112,11 +112,11 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose })
 
   return (
     <div 
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 sm:bg-transparent sm:p-0 sm:block sm:absolute sm:top-full sm:mt-2 sm:right-0 sm:w-[300px] sm:shadow-2xl sm:z-[60] animate-in fade-in zoom-in-95 duration-150 font-body`}
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 sm:bg-transparent sm:p-0 sm:block sm:absolute sm:top-full sm:mt-2 ${align === 'left' ? 'sm:left-0' : 'sm:right-0'} sm:w-[300px] sm:shadow-2xl sm:z-[60] animate-in fade-in zoom-in-95 duration-150 font-body`}
       onClick={(e) => { e.stopPropagation(); onClose?.(); }}
     >
       <div 
-        className="w-[300px] sm:w-full bg-white rounded-xl border border-slate-200 shadow-2xl p-4 sm:shadow-none sm:p-4 sm:border-0 sm:rounded-none sm:bg-transparent"
+        className="w-[300px] sm:w-full bg-white rounded-2xl border border-slate-200 shadow-2xl p-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Month Year Header */}

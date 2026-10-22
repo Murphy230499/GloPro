@@ -5,9 +5,11 @@ import dynamic from 'next/dynamic';
 import { 
   Building2, Plus, Edit2, Trash2, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Check, Clock, User, Phone, CheckCircle2, ShoppingCart, 
-  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings, Calendar, Box
+  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings, Calendar, Box,
+  CalendarDays, Layers, Info
 } from 'lucide-react';
 import BedTimelineView from '@/components/rooms-beds/BedTimelineView';
+import { CustomDatePickerPopover } from '@/components/appointments/AppointmentHeader';
 
 const Bed3DViewer = dynamic(() => import('@/components/rooms-beds/Bed3DViewer'), {
   ssr: false,
@@ -119,6 +121,18 @@ export default function RoomsBeds() {
   const [diagramViewMode, setDiagramViewMode] = useState('grid');
   const [selectedTimelineDate, setSelectedTimelineDate] = useState(() => getTodayDateString());
   const [timelineRoomFilter, setTimelineRoomFilter] = useState('all');
+  const [isTimelineDatePickerOpen, setIsTimelineDatePickerOpen] = useState(false);
+
+  // Click outside to close Timeline DatePicker Popover
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.datepicker-timeline-container')) {
+        setIsTimelineDatePickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 1. Initial Load Data
   const loadData = async () => {
@@ -1257,17 +1271,18 @@ export default function RoomsBeds() {
     });
   }, [selectedTimelineDate, beds, appointments, bedSessions, staff, services]);
 
-  const handlePrevDay = () => {
-    const d = new Date(selectedTimelineDate);
-    d.setDate(d.getDate() - 1);
-    setSelectedTimelineDate(d.toISOString().slice(0, 10));
+  const handleDateShift = (days) => {
+    const parts = (selectedTimelineDate || getTodayDateString()).split('-');
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    setSelectedTimelineDate(`${yyyy}-${mm}-${dd}`);
   };
 
-  const handleNextDay = () => {
-    const d = new Date(selectedTimelineDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedTimelineDate(d.toISOString().slice(0, 10));
-  };
+  const handlePrevDay = () => handleDateShift(-1);
+  const handleNextDay = () => handleDateShift(1);
 
   const handleToday = () => {
     setSelectedTimelineDate(getTodayDateString());
@@ -1483,64 +1498,75 @@ export default function RoomsBeds() {
               {/* Thanh điều khiển ngày & bộ lọc phòng cho Timeline (Giao diện hiện đại) */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Cụm điều hướng ngày Trước / Hôm nay / Sau */}
-                  <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/70">
+                  {/* Nút Hôm nay */}
+                  <button
+                    type="button"
+                    onClick={handleToday}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSameDay(selectedTimelineDate, getTodayDateString())
+                        ? 'bg-blue-600 text-white shadow-2xs'
+                        : 'bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    Hôm nay
+                  </button>
+
+                  {/* Custom DatePicker Navigation Segmented Pill (tương tự module lịch hẹn) */}
+                  <div className="relative flex items-center justify-between bg-white rounded-xl border border-slate-200/90 shadow-2xs divide-x divide-slate-200 font-sans shrink-0 datepicker-timeline-container">
                     <button
                       type="button"
                       onClick={handlePrevDay}
-                      className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
                       title="Ngày trước"
+                      className="px-2.5 py-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center justify-center active:scale-95 cursor-pointer rounded-l-xl"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="w-4 h-4 stroke-[2]" />
                     </button>
 
                     <button
                       type="button"
-                      onClick={handleToday}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        isSameDay(selectedTimelineDate, getTodayDateString())
-                          ? 'bg-blue-600 text-white shadow-2xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                      onClick={() => setIsTimelineDatePickerOpen(!isTimelineDatePickerOpen)}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-1.5 hover:bg-slate-50 transition-colors cursor-pointer ${
+                        isTimelineDatePickerOpen ? 'bg-slate-50 text-blue-600 font-bold' : 'text-slate-700 font-semibold'
                       }`}
                     >
-                      Hôm nay
+                      <CalendarDays className={`w-4 h-4 ${isTimelineDatePickerOpen ? 'text-blue-500' : 'text-slate-400'}`} />
+                      <span className="text-xs whitespace-nowrap">
+                        {isSameDay(selectedTimelineDate, getTodayDateString()) ? 'Hôm nay • ' : ''}
+                        {(() => {
+                          try {
+                            const [y, m, d] = selectedTimelineDate.split('-').map(Number);
+                            const dateObj = new Date(y, m - 1, d);
+                            const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                            return `${days[dateObj.getDay()]}, ${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
+                          } catch (e) {
+                            return selectedTimelineDate;
+                          }
+                        })()}
+                      </span>
+                      <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
                     </button>
 
                     <button
                       type="button"
                       onClick={handleNextDay}
-                      className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
                       title="Ngày sau"
+                      className="px-2.5 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center justify-center active:scale-95 cursor-pointer rounded-r-xl"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 stroke-[2]" />
                     </button>
-                  </div>
 
-                  {/* Hiển thị ngày được format đẹp mắt kèm native picker overlay */}
-                  <div className="relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer group">
-                    <Calendar className="w-4 h-4 text-blue-600 shrink-0 group-hover:scale-105 transition-transform" />
-                    <span className="text-xs font-bold text-slate-800">
-                      {isSameDay(selectedTimelineDate, getTodayDateString()) ? 'Hôm nay • ' : ''}
-                      {(() => {
-                        try {
-                          const [y, m, d] = selectedTimelineDate.split('-').map(Number);
-                          const dateObj = new Date(y, m - 1, d);
-                          const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-                          return `${days[dateObj.getDay()]}, ${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
-                        } catch (e) {
-                          return selectedTimelineDate;
-                        }
-                      })()}
-                    </span>
-                    <span className="text-[10px] text-slate-400 group-hover:text-blue-600 transition-colors">
-                      ▼
-                    </span>
-                    <input
-                      type="date"
-                      value={selectedTimelineDate}
-                      onChange={(e) => e.target.value && setSelectedTimelineDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
+                    {/* Custom DatePicker Popover Popup matching appointments module */}
+                    {isTimelineDatePickerOpen && (
+                      <CustomDatePickerPopover
+                        selectedDate={selectedTimelineDate}
+                        align="left"
+                        onSelectDate={(iso) => {
+                          setSelectedTimelineDate(iso);
+                          setIsTimelineDatePickerOpen(false);
+                        }}
+                        onClose={() => setIsTimelineDatePickerOpen(false)}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -1590,7 +1616,52 @@ export default function RoomsBeds() {
               />
             </div>
           ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Chú thích trạng thái vị trí theo màu sắc */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 px-4 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-slate-700 flex items-center gap-1.5 shrink-0">
+                  <Layers className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Trạng thái vị trí:</span>
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Đang trống
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  Chờ phục vụ
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Đặt trước
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-rose-800 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  Đang bận
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Sắp trống
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-fuchsia-900 bg-fuchsia-50 px-2.5 py-1 rounded-lg border border-fuchsia-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse" />
+                  Quá giờ
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/80 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-teal-500" />
+                  Đang dọn dẹp
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60">
+                  <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>Rê chuột để xem chi tiết / Click để tiếp nhận</span>
+                </span>
+              </div>
+            </div>
+
             {bedsByRoom.length === 0 ? (
               <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
                 <DoorOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />

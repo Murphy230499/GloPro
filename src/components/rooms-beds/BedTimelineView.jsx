@@ -494,7 +494,7 @@ export default function BedTimelineView({
           </span>
           <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
             <span className="w-2 h-2 rounded-full bg-amber-500" />
-            Sắp trống / Hẹn
+            Sắp trống
           </span>
           <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-fuchsia-50 px-2 py-0.5 rounded border border-fuchsia-200">
             <span className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse" />
