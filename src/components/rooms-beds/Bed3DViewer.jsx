@@ -264,11 +264,13 @@ export default function Bed3DViewer({
   const loungeHitboxRef = useRef(null);
   const lobbyPosRef = useRef(new THREE.Vector3(0, 0, 10));
   const contactShadowTexRef = useRef(null);
+  const animFlightRef = useRef(null);
+  const cameraModeRef = useRef('iso');
 
   // Trạng thái giao diện
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('all');
-  const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'cashier'
+  const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'front' | 'cashier'
   const [themeMode, setThemeMode] = useState('boutique'); // 'boutique' (Sáng ấm tự nhiên) | 'dark' (Obsidian Luxury)
   const [hoveredBed, setHoveredBed] = useState(null);
   const [isAutoTour, setIsAutoTour] = useState(false);
@@ -807,6 +809,7 @@ export default function Bed3DViewer({
       domEl.removeEventListener('pointermove', handlePointerMove);
       domEl.removeEventListener('pointerdown', handlePointerDown);
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      if (animFlightRef.current) cancelAnimationFrame(animFlightRef.current);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -817,37 +820,52 @@ export default function Bed3DViewer({
     };
   }, [themeMode, isAutoTour]);
 
-  // Lướt camera mượt mà (Cinematic Flight)
-  const focusCameraOnObject = (targetPos) => {
+  // Lướt camera điện ảnh mượt mà đến vị trí đích (Smooth Cinematic Flight)
+  const animateCameraFlight = (endTarget, endCamPos, duration = 650) => {
     if (!controlsRef.current || !cameraRef.current) return;
     const controls = controlsRef.current;
     const camera = cameraRef.current;
 
+    if (animFlightRef.current) {
+      cancelAnimationFrame(animFlightRef.current);
+      animFlightRef.current = null;
+    }
+
     const startTarget = controls.target.clone();
-    const endTarget = new THREE.Vector3(targetPos.x, targetPos.y + 0.8, targetPos.z);
-
     const startCamPos = camera.position.clone();
-    const offset = new THREE.Vector3(9, 8, 10);
-    const endCamPos = endTarget.clone().add(offset);
-
-    let progress = 0;
-    const duration = 650;
     const startTime = performance.now();
 
     const step = () => {
       const now = performance.now();
-      progress = Math.min((now - startTime) / duration, 1);
+      const progress = Math.min((now - startTime) / duration, 1);
+      // Cubic ease-out cho chuyển động camera đầm và êm ái
       const ease = 1 - Math.pow(1 - progress, 3);
 
       controls.target.lerpVectors(startTarget, endTarget, ease);
       camera.position.lerpVectors(startCamPos, endCamPos, ease);
       controls.update();
 
-      if (progress < duration) {
-        requestAnimationFrame(step);
+      if (progress < 1) {
+        animFlightRef.current = requestAnimationFrame(step);
+      } else {
+        animFlightRef.current = null;
       }
     };
-    step();
+    animFlightRef.current = requestAnimationFrame(step);
+  };
+
+  // Focus đối tượng tương thích theo cameraMode hiện hành
+  const focusCameraOnObject = (targetPos) => {
+    const curMode = cameraModeRef.current || 'iso';
+    let offset = new THREE.Vector3(9.5, 9.0, 11.0);
+    if (curMode === 'top') {
+      offset = new THREE.Vector3(0, 18.0, 0.1);
+    } else if (curMode === 'front') {
+      offset = new THREE.Vector3(0, 5.5, 13.5);
+    }
+    const endTarget = new THREE.Vector3(targetPos.x, targetPos.y + 0.8, targetPos.z);
+    const endCamPos = endTarget.clone().add(offset);
+    animateCameraFlight(endTarget, endCamPos);
   };
 
   // Tái tạo Cửa Hàng, Quầy Thu Ngân, Phòng & Giường trong không gian 3D
@@ -1213,10 +1231,16 @@ export default function Bed3DViewer({
       roomGroup.name = `room_arch_${room.id || roomIdx}`;
       roomGroup.position.set(roomX, 0, roomZ);
 
-      roomPositionsRef.current.set(room.id || `idx_${roomIdx}`, {
+      const roomKey = room.id || `idx_${roomIdx}`;
+      const roomInfo = {
+        id: roomKey,
         center: new THREE.Vector3(roomX, 0, roomZ),
         name: room.name || `Phòng ${roomIdx + 1}`
-      });
+      };
+      roomPositionsRef.current.set(roomKey, roomInfo);
+      if (room.id) roomPositionsRef.current.set(String(room.id), roomInfo);
+      if (room.name) roomPositionsRef.current.set(String(room.name), roomInfo);
+      roomPositionsRef.current.set(`idx_${roomIdx}`, roomInfo);
 
       // 1. Sàn phòng riêng biệt với texture gỗ sồi ấm áp
       const roomW = 14.4;
@@ -1320,35 +1344,112 @@ export default function Bed3DViewer({
     });
   }, [bedsByRoom, bedSessions, waitingGuests, themeMode, t, onOpenCashier]);
 
-  // Điều khiển góc quay Camera
-  const handleResetCamera = () => {
-    if (!controlsRef.current || !cameraRef.current) return;
-    controlsRef.current.target.set(0, 0, 0);
-    cameraRef.current.position.set(28, 24, 30);
-    controlsRef.current.update();
-    setCameraMode('iso');
-    setIsAutoTour(false);
+  // Tính toán tọa độ Camera & Target theo từng View Mode và Vị trí (Toàn cửa hàng hoặc Từng phòng)
+  const getCameraCoordinates = (roomId, mode) => {
+    const lPos = lobbyPosRef.current || new THREE.Vector3(0, 0, 10);
+
+    // 1. Quầy thu ngân & Sảnh đón tiếp
+    if (mode === 'cashier') {
+      return {
+        target: new THREE.Vector3(0.5, 1.2, lPos.z + 0.5),
+        position: new THREE.Vector3(0.5, 5.0, lPos.z + 8.8)
+      };
+    }
+
+    // 2. Chế độ xem "Toàn cửa hàng" (Tất cả)
+    if (!roomId || roomId === 'all') {
+      if (mode === 'top') {
+        return {
+          target: new THREE.Vector3(0, 0, 2),
+          position: new THREE.Vector3(0, 46, 2.1)
+        };
+      }
+      if (mode === 'front') {
+        return {
+          target: new THREE.Vector3(0, 1.5, 2),
+          position: new THREE.Vector3(0, 13, 40)
+        };
+      }
+      // Mặc định 'iso' (Góc 3D toàn cảnh)
+      return {
+        target: new THREE.Vector3(0, 0, 2),
+        position: new THREE.Vector3(26, 24, 32)
+      };
+    }
+
+    // 3. Chế độ xem Focus vào từng phòng cụ thể
+    const roomInfo = roomPositionsRef.current.get(roomId);
+    if (!roomInfo) {
+      // Fallback nếu không tìm thấy ID phòng
+      return getCameraCoordinates('all', mode);
+    }
+
+    const { x, z } = roomInfo.center;
+
+    if (mode === 'top') {
+      return {
+        target: new THREE.Vector3(x, 0, z),
+        position: new THREE.Vector3(x, 20.0, z + 0.1)
+      };
+    }
+    if (mode === 'front') {
+      return {
+        target: new THREE.Vector3(x, 1.2, z),
+        position: new THREE.Vector3(x, 5.8, z + 14.0)
+      };
+    }
+    // Mặc định 'iso' (Góc 3D riêng cho phòng)
+    return {
+      target: new THREE.Vector3(x, 0.8, z),
+      position: new THREE.Vector3(x + 9.5, 9.0, z + 11.0)
+    };
   };
 
-  const handleTopDownView = () => {
-    if (!controlsRef.current || !cameraRef.current) return;
-    controlsRef.current.target.set(0, 0, 0);
-    cameraRef.current.position.set(0, 42, 0.1);
-    controlsRef.current.update();
-    setCameraMode('top');
+  // Chuyển đổi linh hoạt giữa các Chế độ View (Góc 3D | Mặt bằng | Chính diện | Quầy thu ngân)
+  const handleSwitchViewMode = (mode) => {
+    cameraModeRef.current = mode;
+    setCameraMode(mode);
     setIsAutoTour(false);
+
+    if (mode === 'cashier') {
+      const coords = getCameraCoordinates('all', 'cashier');
+      animateCameraFlight(coords.target, coords.position);
+      setShowLoungeModal(true);
+      return;
+    }
+
+    // Chuyển góc quay theo phòng hiện tại đang được chọn (Toàn cửa hàng hoặc phòng đang focus)
+    const coords = getCameraCoordinates(selectedRoomId, mode);
+    animateCameraFlight(coords.target, coords.position);
+  };
+
+  // Chọn phòng hoặc chọn Xem toàn cửa hàng
+  const handleSelectRoom = (roomId) => {
+    setSelectedRoomId(roomId);
+    setIsAutoTour(false);
+
+    let activeMode = cameraModeRef.current || cameraMode;
+    // Nếu đang ở góc thu ngân mà click phòng, tự động chuyển về góc 3D để tập trung vào phòng đó
+    if (activeMode === 'cashier') {
+      activeMode = 'iso';
+      cameraModeRef.current = 'iso';
+      setCameraMode('iso');
+    }
+
+    const coords = getCameraCoordinates(roomId, activeMode);
+    animateCameraFlight(coords.target, coords.position);
   };
 
   const handleFocusCashier = () => {
-    if (!controlsRef.current || !cameraRef.current) return;
-    const lPos = lobbyPosRef.current;
-    // Tọa độ nhìn bao quát toàn bộ khu vực Quầy Thu Ngân lẫn Sảnh Chờ Sofa
-    controlsRef.current.target.set(0.5, 1.2, lPos.z + 0.5);
-    cameraRef.current.position.set(0.5, 5.0, lPos.z + 8.8);
-    controlsRef.current.update();
-    setCameraMode('cashier');
-    setIsAutoTour(false);
-    setShowLoungeModal(true);
+    handleSwitchViewMode('cashier');
+  };
+
+  const handleResetCamera = () => {
+    handleSwitchViewMode('iso');
+  };
+
+  const handleTopDownView = () => {
+    handleSwitchViewMode('top');
   };
 
   const handleZoom = (delta) => {
@@ -1357,20 +1458,6 @@ export default function Bed3DViewer({
     cameraRef.current.getWorldDirection(dir);
     cameraRef.current.position.addScaledVector(dir, delta * 3.5);
     controlsRef.current.update();
-  };
-
-  const handleSelectRoom = (roomId) => {
-    setSelectedRoomId(roomId);
-    if (!controlsRef.current || !cameraRef.current) return;
-    if (roomId === 'all') {
-      handleResetCamera();
-      return;
-    }
-
-    const roomInfo = roomPositionsRef.current.get(roomId);
-    if (roomInfo) {
-      focusCameraOnObject(roomInfo.center);
-    }
   };
 
   if (webglError) {
@@ -1422,21 +1509,25 @@ export default function Bed3DViewer({
             <span>Toàn cửa hàng</span>
           </button>
 
-          {bedsByRoom.map(group => {
-            const rId = group.room?.id || group.room?.name;
-            const isSel = selectedRoomId === rId;
+          {bedsByRoom.map((group, rIdx) => {
+            const rId = group.room?.id || group.room?.name || `idx_${rIdx}`;
+            const isSel = selectedRoomId === rId ||
+                          (group.room?.id && selectedRoomId === group.room?.id) ||
+                          (group.room?.name && selectedRoomId === group.room?.name) ||
+                          (selectedRoomId === `idx_${rIdx}`);
             return (
               <button
                 key={rId}
                 type="button"
                 onClick={() => handleSelectRoom(rId)}
+                title={`Tập trung xem ${group.room?.name || `Phòng ${rIdx + 1}`}`}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   isSel
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                     : isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                <span>{group.room?.name || 'Phòng'}</span>
+                <span>{group.room?.name || `Phòng ${rIdx + 1}`}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   isSel ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-200 text-slate-700'
                 }`}>
@@ -1543,33 +1634,55 @@ export default function Bed3DViewer({
 
         <div className={`w-px h-4 ${isDark ? 'bg-white/15' : 'bg-slate-200'}`} />
 
-        {/* Nút 3D Toàn cảnh (Isometric) */}
-        <button
-          type="button"
-          onClick={handleResetCamera}
-          title="✨ 3D Không gian toàn cảnh (Isometric)"
-          className={`p-2 rounded-xl transition-all cursor-pointer ${
-            cameraMode === 'iso' 
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-              : isDark ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-          }`}
-        >
-          <Compass className="w-4 h-4" />
-        </button>
+        {/* Cụm Chế độ View rõ ràng: Góc 3D | Mặt bằng | Chính diện */}
+        <div className={`flex items-center gap-1 p-0.5 rounded-xl border ${
+          isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200/80'
+        }`}>
+          {/* Nút 3D Toàn cảnh (Isometric) */}
+          <button
+            type="button"
+            onClick={() => handleSwitchViewMode('iso')}
+            title="Góc 3D không gian phối cảnh toàn tiệm"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              cameraMode === 'iso' 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Góc 3D</span>
+          </button>
 
-        {/* Nút Mặt bằng tổng thể (Top-down) */}
-        <button
-          type="button"
-          onClick={handleTopDownView}
-          title="📐 Mặt bằng tổng thể từ trên xuống (Top-down)"
-          className={`p-2 rounded-xl transition-all cursor-pointer ${
-            cameraMode === 'top' 
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-              : isDark ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-        </button>
+          {/* Nút Mặt bằng tổng thể (Top-down) */}
+          <button
+            type="button"
+            onClick={() => handleSwitchViewMode('top')}
+            title="Mặt bằng kiến trúc nhìn thẳng từ trên xuống"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              cameraMode === 'top' 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mặt bằng</span>
+          </button>
+
+          {/* Nút Góc nhìn trực diện (Front View) */}
+          <button
+            type="button"
+            onClick={() => handleSwitchViewMode('front')}
+            title="Góc nhìn ngang chính diện"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              cameraMode === 'front' 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Chính diện</span>
+          </button>
+        </div>
 
         <div className={`w-px h-4 ${isDark ? 'bg-white/15' : 'bg-slate-200'}`} />
 
@@ -1580,7 +1693,7 @@ export default function Bed3DViewer({
           title={isAutoTour ? 'Dừng quay tự động' : 'Bật chế độ Xem tự động (Auto-Tour tiệm)'}
           className={`p-2 rounded-xl transition-all cursor-pointer ${
             isAutoTour 
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' 
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
               : isDark ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
           }`}
         >
