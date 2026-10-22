@@ -48,12 +48,12 @@ const STATUS_THEME = {
     glowColor: 'rgba(244, 63, 94, 0.45)'
   },
   nearly_finished: {
-    label: 'Sắp trống',
-    hex: 0xfbbf24, // Amber 400
-    colorStr: '#fbbf24',
-    cssDot: 'bg-amber-400',
-    cssBadge: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-400/30',
-    glowColor: 'rgba(251, 191, 36, 0.45)'
+    label: 'Sắp hoàn thành',
+    hex: 0xf97316, // Orange 500
+    colorStr: '#f97316',
+    cssDot: 'bg-orange-500',
+    cssBadge: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30',
+    glowColor: 'rgba(249, 115, 22, 0.45)'
   },
   overtime: {
     label: 'Quá giờ',
@@ -584,16 +584,13 @@ export default function Bed3DViewer({
       `;
     } else {
       cardHtml = `
-        <div class="rounded-xl px-3 py-1.5 shadow-xl backdrop-blur-2xl border flex items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 ${
+        <div class="rounded-xl px-2.5 py-1 shadow-md backdrop-blur-xl border flex items-center gap-1.5 cursor-pointer transition-all duration-200 hover:scale-105 ${
           isDark 
             ? 'bg-slate-950/85 text-white border-white/10 hover:border-emerald-500/50' 
-            : 'bg-white/95 text-slate-800 border-slate-200/90 hover:border-emerald-500/50'
+            : 'bg-white/95 text-slate-800 border-slate-200/90 hover:border-emerald-500/50 shadow-sm'
         }">
           <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
-          <span class="text-xs font-black tracking-tight">${bed.name || 'Vị trí'}</span>
-          <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded-md">
-            Trống
-          </span>
+          <span class="text-xs font-bold tracking-tight">${bed.name || 'Vị trí'}</span>
         </div>
       `;
     }
@@ -1266,10 +1263,22 @@ export default function Bed3DViewer({
       slatCap.position.set(0, 2.58, -roomD / 2 + 0.3);
       roomGroup.add(slatCap);
 
-      // 3. Đèn trần Spa rọi điểm dịu mắt (Downlight Spotlight)
-      const spotLight = new THREE.PointLight(0xfffbeb, isDark ? 0.8 : 0.55, 14, 1.2);
-      spotLight.position.set(0, 4.6, 0);
-      roomGroup.add(spotLight);
+      // 4. Biển tên phòng gắn trên đỉnh vách ngăn kiến trúc (Clean Architectural Room Signage)
+      const roomBadgeDom = document.createElement('div');
+      roomBadgeDom.className = 'select-none pointer-events-none transform -translate-y-1';
+      roomBadgeDom.innerHTML = `
+        <div class="px-3 py-1 rounded-xl shadow-lg backdrop-blur-xl flex items-center gap-2 border ${
+          isDark 
+            ? 'bg-slate-900/90 text-white border-blue-500/40' 
+            : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-slate-300/40'
+        }">
+          <div class="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></div>
+          <span class="text-xs font-black tracking-wider uppercase">${room.name || `Phòng ${roomIdx + 1}`}</span>
+        </div>
+      `;
+      const roomBadgeObj = new CSS2DObject(roomBadgeDom);
+      roomBadgeObj.position.set(0, 2.85, -roomD / 2 + 0.3);
+      roomGroup.add(roomBadgeObj);
 
       scene.add(roomGroup);
 
@@ -1494,6 +1503,10 @@ export default function Bed3DViewer({
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500"></span>
             <span>Đang làm</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500"></span>
+            <span>Sắp hoàn thành</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping shadow-sm shadow-rose-600"></span>
