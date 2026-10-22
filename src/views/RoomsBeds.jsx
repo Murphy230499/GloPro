@@ -4,8 +4,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Building2, Plus, Edit2, Trash2, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Check, Clock, User, Phone, CheckCircle2, ShoppingCart, 
-  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings
+  DoorOpen, Sparkles, Filter, RefreshCw, LayoutGrid, Settings, Calendar
 } from 'lucide-react';
+import BedTimelineView from '@/components/rooms-beds/BedTimelineView';
+import { aggregateBedTimelineEvents, getTodayDateString, isSameDay } from '@/lib/bedTimelineHelper';
 import { useT } from '@/lib/i18n';
 import { useBranch } from '@/lib/BranchContext';
 import { base44 } from '@/api/base44Client';
@@ -30,7 +32,8 @@ import {
   encodeRoomToFacility, 
   parseBedFromFacility, 
   encodeBedToFacility,
-  calculateCleaningCountdown
+  calculateCleaningCountdown,
+  ensureValidUuid
 } from '@/lib/roomBedDbHelper';
 
 export default function RoomsBeds() {
@@ -44,15 +47,21 @@ export default function RoomsBeds() {
   const [allRooms, setAllRooms] = useState([]);
   const [allBeds, setAllBeds] = useState([]);
 
-  // Filtered views strictly for current selected branch
+  // Filtered views strictly for current selected branch (sorted naturally: Tầng 1 -> Tầng 2 -> Tầng 3)
   const rooms = useMemo(() => {
-    if (!currentBranchId || currentBranchId === 'all') return allRooms;
-    return allRooms.filter(r => !r.branch_id || r.branch_id === currentBranchId);
+    let list = allRooms;
+    if (currentBranchId && currentBranchId !== 'all') {
+      list = allRooms.filter(r => !r.branch_id || r.branch_id === currentBranchId);
+    }
+    return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
   }, [allRooms, currentBranchId]);
 
   const beds = useMemo(() => {
-    if (!currentBranchId || currentBranchId === 'all') return allBeds;
-    return allBeds.filter(b => !b.branch_id || b.branch_id === currentBranchId);
+    let list = allBeds;
+    if (currentBranchId && currentBranchId !== 'all') {
+      list = allBeds.filter(b => !b.branch_id || b.branch_id === currentBranchId);
+    }
+    return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
   }, [allBeds, currentBranchId]);
 
   const [services, setServices] = useState([]);
@@ -94,6 +103,11 @@ export default function RoomsBeds() {
   // Status Filter for Diagram
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Diagram Sub-View: 'grid' (Lưới thẻ) | 'timeline' (Dòng thời gian)
+  const [diagramViewMode, setDiagramViewMode] = useState('grid');
+  const [selectedTimelineDate, setSelectedTimelineDate] = useState(() => getTodayDateString());
+  const [timelineRoomFilter, setTimelineRoomFilter] = useState('all');
+
   // 1. Initial Load Data
   const loadData = async () => {
     try {
@@ -131,30 +145,79 @@ export default function RoomsBeds() {
       }
 
       if (parsedDbRooms.length > 0) {
-        // DB is primary source of truth. Keep any local unsynced rooms
-        const dbRoomIds = new Set(parsedDbRooms.map(r => r.id));
-        const unsyncedRooms = (loadedRooms || []).filter(r => !dbRoomIds.has(r.id));
-        loadedRooms = [...parsedDbRooms, ...unsyncedRooms];
-      } else if (loadedRooms === null) {
-        // If salon has never initialized rooms anywhere and has a branch, initialize demo rooms for primary branch
-        const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
-          ? branches[0].id
-          : (currentBranchId !== 'all' ? currentBranchId : null);
-        if (primaryBranchId) {
-          loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
-          if (base44.entities.Facility) {
-            for (const r of loadedRooms) {
-              base44.entities.Facility.create(encodeRoomToFacility(r)).catch(() => null);
-            }
+        // DB is the exclusive single source of truth for rooms - prevent phantom/demo rooms
+        loadedRooms = parsedDbRooms;
+      } else if (!loadedRooms || loadedRooms.length === 0) {
+        // If no rooms in DB or local, check if any beds already have room assignments
+        const referencedRoomIds = [];
+        (dbBedFacilities || []).forEach(fb => {
+          const services = Array.isArray(fb.applicable_services) ? fb.applicable_services : [];
+          const rTag = services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+          if (rTag) {
+            const rId = rTag.replace('__room__:', '').trim();
+            if (rId && !referencedRoomIds.includes(rId)) referencedRoomIds.push(rId);
           }
+        });
+
+        if (referencedRoomIds.length > 0) {
+          const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
+            ? branches[0].id
+            : (currentBranchId !== 'all' ? currentBranchId : null);
+          loadedRooms = referencedRoomIds.map((rId, idx) => ({
+            id: rId,
+            name: `Phòng ${idx + 1}`,
+            color: ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#6366F1'][idx % 5],
+            branch_id: primaryBranchId,
+            display_order: idx + 1
+          }));
         } else {
-          loadedRooms = [];
+          // Initialize demo rooms
+          const primaryBranchId = (branches && branches.length > 0 && branches[0].id !== 'all')
+            ? branches[0].id
+            : (currentBranchId !== 'all' ? currentBranchId : null);
+          if (primaryBranchId) {
+            loadedRooms = INITIAL_DEMO_ROOMS.map(r => ({ ...r, branch_id: primaryBranchId }));
+          } else {
+            loadedRooms = [];
+          }
         }
-      } else if (loadedRooms && loadedRooms.length > 0) {
-        // DB had no rooms yet, sync local rooms to database
-        if (base44.entities.Facility) {
-          for (const r of loadedRooms) {
-            base44.entities.Facility.create(encodeRoomToFacility(r)).catch(() => null);
+      }
+
+      // Ensure any room ID referenced by existing beds exists in loadedRooms
+      const existingRoomKeySet = new Set(
+        (loadedRooms || []).flatMap(r => [r.id, r.db_id, ensureValidUuid(r.id)].filter(Boolean))
+      );
+      (dbBedFacilities || []).forEach(fb => {
+        const services = Array.isArray(fb.applicable_services) ? fb.applicable_services : [];
+        const rTag = services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+        if (rTag) {
+          const rId = rTag.replace('__room__:', '').trim();
+          if (rId && !existingRoomKeySet.has(rId) && !existingRoomKeySet.has(ensureValidUuid(rId))) {
+            const newOrder = (loadedRooms?.length || 0) + 1;
+            const newRecoveredRoom = {
+              id: rId,
+              name: `Phòng ${newOrder}`,
+              color: '#3B82F6',
+              branch_id: fb.branch_id || (currentBranchId !== 'all' ? currentBranchId : null),
+              display_order: newOrder
+            };
+            if (!loadedRooms) loadedRooms = [];
+            loadedRooms.push(newRecoveredRoom);
+            existingRoomKeySet.add(rId);
+            existingRoomKeySet.add(ensureValidUuid(rId));
+          }
+        }
+      });
+
+      // Persist any un-synced rooms to Supabase database so they survive reloads
+      if (base44.entities.Facility && loadedRooms && loadedRooms.length > 0) {
+        const dbRoomUuids = new Set(dbRoomFacilities.map(f => f.id));
+        for (const r of loadedRooms) {
+          const encoded = encodeRoomToFacility(r);
+          if (encoded && !dbRoomUuids.has(encoded.id)) {
+            base44.entities.Facility.create(encoded).catch(err => {
+              console.warn('Sync room to Supabase warning:', err);
+            });
           }
         }
       }
@@ -472,8 +535,10 @@ export default function RoomsBeds() {
         ? currentBranchId
         : (branches && branches.length > 0 && branches[0].id !== 'all' ? branches[0].id : null));
 
+      const roomUuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `room_${Date.now()}`;
       const newRoom = {
-        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? `room_${crypto.randomUUID().slice(0, 8)}` : `room_${Date.now()}`,
+        id: roomUuid,
+        db_id: ensureValidUuid(roomUuid),
         name: (roomObj.name || '').trim(),
         color: roomObj.color || '#3B82F6',
         branch_id: targetBranchId,
@@ -502,7 +567,7 @@ export default function RoomsBeds() {
     try {
       let updatedRoom = null;
       const updated = allRooms.map(r => {
-        if (r.id === roomId) {
+        if (r.id === roomId || r.db_id === roomId || ensureValidUuid(r.id) === ensureValidUuid(roomId)) {
           updatedRoom = {
             ...r,
             name: (roomData.name || r.name).trim(),
@@ -515,7 +580,8 @@ export default function RoomsBeds() {
       });
 
       if (updatedRoom && base44.entities.Facility) {
-        await base44.entities.Facility.update(roomId, encodeRoomToFacility(updatedRoom)).catch(err => {
+        const targetDbId = updatedRoom.db_id || ensureValidUuid(roomId);
+        await base44.entities.Facility.update(targetDbId, encodeRoomToFacility(updatedRoom)).catch(err => {
           console.error('Failed to update room in database:', err);
         });
       }
@@ -533,12 +599,13 @@ export default function RoomsBeds() {
   const handleDeleteRoom = async (roomId) => {
     try {
       if (base44.entities.Facility) {
-        await base44.entities.Facility.delete(roomId).catch(err => {
+        const targetDbId = ensureValidUuid(roomId);
+        await base44.entities.Facility.delete(targetDbId).catch(err => {
           console.error('Failed to delete room from database:', err);
         });
       }
 
-      const updatedRooms = allRooms.filter(r => r.id !== roomId);
+      const updatedRooms = allRooms.filter(r => r.id !== roomId && r.db_id !== roomId && ensureValidUuid(r.id) !== ensureValidUuid(roomId));
       setAllRooms(updatedRooms);
       localStorage.setItem(getTenantStorageKey('gp_rooms'), JSON.stringify(updatedRooms));
       localStorage.setItem('gp_rooms', JSON.stringify(updatedRooms));
@@ -1042,28 +1109,93 @@ export default function RoomsBeds() {
         });
 
     const roomMap = {};
-    // Seed with existing rooms
+    const orderedGroups = [];
+
+    // Seed with existing rooms - indexed by id, db_id and deterministic UUID
     rooms.forEach(r => {
-      roomMap[r.id] = { room: r, beds: [] };
+      const group = { room: r, beds: [] };
+      orderedGroups.push(group);
+      if (r.id) roomMap[r.id] = group;
+      if (r.db_id) roomMap[r.db_id] = group;
+      const validUuid = ensureValidUuid(r.id);
+      if (validUuid) roomMap[validUuid] = group;
     });
 
     // Unassigned room bucket
     const unassignedRoomKey = '__unassigned';
-    roomMap[unassignedRoomKey] = {
+    const unassignedGroup = {
       room: { id: unassignedRoomKey, name: t('rooms_beds.unassigned_area', 'Chưa phân phòng / Khu vực chung') },
       beds: []
     };
 
     filteredBeds.forEach(bed => {
-      const rId = bed.room_id && roomMap[bed.room_id] ? bed.room_id : unassignedRoomKey;
-      roomMap[rId].beds.push(bed);
+      let matchedGroup = null;
+      if (bed.room_id) {
+        matchedGroup = roomMap[bed.room_id] || roomMap[ensureValidUuid(bed.room_id)];
+      }
+      if (matchedGroup) {
+        matchedGroup.beds.push(bed);
+      } else {
+        unassignedGroup.beds.push(bed);
+      }
     });
 
-    // Filter out empty rooms if a specific status filter is active
-    return Object.values(roomMap).filter(group => group.beds.length > 0 || (statusFilter === 'all' && group.room.id !== unassignedRoomKey));
+    // Naturally sort beds within each room group: Ghế 1 -> Ghế 2 -> Ghế 3 -> Ghế 4
+    orderedGroups.forEach(g => {
+      g.beds.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+    });
+    unassignedGroup.beds.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+    const result = orderedGroups.filter(g => g.beds.length > 0 || statusFilter === 'all');
+    if (unassignedGroup.beds.length > 0) {
+      result.push(unassignedGroup);
+    }
+    return result;
   }, [rooms, beds, enrichedBedSessions, statusFilter, t]);
 
-  // 8. Pagination for Settings Table
+  // 8. Timeline Merged Events & Controls
+  const timelineEventsByBedId = useMemo(() => {
+    return aggregateBedTimelineEvents({
+      selectedDate: selectedTimelineDate,
+      beds,
+      appointments,
+      bedSessions,
+      staff,
+      services
+    });
+  }, [selectedTimelineDate, beds, appointments, bedSessions, staff, services]);
+
+  const handlePrevDay = () => {
+    const d = new Date(selectedTimelineDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedTimelineDate(d.toISOString().slice(0, 10));
+  };
+
+  const handleNextDay = () => {
+    const d = new Date(selectedTimelineDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedTimelineDate(d.toISOString().slice(0, 10));
+  };
+
+  const handleToday = () => {
+    setSelectedTimelineDate(getTodayDateString());
+  };
+
+  const handleTimelineSelectEvent = (event, bed, room) => {
+    setSelectedBedForDrawer(bed);
+    setDrawerOpen(true);
+  };
+
+  const handleTimelineEmptySlotClick = ({ bed, room, time, minutes }) => {
+    setQuickAssignBed(bed);
+  };
+
+  const handleTimelineBedClick = (bed, room) => {
+    setSelectedBedForDrawer(bed);
+    setDrawerOpen(true);
+  };
+
+  // 9. Pagination for Settings Table
   const totalPages = Math.max(1, Math.ceil(beds.length / pageSize));
   const paginatedBeds = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -1125,15 +1257,41 @@ export default function RoomsBeds() {
         <div className="flex overflow-x-auto gap-1">
           <button
             type="button"
-            onClick={() => setActiveTab('diagram')}
+            onClick={() => {
+              setActiveTab('diagram');
+              setDiagramViewMode('grid');
+            }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'diagram'
+              activeTab === 'diagram' && diagramViewMode === 'grid'
                 ? 'bg-blue-600 text-white shadow-sm font-bold'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
             <LayoutGrid className="w-4 h-4 shrink-0" />
             <span>{t('rooms_beds.tab_diagram', 'Sơ đồ vị trí')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('diagram');
+              setDiagramViewMode('timeline');
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === 'diagram' && diagramViewMode === 'timeline'
+                ? 'bg-blue-600 text-white shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0" />
+            <span>{t('rooms_beds.view_timeline', 'Timeline theo giường')}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === 'diagram' && diagramViewMode === 'timeline'
+                ? 'bg-white/20 text-white'
+                : 'bg-blue-100 text-blue-700'
+            }`}>
+              Mới
+            </span>
           </button>
 
           <button
@@ -1150,25 +1308,36 @@ export default function RoomsBeds() {
           </button>
         </div>
 
-        {/* Legend for Sơ đồ vị trí */}
+        {/* View Switcher for Sơ đồ vị trí: [Lưới | Timeline] */}
         {activeTab === 'diagram' && (
-          <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-600 px-3 py-1">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-              {t('rooms_beds.legend_available', 'Đang trống')}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
-              {t('rooms_beds.legend_busy', 'Đang bận')}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
-              {t('rooms_beds.legend_nearly_finished', 'Sắp trống')}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-fuchsia-500" />
-              {t('rooms_beds.legend_overtime', 'Quá giờ')}
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => setDiagramViewMode('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  diagramViewMode === 'grid'
+                    ? 'bg-white text-slate-900 shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>{t('rooms_beds.view_grid', 'Sơ đồ lưới')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDiagramViewMode('timeline')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  diagramViewMode === 'timeline'
+                    ? 'bg-white text-slate-900 shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{t('rooms_beds.view_timeline', 'Timeline giường')}</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1182,8 +1351,85 @@ export default function RoomsBeds() {
           </div>
         ) : activeTab === 'diagram' ? (
           /* ========================================================================= */
-          /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID - MOCKUP 3)                       */
+          /* TAB 1: SƠ ĐỒ VỊ TRÍ (LIVE TRACKING GRID HOẶC TIMELINE VIEW)               */
           /* ========================================================================= */
+          diagramViewMode === 'timeline' ? (
+            <div className="space-y-4">
+              {/* Thanh điều khiển ngày & bộ lọc phòng cho Timeline */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePrevDay}
+                    className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+                    title="Ngày trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleToday}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                      isSameDay(selectedTimelineDate, getTodayDateString())
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Hôm nay
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextDay}
+                    className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+                    title="Ngày sau"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <input
+                      type="date"
+                      value={selectedTimelineDate}
+                      onChange={(e) => e.target.value && setSelectedTimelineDate(e.target.value)}
+                      className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Lọc phòng:</span>
+                  </div>
+                  <select
+                    value={timelineRoomFilter}
+                    onChange={(e) => setTimelineRoomFilter(e.target.value)}
+                    className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                  >
+                    <option value="all">Tất cả phòng ({rooms.length})</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Bed Timeline View Component */}
+              <BedTimelineView
+                rooms={rooms}
+                beds={beds}
+                eventsByBedId={timelineEventsByBedId}
+                selectedDate={selectedTimelineDate}
+                selectedRoomId={timelineRoomFilter}
+                onSelectEvent={handleTimelineSelectEvent}
+                onEmptySlotClick={handleTimelineEmptySlotClick}
+                onBedClick={handleTimelineBedClick}
+              />
+            </div>
+          ) : (
           <div className="space-y-6">
             {/* Status Quick Filter Bar */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -1691,6 +1937,7 @@ export default function RoomsBeds() {
               ))
             )}
           </div>
+          )
         ) : (
           /* ========================================================================= */
           /* TAB 2: CÀI ĐẶT VỊ TRÍ (MANAGEMENT TABLE & MODALS - MOCKUP 1)               */
