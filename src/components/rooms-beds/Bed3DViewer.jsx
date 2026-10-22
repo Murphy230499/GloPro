@@ -7,62 +7,106 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { 
   Building2, ZoomIn, ZoomOut, RotateCcw, 
   Layers, User, Scissors, Clock, AlertCircle, 
-  CheckCircle2, Sparkles, Compass
+  CheckCircle2, Sparkles, Compass, Maximize2, Minimize2,
+  Sun, Moon, Eye, Activity
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
-// Bảng màu trạng thái chuẩn GloPro (Tuân thủ nghiêm ngặt quy tắc No-Purple)
-const STATUS_CONFIG = {
+// Bảng màu trạng thái chuẩn GloPro (Tuân thủ nghiêm ngặt quy tắc No-Purple, tối ưu thẩm mỹ cao cấp)
+const STATUS_THEME = {
   available: {
     label: 'Đang trống',
     hex: 0x10b981, // Emerald 500
+    colorStr: '#10b981',
     cssDot: 'bg-emerald-500',
-    cssBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    cssGlow: 'rgba(16, 185, 129, 0.4)'
+    cssBadge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    glowColor: 'rgba(16, 185, 129, 0.45)'
   },
   waiting: {
     label: 'Chờ phục vụ',
-    hex: 0x3b82f6, // Blue 500
-    cssDot: 'bg-blue-500',
-    cssBadge: 'bg-blue-50 text-blue-700 border-blue-200',
-    cssGlow: 'rgba(59, 130, 246, 0.4)'
+    hex: 0x0ea5e9, // Sky 500
+    colorStr: '#0ea5e9',
+    cssDot: 'bg-sky-400',
+    cssBadge: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    glowColor: 'rgba(14, 165, 233, 0.45)'
   },
   reserved: {
     label: 'Đặt trước',
     hex: 0xf59e0b, // Amber 500
-    cssDot: 'bg-amber-500',
-    cssBadge: 'bg-amber-50 text-amber-700 border-amber-200',
-    cssGlow: 'rgba(245, 158, 11, 0.4)'
+    colorStr: '#f59e0b',
+    cssDot: 'bg-amber-400',
+    cssBadge: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    glowColor: 'rgba(245, 158, 11, 0.45)'
   },
   in_progress: {
     label: 'Đang bận',
     hex: 0xf43f5e, // Rose 500
+    colorStr: '#f43f5e',
     cssDot: 'bg-rose-500',
-    cssBadge: 'bg-rose-50 text-rose-700 border-rose-200',
-    cssGlow: 'rgba(244, 63, 94, 0.4)'
+    cssBadge: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+    glowColor: 'rgba(244, 63, 94, 0.45)'
   },
   nearly_finished: {
     label: 'Sắp trống',
     hex: 0xfbbf24, // Amber 400
+    colorStr: '#fbbf24',
     cssDot: 'bg-amber-400',
-    cssBadge: 'bg-amber-50 text-amber-800 border-amber-300',
-    cssGlow: 'rgba(251, 191, 36, 0.4)'
+    cssBadge: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
+    glowColor: 'rgba(251, 191, 36, 0.45)'
   },
   overtime: {
     label: 'Quá giờ',
-    hex: 0xe11d48, // Rose 600 (Vivid Red-Rose alert)
-    cssDot: 'bg-rose-600 animate-ping',
-    cssBadge: 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
-    cssGlow: 'rgba(225, 29, 72, 0.5)'
+    hex: 0xe11d48, // Vivid Rose Red Alert
+    colorStr: '#e11d48',
+    cssDot: 'bg-rose-500 animate-ping',
+    cssBadge: 'bg-rose-600/25 text-rose-300 border-rose-500/50 font-bold',
+    glowColor: 'rgba(225, 29, 72, 0.65)'
   },
   cleaning: {
     label: 'Đang dọn dẹp',
     hex: 0x14b8a6, // Teal 500
-    cssDot: 'bg-teal-500',
-    cssBadge: 'bg-teal-50 text-teal-700 border-teal-200',
-    cssGlow: 'rgba(20, 184, 166, 0.4)'
+    colorStr: '#14b8a6',
+    cssDot: 'bg-teal-400',
+    cssBadge: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+    glowColor: 'rgba(20, 184, 166, 0.45)'
   }
 };
+
+// Tạo texture bóng đổ tiếp xúc mềm mại (Soft Contact Shadow)
+function createContactShadowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 62);
+  gradient.addColorStop(0, 'rgba(15, 23, 42, 0.65)');
+  gradient.addColorStop(0.35, 'rgba(15, 23, 42, 0.35)');
+  gradient.addColorStop(0.7, 'rgba(15, 23, 42, 0.12)');
+  gradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// Tạo texture vầng hào quang mặt sàn theo màu trạng thái
+function createGlowHaloTexture(colorStr) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(64, 64, 25, 64, 64, 62);
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  gradient.addColorStop(0.5, colorStr);
+  gradient.addColorStop(0.85, 'rgba(0, 0, 0, 0)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
 
 export default function Bed3DViewer({
   bedsByRoom = [],
@@ -77,15 +121,20 @@ export default function Bed3DViewer({
   const controlsRef = useRef(null);
   const cameraRef = useRef(null);
   const animFrameIdRef = useRef(null);
-  const bedMeshesRef = useRef(new Map()); // bedId -> { mesh, ledMesh, labelObj, roomCenter, bedData }
-  const roomPositionsRef = useRef(new Map()); // roomId -> { center: Vector3, name: string }
 
-  // UI Filter states
+  // Bộ nhớ đệm tham chiếu vật thể
+  const bedMeshesRef = useRef(new Map());
+  const roomPositionsRef = useRef(new Map());
+  const contactShadowTexRef = useRef(null);
+
+  // Trạng thái giao diện
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('all');
-  const [cameraView, setCameraView] = useState('iso'); // 'iso' | 'top'
-  const [hoveredBedInfo, setHoveredBedInfo] = useState(null);
+  const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'front'
+  const [themeMode, setThemeMode] = useState('dark'); // 'dark' (Obsidian Luxury) | 'clay' (Warm Architectural)
+  const [hoveredBed, setHoveredBed] = useState(null);
 
-  // Thống kê nhanh trạng thái
+  // Thống kê nhanh dữ liệu
   const stats = useMemo(() => {
     let total = 0;
     let occupied = 0;
@@ -108,167 +157,283 @@ export default function Bed3DViewer({
     return { total, occupied, available, overtime };
   }, [bedsByRoom, bedSessions]);
 
-  // Tạo Procedural 3D Mesh cho một Giường / Ghế Spa
-  const createBedMesh = (bed, statusConfig) => {
+  // Sinh mô hình 3D Giường / Ghế Spa Cao Cấp (High-Fidelity Procedural Model)
+  const createLuxuryBedModel = (bed, statusConfig, shadowTex) => {
     const group = new THREE.Group();
-    group.name = `bed_${bed.id}`;
+    group.name = `luxury_bed_${bed.id}`;
 
-    // 1. Chân đế kim loại mờ (Base Stand)
+    // 1. Bóng đổ tiếp xúc mềm trên mặt sàn (Soft Contact Shadow Decal)
+    const shadowGeo = new THREE.PlaneGeometry(2.8, 3.8);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTex,
+      transparent: true,
+      opacity: themeMode === 'dark' ? 0.75 : 0.5,
+      depthWrite: false
+    });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.y = 0.015;
+    group.add(shadowMesh);
+
+    // 2. Vòng phát sáng mặt sàn (Floor Status Halo Glow)
+    const haloTex = createGlowHaloTexture(statusConfig.colorStr);
+    const haloGeo = new THREE.PlaneGeometry(3.2, 4.2);
+    const haloMat = new THREE.MeshBasicMaterial({
+      map: haloTex,
+      transparent: true,
+      opacity: themeMode === 'dark' ? 0.8 : 0.5,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+    haloMesh.rotation.x = -Math.PI / 2;
+    haloMesh.position.y = 0.02;
+    group.add(haloMesh);
+
+    // 3. Chân đế kim loại mạ Titanium xước mờ (Titanium Pedestal Base)
     const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x334155, // Slate 700
-      metalness: 0.6,
+      color: themeMode === 'dark' ? 0x1e293b : 0x334155, // Slate 800 / 700
+      metalness: 0.85,
+      roughness: 0.25
+    });
+
+    // Đế chân tròn hoặc bo góc
+    const basePlateGeo = new THREE.CylinderGeometry(0.85, 0.95, 0.12, 32);
+    const basePlate = new THREE.Mesh(basePlateGeo, baseMat);
+    basePlate.position.y = 0.06;
+    basePlate.castShadow = true;
+    basePlate.receiveShadow = true;
+    group.add(basePlate);
+
+    // Trụ nâng thủy lực kim loại bóng (Hydraulic Column)
+    const columnMat = new THREE.MeshStandardMaterial({
+      color: 0x94a3b8, // Chrome/Steel
+      metalness: 0.95,
+      roughness: 0.15
+    });
+    const columnGeo = new THREE.CylinderGeometry(0.18, 0.2, 0.45, 32);
+    const column = new THREE.Mesh(columnGeo, columnMat);
+    column.position.y = 0.32;
+    column.castShadow = true;
+    group.add(column);
+
+    // Khung đỡ mặt giường (Sub-frame)
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: themeMode === 'dark' ? 0x0f172a : 0x1e293b,
+      metalness: 0.7,
       roughness: 0.3
     });
-    const baseGeo = new THREE.BoxGeometry(1.6, 0.15, 2.6);
-    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-    baseMesh.position.y = 0.075;
-    baseMesh.castShadow = true;
-    baseMesh.receiveShadow = true;
-    group.add(baseMesh);
+    const frameGeo = new THREE.BoxGeometry(1.5, 0.1, 2.5);
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.y = 0.58;
+    frame.castShadow = true;
+    group.add(frame);
 
-    // 4 Chân giường mạ kim loại
-    const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 16);
-    const legPositions = [
-      [-0.7, 0.2, -1.1],
-      [0.7, 0.2, -1.1],
-      [-0.7, 0.2, 1.1],
-      [0.7, 0.2, 1.1]
-    ];
-    legPositions.forEach(([x, y, z]) => {
-      const leg = new THREE.Mesh(legGeo, baseMat);
-      leg.position.set(x, y, z);
-      group.add(leg);
-    });
-
-    // 2. Dải LED phát sáng dưới gầm giường (Status LED Glow Strip)
+    // 4. Dải đèn Neon LED trạng thái (Status Edge LED)
     const ledMat = new THREE.MeshStandardMaterial({
       color: statusConfig.hex,
       emissive: statusConfig.hex,
-      emissiveIntensity: 0.9,
-      roughness: 0.2
+      emissiveIntensity: themeMode === 'dark' ? 1.6 : 0.9,
+      roughness: 0.1
     });
-    const ledGeo = new THREE.BoxGeometry(1.64, 0.06, 2.64);
+    const ledGeo = new THREE.BoxGeometry(1.54, 0.05, 2.54);
     const ledMesh = new THREE.Mesh(ledGeo, ledMat);
-    ledMesh.position.y = 0.42;
+    ledMesh.position.y = 0.64;
     group.add(ledMesh);
 
-    // 3. Nệm bọc da cao cấp (Cushion Mattress)
-    const mattressMat = new THREE.MeshStandardMaterial({
-      color: 0xf8fafc, // Slate 50
-      roughness: 0.4,
+    // 5. Nệm bọc da cao cấp với đường cong nhẹ (Plush Contoured Mattress)
+    const leatherMat = new THREE.MeshStandardMaterial({
+      color: themeMode === 'dark' ? 0xf1f5f9 : 0xffffff, // Da màu kem/sáng thanh lịch
+      roughness: 0.35,
       metalness: 0.05
     });
-    const mattressGeo = new THREE.BoxGeometry(1.56, 0.35, 2.56);
-    const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
-    mattressMesh.position.y = 0.62;
-    mattressMesh.castShadow = true;
-    group.add(mattressMesh);
 
-    // 4. Gối đầu thư giãn (Ergonomic Pillow)
+    // Phần nệm chính
+    const mattressGeo = new THREE.BoxGeometry(1.46, 0.32, 2.46);
+    const mattress = new THREE.Mesh(mattressGeo, leatherMat);
+    mattress.position.y = 0.81;
+    mattress.castShadow = true;
+    mattress.receiveShadow = true;
+    group.add(mattress);
+
+    // 6. Gối đầu công thái học (Ergonomic Spa Pillow)
     const pillowMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0, // Slate 200
-      roughness: 0.5
+      color: themeMode === 'dark' ? 0xe2e8f0 : 0xf8fafc,
+      roughness: 0.45,
+      metalness: 0.02
     });
-    const pillowGeo = new THREE.BoxGeometry(1.1, 0.12, 0.6);
-    const pillowMesh = new THREE.Mesh(pillowGeo, pillowMat);
-    pillowMesh.position.set(0, 0.85, -0.9);
-    group.add(pillowMesh);
+    const pillowGeo = new THREE.CylinderGeometry(0.38, 0.38, 1.1, 32);
+    const pillow = new THREE.Mesh(pillowGeo, pillowMat);
+    pillow.rotation.z = Math.PI / 2;
+    pillow.position.set(0, 1.02, -0.85);
+    pillow.scale.set(1, 0.45, 1);
+    pillow.castShadow = true;
+    group.add(pillow);
 
-    // 5. Khăn trải trang trí vắt ngang giường (Bed Runner)
+    // 7. Khăn trải trang trí vắt ngang giường (Bed Runner)
     const runnerMat = new THREE.MeshStandardMaterial({
       color: statusConfig.hex,
-      roughness: 0.7
+      roughness: 0.6,
+      metalness: 0.1
     });
-    const runnerGeo = new THREE.BoxGeometry(1.58, 0.04, 0.5);
-    const runnerMesh = new THREE.Mesh(runnerGeo, runnerMat);
-    runnerMesh.position.set(0, 0.81, 0.7);
-    group.add(runnerMesh);
+    const runnerGeo = new THREE.BoxGeometry(1.48, 0.03, 0.45);
+    const runner = new THREE.Mesh(runnerGeo, runnerMat);
+    runner.position.set(0, 0.98, 0.65);
+    group.add(runner);
 
-    // Hitbox vô hình để bắt Raycaster chính xác và dễ click
-    const hitboxGeo = new THREE.BoxGeometry(2.0, 1.6, 3.0);
+    // 8. Bàn tiện ích Spa mini bên cạnh giường (Spa Side Cart)
+    const cartGroup = new THREE.Group();
+    const cartMat = new THREE.MeshStandardMaterial({
+      color: themeMode === 'dark' ? 0x1e293b : 0xe2e8f0,
+      metalness: 0.4,
+      roughness: 0.4
+    });
+    const cartTopGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.04, 24);
+    const cartTop = new THREE.Mesh(cartTopGeo, cartMat);
+    cartTop.position.set(1.05, 0.75, -0.7);
+    cartGroup.add(cartTop);
+
+    const cartLegGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.72, 16);
+    const cartLeg = new THREE.Mesh(cartLegGeo, columnMat);
+    cartLeg.position.set(1.05, 0.37, -0.7);
+    cartGroup.add(cartLeg);
+
+    // Lọ tinh dầu thơm mini trên bàn
+    const bottleMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      roughness: 0.1,
+      metalness: 0.3,
+      transparent: true,
+      opacity: 0.85
+    });
+    const bottleGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.14, 16);
+    const bottle = new THREE.Mesh(bottleGeo, bottleMat);
+    bottle.position.set(1.05, 0.84, -0.7);
+    cartGroup.add(bottle);
+
+    group.add(cartGroup);
+
+    // 9. Cột Laser định vị không gian (Spatial Anchor Stem)
+    const stemMat = new THREE.MeshBasicMaterial({
+      color: statusConfig.hex,
+      transparent: true,
+      opacity: themeMode === 'dark' ? 0.35 : 0.2
+    });
+    const stemGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.2, 12);
+    const stem = new THREE.Mesh(stemGeo, stemMat);
+    stem.position.set(0, 1.6, 0);
+    group.add(stem);
+
+    // Hitbox vô hình bắt click/hover
+    const hitboxGeo = new THREE.BoxGeometry(2.3, 2.0, 3.2);
     const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
-    hitbox.position.y = 0.8;
+    hitbox.position.y = 0.9;
     hitbox.userData = { isBedHitbox: true, bedId: bed.id, bedData: bed };
     group.add(hitbox);
 
-    return { group, ledMesh, runnerMesh, hitbox };
+    return { group, ledMesh, haloMesh, hitbox };
   };
 
-  // Tạo DOM Card nổi bật trên đầu giường bằng CSS2D
+  // Tạo Floating Spatial Card bằng CSS2D
   const createBedCSS2DElement = (bed, room, session) => {
     const statusKey = session ? (session.status || 'in_progress') : 'available';
-    const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.available;
+    const cfg = STATUS_THEME[statusKey] || STATUS_THEME.available;
     const isOccupied = Boolean(session);
 
     const div = document.createElement('div');
-    div.className = 'select-none pointer-events-auto transition-transform hover:scale-105 duration-200';
+    div.className = 'select-none pointer-events-auto transform transition-all duration-300 hover:scale-105';
     div.style.transform = 'translate3d(0, 0, 0)';
 
-    let innerContent = '';
+    let cardHtml = '';
     if (isOccupied) {
       const customerName = session.customer_name || t('rooms_beds.guest', 'Khách vãng lai');
       const techName = session.technician_name || t('rooms_beds.unassigned_staff', 'Chưa chọn KTV');
       const serviceName = (session.services && session.services[0]?.name) || session.service_name || t('rooms_beds.standard_service', 'Dịch vụ Spa');
-      const progressPercent = session.progress_percent || 0;
+      const progressPercent = Math.min(100, Math.max(0, session.progress_percent || 0));
       const isOver = session.status === 'overtime';
+      const remainingMins = session.remaining_minutes ?? 0;
+      const initialLetter = customerName.charAt(0).toUpperCase();
 
-      innerContent = `
-        <div class="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 shadow-xl border border-slate-200/90 text-left min-w-[210px] max-w-[250px] cursor-pointer hover:border-blue-400 transition-all">
-          <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+      cardHtml = `
+        <div class="group relative rounded-2xl p-3 shadow-2xl backdrop-blur-xl transition-all duration-300 min-w-[220px] max-w-[260px] cursor-pointer text-left border ${
+          themeMode === 'dark' 
+            ? 'bg-slate-950/85 text-white border-white/10 hover:border-blue-500/80 hover:shadow-blue-500/20' 
+            : 'bg-white/95 text-slate-900 border-slate-200/90 hover:border-blue-500/80 hover:shadow-slate-300/60'
+        }">
+          <!-- Glowing Top Accent Line -->
+          <div class="absolute -top-[1px] left-4 right-4 h-[2px] rounded-full" style="background: ${cfg.colorStr}; box-shadow: 0 0 10px ${cfg.colorStr};"></div>
+
+          <!-- Header Row -->
+          <div class="flex items-center justify-between gap-2 pb-2 border-b ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}">
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full ${cfg.cssDot}"></span>
-              <span class="text-xs font-black text-slate-800 tracking-tight">${bed.name || 'Vị trí'}</span>
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: ${cfg.colorStr}"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2" style="background: ${cfg.colorStr}"></span>
+              </span>
+              <span class="text-xs font-black tracking-tight ${themeMode === 'dark' ? 'text-white' : 'text-slate-900'}">${bed.name || 'Vị trí'}</span>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${cfg.cssBadge}">
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border tracking-wide uppercase ${cfg.cssBadge}">
               ${cfg.label}
             </span>
           </div>
-          
-          <div class="mt-2 space-y-1.5">
-            <div class="flex items-center gap-1.5 text-slate-900 font-bold text-xs truncate">
-              <svg class="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-              <span class="truncate">${customerName}</span>
+
+          <!-- Customer Info -->
+          <div class="mt-2.5 flex items-center gap-2.5">
+            <div class="relative w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-md ${
+              themeMode === 'dark' ? 'bg-gradient-to-tr from-slate-800 to-slate-700 text-blue-400 border border-white/15' : 'bg-gradient-to-tr from-blue-50 to-blue-100 text-blue-700 border border-blue-200'
+            }">
+              ${initialLetter}
+              <!-- Mini Progress Ring Indicator -->
+              <svg class="absolute -inset-0.5 w-9 h-9 -rotate-90 pointer-events-none" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="16" fill="none" stroke="${themeMode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}" stroke-width="2.5" />
+                <circle cx="18" cy="18" r="16" fill="none" stroke="${cfg.colorStr}" stroke-width="2.5" stroke-dasharray="100" stroke-dashoffset="${100 - progressPercent}" stroke-linecap="round" />
+              </svg>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span class="flex items-center gap-1 truncate text-slate-600">
-                <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path></svg>
-                ${techName}
-              </span>
-              <span class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded-md truncate max-w-[90px]">
-                ${serviceName}
-              </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold truncate ${themeMode === 'dark' ? 'text-slate-100' : 'text-slate-900'}">
+                ${customerName}
+              </div>
+              <div class="text-[11px] truncate flex items-center gap-1 ${themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}">
+                <span class="font-medium">KTV:</span>
+                <span class="font-semibold text-sky-400">${techName}</span>
+              </div>
             </div>
+          </div>
 
-            <!-- Progress Bar -->
-            <div class="pt-1">
-              <div class="flex justify-between text-[10px] text-slate-400 font-semibold mb-1">
-                <span>Tiến độ</span>
-                <span class="${isOver ? 'text-rose-600 font-bold' : 'text-slate-600'}">
-                  ${isOver ? 'Quá giờ' : `${progressPercent}%`}
-                </span>
-              </div>
-              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500 ${isOver ? 'bg-rose-500' : 'bg-blue-600'}" style="width: ${Math.min(100, Math.max(8, progressPercent))}%"></div>
-              </div>
-            </div>
+          <!-- Service Tag & Timer -->
+          <div class="mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}">
+            <span class="font-medium text-slate-400 truncate max-w-[130px]">
+              ${serviceName}
+            </span>
+            <span class="font-bold text-[10px] px-1.5 py-0.5 rounded-md ${
+              isOver 
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' 
+                : themeMode === 'dark' ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700'
+            }">
+              ${isOver ? 'Quá giờ' : `Còn ${remainingMins}p`}
+            </span>
           </div>
         </div>
       `;
     } else {
-      innerContent = `
-        <div class="bg-white/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-md border border-slate-200/80 flex items-center gap-2 cursor-pointer hover:bg-white hover:border-emerald-300 transition-all">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="text-xs font-bold text-slate-800">${bed.name || 'Vị trí'}</span>
-          <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-md">
+      cardHtml = `
+        <div class="rounded-xl px-3 py-1.5 shadow-xl backdrop-blur-xl border flex items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 ${
+          themeMode === 'dark' 
+            ? 'bg-slate-950/80 text-white border-white/10 hover:border-emerald-500/50' 
+            : 'bg-white/95 text-slate-800 border-slate-200/90 hover:border-emerald-500/50'
+        }">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
+          <span class="text-xs font-black tracking-tight">${bed.name || 'Vị trí'}</span>
+          <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded-md">
             Trống
           </span>
         </div>
       `;
     }
 
-    div.innerHTML = innerContent;
+    div.innerHTML = cardHtml;
     div.onclick = (e) => {
       e.stopPropagation();
       onSelectBed(bed);
@@ -277,21 +442,26 @@ export default function Bed3DViewer({
     return div;
   };
 
-  // Khởi tạo Scene 3D
+  // Khởi tạo Scene 3D & Renderers
   useEffect(() => {
     if (!mountRef.current) return;
     const container = mountRef.current;
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 560;
+    const width = container.clientWidth || 900;
+    const height = container.clientHeight || 650;
 
     // 1. Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf1f5f9); // Slate 100 sleek studio tone
     sceneRef.current = scene;
 
-    // 2. Camera setup (Isometric-style Perspective)
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(24, 22, 28);
+    // Thiết lập màu nền & sương mù phối cảnh (Fog)
+    const isDark = themeMode === 'dark';
+    const bgCol = isDark ? 0x090d16 : 0xedf2f9;
+    scene.background = new THREE.Color(bgCol);
+    scene.fog = new THREE.FogExp2(bgCol, isDark ? 0.012 : 0.009);
+
+    // 2. Camera setup: Góc quay Isometric điện ảnh (FOV 32)
+    const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 1000);
+    camera.position.set(30, 26, 34);
     cameraRef.current = camera;
 
     // 3. WebGL Renderer
@@ -301,11 +471,11 @@ export default function Bed3DViewer({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = isDark ? 1.25 : 1.15;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. CSS2D Renderer cho nhãn thẻ nổi trên đầu giường
+    // 4. CSS2D Renderer cho thẻ nổi
     const labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(width, height);
     labelRenderer.domElement.style.position = 'absolute';
@@ -318,54 +488,72 @@ export default function Bed3DViewer({
     // 5. OrbitControls
     const controls = new OrbitControls(camera, labelRenderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.minDistance = 6;
-    controls.maxDistance = 75;
-    controls.maxPolarAngle = Math.PI / 2.05; // Không cho camera chìm dưới sàn
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 8;
+    controls.maxDistance = 85;
+    controls.maxPolarAngle = Math.PI / 2.08;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    // 6. Ánh sáng Studio ấm áp, dịu mắt
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-    scene.add(ambientLight);
-
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe2e8f0, 0.6);
-    hemiLight.position.set(0, 30, 0);
+    // 6. Ánh sáng Kiến Trúc Studio Đa Chiều
+    const hemiLight = new THREE.HemisphereLight(
+      isDark ? 0x93c5fd : 0xffffff, // Trời
+      isDark ? 0x0f172a : 0xdbeafe, // Đất
+      isDark ? 0.9 : 1.2
+    );
+    hemiLight.position.set(0, 40, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
-    dirLight.position.set(20, 35, 20);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 100;
-    dirLight.shadow.camera.left = -25;
-    dirLight.shadow.camera.right = 25;
-    dirLight.shadow.camera.top = 25;
-    dirLight.shadow.camera.bottom = -25;
-    dirLight.shadow.bias = -0.0005;
-    scene.add(dirLight);
+    const ambientLight = new THREE.AmbientLight(isDark ? 0x334155 : 0xffffff, isDark ? 0.7 : 0.8);
+    scene.add(ambientLight);
 
-    // Sàn studio chính dưới cùng
-    const groundGeo = new THREE.PlaneGeometry(120, 120);
-    const groundMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0, // Slate 200
-      roughness: 0.85,
-      metalness: 0.05
+    // Đèn chính (Key Directional Sun) tạo bóng đổ sắc nét
+    const sunLight = new THREE.DirectionalLight(isDark ? 0xffffff : 0xfffbeb, isDark ? 2.2 : 2.6);
+    sunLight.position.set(25, 45, 25);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 4096;
+    sunLight.shadow.mapSize.height = 4096;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 120;
+    sunLight.shadow.camera.left = -30;
+    sunLight.shadow.camera.right = 30;
+    sunLight.shadow.camera.top = 30;
+    sunLight.shadow.camera.bottom = -30;
+    sunLight.shadow.bias = -0.0004;
+    scene.add(sunLight);
+
+    // Đèn phụ dịu (Fill Cool Rim Light)
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, isDark ? 0.8 : 0.4);
+    rimLight.position.set(-25, 30, -25);
+    scene.add(rimLight);
+
+    // 7. Sàn không gian vô cực (Infinite Ambient Floor)
+    const floorGeo = new THREE.PlaneGeometry(160, 160);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x0b1120 : 0xe2e8f0,
+      roughness: 0.92,
+      metalness: 0.08
     });
-    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-    groundMesh.rotation.x = -Math.PI / 2;
-    groundMesh.position.y = -0.05;
-    groundMesh.receiveShadow = true;
-    scene.add(groundMesh);
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.position.y = -0.02;
+    floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
 
-    // Lưới studio tinh tế
-    const gridHelper = new THREE.GridHelper(80, 40, 0xcbcfd6, 0xe2e8f0);
-    gridHelper.position.y = 0.01;
+    // Lưới tọa độ không gian thanh lịch
+    const gridHelper = new THREE.GridHelper(
+      100, 
+      50, 
+      isDark ? 0x1e293b : 0x94a3b8, 
+      isDark ? 0x0f172a : 0xcbd5e1
+    );
+    gridHelper.position.y = 0.005;
     scene.add(gridHelper);
 
-    // 7. Raycasting bắt sự kiện Hover & Click trên canvas
+    // Chuẩn bị texture bóng đổ mềm dùng chung
+    contactShadowTexRef.current = createContactShadowTexture();
+
+    // 8. Raycaster bắt sự kiện
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -384,15 +572,14 @@ export default function Bed3DViewer({
       if (intersects.length > 0) {
         const hit = intersects[0].object;
         renderer.domElement.style.cursor = 'pointer';
-        setHoveredBedInfo(hit.userData.bedData);
+        setHoveredBed(hit.userData.bedData);
       } else {
         renderer.domElement.style.cursor = 'default';
-        setHoveredBedInfo(null);
+        setHoveredBed(null);
       }
     };
 
     const handlePointerDown = (e) => {
-      // Chỉ bắt chuột trái (click)
       if (e.button !== 0) return;
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -410,8 +597,7 @@ export default function Bed3DViewer({
         const bedData = hit.userData.bedData;
         if (bedData) {
           onSelectBed(bedData);
-          // Lướt camera tới gần vị trí giường
-          focusCameraOnBed(hit.parent.position);
+          focusCameraOnObject(hit.parent.position);
         }
       }
     };
@@ -420,7 +606,7 @@ export default function Bed3DViewer({
     domEl.addEventListener('pointermove', handlePointerMove);
     domEl.addEventListener('pointerdown', handlePointerDown);
 
-    // 8. Animation loop
+    // 9. Animation Loop
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
       controls.update();
@@ -429,7 +615,7 @@ export default function Bed3DViewer({
     };
     animate();
 
-    // 9. Resize observer
+    // 10. Resize Observer
     const resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         const { width: newW, height: newH } = entry.contentRect;
@@ -456,26 +642,26 @@ export default function Bed3DViewer({
       }
       renderer.dispose();
     };
-  }, []);
+  }, [themeMode]);
 
-  // Lướt camera tới đối tượng mượt mà
-  const focusCameraOnBed = (targetPos) => {
+  // Lướt camera mượt mà (Cinematic Flight)
+  const focusCameraOnObject = (targetPos) => {
     if (!controlsRef.current || !cameraRef.current) return;
     const controls = controlsRef.current;
     const camera = cameraRef.current;
 
     const startTarget = controls.target.clone();
-    const endTarget = new THREE.Vector3(targetPos.x, targetPos.y + 0.8, targetPos.z);
+    const endTarget = new THREE.Vector3(targetPos.x, targetPos.y + 0.9, targetPos.z);
     const startCamPos = camera.position.clone();
-    const endCamPos = new THREE.Vector3(targetPos.x + 6, targetPos.y + 7, targetPos.z + 8);
+    const endCamPos = new THREE.Vector3(targetPos.x + 8, targetPos.y + 9, targetPos.z + 10);
 
     let progress = 0;
-    const duration = 25; // frames (~0.4s)
+    const duration = 28;
 
     const step = () => {
       progress++;
       const tNorm = Math.min(1, progress / duration);
-      const ease = 0.5 - Math.cos(tNorm * Math.PI) / 2; // Ease in-out
+      const ease = 0.5 - Math.cos(tNorm * Math.PI) / 2;
 
       controls.target.lerpVectors(startTarget, endTarget, ease);
       camera.position.lerpVectors(startCamPos, endCamPos, ease);
@@ -488,12 +674,12 @@ export default function Bed3DViewer({
     step();
   };
 
-  // Cập nhật hoặc Dựng lại các Phòng và Giường trong Scene 3D khi data thay đổi
+  // Tái tạo Phòng & Giường trong không gian 3D khi data đổi
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Dọn dẹp các nhóm phòng & giường cũ
+    // Dọn dẹp
     bedMeshesRef.current.forEach(({ group, labelObj }) => {
       if (labelObj) group.remove(labelObj);
       scene.remove(group);
@@ -501,14 +687,16 @@ export default function Bed3DViewer({
     bedMeshesRef.current.clear();
     roomPositionsRef.current.clear();
 
-    const oldRooms = scene.children.filter(c => c.name && c.name.startsWith('room_group_'));
+    const oldRooms = scene.children.filter(c => c.name && c.name.startsWith('room_arch_'));
     oldRooms.forEach(r => scene.remove(r));
 
     if (!bedsByRoom || bedsByRoom.length === 0) return;
 
-    // Sắp xếp các phòng trong không gian 3D theo bố cục đa chiều (Showroom grid)
-    const ROOM_SPACING_X = 14;
-    const ROOM_SPACING_Z = 13;
+    const isDark = themeMode === 'dark';
+    const shadowTex = contactShadowTexRef.current || createContactShadowTexture();
+
+    const ROOM_SPACING_X = 16.5;
+    const ROOM_SPACING_Z = 14.5;
     const totalRooms = bedsByRoom.length;
     const columns = Math.ceil(Math.sqrt(totalRooms));
 
@@ -518,12 +706,11 @@ export default function Bed3DViewer({
       const col = roomIdx % columns;
       const row = Math.floor(roomIdx / columns);
 
-      // Tọa độ tâm của phòng
       const roomX = (col - (columns - 1) / 2) * ROOM_SPACING_X;
       const roomZ = (row - (Math.ceil(totalRooms / columns) - 1) / 2) * ROOM_SPACING_Z;
 
       const roomGroup = new THREE.Group();
-      roomGroup.name = `room_group_${room.id || roomIdx}`;
+      roomGroup.name = `room_arch_${room.id || roomIdx}`;
       roomGroup.position.set(roomX, 0, roomZ);
 
       roomPositionsRef.current.set(room.id || `idx_${roomIdx}`, {
@@ -531,82 +718,95 @@ export default function Bed3DViewer({
         name: room.name || `Phòng ${roomIdx + 1}`
       });
 
-      // 1. Bục sàn phòng sang trọng (Room Elevated Floor Slab)
-      const roomWidth = 11.5;
-      const roomDepth = 9.8;
-      const floorMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.3,
+      // 1. Bục sàn phòng kiến trúc (Architectural Room Podium)
+      const roomW = 14.2;
+      const roomD = 11.8;
+      const podiumMat = new THREE.MeshStandardMaterial({
+        color: isDark ? 0x0f172a : 0xffffff, // Slate 900 / Pure White
+        roughness: 0.35,
         metalness: 0.05
       });
-      const floorGeo = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth);
-      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-      floorMesh.position.y = 0.1;
-      floorMesh.receiveShadow = true;
-      roomGroup.add(floorMesh);
+      const podiumGeo = new THREE.BoxGeometry(roomW, 0.25, roomD);
+      const podiumMesh = new THREE.Mesh(podiumGeo, podiumMat);
+      podiumMesh.position.y = 0.125;
+      podiumMesh.receiveShadow = true;
+      roomGroup.add(podiumMesh);
 
-      // Viền kim loại quanh bục sàn
-      const borderMat = new THREE.MeshStandardMaterial({
-        color: 0x94a3b8, // Slate 400
-        metalness: 0.5,
-        roughness: 0.4
+      // Viền kim loại sang trọng xung quanh bục
+      const trimMat = new THREE.MeshStandardMaterial({
+        color: isDark ? 0x334155 : 0xcbd5e1,
+        metalness: 0.8,
+        roughness: 0.2
       });
-      const borderGeo = new THREE.BoxGeometry(roomWidth + 0.1, 0.05, roomDepth + 0.1);
-      const borderMesh = new THREE.Mesh(borderGeo, borderMat);
-      borderMesh.position.y = 0.22;
-      roomGroup.add(borderMesh);
+      const trimGeo = new THREE.BoxGeometry(roomW + 0.12, 0.06, roomD + 0.12);
+      const trimMesh = new THREE.Mesh(trimGeo, trimMat);
+      trimMesh.position.y = 0.26;
+      roomGroup.add(trimMesh);
 
-      // 2. Vách kính lửng ngăn phòng (Frosted Glass Divider)
+      // 2. Vách lam gỗ kiến trúc hoặc kính sọc mờ (Architectural Slats / Glass Partition)
       const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xe2e8f0,
+        color: isDark ? 0x38bdf8 : 0xbae6fd,
         transparent: true,
-        opacity: 0.45,
-        roughness: 0.2,
-        transmission: 0.7,
-        thickness: 0.3
+        opacity: isDark ? 0.35 : 0.5,
+        roughness: 0.15,
+        transmission: 0.75,
+        thickness: 0.4
       });
-      const backWallGeo = new THREE.BoxGeometry(roomWidth, 1.8, 0.1);
-      const backWall = new THREE.Mesh(backWallGeo, glassMat);
-      backWall.position.set(0, 1.0, -roomDepth / 2);
-      roomGroup.add(backWall);
+      const partitionGeo = new THREE.BoxGeometry(roomW - 1, 2.2, 0.1);
+      const partition = new THREE.Mesh(partitionGeo, glassMat);
+      partition.position.set(0, 1.25, -roomD / 2 + 0.3);
+      partition.castShadow = true;
+      roomGroup.add(partition);
 
-      // 3. Biển tên phòng nổi phía trước (CSS2D Room Header)
-      const roomBadgeDiv = document.createElement('div');
-      roomBadgeDiv.className = 'select-none pointer-events-none';
-      roomBadgeDiv.innerHTML = `
-        <div class="bg-slate-900/90 text-white backdrop-blur-md px-3 py-1 rounded-xl shadow-lg border border-slate-700/80 flex items-center gap-1.5 whitespace-nowrap">
-          <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-          <span class="text-xs font-bold tracking-wide">${room.name || 'Phòng'}</span>
-          <span class="text-[10px] text-slate-300 bg-white/10 px-1.5 py-0.2 rounded-full font-semibold">${beds.length} vị trí</span>
+      // 3. Đèn trần Spa rọi điểm dịu mắt (Downlight Spotlight)
+      const spotLight = new THREE.PointLight(0xfffbeb, isDark ? 0.8 : 0.5, 12, 1.2);
+      spotLight.position.set(0, 4.5, 0);
+      roomGroup.add(spotLight);
+
+      // 4. Biển tên phòng nổi phía trước (CSS2D Architectural Room Header)
+      const roomBadgeDom = document.createElement('div');
+      roomBadgeDom.className = 'select-none pointer-events-none transform -translate-y-2';
+      roomBadgeDom.innerHTML = `
+        <div class="px-4 py-1.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-2.5 border ${
+          isDark 
+            ? 'bg-slate-950/90 text-white border-white/15' 
+            : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-slate-300'
+        }">
+          <div class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></div>
+          <span class="text-xs font-black tracking-wider uppercase">${room.name || 'Phòng Spa'}</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${
+            isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
+          }">
+            ${beds.length} vị trí
+          </span>
         </div>
       `;
-      const roomBadgeObj = new CSS2DObject(roomBadgeDiv);
-      roomBadgeObj.position.set(0, 2.3, -roomDepth / 2);
+      const roomBadgeObj = new CSS2DObject(roomBadgeDom);
+      roomBadgeObj.position.set(0, 2.8, -roomD / 2 + 0.3);
       roomGroup.add(roomBadgeObj);
 
       scene.add(roomGroup);
 
-      // 4. Bố trí các giường / ghế bên trong phòng
+      // 5. Bố trí các giường / ghế bên trong phòng
       const bedCols = Math.min(beds.length, 4);
-      const bedSpacingX = 2.4;
-      const bedZOffset = 0.5;
+      const bedSpacingX = 2.9;
+      const bedZOffset = 0.4;
 
       beds.forEach((bed, bIdx) => {
         const sess = bedSessions[bed.id];
         const statusKey = sess ? (sess.status || 'in_progress') : 'available';
-        const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.available;
+        const cfg = STATUS_THEME[statusKey] || STATUS_THEME.available;
 
-        const { group: bedGroup, ledMesh, runnerMesh, hitbox } = createBedMesh(bed, cfg);
+        const { group: bedGroup, ledMesh, haloMesh, hitbox } = createLuxuryBedModel(bed, cfg, shadowTex);
 
-        // Vị trí giường tính theo tâm phòng
         const bX = roomX + (bIdx - (bedCols - 1) / 2) * bedSpacingX;
         const bZ = roomZ + bedZOffset;
-        bedGroup.position.set(bX, 0.2, bZ);
+        bedGroup.position.set(bX, 0.25, bZ);
 
-        // Thêm CSS2D Badge cho từng giường
+        // Gắn Floating CSS2D Card
         const bedCardDom = createBedCSS2DElement(bed, room, sess);
         const bedLabelObj = new CSS2DObject(bedCardDom);
-        bedLabelObj.position.set(0, 2.1, 0);
+        bedLabelObj.position.set(0, 2.45, 0);
         bedGroup.add(bedLabelObj);
 
         scene.add(bedGroup);
@@ -614,7 +814,7 @@ export default function Bed3DViewer({
         bedMeshesRef.current.set(bed.id, {
           mesh: bedGroup,
           ledMesh,
-          runnerMesh,
+          haloMesh,
           labelObj: bedLabelObj,
           hitbox,
           bedData: bed,
@@ -622,42 +822,41 @@ export default function Bed3DViewer({
         });
       });
     });
-  }, [bedsByRoom, bedSessions, t]);
+  }, [bedsByRoom, bedSessions, themeMode, t]);
 
-  // Điều khiển Camera Preset
+  // Điều khiển góc quay Camera
   const handleResetCamera = () => {
     if (!controlsRef.current || !cameraRef.current) return;
-    const controls = controlsRef.current;
-    const camera = cameraRef.current;
-
-    controls.target.set(0, 0, 0);
-    camera.position.set(24, 22, 28);
-    controls.update();
-    setCameraView('iso');
+    controlsRef.current.target.set(0, 0, 0);
+    cameraRef.current.position.set(30, 26, 34);
+    controlsRef.current.update();
+    setCameraMode('iso');
   };
 
   const handleTopDownView = () => {
     if (!controlsRef.current || !cameraRef.current) return;
-    const controls = controlsRef.current;
-    const camera = cameraRef.current;
+    controlsRef.current.target.set(0, 0, 0);
+    cameraRef.current.position.set(0, 42, 0.1);
+    controlsRef.current.update();
+    setCameraMode('top');
+  };
 
-    controls.target.set(0, 0, 0);
-    camera.position.set(0, 36, 0.1);
-    controls.update();
-    setCameraView('top');
+  const handleFrontView = () => {
+    if (!controlsRef.current || !cameraRef.current) return;
+    controlsRef.current.target.set(0, 0, 0);
+    cameraRef.current.position.set(0, 14, 38);
+    controlsRef.current.update();
+    setCameraMode('front');
   };
 
   const handleZoom = (delta) => {
     if (!cameraRef.current || !controlsRef.current) return;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
     const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    camera.position.addScaledVector(dir, delta * 3);
-    controls.update();
+    cameraRef.current.getWorldDirection(dir);
+    cameraRef.current.position.addScaledVector(dir, delta * 3.5);
+    controlsRef.current.update();
   };
 
-  // Chuyển góc nhìn tới phòng được chọn
   const handleSelectRoom = (roomId) => {
     setSelectedRoomId(roomId);
     if (!controlsRef.current || !cameraRef.current) return;
@@ -668,27 +867,37 @@ export default function Bed3DViewer({
 
     const roomInfo = roomPositionsRef.current.get(roomId);
     if (roomInfo) {
-      const pos = roomInfo.center;
-      focusCameraOnBed(pos);
+      focusCameraOnObject(roomInfo.center);
     }
   };
 
   return (
-    <div className="relative w-full h-[620px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-sm bg-slate-900 select-none">
-      {/* 3D Canvas Mount Point */}
+    <div className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl ${
+      isFullscreen 
+        ? 'fixed inset-0 z-50 rounded-none h-screen w-screen border-none' 
+        : 'h-[680px] border-slate-800'
+    } ${themeMode === 'dark' ? 'bg-[#090d16]' : 'bg-[#edf2f9]'}`}>
+
+      {/* Canvas Three.js & CSS2D */}
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
-      {/* Top HUD: Bộ lọc tầng/phòng & Thống kê nhanh */}
-      <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+      {/* ========================================================================= */}
+      {/* TOP HUD: Room Switcher Pills & Realtime Performance Metrics               */}
+      {/* ========================================================================= */}
+      <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 pointer-events-none z-10">
         {/* Pills chọn Phòng / Tầng */}
-        <div className="flex items-center gap-1.5 p-1 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 pointer-events-auto overflow-x-auto max-w-[70%] scrollbar-none">
+        <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl pointer-events-auto border overflow-x-auto max-w-[72%] scrollbar-none ${
+          themeMode === 'dark' 
+            ? 'bg-slate-950/80 border-white/10 text-white' 
+            : 'bg-white/90 border-slate-200/90 text-slate-800'
+        }`}>
           <button
             type="button"
             onClick={() => handleSelectRoom('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               selectedRoomId === 'all'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                : themeMode === 'dark' ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -705,13 +914,13 @@ export default function Bed3DViewer({
                 onClick={() => handleSelectRoom(rId)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   isSel
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                    : themeMode === 'dark' ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <span>{group.room?.name || 'Phòng'}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isSel ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                  isSel ? 'bg-white/20 text-white' : themeMode === 'dark' ? 'bg-white/10 text-slate-300' : 'bg-slate-200 text-slate-700'
                 }`}>
                   {group.beds?.length || 0}
                 </span>
@@ -721,27 +930,34 @@ export default function Bed3DViewer({
         </div>
 
         {/* Cụm Thống kê nhanh trạng thái */}
-        <div className="hidden lg:flex items-center gap-2 p-1.5 bg-slate-900/85 backdrop-blur-md rounded-2xl shadow-lg border border-slate-800 text-white pointer-events-auto">
-          <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold">
-            <span className="text-slate-400">Tổng:</span>
-            <span className="font-bold text-white">{stats.total}</span>
+        <div className={`hidden lg:flex items-center gap-2 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl pointer-events-auto border ${
+          themeMode === 'dark' ? 'bg-slate-950/80 border-white/10 text-white' : 'bg-white/90 border-slate-200/90 text-slate-800'
+        }`}>
+          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold">
+            <span className={themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Tổng vị trí:</span>
+            <span className="font-bold">{stats.total}</span>
           </div>
-          <div className="w-px h-3.5 bg-slate-700" />
-          <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-slate-300">Đang bận:</span>
-            <span className="font-bold text-rose-400">{stats.occupied}</span>
+
+          <div className={`w-px h-3.5 ${themeMode === 'dark' ? 'bg-white/15' : 'bg-slate-200'}`} />
+
+          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500"></span>
+            <span className={themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Đang bận:</span>
+            <span className="font-bold text-rose-500">{stats.occupied}</span>
           </div>
-          <div className="w-px h-3.5 bg-slate-700" />
-          <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-300">Trống:</span>
-            <span className="font-bold text-emerald-400">{stats.available}</span>
+
+          <div className={`w-px h-3.5 ${themeMode === 'dark' ? 'bg-white/15' : 'bg-slate-200'}`} />
+
+          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
+            <span className={themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Đang trống:</span>
+            <span className="font-bold text-emerald-500">{stats.available}</span>
           </div>
+
           {stats.overtime > 0 && (
             <>
-              <div className="w-px h-3.5 bg-slate-700" />
-              <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-300 bg-rose-950/80 rounded-xl">
+              <div className={`w-px h-3.5 ${themeMode === 'dark' ? 'bg-white/15' : 'bg-slate-200'}`} />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 rounded-xl">
                 <AlertCircle className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
                 <span>Quá giờ: {stats.overtime}</span>
               </div>
@@ -750,47 +966,57 @@ export default function Bed3DViewer({
         </div>
       </div>
 
-      {/* Bottom-Left HUD: Bảng màu trạng thái đèn LED (Legend) */}
-      <div className="absolute bottom-4 left-4 p-2.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/80 pointer-events-auto flex flex-wrap items-center gap-3">
-        <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-blue-500" />
-          Đèn LED:
+      {/* ========================================================================= */}
+      {/* BOTTOM-LEFT: Bảng chú thích màu đèn LED sàn (Status Glow Legend)          */}
+      {/* ========================================================================= */}
+      <div className={`absolute bottom-4 left-4 p-2.5 rounded-2xl shadow-2xl backdrop-blur-2xl pointer-events-auto border flex flex-wrap items-center gap-3.5 z-10 ${
+        themeMode === 'dark' ? 'bg-slate-950/80 border-white/10 text-white' : 'bg-white/90 border-slate-200/90 text-slate-800'
+      }`}>
+        <span className="text-[10px] font-black tracking-widest uppercase flex items-center gap-1.5 text-slate-400">
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          Hào quang:
         </span>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
+        <div className="flex items-center gap-3 flex-wrap text-xs font-semibold">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500"></span>
             <span>Trống</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-sm shadow-sky-400"></span>
             <span>Chờ KTV</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400"></span>
             <span>Đặt trước</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500"></span>
             <span>Đang làm</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shadow-sm" />
-            <span>Quá giờ</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping shadow-sm shadow-rose-600"></span>
+            <span className="text-rose-400 font-bold">Quá giờ</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm" />
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-sm shadow-teal-400"></span>
             <span>Dọn dẹp</span>
           </div>
         </div>
       </div>
 
-      {/* Bottom-Right HUD: Camera Navigation Tools */}
-      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 p-1 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/80 pointer-events-auto">
+      {/* ========================================================================= */}
+      {/* BOTTOM-RIGHT: Camera Angles, Theme & Fullscreen Controls                  */}
+      {/* ========================================================================= */}
+      <div className={`absolute bottom-4 right-4 flex items-center gap-1.5 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl pointer-events-auto border z-10 ${
+        themeMode === 'dark' ? 'bg-slate-950/80 border-white/10 text-white' : 'bg-white/90 border-slate-200/90 text-slate-800'
+      }`}>
         <button
           type="button"
           onClick={() => handleZoom(1)}
           title="Phóng to"
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+          className={`p-2 rounded-xl transition-all cursor-pointer ${
+            themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          }`}
         >
           <ZoomIn className="w-4 h-4" />
         </button>
@@ -799,19 +1025,23 @@ export default function Bed3DViewer({
           type="button"
           onClick={() => handleZoom(-1)}
           title="Thu nhỏ"
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+          className={`p-2 rounded-xl transition-all cursor-pointer ${
+            themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          }`}
         >
           <ZoomOut className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-4 bg-slate-200" />
+        <div className={`w-px h-4 ${themeMode === 'dark' ? 'bg-white/15' : 'bg-slate-200'}`} />
 
         <button
           type="button"
           onClick={handleResetCamera}
-          title="Góc nhìn phối cảnh (Isometric)"
+          title="Góc nhìn phối cảnh nghiêng (Isometric)"
           className={`p-2 rounded-xl transition-all cursor-pointer ${
-            cameraView === 'iso' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            cameraMode === 'iso' 
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+              : themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
           }`}
         >
           <Compass className="w-4 h-4" />
@@ -820,23 +1050,53 @@ export default function Bed3DViewer({
         <button
           type="button"
           onClick={handleTopDownView}
-          title="Góc nhìn thẳng từ trên xuống"
+          title="Góc nhìn từ trên xuống (Top-down Mặt bằng)"
           className={`p-2 rounded-xl transition-all cursor-pointer ${
-            cameraView === 'top' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            cameraMode === 'top' 
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+              : themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
           }`}
         >
           <Layers className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-4 bg-slate-200" />
-
         <button
           type="button"
-          onClick={handleResetCamera}
-          title="Đặt lại góc nhìn ban đầu"
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+          onClick={handleFrontView}
+          title="Góc nhìn ngang điện ảnh (Front View)"
+          className={`p-2 rounded-xl transition-all cursor-pointer ${
+            cameraMode === 'front' 
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+              : themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          }`}
         >
-          <RotateCcw className="w-4 h-4" />
+          <Eye className="w-4 h-4" />
+        </button>
+
+        <div className={`w-px h-4 ${themeMode === 'dark' ? 'bg-white/15' : 'bg-slate-200'}`} />
+
+        {/* Chuyển đổi Theme Sáng / Tối */}
+        <button
+          type="button"
+          onClick={() => setThemeMode(m => m === 'dark' ? 'clay' : 'dark')}
+          title={themeMode === 'dark' ? 'Chuyển sang Chế độ Clay Studio' : 'Chuyển sang Chế độ Obsidian Luxury'}
+          className={`p-2 rounded-xl transition-all cursor-pointer ${
+            themeMode === 'dark' ? 'hover:bg-white/10 text-amber-400' : 'hover:bg-slate-100 text-slate-700'
+          }`}
+        >
+          {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+
+        {/* Nút Toàn màn hình (Fullscreen Control Tower) */}
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(f => !f)}
+          title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Mở toàn màn hình trung tâm điều hành'}
+          className={`p-2 rounded-xl transition-all cursor-pointer ${
+            themeMode === 'dark' ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          }`}
+        >
+          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
       </div>
     </div>
