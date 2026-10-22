@@ -15,7 +15,7 @@ import {
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 import { base44 } from '@/api/base44Client';
 import { getTenantStorageKey } from '@/lib/tenantManager';
-import { isRoomFacility } from '@/lib/roomBedDbHelper';
+import { isRoomFacility, ensureValidUuid } from '@/lib/roomBedDbHelper';
 
 /**
  * FacilityAssignPicker
@@ -82,6 +82,13 @@ export default function FacilityAssignPicker({
       if (branchKey && branchKey !== 'all' && loadedRooms && loadedRooms.length > 0) {
         loadedRooms = loadedRooms.filter(r => !r.branch_id || r.branch_id === branchKey);
       }
+      // Sắp xếp phòng tự nhiên theo thứ tự: Tầng 1 -> Tầng 2 -> Tầng 3...
+      loadedRooms = [...loadedRooms].sort((a, b) => {
+        if (a.display_order !== undefined && b.display_order !== undefined && a.display_order !== b.display_order) {
+          return a.display_order - b.display_order;
+        }
+        return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
       setRooms(loadedRooms || []);
 
       // 2. Load Beds từ nguồn Dữ liệu Giường & Phòng
@@ -110,7 +117,7 @@ export default function FacilityAssignPicker({
       }
 
       const roomById = new Map((loadedRooms || []).map(r => [r.id, r]));
-      const mappedBeds = rawBeds.map(b => {
+      let mappedBeds = rawBeds.map(b => {
         const rId = b.room_id || bedRoomMap[b.id];
         const roomObj = rId ? roomById.get(rId) : null;
         return {
@@ -119,6 +126,9 @@ export default function FacilityAssignPicker({
           room_name: b.room_name || roomObj?.name || null
         };
       });
+
+      // Sắp xếp giường tự nhiên: Ghế 1 -> Ghế 2 -> Ghế 3...
+      mappedBeds = [...mappedBeds].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
       setBeds(mappedBeds);
 
       // 3. Load Active Bed Sessions từ Quản lý Giường Phòng
@@ -318,28 +328,63 @@ export default function FacilityAssignPicker({
       return [{ room: null, beds: filtered }];
     }
 
-    // Nhóm theo Room
-    const roomMap = new Map();
-    rooms.forEach(r => roomMap.set(r.id, { room: r, beds: [] }));
-    const defaultGroup = { room: { id: '__other', name: 'Vị trí khác' }, beds: [] };
+    // 1. Sắp xếp thứ tự các Phòng (Rooms) đúng như ở module giường phòng:
+    // Tầng 1 -> Tầng 2 -> Tầng 3... (tự nhiên theo name hoặc display_order)
+    const sortedRooms = [...rooms].sort((a, b) => {
+      if (a.display_order !== undefined && b.display_order !== undefined && a.display_order !== b.display_order) {
+        return a.display_order - b.display_order;
+      }
+      return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
+    });
 
-    filtered.forEach(b => {
-      if (b.room_id && roomMap.has(b.room_id)) {
-        roomMap.get(b.room_id).beds.push(b);
+    const roomMap = {};
+    const orderedGroups = [];
+
+    // Tạo các nhóm phòng theo đúng thứ tự
+    sortedRooms.forEach(r => {
+      const group = { room: r, beds: [] };
+      orderedGroups.push(group);
+      if (r.id) roomMap[r.id] = group;
+      if (r.db_id) roomMap[r.db_id] = group;
+      const validUuid = ensureValidUuid(r.id);
+      if (validUuid) roomMap[validUuid] = group;
+      if (r.name) roomMap[`name:${r.name.trim().toLowerCase()}`] = group;
+    });
+
+    const unassignedGroup = {
+      room: { id: '__unassigned', name: t('rooms_beds.unassigned_area', 'Chưa phân phòng / Khu vực chung') },
+      beds: []
+    };
+
+    // 2. Gán từng giường vào đúng nhóm phòng
+    filtered.forEach(bed => {
+      let matchedGroup = null;
+      if (bed.room_id) {
+        matchedGroup = roomMap[bed.room_id] || roomMap[ensureValidUuid(bed.room_id)];
+      }
+      if (!matchedGroup && bed.room_name) {
+        matchedGroup = roomMap[`name:${bed.room_name.trim().toLowerCase()}`];
+      }
+      if (matchedGroup) {
+        matchedGroup.beds.push(bed);
       } else {
-        const foundByName = rooms.find(r => r.name === b.room_name);
-        if (foundByName && roomMap.has(foundByName.id)) {
-          roomMap.get(foundByName.id).beds.push(b);
-        } else {
-          defaultGroup.beds.push(b);
-        }
+        unassignedGroup.beds.push(bed);
       }
     });
 
-    const result = Array.from(roomMap.values()).filter(g => g.beds.length > 0);
-    if (defaultGroup.beds.length > 0) result.push(defaultGroup);
-    return result;
-  }, [enrichedBeds, rooms, searchQ, showRoomGroup]);
+    // 3. Sắp xếp thứ tự các giường trong từng phòng đúng như ở module giường phòng:
+    // Ghế 1 -> Ghế 2 -> Ghế 3 -> Ghế 4...
+    orderedGroups.forEach(g => {
+      g.beds.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+    });
+    unassignedGroup.beds.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+    const finalGroups = orderedGroups.filter(g => g.beds.length > 0);
+    if (unassignedGroup.beds.length > 0) {
+      finalGroups.push(unassignedGroup);
+    }
+    return finalGroups;
+  }, [enrichedBeds, rooms, searchQ, showRoomGroup, t]);
 
   // Xử lý mở đóng dropdown và đo vị trí viewport
   const handleToggle = (e) => {
@@ -501,9 +546,12 @@ export default function FacilityAssignPicker({
                   <div key={group.room?.id || 'all'} className="pt-2 first:pt-0 space-y-1">
                     {/* Room Group Header */}
                     {group.room && (
-                      <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>{group.room.name}</span>
-                        <span className="font-normal text-[10px] text-slate-400">
+                      <div className="px-2 py-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between bg-slate-50/80 rounded-lg">
+                        <span className="flex items-center gap-1.5 font-bold text-slate-700">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.room.color || '#3B82F6' }} />
+                          <span>{group.room.name}</span>
+                        </span>
+                        <span className="font-medium text-[10px] text-slate-400">
                           {group.beds.length} vị trí
                         </span>
                       </div>
