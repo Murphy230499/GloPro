@@ -1309,7 +1309,7 @@ export default function RoomsBeds() {
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
-                <span>{t('rooms_beds.view_timeline', 'Timeline giường')}</span>
+                <span>{t('rooms_beds.view_timeline', 'Timeline')}</span>
               </button>
             </div>
           </div>
@@ -1420,6 +1420,8 @@ export default function RoomsBeds() {
                 rooms={rooms}
                 beds={beds}
                 eventsByBedId={timelineEventsByBedId}
+                bedSessions={enrichedBedSessions}
+                appointments={appointments}
                 selectedDate={selectedTimelineDate}
                 selectedRoomId={timelineRoomFilter}
                 onSelectEvent={handleTimelineSelectEvent}

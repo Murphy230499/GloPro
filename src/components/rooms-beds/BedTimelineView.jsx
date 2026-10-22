@@ -22,11 +22,14 @@ import {
   getTodayDateString
 } from '@/lib/bedTimelineHelper';
 import { ensureValidUuid } from '@/lib/roomBedDbHelper';
+import { calculateBedAvailableWindow, BED_BUFFER_MINUTES } from '@/lib/bedConflictHelper';
 
 export default function BedTimelineView({
   rooms = [],
   beds = [],
   eventsByBedId = {},
+  bedSessions = {},
+  appointments = [],
   selectedDate = getTodayDateString(),
   selectedRoomId = 'all',
   onSelectEvent,
@@ -133,69 +136,191 @@ export default function BedTimelineView({
     }, 200);
   };
 
-  // Trạng thái thẻ giường bên cột trái
-  const getBedStatusBadge = (bed) => {
-    const events = eventsByBedId[bed.id] || [];
-    const activeNow = events.find(e => isToday && currentMinutes >= e.start_minutes && currentMinutes <= e.end_minutes);
+  // Tính toán màu sắc và trạng thái của giường đồng bộ chính xác với Sơ đồ dạng lưới
+  const getBedRealtimeStatusInfo = (bed) => {
+    if (!bed) {
+      return {
+        bgClass: 'bg-white',
+        borderLeft: 'border-l-4 border-l-slate-300',
+        badgeBg: 'bg-slate-100 text-slate-600',
+        dotColor: 'bg-slate-400',
+        text: 'KHÔNG XÁC ĐỊNH',
+        subText: null
+      };
+    }
 
-    if (activeNow) {
-      return (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Đang phục vụ
-        </span>
-      );
+    // 1. Tìm phiên phục vụ hiện tại từ bedSessions
+    const session = bedSessions[bed.id] || 
+                    (bed.db_id && bedSessions[bed.db_id]) ||
+                    (ensureValidUuid(bed.id) && bedSessions[ensureValidUuid(bed.id)]);
+
+    const isOccupied = Boolean(session);
+    const isCleaning = session?.status === 'cleaning' || bed.status === 'cleaning';
+    const isWaiting = session?.status === 'waiting';
+    const isReserved = session?.status === 'reserved';
+    const isNearlyFinished = session?.status === 'nearly_finished';
+    const isOvertime = session?.status === 'overtime';
+
+    // 2. Kiểm tra sự kiện đang diễn ra trong ngày hôm nay
+    const now = new Date();
+    const currentMinsNow = now.getHours() * 60 + now.getMinutes();
+    const bedEvents = eventsByBedId[bed.id] || [];
+    const activeEventNow = isToday ? bedEvents.find(e => currentMinsNow >= e.start_minutes && currentMinsNow <= e.end_minutes) : null;
+
+    // 3. Khung thời gian trống cho giường chưa có khách
+    let windowInfo = null;
+    if (!isOccupied && appointments && appointments.length > 0) {
+      windowInfo = calculateBedAvailableWindow(bed.id, appointments, currentMinsNow, BED_BUFFER_MINUTES);
     }
-    if (bed.status === 'cleaning') {
-      return (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          Cần dọn dẹp
-        </span>
-      );
+
+    // A. Quá giờ (Fuchsia/Rose neon)
+    if (isOvertime || activeEventNow?.is_overtime) {
+      return {
+        bgClass: 'bg-fuchsia-50/40 hover:bg-fuchsia-50/60',
+        borderLeft: 'border-l-4 border-l-fuchsia-500',
+        badgeBg: 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-300/80',
+        dotColor: 'bg-fuchsia-500 animate-ping',
+        text: 'QUÁ GIỜ',
+        subText: session?.customer_name || activeEventNow?.customer_name || null
+      };
     }
-    if (bed.status === 'maintenance') {
-      return (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-          Bảo trì
-        </span>
-      );
+
+    // B. Sắp trống (Amber)
+    if (isNearlyFinished) {
+      return {
+        bgClass: 'bg-amber-50/40 hover:bg-amber-50/60',
+        borderLeft: 'border-l-4 border-l-amber-500',
+        badgeBg: 'bg-amber-100 text-amber-900 border border-amber-300/80',
+        dotColor: 'bg-amber-500',
+        text: 'SẮP TRỐNG',
+        subText: session?.customer_name || null
+      };
     }
-    return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-50 text-slate-500 border border-slate-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-        Sẵn sàng
-      </span>
-    );
+
+    // C. Đang dọn dẹp (Teal)
+    if (isCleaning) {
+      return {
+        bgClass: 'bg-teal-50/40 hover:bg-teal-50/60',
+        borderLeft: 'border-l-4 border-l-teal-500',
+        badgeBg: 'bg-teal-100 text-teal-800 border border-teal-300/80',
+        dotColor: 'bg-teal-500',
+        text: 'ĐANG DỌN DẸP',
+        subText: null
+      };
+    }
+
+    // D. Chờ phục vụ (Blue)
+    if (isWaiting) {
+      return {
+        bgClass: 'bg-blue-50/40 hover:bg-blue-50/60',
+        borderLeft: 'border-l-4 border-l-blue-500',
+        badgeBg: 'bg-blue-100 text-blue-800 border border-blue-300/80',
+        dotColor: 'bg-blue-500',
+        text: 'CHỜ PHỤC VỤ',
+        subText: session?.customer_name || null
+      };
+    }
+
+    // E. Đặt trước (Amber)
+    if (isReserved) {
+      return {
+        bgClass: 'bg-amber-50/40 hover:bg-amber-50/60',
+        borderLeft: 'border-l-4 border-l-amber-500',
+        badgeBg: 'bg-amber-100 text-amber-800 border border-amber-300/80',
+        dotColor: 'bg-amber-500',
+        text: 'ĐẶT TRƯỚC',
+        subText: session?.customer_name || null
+      };
+    }
+
+    // F. Đang bận (Rose)
+    if (isOccupied || activeEventNow) {
+      return {
+        bgClass: 'bg-rose-50/30 hover:bg-rose-50/50',
+        borderLeft: 'border-l-4 border-l-rose-500',
+        badgeBg: 'bg-rose-100 text-rose-800 border border-rose-300/80',
+        dotColor: 'bg-rose-500 animate-pulse',
+        text: 'ĐANG BẬN',
+        subText: session?.customer_name || activeEventNow?.customer_name || null
+      };
+    }
+
+    // G. Giường trống có lịch hẹn sắp tới
+    if (windowInfo?.hasNextAppt) {
+      if (windowInfo.availableMinutes <= 0) {
+        return {
+          bgClass: 'bg-amber-50/30 hover:bg-amber-50/50',
+          borderLeft: 'border-l-4 border-l-amber-400',
+          badgeBg: 'bg-amber-100 text-amber-900 border border-amber-300/80',
+          dotColor: 'bg-amber-500',
+          text: `HẸN ${windowInfo.availableUntil}`,
+          subText: null
+        };
+      }
+      return {
+        bgClass: 'bg-emerald-50/20 hover:bg-emerald-50/40',
+        borderLeft: 'border-l-4 border-l-emerald-500',
+        badgeBg: 'bg-emerald-100 text-emerald-900 border border-emerald-300/80',
+        dotColor: 'bg-emerald-500',
+        text: `TRỐNG ĐẾN ${windowInfo.availableUntil}`,
+        subText: null
+      };
+    }
+
+    // H. Đang trống (Emerald)
+    return {
+      bgClass: 'bg-emerald-50/15 hover:bg-emerald-50/30',
+      borderLeft: 'border-l-4 border-l-emerald-500',
+      badgeBg: 'bg-emerald-100 text-emerald-800 border border-emerald-300/70',
+      dotColor: 'bg-emerald-500',
+      text: 'ĐANG TRỐNG',
+      subText: null
+    };
   };
 
   return (
     <div className="relative flex flex-col bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden select-none">
       
-      {/* 1. Header Toolbar phụ: Chú thích loại khách & Vạch thời gian */}
-      <div className="px-5 py-3 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="font-bold text-slate-700 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-slate-500" />
-            Chú giải ca:
+      {/* 1. Header Toolbar phụ: Chú thích trạng thái vị trí & loại khách */}
+      <div className="px-5 py-2.5 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-bold text-slate-700 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-slate-500" />
+            Trạng thái giường:
           </span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200/80 text-sky-800 text-[11px] font-semibold">
-            <span className="w-2 h-2 rounded-full bg-sky-500" />
-            <span>Khách đặt trước (Appointment)</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold">
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Khách vãng lai / Trực tiếp (Walk-in)</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-800 text-[11px] font-semibold">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <span>Ca làm quá giờ (Overtime)</span>
-          </div>
+            Đang trống
+          </span>
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            Đang bận
+          </span>
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            Sắp trống / Hẹn
+          </span>
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-fuchsia-50 px-2 py-0.5 rounded border border-fuchsia-200">
+            <span className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse" />
+            Quá giờ
+          </span>
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+            <span className="w-2 h-2 rounded-full bg-teal-500" />
+            Dọn dẹp
+          </span>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-500 text-[11px] bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs">
-          <Info className="w-3.5 h-3.5 text-blue-500" />
-          <span>Click vào khung giờ trống để <b>Tiếp nhận khách</b> vào giường</span>
+        <div className="flex items-center gap-3 text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+            <span className="w-2.5 h-2.5 rounded bg-sky-200 border border-sky-400" />
+            <span>Đặt trước</span>
+            <span className="w-2.5 h-2.5 rounded bg-emerald-200 border border-emerald-400 ml-1.5" />
+            <span>Vãng lai</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-500 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+            <Info className="w-3.5 h-3.5 text-blue-500" />
+            <span>Click ô trống để tiếp nhận</span>
+          </div>
         </div>
       </div>
 
@@ -317,21 +442,29 @@ export default function BedTimelineView({
                       key={bed.id}
                       className="flex h-16 border-b border-slate-100 hover:bg-slate-50/30 transition-colors group"
                     >
-                      {/* Cột Tên Giường (Sticky Left) */}
-                      <div 
-                        onClick={() => onBedClick && onBedClick(bed, room)}
-                        className="w-[240px] shrink-0 sticky left-0 z-10 bg-white group-hover:bg-slate-50/90 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-semibold text-slate-900 truncate">
-                            {bed.name}
-                          </span>
-                          {getBedStatusBadge(bed)}
-                        </div>
-                        <span className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {bed.display_name || bed.code || `${room.name} • ${bed.name}`}
-                        </span>
-                      </div>
+                      {/* Cột Tên Giường (Sticky Left, hiển thị màu sắc theo trạng thái của giường như ở dạng lưới) */}
+                      {(() => {
+                        const statusInfo = getBedRealtimeStatusInfo(bed);
+                        return (
+                          <div 
+                            onClick={() => onBedClick && onBedClick(bed, room)}
+                            className={`w-[240px] shrink-0 sticky left-0 z-10 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)] ${statusInfo.bgClass} ${statusInfo.borderLeft}`}
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-bold text-slate-900 truncate">
+                                {bed.name}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider shrink-0 ${statusInfo.badgeBg}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotColor}`} />
+                                <span>{statusInfo.text}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                              {statusInfo.subText ? `Khách: ${statusInfo.subText}` : (bed.display_name || bed.code || `${room.name} • ${bed.name}`)}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Lưới Timeline của Giường này */}
                       <div 
@@ -464,15 +597,27 @@ export default function BedTimelineView({
                     key={bed.id}
                     className="flex h-16 border-b border-slate-100 hover:bg-slate-50/30 transition-colors group"
                   >
-                    <div 
-                      onClick={() => onBedClick && onBedClick(bed, null)}
-                      className="w-[240px] shrink-0 sticky left-0 z-10 bg-white group-hover:bg-slate-50/90 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]"
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-slate-800 truncate">{bed.name}</span>
-                        {getBedStatusBadge(bed)}
-                      </div>
-                    </div>
+                    {/* Cột Tên Giường chưa gán phòng */}
+                    {(() => {
+                      const statusInfo = getBedRealtimeStatusInfo(bed);
+                      return (
+                        <div 
+                          onClick={() => onBedClick && onBedClick(bed, null)}
+                          className={`w-[240px] shrink-0 sticky left-0 z-10 border-r border-slate-200 px-3.5 py-2 flex flex-col justify-center cursor-pointer transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)] ${statusInfo.bgClass} ${statusInfo.borderLeft}`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-slate-900 truncate">{bed.name}</span>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider shrink-0 ${statusInfo.badgeBg}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotColor}`} />
+                              <span>{statusInfo.text}</span>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                            {statusInfo.subText ? `Khách: ${statusInfo.subText}` : (bed.display_name || bed.code || bed.name)}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     <div 
                       className="relative shrink-0 flex"
