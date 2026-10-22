@@ -1353,13 +1353,20 @@ export default function RoomsBeds() {
           /* ========================================================================= */
           diagramViewMode === '3d' ? (
             <div className="space-y-4">
-              <Bed3DViewer
-                bedsByRoom={bedsByRoom}
-                bedSessions={enrichedBedSessions}
-                onSelectBed={(bed) => {
-                  setSelectedBedForDrawer(bed);
-                }}
-              />
+              <React.Suspense fallback={
+                <div className="w-full h-[620px] rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center gap-3 text-slate-400">
+                  <div className="w-8 h-8 border-3 border-slate-700 border-t-blue-500 rounded-full animate-spin" />
+                  <span className="text-xs font-semibold text-slate-300">Đang khởi tạo không gian 3D...</span>
+                </div>
+              }>
+                <Bed3DViewer
+                  bedsByRoom={bedsByRoom}
+                  bedSessions={enrichedBedSessions}
+                  onSelectBed={(bed) => {
+                    setSelectedBedForDrawer(bed);
+                  }}
+                />
+              </React.Suspense>
             </div>
           ) : diagramViewMode === 'timeline' ? (
             <div className="space-y-4">
