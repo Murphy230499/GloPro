@@ -31,6 +31,7 @@ export default function QuickAssignBedModal({
   allRooms = [],
   appointments = [],
   allBedSessions = {},
+  initialAppointment = null,
   onStartServing,
   onReassignAppointment,
   loading = false
@@ -89,15 +90,29 @@ export default function QuickAssignBedModal({
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       setStartTime(`${hh}:${mm}`);
-      setSelectedServices([{ service_id: applicableServices[0]?.id || '', staff_id: staff[0]?.id || '' }]);
-      setSelectedCustomer(null);
+
+      if (initialAppointment) {
+        const foundCustomer = (customers || []).find(c => c.id === initialAppointment.customer_id) || {
+          id: initialAppointment.customer_id || `cus_${Date.now()}`,
+          name: initialAppointment.customer_name || 'Khách hàng',
+          phone: initialAppointment.customer_phone || ''
+        };
+        setSelectedCustomer(foundCustomer);
+        const srvId = initialAppointment.service_id || (initialAppointment.services && initialAppointment.services[0]?.id) || applicableServices[0]?.id || '';
+        const stfId = initialAppointment.staff_id || staff[0]?.id || '';
+        setSelectedServices([{ service_id: srvId, staff_id: stfId }]);
+      } else {
+        setSelectedServices([{ service_id: applicableServices[0]?.id || '', staff_id: staff[0]?.id || '' }]);
+        setSelectedCustomer(null);
+      }
+
       setShowClientSearch(false);
       setClientQ('');
       setCustomerMode('existing');
       setNewCustomerName('');
       setNewCustomerPhone('');
     }
-  }, [open, bed, applicableServices, staff]);
+  }, [open, bed, applicableServices, staff, initialAppointment]);
 
   // Close floating customer dropdown when clicking outside
   useEffect(() => {

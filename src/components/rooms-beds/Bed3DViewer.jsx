@@ -9,7 +9,7 @@ import {
   Sparkles, Compass, Maximize2, Minimize2,
   Sun, Moon, Eye, CreditCard, Store, Play, Pause,
   RefreshCw, CheckCircle2, ChevronRight,
-  X, Users, Coffee, Clock, Phone, ArrowRight
+  X, Users, Coffee, Clock, Phone, ArrowRight, Plus
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
@@ -1652,17 +1652,17 @@ export default function Bed3DViewer({
             <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                  <Store className="w-5 h-5" />
+                  <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base">Quầy Thu Ngân & Sảnh Chờ</h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-600 border border-blue-500/30">
-                      Lễ tân
+                    <h3 className="font-bold text-base">Khách Chờ Phục Vụ</h3>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 border border-amber-500/30">
+                      Đang chờ
                     </span>
                   </div>
                   <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Danh sách khách đang ngồi ghế chờ & theo dõi dịch vụ
+                    Danh sách khách đang chờ và xếp vào vị trí giường
                   </p>
                 </div>
               </div>
@@ -1709,21 +1709,21 @@ export default function Bed3DViewer({
                     <Coffee className="w-8 h-8" />
                   </div>
                   <h4 className={`font-bold text-sm mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    Hiện tại ghế chờ đang trống
+                    Hiện chưa có khách nào đang chờ phục vụ
                   </h4>
                   <p className="text-xs leading-relaxed max-w-xs mb-5">
-                    Tất cả khách hàng đã được xếp vào giường làm liệu trình hoặc đã thanh toán xong.
+                    Tất cả khách hàng đã được xếp vào giường làm liệu trình hoặc tiệm chưa có lịch hẹn mới trong danh sách chờ.
                   </p>
                   <button
                     type="button"
                     onClick={() => {
                       setShowLoungeModal(false);
-                      onOpenCashier();
+                      onAssignGuest({ isWalkIn: true });
                     }}
                     className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Mở Thu Ngân POS tạo đơn mới</span>
+                    <Plus className="w-4 h-4" />
+                    <span>Tiếp nhận khách mới vào vị trí</span>
                   </button>
                 </div>
               ) : (
@@ -1787,31 +1787,17 @@ export default function Bed3DViewer({
                             <span className="font-semibold">{guest.service_name}</span>
                           </div>
 
-                          {isWaitingBed ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowLoungeModal(false);
-                                onAssignGuest(guest);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95"
-                            >
-                              <span>Xếp giường</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowLoungeModal(false);
-                                onOpenCashier(guest);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all active:scale-95"
-                            >
-                              <CreditCard className="w-3.5 h-3.5" />
-                              <span>Thanh toán</span>
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowLoungeModal(false);
+                              onAssignGuest(guest);
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95 shrink-0"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Bắt đầu phục vụ</span>
+                          </button>
                         </div>
                       </div>
                     );
@@ -1826,12 +1812,12 @@ export default function Bed3DViewer({
                 type="button"
                 onClick={() => {
                   setShowLoungeModal(false);
-                  onOpenCashier();
+                  onAssignGuest({ isWalkIn: true });
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
               >
-                <CreditCard className="w-4 h-4" />
-                <span>Mở Thu Ngân POS</span>
+                <Plus className="w-4 h-4" />
+                <span>Tiếp nhận khách mới</span>
               </button>
 
               <button
