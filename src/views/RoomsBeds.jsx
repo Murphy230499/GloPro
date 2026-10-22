@@ -2349,6 +2349,8 @@ export default function RoomsBeds() {
           customer={invoiceData.customer}
           initialCart={invoiceData.initialCart}
           facilities={allBeds}
+          rooms={allRooms}
+          bedSessions={bedSessions}
           onClose={() => {
             setInvoiceModalOpen(false);
             setInvoiceData(null);

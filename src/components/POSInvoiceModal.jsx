@@ -14,9 +14,10 @@ import { useBranch } from '@/lib/BranchContext';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 import { useT } from '@/lib/i18n';
+import { isRoomFacility, parseRoomFromFacility } from '@/lib/roomBedDbHelper';
 
 export default function POSInvoiceModal({
-  open, customer, initialCart = [], facilities = [], existingInvoice = null, appointmentId = null, onClose, onSaved }) {
+  open, customer, initialCart = [], facilities = [], rooms = [], bedSessions = null, existingInvoice = null, appointmentId = null, onClose, onSaved }) {
   const { t } = useT();
   const { currentBranchId, branches } = useBranch();
   // POS tab and search states
@@ -50,6 +51,7 @@ export default function POSInvoiceModal({
   const [staff, setStaff] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loadedFacilities, setLoadedFacilities] = useState([]);
+  const [loadedRooms, setLoadedRooms] = useState([]);
 
   // Session state (equivalent to cashier active session)
   const [session, setSession] = useState(null);
@@ -90,7 +92,10 @@ export default function POSInvoiceModal({
       setGroups(gr);
       setStaff(st.filter(x => x.is_active));
       setCustomers(c);
-      setLoadedFacilities(fac || []);
+      const roomFacs = (fac || []).filter(isRoomFacility).map(parseRoomFromFacility).filter(Boolean);
+      const bedFacs = (fac || []).filter(f => !isRoomFacility(f));
+      setLoadedRooms(roomFacs);
+      setLoadedFacilities(bedFacs);
 
       const allCatalog = [...s, ...p, ...pk, ...t, ...sc, ...pc, ...gc];
       setSession(prev => {
@@ -610,6 +615,7 @@ export default function POSInvoiceModal({
     setPaying(false);
   };
 
+  const effectiveRooms = rooms && rooms.length > 0 ? rooms : loadedRooms;
   const effectiveFacs = facilities && facilities.length > 0 ? facilities : loadedFacilities;
 
   const modalContent = (
@@ -670,6 +676,8 @@ export default function POSInvoiceModal({
               staff={staff}
               customers={customers}
               facilities={effectiveFacs}
+              rooms={effectiveRooms}
+              bedSessions={bedSessions}
               onUpdate={handleUpdateSession}
               onPickCustomer={(c) => handleUpdateSession({ customer: c })}
               onClearCustomer={() => handleUpdateSession({ customer: null })}
@@ -691,6 +699,8 @@ export default function POSInvoiceModal({
               staff={staff}
               customers={customers}
               facilities={effectiveFacs}
+              rooms={effectiveRooms}
+              bedSessions={bedSessions}
               onUpdate={handleUpdateSession}
               onPickCustomer={(c) => handleUpdateSession({ customer: c })}
               onClearCustomer={() => handleUpdateSession({ customer: null })}

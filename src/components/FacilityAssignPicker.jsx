@@ -34,6 +34,8 @@ export default function FacilityAssignPicker({
   value = '',
   onChange,
   facilities = [],
+  rooms: propRooms = [],
+  bedSessions: externalBedSessions = null,
   placeholder,
   disabled = false,
   className = '',
@@ -64,52 +66,78 @@ export default function FacilityAssignPicker({
     try {
       const branchKey = currentBranchId || 'all';
 
-      // Load Rooms
-      let loadedRooms = [];
-      const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
-      const branchRoomsKey = getTenantStorageKey('gp_rooms', branchKey);
-      const savedRooms = localStorage.getItem(unifiedRoomsKey) || localStorage.getItem(branchRoomsKey);
-      if (savedRooms) {
-        try { loadedRooms = JSON.parse(savedRooms); } catch (e) {}
-      }
+      // 1. Load Rooms từ nguồn Dữ liệu Giường & Phòng
+      let loadedRooms = (propRooms && propRooms.length > 0) ? propRooms : [];
       if (!loadedRooms || loadedRooms.length === 0) {
-        loadedRooms = INITIAL_DEMO_ROOMS;
+        const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
+        const branchRoomsKey = getTenantStorageKey('gp_rooms', branchKey);
+        const savedRooms = localStorage.getItem(unifiedRoomsKey) || 
+                           localStorage.getItem('gp_rooms') || 
+                           localStorage.getItem('gp_rooms_default_') ||
+                           localStorage.getItem(branchRoomsKey);
+        if (savedRooms) {
+          try { loadedRooms = JSON.parse(savedRooms); } catch (e) {}
+        }
       }
-      // Filter strictly by branch if a specific branch is selected
-      if (branchKey && branchKey !== 'all') {
+      if (branchKey && branchKey !== 'all' && loadedRooms && loadedRooms.length > 0) {
         loadedRooms = loadedRooms.filter(r => !r.branch_id || r.branch_id === branchKey);
       }
-      setRooms(loadedRooms);
+      setRooms(loadedRooms || []);
 
-      // Load Beds
-      let loadedBeds = facilities && facilities.length > 0 ? facilities : [];
+      // 2. Load Beds từ nguồn Dữ liệu Giường & Phòng
+      let loadedBeds = (facilities && facilities.length > 0) ? facilities : [];
       if (!loadedBeds || loadedBeds.length === 0) {
         const unifiedBedsKey = getTenantStorageKey('gp_facilities');
         const branchBedsKey = getTenantStorageKey('gp_facilities', branchKey);
-        const savedBeds = localStorage.getItem(unifiedBedsKey) || localStorage.getItem(branchBedsKey);
+        const savedBeds = localStorage.getItem(unifiedBedsKey) || 
+                          localStorage.getItem('gp_facilities') || 
+                          localStorage.getItem(branchBedsKey);
         if (savedBeds) {
           try { loadedBeds = JSON.parse(savedBeds); } catch (e) {}
         }
       }
-      if (!loadedBeds || loadedBeds.length === 0) {
-        loadedBeds = INITIAL_DEMO_BEDS;
-      }
-      // Filter strictly by branch if a specific branch is selected
-      if (branchKey && branchKey !== 'all') {
+      if (branchKey && branchKey !== 'all' && loadedBeds && loadedBeds.length > 0) {
         loadedBeds = loadedBeds.filter(b => !b.branch_id || b.branch_id === branchKey);
       }
-      setBeds(loadedBeds.filter(b => !isRoomFacility(b)));
+      const rawBeds = (loadedBeds || []).filter(b => !isRoomFacility(b));
 
-      // Load Active Bed Sessions
-      const sessionMap = {};
-      const sessionsKey = getTenantStorageKey('gp_active_bed_sessions', branchKey);
-      const savedSessions = localStorage.getItem(sessionsKey);
-      if (savedSessions) {
-        try { Object.assign(sessionMap, JSON.parse(savedSessions)); } catch (e) {}
+      // Ghép nối thông tin phòng cho từng giường theo cấu hình Phòng & Giường
+      let bedRoomMap = {};
+      const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+      const rawMap = localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map');
+      if (rawMap) {
+        try { bedRoomMap = JSON.parse(rawMap); } catch (e) {}
       }
-      setBedSessions(sessionMap);
 
-      // Load Today Appointments for conflict check
+      const roomById = new Map((loadedRooms || []).map(r => [r.id, r]));
+      const mappedBeds = rawBeds.map(b => {
+        const rId = b.room_id || bedRoomMap[b.id];
+        const roomObj = rId ? roomById.get(rId) : null;
+        return {
+          ...b,
+          room_id: rId || b.room_id || null,
+          room_name: b.room_name || roomObj?.name || null
+        };
+      });
+      setBeds(mappedBeds);
+
+      // 3. Load Active Bed Sessions từ Quản lý Giường Phòng
+      if (externalBedSessions && Object.keys(externalBedSessions).length > 0) {
+        setBedSessions(externalBedSessions);
+      } else {
+        const sessionMap = {};
+        const sessionsKey = getTenantStorageKey('gp_active_bed_sessions');
+        const branchSessionsKey = getTenantStorageKey('gp_active_bed_sessions', branchKey);
+        const savedSessions = localStorage.getItem(sessionsKey) || 
+                              localStorage.getItem('gp_active_bed_sessions') || 
+                              localStorage.getItem(branchSessionsKey);
+        if (savedSessions) {
+          try { Object.assign(sessionMap, JSON.parse(savedSessions)); } catch (e) {}
+        }
+        setBedSessions(sessionMap);
+      }
+
+      // 4. Load Today Appointments for conflict check
       let loadedAppts = [];
       const apptsKey = getTenantStorageKey('gp_today_appointments', branchKey);
       const cachedAppts = localStorage.getItem(apptsKey);
@@ -135,7 +163,7 @@ export default function FacilityAssignPicker({
 
   useEffect(() => {
     syncData();
-  }, [currentBranchId, facilities]);
+  }, [currentBranchId, facilities, propRooms, externalBedSessions]);
 
   // Lắng nghe các sự kiện cập nhật giường phòng trên toàn hệ thống
   useEffect(() => {
@@ -143,6 +171,7 @@ export default function FacilityAssignPicker({
     window.addEventListener('gp_bed_session_checkout_completed', handleSyncEvent);
     window.addEventListener('gp_bed_session_updated', handleSyncEvent);
     window.addEventListener('gp_appointment_updated', handleSyncEvent);
+    window.addEventListener('gp_rooms_changed', handleSyncEvent);
     window.addEventListener('storage', handleSyncEvent);
 
     // Cập nhật đồng hồ mỗi 15 giây
@@ -156,10 +185,11 @@ export default function FacilityAssignPicker({
       window.removeEventListener('gp_bed_session_checkout_completed', handleSyncEvent);
       window.removeEventListener('gp_bed_session_updated', handleSyncEvent);
       window.removeEventListener('gp_appointment_updated', handleSyncEvent);
+      window.removeEventListener('gp_rooms_changed', handleSyncEvent);
       window.removeEventListener('storage', handleSyncEvent);
       clearInterval(interval);
     };
-  }, [currentBranchId]);
+  }, [currentBranchId, propRooms, facilities, externalBedSessions]);
 
   // 3. Tính toán trạng thái chi tiết của từng giường
   const enrichedBeds = useMemo(() => {
@@ -409,15 +439,6 @@ export default function FacilityAssignPicker({
         </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-1">
-          {selectedBed && !hideClear && !disabled && (
-            <span
-              onClick={handleClear}
-              className="p-0.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
-              title="Bỏ chọn vị trí"
-            >
-              <X className="w-3 h-3" />
-            </span>
-          )}
           <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? 'rotate-180 text-blue-600' : ''}`} />
         </div>
       </button>
@@ -442,7 +463,7 @@ export default function FacilityAssignPicker({
               maxHeight: '380px'
             }}
           >
-            {/* Header: Title & Quick Stats */}
+            {/* Header: Title & Search */}
             <div className="p-3 border-b border-slate-100 bg-slate-50/80">
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="font-bold text-slate-800 flex items-center gap-1.5">
@@ -450,28 +471,12 @@ export default function FacilityAssignPicker({
                   <span>{t('rooms_beds.select_bed_title', 'Chọn vị trí phục vụ')}</span>
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  {stats.total} {t('rooms_beds.unit_bed', 'vị trí')}
-                </span>
-              </div>
-
-              {/* Status Counters Indicator */}
-              <div className="flex items-center gap-2 text-[10px] font-semibold">
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>{stats.available} trống (chọn được)</span>
-                </span>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>{stats.nearly} sắp xong</span>
-                </span>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                  <span>{stats.busy} đang bận</span>
+                  {enrichedBeds.length} {t('rooms_beds.unit_bed', 'vị trí')}
                 </span>
               </div>
 
               {/* Search Bar */}
-              <div className="relative mt-2.5">
+              <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -486,21 +491,6 @@ export default function FacilityAssignPicker({
 
             {/* List Beds by Room */}
             <div className="flex-1 overflow-y-auto p-2 space-y-3 divide-y divide-slate-100">
-              {/* Option to clear / unassign */}
-              {value && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-rose-50 text-xs text-slate-500 hover:text-rose-600 transition-colors text-left cursor-pointer group"
-                >
-                  <span className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-rose-100 flex items-center justify-center text-slate-400 group-hover:text-rose-500 shrink-0 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="font-medium text-slate-500 italic">
-                    {t('rooms_beds.unassign_bed', '— Bỏ chọn vị trí —')}
-                  </span>
-                </button>
-              )}
 
               {groupedBeds.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs">
@@ -523,31 +513,22 @@ export default function FacilityAssignPicker({
                     <div className="space-y-1">
                       {group.beds.map(bed => {
                         const isSelected = value && (bed.id === value || bed.name === value);
-                        const isSelectable = bed.selectable;
 
                         return (
                           <div
                             key={bed.id}
                             onClick={() => handleSelectBed(bed)}
-                            className={`w-full flex items-center justify-between p-2 rounded-xl border text-xs transition-all text-left ${
+                            className={`w-full flex items-center justify-between p-2 rounded-xl border text-xs transition-all text-left cursor-pointer ${
                               isSelected
                                 ? 'bg-blue-50/80 border-blue-300 ring-1 ring-blue-500/20 shadow-2xs'
-                                : isSelectable
-                                ? 'bg-white border-slate-100 hover:border-blue-200 hover:bg-slate-50/80 cursor-pointer'
-                                : 'bg-slate-50/70 border-slate-150 opacity-60 cursor-not-allowed select-none'
+                                : 'bg-white border-slate-100 hover:border-blue-200 hover:bg-slate-50/80'
                             }`}
                           >
                             {/* Left: Bed Name + Occupant / Room info */}
                             <div className="min-w-0 pr-2">
                               <div className="flex items-center gap-1.5">
-                                {!isSelectable ? (
-                                  <Lock className="w-3 h-3 text-slate-400 shrink-0" />
-                                ) : (
-                                  <span className="text-xs">🛏️</span>
-                                )}
-                                <span className={`font-bold truncate ${
-                                  !isSelectable ? 'text-slate-600' : 'text-slate-800'
-                                }`}>
+                                <span className="text-xs">🛏️</span>
+                                <span className="font-bold truncate text-slate-800">
                                   {bed.name}
                                 </span>
                                 {bed.room_name && !group.room && (
@@ -584,17 +565,14 @@ export default function FacilityAssignPicker({
             </div>
 
             {/* Footer Advice */}
-            <div className="p-2 border-t border-slate-100 bg-slate-50 text-[10px] text-slate-500 flex items-center justify-between">
-              <span className="flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 text-blue-600 shrink-0" />
-                <span>Giường bận hoặc sắp xong sẽ không thể chọn</span>
-              </span>
+            <div className="px-3 py-2 border-t border-slate-100 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between">
+              <span className="text-slate-400">{t('rooms_beds.select_bed_title', 'Danh sách vị trí phục vụ')}</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-blue-600 font-semibold hover:underline cursor-pointer"
+                className="text-emerald-600 font-semibold hover:underline cursor-pointer"
               >
-                {t('common.done', 'Xong')}
+                {t('common.done', 'Đóng')}
               </button>
             </div>
           </div>

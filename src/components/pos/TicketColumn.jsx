@@ -85,7 +85,7 @@ const groupCartItems = (cart) => {
   return groups;
 };
 
-export default function TicketColumn({ session, staff, customers, facilities = [], onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled, onMobileAddClick }) {
+export default function TicketColumn({ session, staff, customers, facilities = [], rooms = [], bedSessions = null, onUpdate, onPickCustomer, onClearCustomer, onNewCustomer, onCheckout, onCancel, onReview, disabled, onMobileAddClick }) {
   const { t } = useT();
   const { currentBranchId } = useBranch();
 
@@ -94,6 +94,7 @@ export default function TicketColumn({ session, staff, customers, facilities = [
     if (!list || list.length === 0) {
       try {
         const cached = localStorage.getItem(getTenantStorageKey('gp_facilities')) ||
+                       localStorage.getItem('gp_facilities') ||
                        localStorage.getItem(getTenantStorageKey('gp_facilities', currentBranchId));
         if (cached) list = JSON.parse(cached);
       } catch (e) {}
@@ -104,6 +105,20 @@ export default function TicketColumn({ session, staff, customers, facilities = [
     }
     return list;
   }, [facilities, currentBranchId]);
+
+  const effectiveRooms = React.useMemo(() => {
+    let list = rooms;
+    if (!list || list.length === 0) {
+      try {
+        const cached = localStorage.getItem(getTenantStorageKey('gp_rooms')) ||
+                       localStorage.getItem('gp_rooms') ||
+                       localStorage.getItem('gp_rooms_default_') ||
+                       localStorage.getItem(getTenantStorageKey('gp_rooms', currentBranchId));
+        if (cached) list = JSON.parse(cached);
+      } catch (e) {}
+    }
+    return list || [];
+  }, [rooms, currentBranchId]);
   const getTypeLabel = (type) => {
     const keys = TYPE_LABEL_KEYS[type];
     return keys ? t(keys[0], keys[1]) : t('common.other', 'Khác');
@@ -806,6 +821,8 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                                 value={x.facility_id || ''}
                                 onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
                                 facilities={effectiveFacilities}
+                                rooms={effectiveRooms}
+                                bedSessions={bedSessions}
                                 placeholder="— Chọn vị trí —"
                                 buttonSize="xs"
                               />
@@ -943,6 +960,8 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                               value={x.facility_id || ''}
                               onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
                               facilities={effectiveFacilities}
+                              rooms={effectiveRooms}
+                              bedSessions={bedSessions}
                               placeholder="— Chọn vị trí —"
                               buttonSize="xs"
                             />
@@ -1160,6 +1179,8 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                     setEditFacilityName(name);
                   }}
                   facilities={effectiveFacilities}
+                  rooms={effectiveRooms}
+                  bedSessions={bedSessions}
                   placeholder={t('rooms_beds.select_facility', '— Chưa chọn vị trí —')}
                   buttonSize="sm"
                 />
