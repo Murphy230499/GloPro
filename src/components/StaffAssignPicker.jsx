@@ -113,14 +113,11 @@ export default function StaffAssignPicker({ staff, value, isRequested = false, o
               width: `${coords.width}px`
             }}
           >
-            <button
-              type="button"
-              onClick={() => { onChange('', '', false); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 text-xs text-slate-500"
-            >
-              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center"><Check className="w-3 h-3 text-slate-400" /></div>
-              {t('appointments.unassigned', 'Chưa phân công')}
-            </button>
+            {staffList.length === 0 && (
+              <div className="px-3 py-3 text-center text-xs text-slate-400">
+                {t('common.no_results', 'Không có nhân viên')}
+              </div>
+            )}
             {staffList.map((s) => {
               const isDisabled = disabledStaffIds.includes(s.id);
               const sName = s.full_name || s.name || 'Nhân viên';
