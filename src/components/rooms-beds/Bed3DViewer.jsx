@@ -296,6 +296,12 @@ export default function Bed3DViewer({
   const [webglError, setWebglError] = useState(false);
   const [showLoungeModal, setShowLoungeModal] = useState(false);
 
+  const isAutoTourRef = useRef(false);
+  isAutoTourRef.current = isAutoTour;
+  const selectedRoomIdRef = useRef('all');
+  selectedRoomIdRef.current = selectedRoomId;
+  const handleSelectRoomRef = useRef(null);
+
   // Thống kê nhanh dữ liệu
   const stats = useMemo(() => {
     let total = 0;
@@ -1676,7 +1682,7 @@ export default function Bed3DViewer({
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
       if (controlsRef.current) {
-        controlsRef.current.autoRotate = isAutoTour;
+        controlsRef.current.autoRotate = isAutoTourRef.current;
         controlsRef.current.autoRotateSpeed = 0.8;
         controlsRef.current.update();
       }
@@ -1725,7 +1731,16 @@ export default function Bed3DViewer({
       }
       renderer.dispose();
     };
-  }, [themeMode, isAutoTour]);
+  }, [themeMode]);
+
+  // Đồng bộ trạng thái Auto-Tour quay tự động vào OrbitControls tức thì mà không cần rebuild 3D scene
+  useEffect(() => {
+    isAutoTourRef.current = isAutoTour;
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = isAutoTour;
+      controlsRef.current.autoRotateSpeed = 0.8;
+    }
+  }, [isAutoTour]);
 
   // Lướt camera điện ảnh mượt mà đến vị trí đích (Smooth Cinematic Flight)
   const animateCameraFlight = (endTarget, endCamPos, duration = 650) => {
@@ -2196,13 +2211,18 @@ export default function Bed3DViewer({
 
       // 4. Biển tên phòng gắn trên đỉnh vách ngăn kiến trúc (Clean Architectural Room Signage)
       const roomBadgeDom = document.createElement('div');
-      roomBadgeDom.className = 'room-spatial-badge select-none pointer-events-none transform -translate-y-1';
-      roomBadgeDom.style.zIndex = '1';
+      roomBadgeDom.className = 'room-spatial-badge select-none pointer-events-auto transform -translate-y-1 cursor-pointer hover:scale-105 active:scale-95 transition-all';
+      roomBadgeDom.style.zIndex = '5';
+      roomBadgeDom.title = `Bấm để xem ${room.name || `Phòng ${roomIdx + 1}`}`;
+      roomBadgeDom.onclick = (e) => {
+        e.stopPropagation();
+        handleSelectRoomRef.current?.(roomKey);
+      };
       roomBadgeDom.innerHTML = `
-        <div class="px-3 py-1 rounded-xl shadow-lg backdrop-blur-xl flex items-center gap-2 border ${
+        <div class="px-3 py-1 rounded-xl shadow-lg backdrop-blur-xl flex items-center gap-2 border transition-colors ${
           isDark 
-            ? 'bg-slate-900/90 text-white border-blue-500/40' 
-            : 'bg-white/95 text-slate-900 border-slate-200/90 shadow-slate-300/40'
+            ? 'bg-slate-900/90 text-white border-blue-500/40 hover:border-blue-400' 
+            : 'bg-white/95 text-slate-900 border-slate-200/90 hover:border-blue-500 shadow-slate-300/40'
         }">
           <div class="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></div>
           <span class="text-xs font-black tracking-wider uppercase">${room.name || `Phòng ${roomIdx + 1}`}</span>
@@ -2334,7 +2354,7 @@ export default function Bed3DViewer({
   // Chọn phòng hoặc chọn Xem toàn cửa hàng
   const handleSelectRoom = (roomId) => {
     setSelectedRoomId(roomId);
-    setIsAutoTour(false);
+    selectedRoomIdRef.current = roomId;
 
     let activeMode = cameraModeRef.current || cameraMode;
     // Nếu đang ở góc thu ngân mà click phòng, tự động chuyển về góc 3D để tập trung vào phòng đó
@@ -2346,6 +2366,32 @@ export default function Bed3DViewer({
 
     const coords = getCameraCoordinates(roomId, activeMode);
     animateCameraFlight(coords.target, coords.position);
+
+    // Nếu đang bật quay tự động, tiếp tục quay quanh phòng mới mà không dừng lại
+    if (isAutoTourRef.current && controlsRef.current) {
+      controlsRef.current.autoRotate = true;
+    }
+  };
+  handleSelectRoomRef.current = handleSelectRoom;
+
+  // Bật/tắt quay tự động (Auto-Tour) cho toàn tiệm hoặc phòng đang focus
+  const handleToggleAutoTour = () => {
+    setIsAutoTour(prev => {
+      const next = !prev;
+      isAutoTourRef.current = next;
+      if (controlsRef.current) {
+        controlsRef.current.autoRotate = next;
+        controlsRef.current.autoRotateSpeed = 0.8;
+      }
+      if (next) {
+        // Căn chỉnh góc quay mượt mà vào trung tâm đối tượng đang xem (Toàn tiệm hoặc phòng đang chọn)
+        const curRoomId = selectedRoomIdRef.current || 'all';
+        const activeMode = cameraModeRef.current === 'cashier' ? 'iso' : (cameraModeRef.current || 'iso');
+        const coords = getCameraCoordinates(curRoomId, activeMode);
+        animateCameraFlight(coords.target, coords.position);
+      }
+      return next;
+    });
   };
 
   // Đồng bộ trạng thái hiển thị subtext (thời gian còn lại / chờ KTV) theo phòng đang chọn
@@ -2804,8 +2850,14 @@ export default function Bed3DViewer({
         {/* Nút Xem tự động (Auto-Tour) */}
         <button
           type="button"
-          onClick={() => setIsAutoTour(a => !a)}
-          title={isAutoTour ? 'Dừng quay tự động' : 'Bật chế độ Xem tự động (Auto-Tour tiệm)'}
+          onClick={handleToggleAutoTour}
+          title={
+            isAutoTour 
+              ? 'Dừng quay tự động' 
+              : selectedRoomId === 'all'
+                ? 'Bật quay tự động toàn tiệm'
+                : 'Bật quay tự động quanh phòng đang chọn'
+          }
           className={`p-2 rounded-xl transition-all cursor-pointer ${
             isAutoTour 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
