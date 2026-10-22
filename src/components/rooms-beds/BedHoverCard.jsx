@@ -64,10 +64,10 @@ export default function BedHoverCard({
       case 'overtime':
         return {
           label: 'QUÁ GIỜ',
-          bg: 'bg-purple-50',
-          text: 'text-purple-700',
-          border: 'border-purple-200',
-          barColor: 'bg-purple-600'
+          bg: 'bg-rose-50',
+          text: 'text-rose-700',
+          border: 'border-rose-200',
+          barColor: 'bg-rose-600'
         };
       case 'cleaning':
         return {
@@ -176,6 +176,9 @@ export default function BedHoverCard({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerMove={(e) => e.stopPropagation()}
+      onMouseMove={(e) => e.stopPropagation()}
       className="relative w-[360px] sm:w-[390px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-inset-3 before:-z-10 before:pointer-events-auto"
       style={{ filter: 'drop-shadow(0 20px 25px rgba(15, 23, 42, 0.15))' }}
     >

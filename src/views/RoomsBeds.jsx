@@ -102,6 +102,7 @@ export default function RoomsBeds() {
   const [hoveredBedId, setHoveredBedId] = useState(null);
   const [hoverPosition, setHoverPosition] = useState({ placement: 'top', align: 'center' });
   const hoverTimeoutRef = useRef(null);
+  const isMouseInsideHoverCardRef = useRef(false);
 
   // Transfer Modal
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -988,6 +989,11 @@ export default function RoomsBeds() {
 
   // Hover handlers với delay trơn tru và chống che khuất (smart popover positioning)
   const handleBedMouseEnter = (bedId, event) => {
+    // Nếu chuột đang thao tác bên trong thẻ popup của giường khác, không cho các giường phía sau đè lên/ẩn popup!
+    if (isMouseInsideHoverCardRef.current && hoveredBedId && hoveredBedId !== bedId) {
+      return;
+    }
+
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
@@ -1018,15 +1024,26 @@ export default function RoomsBeds() {
   const handleBedMouseLeave = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredBedId(null);
+      if (!isMouseInsideHoverCardRef.current) {
+        setHoveredBedId(null);
+      }
     }, 350);
   };
 
   const handleHoverCardMouseEnter = () => {
+    isMouseInsideHoverCardRef.current = true;
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+  };
+
+  const handleHoverCardMouseLeave = () => {
+    isMouseInsideHoverCardRef.current = false;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredBedId(null);
+    }, 350);
   };
 
   // 6.5 Reassign or unassign conflicted appointment (e.g. receptionist overrides bed)
@@ -1762,7 +1779,7 @@ export default function RoomsBeds() {
                       return (
                         <div
                           key={bed.id}
-                          className="relative"
+                          className={`relative transition-all duration-150 ${hoveredBedId === bed.id ? 'z-50' : 'z-10'}`}
                           onMouseEnter={(e) => handleBedMouseEnter(bed.id, e)}
                           onMouseLeave={handleBedMouseLeave}
                         >
@@ -1770,7 +1787,7 @@ export default function RoomsBeds() {
                           {hoveredBedId === bed.id && session && (
                             <div 
                               onMouseEnter={handleHoverCardMouseEnter}
-                              onMouseLeave={handleBedMouseLeave}
+                              onMouseLeave={handleHoverCardMouseLeave}
                               className={`absolute z-[100] pointer-events-auto ${
                                 hoverPosition.placement === 'bottom'
                                   ? 'top-[calc(100%+8px)]'
@@ -1790,17 +1807,34 @@ export default function RoomsBeds() {
                                 status={session.status}
                                 cleaningInfo={session.cleaning_info}
                                 staff={staff}
+                                onMouseEnter={handleHoverCardMouseEnter}
+                                onMouseLeave={handleHoverCardMouseLeave}
                                 onTransferRoom={(b, s) => {
                                   setTransferSource({ bed: b, room: group.room, session: s });
                                   setTransferModalOpen(true);
                                   setHoveredBedId(null);
+                                  isMouseInsideHoverCardRef.current = false;
                                 }}
-                                onStartServing={(b, s) => handleStartServingNow(b, s)}
-                                onCheckout={(b, s) => handleOpenCheckout(b, s)}
-                                onReleaseBed={(b, s) => handleReleaseBed(b, s)}
-                                onFinishCleaning={(b) => handleFinishCleaning(b)}
-                                onMouseEnter={handleHoverCardMouseEnter}
-                                onMouseLeave={handleBedMouseLeave}
+                                onStartServing={(b, s) => {
+                                  handleStartServingNow(b, s);
+                                  setHoveredBedId(null);
+                                  isMouseInsideHoverCardRef.current = false;
+                                }}
+                                onCheckout={(b, s) => {
+                                  handleOpenCheckout(b, s);
+                                  setHoveredBedId(null);
+                                  isMouseInsideHoverCardRef.current = false;
+                                }}
+                                onReleaseBed={(b, s) => {
+                                  handleReleaseBed(b, s);
+                                  setHoveredBedId(null);
+                                  isMouseInsideHoverCardRef.current = false;
+                                }}
+                                onFinishCleaning={(b) => {
+                                  handleFinishCleaning(b);
+                                  setHoveredBedId(null);
+                                  isMouseInsideHoverCardRef.current = false;
+                                }}
                               />
                             </div>
                           )}

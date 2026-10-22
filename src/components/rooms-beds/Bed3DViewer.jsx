@@ -1356,6 +1356,16 @@ export default function Bed3DViewer({
     let hoverTimeout = null;
 
     const openPopup = () => {
+      // Nếu có một popup của vị trí khác đang được người dùng rê chuột tương tác (:hover), không cướp popup
+      const hoveredContainers = mountRef.current?.querySelectorAll('.bed-spatial-container.is-hovered');
+      let isAnotherHovered = false;
+      hoveredContainers?.forEach(c => {
+        if (c !== div && c.matches(':hover')) {
+          isAnotherHovered = true;
+        }
+      });
+      if (isAnotherHovered) return;
+
       if (hoverTimeout) {
         clearTimeout(hoverTimeout);
         hoverTimeout = null;
@@ -1371,8 +1381,10 @@ export default function Bed3DViewer({
     const closePopup = () => {
       if (hoverTimeout) clearTimeout(hoverTimeout);
       hoverTimeout = setTimeout(() => {
-        div.classList.remove('is-hovered');
-        div.style.zIndex = '10';
+        if (!div.matches(':hover')) {
+          div.classList.remove('is-hovered');
+          div.style.zIndex = '10';
+        }
       }, 350);
     };
 
@@ -1384,8 +1396,8 @@ export default function Bed3DViewer({
       cardEl.onmouseenter = openPopup;
       cardEl.onmouseleave = closePopup;
 
-      // Chặn OrbitControls bắt các sự kiện chuột/chạm/lăn chuột bên trong thẻ popup
-      ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'wheel', 'touchstart', 'touchend'].forEach(evt => {
+      // Chặn OrbitControls và Raycaster bắt các sự kiện chuột/chạm/lăn chuột bên trong thẻ popup
+      ['pointerdown', 'pointerup', 'pointermove', 'mousedown', 'mouseup', 'mousemove', 'click', 'dblclick', 'wheel', 'touchstart', 'touchend', 'touchmove'].forEach(evt => {
         cardEl.addEventListener(evt, (e) => {
           e.stopPropagation();
         }, { passive: false });
@@ -1522,6 +1534,15 @@ export default function Bed3DViewer({
     const mouse = new THREE.Vector2();
 
     const handlePointerMove = (e) => {
+      // Nếu chuột đang nằm trong bất kỳ popup card nào hoặc phần tử đang hover,
+      // KHÔNG chạy raycast để tránh các hitbox của giường/quầy nằm phía sau đè lên hoặc ẩn popup!
+      if (e.target.closest('.bed-spatial-card') || 
+          e.target.closest('.bed-spatial-container.is-hovered') ||
+          mountRef.current?.querySelector('.bed-spatial-card:hover') ||
+          mountRef.current?.querySelector('.bed-spatial-container.is-hovered:hover')) {
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1540,6 +1561,12 @@ export default function Bed3DViewer({
         renderer.domElement.style.cursor = 'pointer';
         if (hit.userData.isBedHitbox) {
           const bId = hit.userData.bedId;
+          // Nếu đang có một popup đang được hover trực tiếp (:hover), không tự động chuyển giường
+          const hoveredEl = mountRef.current?.querySelector('.bed-spatial-container.is-hovered:hover');
+          if (hoveredEl && hoveredEl.getAttribute('data-bed-id') !== String(bId)) {
+            return;
+          }
+
           setHoveredBed(hit.userData.bedData);
           bedMeshesRef.current.forEach((item, id) => {
             if (item.labelObj && item.labelObj.element) {
@@ -1557,6 +1584,8 @@ export default function Bed3DViewer({
             }
           });
         } else {
+          const hoveredEl = mountRef.current?.querySelector('.bed-spatial-container.is-hovered:hover');
+          if (hoveredEl) return;
           bedMeshesRef.current.forEach(item => {
             if (item.labelObj && item.labelObj.element && !item.labelObj.element.matches(':hover')) {
               item.labelObj.element.classList.remove('is-hovered');
@@ -1565,6 +1594,8 @@ export default function Bed3DViewer({
           });
         }
       } else {
+        const hoveredEl = mountRef.current?.querySelector('.bed-spatial-container.is-hovered:hover');
+        if (hoveredEl) return;
         renderer.domElement.style.cursor = 'default';
         setHoveredBed(null);
         bedMeshesRef.current.forEach(item => {
@@ -1589,6 +1620,11 @@ export default function Bed3DViewer({
 
     const handlePointerDown = (e) => {
       if (e.button !== 0) return;
+      // Không raycast nếu bấm bên trong popup card
+      if (e.target.closest('.bed-spatial-card') || e.target.closest('.bed-spatial-container.is-hovered')) {
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1632,6 +1668,12 @@ export default function Bed3DViewer({
       }
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
+
+      // Đảm bảo phần tử đang hover luôn giữ zIndex cao nhất tuyệt đối (chống CSS2DRenderer ghi đè distance sorting)
+      const activeEl = container.querySelector('.bed-spatial-container.is-hovered');
+      if (activeEl) {
+        activeEl.style.zIndex = '999999';
+      }
     };
     animate();
 
@@ -2380,6 +2422,13 @@ export default function Bed3DViewer({
                       transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
                       visibility 0.22s;
           z-index: 999999 !important;
+        }
+        .bed-spatial-container.is-hovered .bed-spatial-card,
+        .bed-spatial-container:hover .bed-spatial-card,
+        .bed-spatial-card:hover {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          visibility: visible !important;
         }
 
         /* 1. Mặc định / Phía trên (placement-top) */
