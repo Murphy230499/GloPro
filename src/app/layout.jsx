@@ -1,6 +1,7 @@
 import './globals.css';
 import { CopilotProvider } from '@/ai-copilot';
 import dynamic from 'next/dynamic';
+import GlobalErrorCatcher from '@/components/GlobalErrorCatcher';
 
 const CopilotDrawer = dynamic(() => import('@/ai-copilot').then(mod => mod.CopilotDrawer));
 import GlobalNotificationProvider from '@/components/GlobalNotificationProvider';
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="vi">
       <body>
+        <GlobalErrorCatcher />
         <CopilotProvider>
           <GlobalNotificationProvider>
             {children}

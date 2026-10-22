@@ -133,6 +133,7 @@ export default function Bed3DViewer({
   const [cameraMode, setCameraMode] = useState('iso'); // 'iso' | 'top' | 'front'
   const [themeMode, setThemeMode] = useState('dark'); // 'dark' (Obsidian Luxury) | 'clay' (Warm Architectural)
   const [hoveredBed, setHoveredBed] = useState(null);
+  const [webglError, setWebglError] = useState(false);
 
   // Thống kê nhanh dữ liệu
   const stats = useMemo(() => {
@@ -464,8 +465,15 @@ export default function Bed3DViewer({
     camera.position.set(30, 26, 34);
     cameraRef.current = camera;
 
-    // 3. WebGL Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    // 3. WebGL Renderer an toàn với try/catch
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    } catch (err) {
+      console.warn('[Bed3DViewer] WebGL initialization failed:', err);
+      setWebglError(true);
+      return;
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -615,21 +623,26 @@ export default function Bed3DViewer({
     };
     animate();
 
-    // 10. Resize Observer
+    // 10. Resize Observer (Bọc requestAnimationFrame tránh ResizeObserver loop notification)
+    let resizeRaf = null;
     const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const { width: newW, height: newH } = entry.contentRect;
-        if (newW > 0 && newH > 0) {
-          camera.aspect = newW / newH;
-          camera.updateProjectionMatrix();
-          renderer.setSize(newW, newH);
-          labelRenderer.setSize(newW, newH);
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          const { width: newW, height: newH } = entry.contentRect;
+          if (newW > 0 && newH > 0 && cameraRef.current && rendererRef.current && labelRendererRef.current) {
+            cameraRef.current.aspect = newW / newH;
+            cameraRef.current.updateProjectionMatrix();
+            rendererRef.current.setSize(newW, newH, false);
+            labelRendererRef.current.setSize(newW, newH);
+          }
         }
-      }
+      });
     });
     resizeObserver.observe(container);
 
     return () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       resizeObserver.disconnect();
       domEl.removeEventListener('pointermove', handlePointerMove);
       domEl.removeEventListener('pointerdown', handlePointerDown);
@@ -870,6 +883,20 @@ export default function Bed3DViewer({
       focusCameraOnObject(roomInfo.center);
     }
   };
+
+  if (webglError) {
+    return (
+      <div className="w-full h-[520px] rounded-3xl bg-slate-900 border border-slate-800 text-white p-8 flex flex-col items-center justify-center text-center">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+          <Compass className="w-7 h-7" />
+        </div>
+        <h3 className="text-base font-bold text-white mb-2">Trình duyệt chưa bật tăng tốc WebGL 3D</h3>
+        <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+          Thiết bị hoặc trình duyệt của bạn đang bị giới hạn đồ họa phần cứng WebGL. Bạn có thể sử dụng bình thường ở tab Sơ đồ lưới hoặc kích hoạt Tăng tốc phần cứng trong cài đặt trình duyệt.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl ${

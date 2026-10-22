@@ -15,6 +15,7 @@ import AppointmentModal from '@/components/AppointmentModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
 import { base44, getCachedPermissions } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export { toast };
 
@@ -202,7 +203,9 @@ export default function Layout({ children }) {
         {/* Content */}
         <main className="flex-1 min-w-0 overflow-y-auto flex flex-col relative" id="main-content">
           <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-28 md:px-8 md:py-6 grow flex flex-col bg-[hsl(var(--background))]">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </div>
         </main>
       </div>
