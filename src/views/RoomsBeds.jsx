@@ -100,7 +100,7 @@ export default function RoomsBeds() {
 
   // Hover Card states
   const [hoveredBedId, setHoveredBedId] = useState(null);
-  const [hoverPosition, setHoverPosition] = useState({ placement: 'top', align: 'center' });
+  const [hoverPosition, setHoverPosition] = useState({ placement: 'top', align: 'center', maxHeight: 480 });
   const hoverTimeoutRef = useRef(null);
   const isMouseInsideHoverCardRef = useRef(false);
 
@@ -1001,21 +1001,43 @@ export default function RoomsBeds() {
 
     if (event?.currentTarget) {
       const rect = event.currentTarget.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
       const spaceAbove = rect.top;
-      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceBelow = vh - rect.bottom;
 
-      // Nếu phía trên không đủ không gian (< 380px) và phía dưới rộng hơn -> tự động lật xuống dưới
-      const placement = (spaceAbove < 380 && spaceBelow > spaceAbove) ? 'bottom' : 'top';
+      // Tính toán hướng mở (placement) và chiều cao tối đa khả dụng (maxHeight)
+      // Thông thường card đầy đủ dịch vụ cao khoảng 450-490px
+      let placement = 'bottom';
+      let maxHeight = 480;
+
+      if (spaceBelow >= 460) {
+        placement = 'bottom';
+        maxHeight = Math.min(520, spaceBelow - 20);
+      } else if (spaceAbove >= 460) {
+        placement = 'top';
+        maxHeight = Math.min(520, spaceAbove - 20);
+      } else if (spaceBelow >= spaceAbove) {
+        // Cả hai phía đều hẹp nhưng bên dưới thoáng hơn
+        placement = 'bottom';
+        maxHeight = Math.max(260, spaceBelow - 20);
+      } else {
+        // Bên trên thoáng hơn
+        placement = 'top';
+        maxHeight = Math.max(260, spaceAbove - 20);
+      }
 
       // Chống tràn màn hình cạnh trái hoặc cạnh phải
       let align = 'center';
-      if (rect.left < 200) {
+      const bedCenter = rect.left + rect.width / 2;
+      const cardHalfWidth = 195; // 390px / 2
+      if (bedCenter - cardHalfWidth < 20) {
         align = 'left';
-      } else if (window.innerWidth - rect.right < 200) {
+      } else if (bedCenter + cardHalfWidth > vw - 20) {
         align = 'right';
       }
 
-      setHoverPosition({ placement, align });
+      setHoverPosition({ placement, align, maxHeight });
     }
 
     setHoveredBedId(bedId);
@@ -1045,6 +1067,17 @@ export default function RoomsBeds() {
       setHoveredBedId(null);
     }, 350);
   };
+
+  // Tự động đóng hover popover khi scroll trang để tránh popover trôi khỏi vị trí giường
+  useEffect(() => {
+    const handleScroll = () => {
+      if (hoveredBedId && !isMouseInsideHoverCardRef.current) {
+        setHoveredBedId(null);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hoveredBedId]);
 
   // 6.5 Reassign or unassign conflicted appointment (e.g. receptionist overrides bed)
   const handleReassignAppointment = async (appointmentId, newBedId = null) => {
@@ -1799,6 +1832,9 @@ export default function RoomsBeds() {
                                   ? 'right-0'
                                   : 'left-1/2 -translate-x-1/2'
                               }`}
+                              style={{
+                                maxHeight: hoverPosition.maxHeight ? `${hoverPosition.maxHeight}px` : undefined
+                              }}
                             >
                               <BedHoverCard
                                 bed={bed}
@@ -1807,6 +1843,7 @@ export default function RoomsBeds() {
                                 status={session.status}
                                 cleaningInfo={session.cleaning_info}
                                 staff={staff}
+                                maxHeight={hoverPosition.maxHeight}
                                 onMouseEnter={handleHoverCardMouseEnter}
                                 onMouseLeave={handleHoverCardMouseLeave}
                                 onTransferRoom={(b, s) => {

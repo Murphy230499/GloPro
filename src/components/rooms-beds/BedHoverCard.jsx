@@ -26,6 +26,7 @@ export default function BedHoverCard({
   status = 'in_progress', // 'waiting' | 'reserved' | 'nearly_finished' | 'in_progress' | 'overtime' | 'cleaning'
   cleaningInfo = null,
   staff = [],
+  maxHeight = 490,
   onTransferRoom,
   onStartServing,
   onCheckout,
@@ -181,11 +182,14 @@ export default function BedHoverCard({
       onPointerDown={(e) => e.stopPropagation()}
       onPointerMove={(e) => e.stopPropagation()}
       onMouseMove={(e) => e.stopPropagation()}
-      className="relative w-[360px] sm:w-[390px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-inset-3 before:-z-10 before:pointer-events-auto"
-      style={{ filter: 'drop-shadow(0 20px 25px rgba(15, 23, 42, 0.15))' }}
+      className="relative w-[360px] sm:w-[390px] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-inset-3 before:-z-10 before:pointer-events-auto box-border"
+      style={{ 
+        filter: 'drop-shadow(0 20px 25px rgba(15, 23, 42, 0.15))',
+        maxHeight: maxHeight ? `${maxHeight}px` : '490px'
+      }}
     >
       {/* 1. Header: Room | Bed + Status Badge */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
           <Building2 className="w-3.5 h-3.5 text-slate-400" />
           <span>{room?.name || 'Phòng'} | {bed.name}</span>
@@ -196,8 +200,10 @@ export default function BedHoverCard({
         </span>
       </div>
 
-      {/* If in Cleaning Status */}
-      {status === 'cleaning' ? (
+      {/* Scrollable Body Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-0.5 space-y-2.5 py-1">
+        {/* If in Cleaning Status */}
+        {status === 'cleaning' ? (
         <div className="py-4 space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-teal-100/70 text-teal-700 flex items-center justify-center shrink-0">
@@ -392,9 +398,10 @@ export default function BedHoverCard({
           </div>
         </>
       )}
+      </div>
 
-      {/* 5. Action Buttons (Footer - 3-column robust grid, never breaks layout) */}
-      <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 w-full">
+      {/* 5. Action Buttons (Footer - pinned shrink-0 mt-auto luôn hiển thị 100% trên màn hình) */}
+      <div className="pt-2.5 mt-auto border-t border-slate-100 grid grid-cols-3 gap-2 w-full shrink-0">
         {/* Nút 1: Chuyển phòng */}
         <button
           type="button"
