@@ -1164,6 +1164,47 @@ export default function RoomsBeds() {
     return result;
   }, [rooms, beds, enrichedBedSessions, statusFilter, t]);
 
+  // Danh sách khách đang ngồi ghế chờ tại sảnh tiếp tân (chờ xếp giường hoặc chờ thanh toán)
+  const waitingGuests = useMemo(() => {
+    const todayStr = getTodayDateString();
+    
+    // 1. Khách có lịch hẹn hôm nay chưa xếp vào giường (hoặc trạng thái waiting / checked_in)
+    const apptWaiting = (appointments || []).filter(a => {
+      const aDate = a.date || a.appointment_date || (a.start_time ? a.start_time.split('T')[0] : '');
+      const isToday = !aDate || aDate === todayStr || isSameDay(aDate, todayStr);
+      const isNotDone = a.status !== 'completed' && a.status !== 'cancelled';
+      const isWaitingOrUnassigned = a.status === 'waiting' || a.status === 'checked_in' || a.status === 'pending' || !a.facility_id;
+      return isToday && isNotDone && isWaitingOrUnassigned;
+    }).map(a => ({
+      id: a.id,
+      customer_name: a.customer_name || 'Khách vãng lai',
+      customer_phone: a.customer_phone || '—',
+      time: a.start_time ? (a.start_time.includes('T') ? a.start_time.split('T')[1].slice(0, 5) : a.start_time) : 'Đang chờ',
+      service_name: (a.services && a.services[0]?.name) || a.service_name || 'Dịch vụ Salon',
+      staff_name: a.staff_name || a.technician_name || 'Chưa chỉ định',
+      status: a.status || 'waiting',
+      type: 'waiting_for_bed',
+      appointment: a
+    }));
+
+    // 2. Khách ở các vị trí giường sắp hoàn tất hoặc cần thanh toán
+    const checkoutWaiting = Object.values(enrichedBedSessions || {}).filter(s =>
+      s.status === 'nearly_finished' || s.status === 'overtime'
+    ).map(s => ({
+      id: `checkout_${s.bed_id}`,
+      customer_name: s.customer_name || 'Khách vãng lai',
+      customer_phone: s.customer_phone || '—',
+      time: s.end_time || 'Sắp xong',
+      service_name: s.service_name || 'Dịch vụ Salon',
+      staff_name: s.technician_name || s.staff_name || 'KTV',
+      status: s.status,
+      type: 'waiting_for_checkout',
+      session: s
+    }));
+
+    return [...apptWaiting, ...checkoutWaiting];
+  }, [appointments, enrichedBedSessions]);
+
   // 8. Timeline Merged Events & Controls
   const timelineEventsByBedId = useMemo(() => {
     return aggregateBedTimelineEvents({
@@ -1362,8 +1403,25 @@ export default function RoomsBeds() {
                 <Bed3DViewer
                   bedsByRoom={bedsByRoom}
                   bedSessions={enrichedBedSessions}
+                  waitingGuests={waitingGuests}
                   onSelectBed={(bed) => {
                     setSelectedBedForDrawer(bed);
+                  }}
+                  onAssignGuest={(guest) => {
+                    if (guest?.appointment) {
+                      const availableBed = beds.find(b => !enrichedBedSessions[b.id]);
+                      if (availableBed) {
+                        const room = rooms.find(r => r.id === availableBed.room_id);
+                        setQuickAssignBed({ bed: availableBed, room, appointment: guest.appointment });
+                      } else {
+                        setSelectedBedForDrawer(beds[0] || null);
+                      }
+                    } else if (guest?.session) {
+                      const targetBed = beds.find(b => b.id === guest.session.bed_id);
+                      if (targetBed) {
+                        setSelectedBedForDrawer(targetBed);
+                      }
+                    }
                   }}
                   onOpenCashier={() => {
                     setInvoiceModalOpen(true);

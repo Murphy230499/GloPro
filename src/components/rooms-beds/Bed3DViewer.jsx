@@ -8,7 +8,8 @@ import {
   Building2, ZoomIn, ZoomOut, Layers, AlertCircle, 
   Sparkles, Compass, Maximize2, Minimize2,
   Sun, Moon, Eye, CreditCard, Store, Play, Pause,
-  RefreshCw, CheckCircle2, ChevronRight
+  RefreshCw, CheckCircle2, ChevronRight,
+  X, Users, Coffee, Clock, Phone, ArrowRight
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
@@ -243,7 +244,9 @@ export default function Bed3DViewer({
   bedsByRoom = [],
   bedSessions = {},
   onSelectBed = () => {},
-  onOpenCashier = () => {}
+  onOpenCashier = () => {},
+  waitingGuests = [],
+  onAssignGuest = () => {}
 }) {
   const { t } = useT();
   const mountRef = useRef(null);
@@ -258,6 +261,7 @@ export default function Bed3DViewer({
   const bedMeshesRef = useRef(new Map());
   const roomPositionsRef = useRef(new Map());
   const cashierHitboxRef = useRef(null);
+  const loungeHitboxRef = useRef(null);
   const lobbyPosRef = useRef(new THREE.Vector3(0, 0, 10));
   const contactShadowTexRef = useRef(null);
 
@@ -269,6 +273,7 @@ export default function Bed3DViewer({
   const [hoveredBed, setHoveredBed] = useState(null);
   const [isAutoTour, setIsAutoTour] = useState(false);
   const [webglError, setWebglError] = useState(false);
+  const [showLoungeModal, setShowLoungeModal] = useState(false);
 
   // Thống kê nhanh dữ liệu
   const stats = useMemo(() => {
@@ -602,50 +607,7 @@ export default function Bed3DViewer({
     return div;
   };
 
-  // Tạo Thẻ nổi CSS2D trên Quầy Thu Ngân
-  const createCashierCSS2DElement = () => {
-    const isDark = themeMode === 'dark';
-    const div = document.createElement('div');
-    div.className = 'select-none pointer-events-auto transform transition-all duration-300 hover:scale-105 cursor-pointer';
 
-    div.innerHTML = `
-      <div class="px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-2xl border flex items-center gap-3 transition-all ${
-        isDark 
-          ? 'bg-slate-950/90 text-white border-blue-500/40 hover:border-blue-400' 
-          : 'bg-white/95 text-slate-900 border-amber-300/80 hover:border-amber-400 shadow-amber-500/10'
-      }">
-        <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shrink-0 shadow-lg bg-gradient-to-tr from-blue-600 to-indigo-600">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-          </svg>
-        </div>
-
-        <div class="text-left">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-black tracking-wider uppercase text-blue-600">QUẦY THU NGÂN & TIẾP TÂN</span>
-            <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
-              Sẵn sàng
-            </span>
-          </div>
-          <div class="text-[11px] text-slate-500 font-semibold flex items-center gap-2 mt-0.5">
-            <span>${stats.occupied} khách đang phục vụ</span>
-            <span>•</span>
-            <span class="text-blue-600 font-bold hover:underline flex items-center gap-0.5">
-              <span>Mở POS thanh toán</span>
-              <span>→</span>
-            </span>
-          </div>
-        </div>
-      </div>
-    `;
-
-    div.onclick = (e) => {
-      e.stopPropagation();
-      onOpenCashier();
-    };
-
-    return div;
-  };
 
   // Khởi tạo Scene 3D & Renderers
   useEffect(() => {
@@ -762,6 +724,7 @@ export default function Bed3DViewer({
         if (item.hitbox) hitboxes.push(item.hitbox);
       });
       if (cashierHitboxRef.current) hitboxes.push(cashierHitboxRef.current);
+      if (loungeHitboxRef.current) hitboxes.push(loungeHitboxRef.current);
 
       const intersects = raycaster.intersectObjects(hitboxes, false);
       if (intersects.length > 0) {
@@ -788,13 +751,13 @@ export default function Bed3DViewer({
         if (item.hitbox) hitboxes.push(item.hitbox);
       });
       if (cashierHitboxRef.current) hitboxes.push(cashierHitboxRef.current);
+      if (loungeHitboxRef.current) hitboxes.push(loungeHitboxRef.current);
 
       const intersects = raycaster.intersectObjects(hitboxes, false);
       if (intersects.length > 0) {
         const hit = intersects[0].object;
-        if (hit.userData.isCashierHitbox) {
-          onOpenCashier();
-          focusCameraOnObject(hit.parent.position);
+        if (hit.userData.isCashierHitbox || hit.userData.isLoungeHitbox) {
+          handleFocusCashier();
           return;
         }
 
@@ -908,6 +871,7 @@ export default function Bed3DViewer({
     bedMeshesRef.current.clear();
     roomPositionsRef.current.clear();
     cashierHitboxRef.current = null;
+    loungeHitboxRef.current = null;
 
     const oldRooms = scene.children.filter(c => c && c.name && typeof c.name === 'string' && (c.name.startsWith('room_arch_') || c.name.startsWith('store_')));
     oldRooms.forEach(r => {
@@ -1153,6 +1117,47 @@ export default function Bed3DViewer({
     tableLeg.position.set(0, 0.18, 1.45);
     loungeGroup.add(tableLeg);
 
+    // Hitbox tương tác cho toàn bộ khu vực Ghế Chờ Sofa
+    const sofaHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(4.4, 1.3, 2.6),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    sofaHitbox.position.set(0, 0.65, 0.5);
+    sofaHitbox.userData = { isLoungeHitbox: true };
+    loungeGroup.add(sofaHitbox);
+    loungeHitboxRef.current = sofaHitbox;
+
+    // Hình người 3D ngồi chờ tại sảnh nếu có khách đang chờ
+    if (waitingGuests.length > 0) {
+      const guestCount = Math.min(waitingGuests.length, 3);
+      for (let gi = 0; gi < guestCount; gi++) {
+        const guestSitting = new THREE.Group();
+        const offsetX = (gi - (guestCount - 1) / 2) * 1.05;
+        guestSitting.position.set(offsetX, 0.36, 0.0);
+
+        // Thân người ngồi
+        const gBody = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.24, 0.28, 0.52, 16),
+          new THREE.MeshStandardMaterial({
+            color: gi % 2 === 0 ? 0x0284c7 : 0xd97706,
+            roughness: 0.5
+          })
+        );
+        gBody.position.y = 0.26;
+        guestSitting.add(gBody);
+
+        // Đầu người
+        const gHead = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xfbcfe8, roughness: 0.4 })
+        );
+        gHead.position.y = 0.62;
+        guestSitting.add(gHead);
+
+        loungeGroup.add(guestSitting);
+      }
+    }
+
     lobbyGroup.add(loungeGroup);
 
     // CÂY XANH KIỂNG BOUTIQUE (Monstera in Ceramic Planter)
@@ -1179,11 +1184,7 @@ export default function Bed3DViewer({
     addPlant(lobbyW / 2 - 1.4, lobbyD / 2 - 1.4);
     addPlant(0.5, -lobbyD / 2 + 1.0);
 
-    // Gắn Floating CSS2D Card trên Quầy Thu Ngân
-    const cashierLabelDom = createCashierCSS2DElement();
-    const cashierLabelObj = new CSS2DObject(cashierLabelDom);
-    cashierLabelObj.position.set(-3.5, 3.4, 0.5);
-    lobbyGroup.add(cashierLabelObj);
+
 
     // Đèn chiếu ấm áp quầy lễ tân
     const lobbySpot = new THREE.PointLight(0xffedd5, isDark ? 1.0 : 0.85, 16, 1.2);
@@ -1325,7 +1326,7 @@ export default function Bed3DViewer({
         });
       });
     });
-  }, [bedsByRoom, bedSessions, themeMode, t, onOpenCashier]);
+  }, [bedsByRoom, bedSessions, waitingGuests, themeMode, t, onOpenCashier]);
 
   // Điều khiển góc quay Camera
   const handleStoreEntranceView = () => {
@@ -1359,11 +1360,13 @@ export default function Bed3DViewer({
   const handleFocusCashier = () => {
     if (!controlsRef.current || !cameraRef.current) return;
     const lPos = lobbyPosRef.current;
-    controlsRef.current.target.set(-3.5, 1.2, lPos.z + 0.5);
-    cameraRef.current.position.set(-3.5, 4.2, lPos.z + 4.8);
+    // Tọa độ nhìn bao quát toàn bộ khu vực Quầy Thu Ngân lẫn Sảnh Chờ Sofa
+    controlsRef.current.target.set(0.5, 1.2, lPos.z + 0.5);
+    cameraRef.current.position.set(0.5, 5.0, lPos.z + 8.8);
     controlsRef.current.update();
     setCameraMode('cashier');
     setIsAutoTour(false);
+    setShowLoungeModal(true);
   };
 
   const handleZoom = (delta) => {
@@ -1462,16 +1465,8 @@ export default function Bed3DViewer({
           })}
         </div>
 
-        {/* Nút bấm nhanh mở Thu Ngân POS & Cụm Thống kê */}
+        {/* Cụm Thống kê Vị trí Trực quan */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <button
-            type="button"
-            onClick={onOpenCashier}
-            className="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-xl shadow-blue-500/25 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Thu Ngân POS</span>
-          </button>
 
           <div className={`hidden lg:flex items-center gap-2 p-1.5 rounded-2xl shadow-2xl backdrop-blur-2xl border ${
             isDark ? 'bg-slate-950/85 border-white/10 text-white' : 'bg-white/95 border-slate-200/90 text-slate-800'
@@ -1555,11 +1550,11 @@ export default function Bed3DViewer({
           <span className="hidden sm:inline">Cửa vào tiệm</span>
         </button>
 
-        {/* Nút Xem Quầy Thu Ngân (Focus Cashier) */}
+        {/* Nút Xem Quầy Thu Ngân & Sảnh Chờ (Focus Cashier & Lounge) */}
         <button
           type="button"
           onClick={handleFocusCashier}
-          title="🏢 Quầy thu ngân & đón tiếp"
+          title="🏢 Quầy thu ngân & Sảnh ghế chờ"
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
             cameraMode === 'cashier' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
@@ -1568,6 +1563,11 @@ export default function Bed3DViewer({
         >
           <CreditCard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Quầy Thu Ngân</span>
+          {waitingGuests.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 animate-pulse">
+              {waitingGuests.length} chờ
+            </span>
+          )}
         </button>
 
         <div className={`w-px h-4 ${isDark ? 'bg-white/15' : 'bg-slate-200'}`} />
@@ -1664,6 +1664,220 @@ export default function Bed3DViewer({
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL / DRAWER: SẢNH CHỜ & QUẦY THU NGÂN (HIỂN THỊ KHÁCH ĐANG CHỜ)        */}
+      {/* ========================================================================= */}
+      {showLoungeModal && (
+        <div className="absolute inset-0 z-40 bg-slate-950/40 backdrop-blur-xs flex justify-end pointer-events-auto animate-in fade-in duration-200">
+          <div 
+            className={`w-full max-w-md h-full flex flex-col shadow-2xl border-l backdrop-blur-2xl transition-all ${
+              isDark 
+                ? 'bg-slate-900/95 text-white border-white/10' 
+                : 'bg-white/95 text-slate-800 border-slate-200 shadow-slate-900/20'
+            }`}
+          >
+            {/* Header */}
+            <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base">Quầy Thu Ngân & Sảnh Chờ</h3>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-600 border border-blue-500/30">
+                      Lễ tân
+                    </span>
+                  </div>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Danh sách khách đang ngồi ghế chờ & theo dõi dịch vụ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLoungeModal(false)}
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
+                  isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Summary Badges */}
+            <div className={`px-5 py-3 border-b grid grid-cols-3 gap-2 ${isDark ? 'border-white/10 bg-slate-950/40' : 'border-slate-100 bg-slate-50/70'}`}>
+              <div className="text-center p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Khách ngồi chờ</div>
+                <div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                  {waitingGuests.length}
+                </div>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">Đang phục vụ</div>
+                <div className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">
+                  {stats.occupied}
+                </div>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Giường trống</div>
+                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {stats.available}
+                </div>
+              </div>
+            </div>
+
+            {/* Body: Danh sách khách đang ngồi ghế chờ */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {waitingGuests.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-4 ${
+                    isDark ? 'bg-slate-800/80 text-slate-500' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <Coffee className="w-8 h-8" />
+                  </div>
+                  <h4 className={`font-bold text-sm mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    Hiện tại ghế chờ đang trống
+                  </h4>
+                  <p className="text-xs leading-relaxed max-w-xs mb-5">
+                    Tất cả khách hàng đã được xếp vào giường làm liệu trình hoặc đã thanh toán xong.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoungeModal(false);
+                      onOpenCashier();
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Mở Thu Ngân POS tạo đơn mới</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+                    <span>Khách tại sảnh ({waitingGuests.length})</span>
+                    <span>Trạng thái</span>
+                  </div>
+
+                  {waitingGuests.map((guest, idx) => {
+                    const isWaitingBed = guest.type === 'waiting_for_bed';
+                    return (
+                      <div 
+                        key={guest.id || idx}
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] ${
+                          isDark 
+                            ? 'bg-slate-800/70 border-white/10 hover:border-blue-500/50' 
+                            : 'bg-white border-slate-200/90 shadow-sm hover:border-blue-300 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
+                              isWaitingBed 
+                                ? 'bg-amber-500/15 text-amber-600 border border-amber-500/30' 
+                                : 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30'
+                            }`}>
+                              {(guest.customer_name || 'K').slice(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-sm">{guest.customer_name}</div>
+                              <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                {guest.customer_phone && guest.customer_phone !== '—' && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{guest.customer_phone}</span>
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{guest.time}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isWaitingBed 
+                              ? 'bg-amber-500/15 text-amber-600 border border-amber-500/30' 
+                              : 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30'
+                          }`}>
+                            {isWaitingBed ? 'Ghế chờ' : 'Chờ thanh toán'}
+                          </span>
+                        </div>
+
+                        <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${
+                          isDark ? 'border-white/5' : 'border-slate-100'
+                        }`}>
+                          <div className="text-xs truncate max-w-[200px]">
+                            <span className="text-slate-400">Dịch vụ: </span>
+                            <span className="font-semibold">{guest.service_name}</span>
+                          </div>
+
+                          {isWaitingBed ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowLoungeModal(false);
+                                onAssignGuest(guest);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95"
+                            >
+                              <span>Xếp giường</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowLoungeModal(false);
+                                onOpenCashier(guest);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all active:scale-95"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>Thanh toán</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className={`p-4 border-t flex items-center gap-2 ${isDark ? 'border-white/10 bg-slate-950/60' : 'border-slate-100 bg-slate-50'}`}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLoungeModal(false);
+                  onOpenCashier();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Mở Thu Ngân POS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowLoungeModal(false)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                  isDark 
+                    ? 'border-white/10 hover:bg-white/10 text-slate-300' 
+                    : 'border-slate-200 hover:bg-slate-100 text-slate-600'
+                }`}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
