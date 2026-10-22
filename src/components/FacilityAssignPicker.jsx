@@ -15,7 +15,7 @@ import {
 import { BED_BUFFER_MINUTES, calculateBedAvailableWindow } from '@/lib/bedConflictHelper';
 import { base44 } from '@/api/base44Client';
 import { getTenantStorageKey } from '@/lib/tenantManager';
-import { isRoomFacility, ensureValidUuid } from '@/lib/roomBedDbHelper';
+import { isRoomFacility, ensureValidUuid, parseBedFromFacility } from '@/lib/roomBedDbHelper';
 
 /**
  * FacilityAssignPicker
@@ -67,7 +67,7 @@ export default function FacilityAssignPicker({
       const branchKey = currentBranchId || 'all';
 
       // 1. Load Rooms từ nguồn Dữ liệu Giường & Phòng
-      let loadedRooms = (propRooms && propRooms.length > 0) ? propRooms : [];
+      let loadedRooms = (propRooms && propRooms.length > 0) ? [...propRooms] : [];
       if (!loadedRooms || loadedRooms.length === 0) {
         const unifiedRoomsKey = getTenantStorageKey('gp_rooms');
         const branchRoomsKey = getTenantStorageKey('gp_rooms', branchKey);
@@ -82,17 +82,9 @@ export default function FacilityAssignPicker({
       if (branchKey && branchKey !== 'all' && loadedRooms && loadedRooms.length > 0) {
         loadedRooms = loadedRooms.filter(r => !r.branch_id || r.branch_id === branchKey);
       }
-      // Sắp xếp phòng tự nhiên theo thứ tự: Tầng 1 -> Tầng 2 -> Tầng 3...
-      loadedRooms = [...loadedRooms].sort((a, b) => {
-        if (a.display_order !== undefined && b.display_order !== undefined && a.display_order !== b.display_order) {
-          return a.display_order - b.display_order;
-        }
-        return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
-      });
-      setRooms(loadedRooms || []);
 
       // 2. Load Beds từ nguồn Dữ liệu Giường & Phòng
-      let loadedBeds = (facilities && facilities.length > 0) ? facilities : [];
+      let loadedBeds = (facilities && facilities.length > 0) ? [...facilities] : [];
       if (!loadedBeds || loadedBeds.length === 0) {
         const unifiedBedsKey = getTenantStorageKey('gp_facilities');
         const branchBedsKey = getTenantStorageKey('gp_facilities', branchKey);
@@ -116,19 +108,108 @@ export default function FacilityAssignPicker({
         try { bedRoomMap = JSON.parse(rawMap); } catch (e) {}
       }
 
-      const roomById = new Map((loadedRooms || []).map(r => [r.id, r]));
+      // Đảm bảo không bị thất lạc phòng: Tìm lại các phòng được tham chiếu trong giường
+      const existingRoomKeys = new Set();
+      loadedRooms.forEach(r => {
+        if (r.id) existingRoomKeys.add(r.id);
+        if (r.db_id) existingRoomKeys.add(r.db_id);
+        const u = ensureValidUuid(r.id);
+        if (u) existingRoomKeys.add(u);
+        if (r.name) existingRoomKeys.add(r.name.trim().toLowerCase());
+      });
+
+      let cachedMasterRooms = [];
+      try {
+        const rawAllRooms = localStorage.getItem(getTenantStorageKey('gp_rooms')) || localStorage.getItem('gp_rooms') || localStorage.getItem('gp_rooms_default_');
+        if (rawAllRooms) cachedMasterRooms = JSON.parse(rawAllRooms);
+      } catch (e) {}
+
+      rawBeds.forEach(b => {
+        let rId = b.room_id;
+        if (!rId && Array.isArray(b.applicable_services)) {
+          const rTag = b.applicable_services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+          if (rTag) rId = rTag.replace('__room__:', '').trim();
+        }
+        if (!rId && bedRoomMap) {
+          rId = bedRoomMap[b.id] || (ensureValidUuid(b.id) ? bedRoomMap[ensureValidUuid(b.id)] : null);
+        }
+        if (rId && !existingRoomKeys.has(rId) && !existingRoomKeys.has(ensureValidUuid(rId))) {
+          const foundMaster = cachedMasterRooms.find(mr => mr.id === rId || mr.db_id === rId || (ensureValidUuid(mr.id) && ensureValidUuid(mr.id) === ensureValidUuid(rId)));
+          if (foundMaster) {
+            loadedRooms.push(foundMaster);
+            if (foundMaster.id) existingRoomKeys.add(foundMaster.id);
+            if (foundMaster.db_id) existingRoomKeys.add(foundMaster.db_id);
+          } else {
+            const newOrder = loadedRooms.length + 1;
+            const recovered = {
+              id: rId,
+              db_id: rId,
+              name: b.room_name || `Phòng ${newOrder}`,
+              color: '#3B82F6',
+              branch_id: b.branch_id || branchKey,
+              display_order: newOrder
+            };
+            loadedRooms.push(recovered);
+            existingRoomKeys.add(rId);
+            existingRoomKeys.add(ensureValidUuid(rId));
+          }
+        }
+      });
+
+      // Index phòng theo tất cả các key (id, db_id, UUID, name)
+      const roomById = new Map();
+      loadedRooms.forEach(r => {
+        if (r.id) roomById.set(r.id, r);
+        if (r.db_id) roomById.set(r.db_id, r);
+        const vUuid = ensureValidUuid(r.id);
+        if (vUuid) roomById.set(vUuid, r);
+        if (r.name) roomById.set(`name:${r.name.trim().toLowerCase()}`, r);
+      });
+
       let mappedBeds = rawBeds.map(b => {
-        const rId = b.room_id || bedRoomMap[b.id];
-        const roomObj = rId ? roomById.get(rId) : null;
+        const parsed = parseBedFromFacility(b, bedRoomMap) || {};
+        const combined = { ...b, ...parsed };
+
+        let rId = combined.room_id;
+        if (!rId && Array.isArray(b.applicable_services)) {
+          const rTag = b.applicable_services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+          if (rTag) rId = rTag.replace('__room__:', '').trim();
+        }
+        if (!rId && bedRoomMap) {
+          rId = bedRoomMap[b.id] || bedRoomMap[b.id?.toLowerCase()] || (ensureValidUuid(b.id) ? bedRoomMap[ensureValidUuid(b.id)] : null);
+        }
+
+        let roomObj = null;
+        if (rId) {
+          roomObj = roomById.get(rId) || roomById.get(ensureValidUuid(rId));
+        }
+        if (!roomObj && (b.room_name || combined.room_name)) {
+          const rn = (b.room_name || combined.room_name).trim().toLowerCase();
+          roomObj = roomById.get(`name:${rn}`);
+        }
+        if (!roomObj && rId) {
+          roomObj = roomById.get(`name:${String(rId).trim().toLowerCase()}`);
+        }
+
         return {
-          ...b,
-          room_id: rId || b.room_id || null,
-          room_name: b.room_name || roomObj?.name || null
+          ...combined,
+          room_id: roomObj?.id || roomObj?.db_id || rId || null,
+          room_name: roomObj?.name || b.room_name || combined.room_name || null
         };
       });
 
       // Sắp xếp giường tự nhiên: Ghế 1 -> Ghế 2 -> Ghế 3...
       mappedBeds = [...mappedBeds].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+      // Sắp xếp phòng tự nhiên theo thứ tự: Tầng 1 -> Tầng 2 -> Tầng 3...
+      loadedRooms = [...loadedRooms].sort((a, b) => {
+        if (a.display_order !== undefined && b.display_order !== undefined && a.display_order !== b.display_order) {
+          return a.display_order - b.display_order;
+        }
+        return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
+
+      setRooms(loadedRooms || []);
       setBeds(mappedBeds);
 
       // 3. Load Active Bed Sessions từ Quản lý Giường Phòng
@@ -358,13 +439,23 @@ export default function FacilityAssignPicker({
 
     // 2. Gán từng giường vào đúng nhóm phòng
     filtered.forEach(bed => {
+      let rId = bed.room_id;
+      if (!rId && Array.isArray(bed.applicable_services)) {
+        const rTag = bed.applicable_services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+        if (rTag) rId = rTag.replace('__room__:', '').trim();
+      }
+
       let matchedGroup = null;
-      if (bed.room_id) {
-        matchedGroup = roomMap[bed.room_id] || roomMap[ensureValidUuid(bed.room_id)];
+      if (rId) {
+        matchedGroup = roomMap[rId] || roomMap[ensureValidUuid(rId)];
       }
       if (!matchedGroup && bed.room_name) {
         matchedGroup = roomMap[`name:${bed.room_name.trim().toLowerCase()}`];
       }
+      if (!matchedGroup && rId) {
+        matchedGroup = roomMap[`name:${String(rId).trim().toLowerCase()}`];
+      }
+
       if (matchedGroup) {
         matchedGroup.beds.push(bed);
       } else {

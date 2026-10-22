@@ -2348,8 +2348,8 @@ export default function RoomsBeds() {
           open={invoiceModalOpen}
           customer={invoiceData.customer}
           initialCart={invoiceData.initialCart}
-          facilities={allBeds}
-          rooms={allRooms}
+          facilities={beds}
+          rooms={rooms}
           bedSessions={bedSessions}
           onClose={() => {
             setInvoiceModalOpen(false);

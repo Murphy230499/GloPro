@@ -117,6 +117,9 @@ export default function TicketColumn({ session, staff, customers, facilities = [
         if (cached) list = JSON.parse(cached);
       } catch (e) {}
     }
+    if (currentBranchId && currentBranchId !== 'all' && list && list.length > 0) {
+      return list.filter(r => !r.branch_id || r.branch_id === currentBranchId);
+    }
     return list || [];
   }, [rooms, currentBranchId]);
   const getTypeLabel = (type) => {

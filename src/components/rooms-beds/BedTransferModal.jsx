@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, ArrowRightLeft, Building2, Check, Sparkles, AlertCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
+import { ensureValidUuid } from '@/lib/roomBedDbHelper';
 
 export default function BedTransferModal({
   open,
@@ -28,14 +29,39 @@ export default function BedTransferModal({
     return !sess || sess.status === 'cleaning'; // can't transfer to busy
   });
 
-  // Group available beds by room
-  const bedsByRoom = allRooms.map(r => ({
+  // Group available beds by room with natural order and multi-key matching
+  const sortedRooms = [...allRooms].sort((a, b) => {
+    if (a.display_order !== undefined && b.display_order !== undefined && a.display_order !== b.display_order) {
+      return a.display_order - b.display_order;
+    }
+    return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  const bedsByRoom = sortedRooms.map(r => ({
     room: r,
-    beds: availableBeds.filter(b => b.room_id === r.id)
+    beds: availableBeds.filter(b => {
+      let bRoomId = b.room_id;
+      if (!bRoomId && Array.isArray(b.applicable_services)) {
+        const rTag = b.applicable_services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+        if (rTag) bRoomId = rTag.replace('__room__:', '').trim();
+      }
+      return bRoomId === r.id ||
+             bRoomId === r.db_id ||
+             (ensureValidUuid(bRoomId) && (ensureValidUuid(bRoomId) === ensureValidUuid(r.id) || ensureValidUuid(bRoomId) === ensureValidUuid(r.db_id))) ||
+             (b.room_name && b.room_name.trim().toLowerCase() === r.name?.trim().toLowerCase());
+    }).sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
   })).filter(g => g.beds.length > 0);
 
   // Unassigned room group
-  const unassignedBeds = availableBeds.filter(b => !b.room_id || !allRooms.some(r => r.id === b.room_id));
+  const unassignedBeds = availableBeds.filter(b => {
+    let bRoomId = b.room_id;
+    if (!bRoomId && Array.isArray(b.applicable_services)) {
+      const rTag = b.applicable_services.find(s => typeof s === 'string' && s.startsWith('__room__:'));
+      if (rTag) bRoomId = rTag.replace('__room__:', '').trim();
+    }
+    return !bRoomId && !b.room_name;
+  }).sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+
   if (unassignedBeds.length > 0) {
     bedsByRoom.push({
       room: { id: '__unassigned', name: 'Khu vực chung / Chưa phân phòng', color: '#64748B' },

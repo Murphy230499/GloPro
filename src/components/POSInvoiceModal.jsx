@@ -14,7 +14,8 @@ import { useBranch } from '@/lib/BranchContext';
 import { getNormalizedLogs, createLogEntry } from '@/lib/logHelper';
 import { createIncomeVoucher } from '@/lib/cashFlowHelper';
 import { useT } from '@/lib/i18n';
-import { isRoomFacility, parseRoomFromFacility } from '@/lib/roomBedDbHelper';
+import { isRoomFacility, parseRoomFromFacility, parseBedFromFacility } from '@/lib/roomBedDbHelper';
+import { getTenantStorageKey } from '@/lib/tenantManager';
 
 export default function POSInvoiceModal({
   open, customer, initialCart = [], facilities = [], rooms = [], bedSessions = null, existingInvoice = null, appointmentId = null, onClose, onSaved }) {
@@ -93,7 +94,13 @@ export default function POSInvoiceModal({
       setStaff(st.filter(x => x.is_active));
       setCustomers(c);
       const roomFacs = (fac || []).filter(isRoomFacility).map(parseRoomFromFacility).filter(Boolean);
-      const bedFacs = (fac || []).filter(f => !isRoomFacility(f));
+      let bedRoomMap = {};
+      try {
+        const bedRoomMapKey = getTenantStorageKey('gp_bed_room_map');
+        const rawMap = localStorage.getItem(bedRoomMapKey) || localStorage.getItem('gp_bed_room_map');
+        if (rawMap) bedRoomMap = JSON.parse(rawMap);
+      } catch (e) {}
+      const bedFacs = (fac || []).filter(f => !isRoomFacility(f)).map(f => parseBedFromFacility(f, bedRoomMap)).filter(Boolean);
       setLoadedRooms(roomFacs);
       setLoadedFacilities(bedFacs);
 
