@@ -856,6 +856,49 @@ export default function Bed3DViewer({
     return { group, ledMesh, haloMesh, hitbox };
   };
 
+  // Tự động tính toán & điều chỉnh vị trí hiển thị popup linh hoạt theo không gian màn hình
+  // (Tự động lật xuống dưới khi ở sát mép trên, lật lên trên khi ở sát mép dưới, căn lề trái/phải không bị tràn viền)
+  const updatePopupPlacement = (containerEl) => {
+    if (!containerEl || !mountRef.current) return;
+    const cRect = mountRef.current.getBoundingClientRect();
+    const pillEl = containerEl.querySelector('.bed-spatial-pill') || containerEl;
+    const pRect = pillEl.getBoundingClientRect();
+
+    // 1. Khoảng cách theo phương dọc (Y)
+    const spaceAbove = pRect.top - cRect.top;
+    const spaceBelow = cRect.bottom - pRect.bottom;
+
+    // Chiều cao card trung bình ~330px.
+    // Nếu khoảng trống phía trên < 360px và phía dưới rộng hơn hoặc đủ chỗ (>= 240px) -> Lật xuống dưới!
+    if (spaceAbove < 360 && spaceBelow >= 240) {
+      containerEl.classList.add('placement-bottom');
+      containerEl.classList.remove('placement-top');
+    } else {
+      containerEl.classList.add('placement-top');
+      containerEl.classList.remove('placement-bottom');
+    }
+
+    // 2. Khoảng cách theo phương ngang (X)
+    const pillCenter = pRect.left + pRect.width / 2;
+    const distFromLeft = pillCenter - cRect.left;
+    const distFromRight = cRect.right - pillCenter;
+    const halfCardWidth = 175; // 350px / 2
+
+    if (distFromLeft < halfCardWidth + 16) {
+      // Sát mép trái màn hình
+      containerEl.classList.add('align-left');
+      containerEl.classList.remove('align-right', 'align-center');
+    } else if (distFromRight < halfCardWidth + 16) {
+      // Sát mép phải màn hình
+      containerEl.classList.add('align-right');
+      containerEl.classList.remove('align-left', 'align-center');
+    } else {
+      // Căn giữa
+      containerEl.classList.add('align-center');
+      containerEl.classList.remove('align-left', 'align-right');
+    }
+  };
+
   // Tạo Floating Spatial Card bằng CSS2D (Mặc định hiển thị pill gọn gàng, hover hiển thị đầy đủ thông tin & action)
   const createBedCSS2DElement = (bed, room, session) => {
     const statusKey = session ? (session.status || 'in_progress') : 'available';
@@ -1289,6 +1332,14 @@ export default function Bed3DViewer({
       };
     }
 
+    div.onmouseenter = () => {
+      updatePopupPlacement(div);
+      div.classList.add('is-hovered');
+    };
+    div.onmouseleave = () => {
+      div.classList.remove('is-hovered');
+    };
+
     div.onclick = (e) => {
       e.stopPropagation();
     };
@@ -1358,6 +1409,15 @@ export default function Bed3DViewer({
     controls.target.set(0, 1.2, 5);
     controlsRef.current = controls;
 
+    // Cập nhật vị trí popup linh hoạt theo góc quay camera
+    controls.addEventListener('change', () => {
+      bedMeshesRef.current.forEach(item => {
+        if (item.labelObj?.element && (item.labelObj.element.classList.contains('is-hovered') || item.labelObj.element.matches(':hover'))) {
+          updatePopupPlacement(item.labelObj.element);
+        }
+      });
+    });
+
     // 6. Ánh sáng Kiến Trúc Studio & Đèn sảnh ấm cúng
     const hemiLight = new THREE.HemisphereLight(
       isDark ? 0x93c5fd : 0xffedd5,
@@ -1425,6 +1485,7 @@ export default function Bed3DViewer({
           bedMeshesRef.current.forEach((item, id) => {
             if (item.labelObj && item.labelObj.element) {
               if (id === bId) {
+                updatePopupPlacement(item.labelObj.element);
                 item.labelObj.element.classList.add('is-hovered');
               } else if (!item.labelObj.element.matches(':hover')) {
                 item.labelObj.element.classList.remove('is-hovered');
@@ -2206,7 +2267,7 @@ export default function Bed3DViewer({
         : 'h-[690px] border-slate-200/80 dark:border-slate-800'
     } ${isDark ? 'bg-[#090d16]' : 'bg-[#f8fafc]'}`}>
 
-      {/* Scoped CSS cho Thẻ Không gian 3D & Hiệu ứng Hover nở rộng thông tin */}
+      {/* Scoped CSS cho Thẻ Không gian 3D & Hiệu ứng Hover nở rộng thông tin thích ứng thông minh */}
       <style>{`
         .bed-spatial-container {
           position: relative;
@@ -2224,22 +2285,22 @@ export default function Bed3DViewer({
         .bed-spatial-pill {
           display: inline-flex;
           align-items: center;
-          transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
           opacity: 1;
           transform: scale(1);
           pointer-events: auto;
         }
         .bed-spatial-container:hover .bed-spatial-pill,
         .bed-spatial-container.is-hovered .bed-spatial-pill {
-          opacity: 0;
-          transform: scale(0.92);
-          pointer-events: none;
+          transform: scale(1.05);
+          border-color: rgba(56, 189, 248, 0.7);
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
         }
         .bed-spatial-card {
           position: absolute;
-          bottom: -10px;
-          left: 50%;
-          transform: translate(-50%, 6px) scale(0.95);
+          width: 340px;
+          max-width: calc(100vw - 32px);
+          max-height: calc(100vh - 120px);
           opacity: 0;
           pointer-events: none;
           visibility: hidden;
@@ -2248,20 +2309,109 @@ export default function Bed3DViewer({
                       visibility 0.22s;
           z-index: 1001;
         }
-        .bed-spatial-container:hover .bed-spatial-card,
-        .bed-spatial-container.is-hovered .bed-spatial-card {
+
+        /* 1. Mặc định / Phía trên (placement-top) */
+        .bed-spatial-container:not(.placement-bottom) .bed-spatial-card,
+        .bed-spatial-container.placement-top .bed-spatial-card {
+          bottom: calc(100% + 10px);
+          top: auto;
+        }
+        .bed-spatial-container:not(.placement-bottom):not(.align-left):not(.align-right) .bed-spatial-card,
+        .bed-spatial-container.placement-top.align-center .bed-spatial-card {
+          left: 50%;
+          right: auto;
+          transform: translate(-50%, 6px) scale(0.96);
+        }
+        .bed-spatial-container:not(.placement-bottom):not(.align-left):not(.align-right):hover .bed-spatial-card,
+        .bed-spatial-container:not(.placement-bottom):not(.align-left):not(.align-right).is-hovered .bed-spatial-card,
+        .bed-spatial-container.placement-top.align-center:hover .bed-spatial-card,
+        .bed-spatial-container.placement-top.align-center.is-hovered .bed-spatial-card {
           opacity: 1;
           pointer-events: auto;
           visibility: visible;
           transform: translate(-50%, 0) scale(1);
         }
-        .bed-spatial-card::after {
+
+        /* 2. Lật xuống phía dưới (placement-bottom) khi phía trên sát mép hoặc bị khuất */
+        .bed-spatial-container.placement-bottom .bed-spatial-card {
+          top: calc(100% + 10px);
+          bottom: auto;
+        }
+        .bed-spatial-container.placement-bottom:not(.align-left):not(.align-right) .bed-spatial-card,
+        .bed-spatial-container.placement-bottom.align-center .bed-spatial-card {
+          left: 50%;
+          right: auto;
+          transform: translate(-50%, -6px) scale(0.96);
+        }
+        .bed-spatial-container.placement-bottom:not(.align-left):not(.align-right):hover .bed-spatial-card,
+        .bed-spatial-container.placement-bottom:not(.align-left):not(.align-right).is-hovered .bed-spatial-card,
+        .bed-spatial-container.placement-bottom.align-center:hover .bed-spatial-card,
+        .bed-spatial-container.placement-bottom.align-center.is-hovered .bed-spatial-card {
+          opacity: 1;
+          pointer-events: auto;
+          visibility: visible;
+          transform: translate(-50%, 0) scale(1);
+        }
+
+        /* 3. Căn sát mép trái (align-left) */
+        .bed-spatial-container.align-left .bed-spatial-card {
+          left: 0 !important;
+          right: auto !important;
+        }
+        .bed-spatial-container:not(.placement-bottom).align-left .bed-spatial-card,
+        .bed-spatial-container.placement-top.align-left .bed-spatial-card {
+          transform: translate(0, 6px) scale(0.96);
+        }
+        .bed-spatial-container.placement-bottom.align-left .bed-spatial-card {
+          transform: translate(0, -6px) scale(0.96);
+        }
+        .bed-spatial-container.align-left:hover .bed-spatial-card,
+        .bed-spatial-container.align-left.is-hovered .bed-spatial-card {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          visibility: visible !important;
+          transform: translate(0, 0) scale(1) !important;
+        }
+
+        /* 4. Căn sát mép phải (align-right) */
+        .bed-spatial-container.align-right .bed-spatial-card {
+          right: 0 !important;
+          left: auto !important;
+        }
+        .bed-spatial-container:not(.placement-bottom).align-right .bed-spatial-card,
+        .bed-spatial-container.placement-top.align-right .bed-spatial-card {
+          transform: translate(0, 6px) scale(0.96);
+        }
+        .bed-spatial-container.placement-bottom.align-right .bed-spatial-card {
+          transform: translate(0, -6px) scale(0.96);
+        }
+        .bed-spatial-container.align-right:hover .bed-spatial-card,
+        .bed-spatial-container.align-right.is-hovered .bed-spatial-card {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          visibility: visible !important;
+          transform: translate(0, 0) scale(1) !important;
+        }
+
+        /* Cầu nối bắt chuột (hit bridge) */
+        .bed-spatial-container:not(.placement-bottom) .bed-spatial-card::after,
+        .bed-spatial-container.placement-top .bed-spatial-card::after {
           content: '';
           position: absolute;
           top: 100%;
           left: -20px;
           right: -20px;
-          height: 35px;
+          height: 25px;
+          pointer-events: auto;
+        }
+        .bed-spatial-container.placement-bottom .bed-spatial-card::after {
+          content: '';
+          position: absolute;
+          bottom: 100%;
+          top: auto;
+          left: -20px;
+          right: -20px;
+          height: 25px;
           pointer-events: auto;
         }
       `}</style>
