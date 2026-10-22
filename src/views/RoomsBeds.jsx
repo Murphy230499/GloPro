@@ -1016,9 +1016,10 @@ export default function RoomsBeds() {
   };
 
   const handleBedMouseLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredBedId(null);
-    }, 250);
+    }, 350);
   };
 
   const handleHoverCardMouseEnter = () => {
@@ -1767,17 +1768,21 @@ export default function RoomsBeds() {
                         >
                           {/* Hover Popover Card (Hiển thị thông minh chống che khuất) */}
                           {hoveredBedId === bed.id && session && (
-                            <div className={`absolute z-[100] pointer-events-auto ${
-                              hoverPosition.placement === 'bottom'
-                                ? 'top-[calc(100%+8px)]'
-                                : 'bottom-[calc(100%+8px)]'
-                            } ${
-                              hoverPosition.align === 'left'
-                                ? 'left-0'
-                                : hoverPosition.align === 'right'
-                                ? 'right-0'
-                                : 'left-1/2 -translate-x-1/2'
-                            }`}>
+                            <div 
+                              onMouseEnter={handleHoverCardMouseEnter}
+                              onMouseLeave={handleBedMouseLeave}
+                              className={`absolute z-[100] pointer-events-auto ${
+                                hoverPosition.placement === 'bottom'
+                                  ? 'top-[calc(100%+8px)]'
+                                  : 'bottom-[calc(100%+8px)]'
+                              } ${
+                                hoverPosition.align === 'left'
+                                  ? 'left-0'
+                                  : hoverPosition.align === 'right'
+                                  ? 'right-0'
+                                  : 'left-1/2 -translate-x-1/2'
+                              }`}
+                            >
                               <BedHoverCard
                                 bed={bed}
                                 room={group.room}

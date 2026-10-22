@@ -924,6 +924,8 @@ export default function Bed3DViewer({
     const customerName = session?.customer_name || customer.name || (isOccupied ? t('rooms_beds.guest', 'Khách vãng lai') : '');
     const customerPhone = session?.customer_phone || customer.phone || '—';
     const customerDob = customer.dob || customer.birthday || '—';
+    const customerAvatar = session?.customer_avatar || customer.avatar_url || null;
+    const customerInitial = (customerName || 'K').slice(0, 1).toUpperCase();
 
     // Danh sách dịch vụ thực hiện trên giường này
     const rawServices = (session?.services && session.services.length > 0)
@@ -958,9 +960,10 @@ export default function Bed3DViewer({
       const key = matched?.id || sId || sName;
       const finalName = matched?.full_name || matched?.name || sName;
       const finalColor = svc.staff_color || matched?.avatar_color || '#0ea5e9';
+      const finalAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
 
       if (!staffMap.has(key)) {
-        staffMap.set(key, { name: finalName, color: finalColor, count: 1 });
+        staffMap.set(key, { name: finalName, color: finalColor, avatar_url: finalAvatar, count: 1 });
       }
     });
 
@@ -972,6 +975,7 @@ export default function Bed3DViewer({
       staffMap.set(sName, {
         name: matched?.full_name || matched?.name || sName,
         color: matched?.avatar_color || '#0ea5e9',
+        avatar_url: matched?.avatar_url || null,
         count: 1
       });
     }
@@ -1049,7 +1053,7 @@ export default function Bed3DViewer({
             </div>
             <div class="space-y-1 pt-1">
               <div class="flex items-center justify-between text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}">
-                <span>Đang dọn dẹp...</span>
+                <span>Tiến độ dọn dẹp...</span>
                 <span class="font-bold text-teal-400">
                   ${cleaningInfo ? `Còn ${cleaningInfo.remainingMinutes} phút` : 'Đang xử lý'}
                 </span>
@@ -1093,26 +1097,35 @@ export default function Bed3DViewer({
             </button>
           </div>
         ` : isOccupied ? `
-          <!-- Khách hàng (Không hiển thị avatar tròn) -->
-          <div class="py-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${customerName}</h4>
-              ${customerPhone !== '—' ? `
-                <div class="flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'} shrink-0">
-                  ${svgPhone}
-                  <span>${customerPhone}</span>
+          <!-- Khách hàng kèm Avatar -->
+          <div class="py-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'} flex items-center gap-2.5">
+            ${customerAvatar ? `
+              <img src="${customerAvatar}" alt="${customerName}" class="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ${isDark ? 'ring-white/20' : 'ring-slate-200'}" />
+            ` : `
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm ring-2 ${isDark ? 'ring-white/10' : 'ring-slate-200'}">
+                ${customerInitial}
+              </div>
+            `}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1.5">
+                <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${customerName}</h4>
+                ${customerPhone !== '—' ? `
+                  <div class="flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'} shrink-0">
+                    ${svgPhone}
+                    <span>${customerPhone}</span>
+                  </div>
+                ` : ''}
+              </div>
+              ${customerDob !== '—' ? `
+                <div class="flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-0.5">
+                  ${svgCalendar}
+                  <span>Ngày sinh: ${customerDob}</span>
                 </div>
               ` : ''}
             </div>
-            ${customerDob !== '—' ? `
-              <div class="flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-1">
-                ${svgCalendar}
-                <span>Ngày sinh: ${customerDob}</span>
-              </div>
-            ` : ''}
           </div>
 
-          <!-- KTV xếp vào vị trí (Không hiển thị avatar tròn) -->
+          <!-- KTV xếp vào vị trí kèm Avatar -->
           <div class="py-2 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
             <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1.5">
               <span>Nhân viên xếp vào vị trí (${assignedStaffList.length})</span>
@@ -1128,10 +1141,17 @@ export default function Bed3DViewer({
             ${assignedStaffList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5">
                 ${assignedStaffList.map(st => `
-                  <div class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold border ${
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl text-xs font-semibold border ${
                     isDark ? 'bg-sky-500/10 border-sky-500/30 text-sky-300' : 'bg-sky-50 border-sky-200 text-sky-700'
                   }">
-                    <span class="text-[11px] truncate max-w-[140px]">${st.name}</span>
+                    ${st.avatar_url ? `
+                      <img src="${st.avatar_url}" alt="${st.name}" class="w-4 h-4 rounded-full object-cover shrink-0" />
+                    ` : `
+                      <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0" style="background: ${st.color || '#0ea5e9'};">
+                        ${(st.name || 'N').slice(0, 1).toUpperCase()}
+                      </div>
+                    `}
+                    <span class="text-[11px] truncate max-w-[130px]">${st.name}</span>
                   </div>
                 `).join('')}
               </div>
@@ -1146,24 +1166,44 @@ export default function Bed3DViewer({
               Dịch vụ thực hiện (${servicesList.length})
             </div>
             <div class="space-y-1.5 max-h-[105px] overflow-y-auto pr-1">
-              ${servicesList.map(svc => `
-                <div class="flex items-center justify-between text-xs p-1.5 rounded-xl ${
-                  isDark ? 'bg-white/5 border border-white/5' : 'bg-slate-50/90 border border-slate-100'
-                }">
-                  <div class="min-w-0 flex-1 pr-2">
-                    <div class="font-semibold truncate ${isDark ? 'text-white' : 'text-slate-800'}">
-                      ${svc.service_name || svc.name || 'Dịch vụ'}
-                      ${svc.is_from_package ? `<span class="ml-1 text-[9px] px-1 py-0.2 rounded font-normal bg-emerald-500/15 text-emerald-400">Gói</span>` : ''}
+              ${servicesList.map(svc => {
+                const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
+                const matched = (callbacksRef.current.staff || []).find(st =>
+                  (svc.staff_id && st.id === svc.staff_id) ||
+                  (sName && (st.full_name === sName || st.name === sName))
+                );
+                const sAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
+                const sColor = svc.staff_color || matched?.avatar_color || '#0ea5e9';
+                const sInitial = (sName || 'K').slice(0, 1).toUpperCase();
+
+                return `
+                  <div class="flex items-center justify-between text-xs p-1.5 rounded-xl ${
+                    isDark ? 'bg-white/5 border border-white/5' : 'bg-slate-50/90 border border-slate-100'
+                  }">
+                    <div class="min-w-0 flex-1 pr-2">
+                      <div class="font-semibold truncate ${isDark ? 'text-white' : 'text-slate-800'}">
+                        ${svc.service_name || svc.name || 'Dịch vụ'}
+                        ${svc.is_from_package ? `<span class="ml-1 text-[9px] px-1 py-0.2 rounded font-normal bg-emerald-500/15 text-emerald-400">Gói</span>` : ''}
+                      </div>
+                      ${sName ? `
+                        <div class="flex items-center gap-1 mt-0.5">
+                          ${sAvatar ? `
+                            <img src="${sAvatar}" alt="${sName}" class="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                          ` : `
+                            <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7.5px] font-bold text-white shrink-0" style="background: ${sColor};">
+                              ${sInitial}
+                            </div>
+                          `}
+                          <span class="text-[10px] text-sky-400 truncate">KTV: ${sName}</span>
+                        </div>
+                      ` : ''}
                     </div>
-                    ${svc.staff_name ? `
-                      <div class="text-[10px] text-sky-400 truncate mt-0.5">KTV: ${svc.staff_name}</div>
-                    ` : ''}
+                    <div class="font-bold shrink-0 text-right ${isDark ? 'text-slate-200' : 'text-slate-900'}">
+                      ${svc.is_from_package ? '0 ₫' : formatVND(svc.price || 0)}
+                    </div>
                   </div>
-                  <div class="font-bold shrink-0 text-right ${isDark ? 'text-slate-200' : 'text-slate-900'}">
-                    ${svc.is_from_package ? '0 ₫' : formatVND(svc.price || 0)}
-                  </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           </div>
 
@@ -1313,28 +1353,51 @@ export default function Bed3DViewer({
       };
     }
 
+    let hoverTimeout = null;
+
+    const openPopup = () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = null;
+      }
+      updatePopupPlacement(div);
+      div.classList.add('is-hovered');
+      div.style.zIndex = '999999';
+      if (div.parentNode && div.parentNode.lastElementChild !== div) {
+        div.parentNode.appendChild(div);
+      }
+    };
+
+    const closePopup = () => {
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      hoverTimeout = setTimeout(() => {
+        div.classList.remove('is-hovered');
+        div.style.zIndex = '10';
+      }, 350);
+    };
+
+    div.onmouseenter = openPopup;
+    div.onmouseleave = closePopup;
+
     const cardEl = div.querySelector('.bed-spatial-card');
     if (cardEl) {
-      cardEl.onclick = (e) => {
-        if (!e.target.closest('button')) {
+      cardEl.onmouseenter = openPopup;
+      cardEl.onmouseleave = closePopup;
+
+      // Chặn OrbitControls bắt các sự kiện chuột/chạm/lăn chuột bên trong thẻ popup
+      ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'wheel', 'touchstart', 'touchend'].forEach(evt => {
+        cardEl.addEventListener(evt, (e) => {
           e.stopPropagation();
+        }, { passive: false });
+      });
+
+      cardEl.onclick = (e) => {
+        e.stopPropagation();
+        if (!e.target.closest('button')) {
           callbacksRef.current.onSelectBed?.(bed);
         }
       };
     }
-
-    div.onmouseenter = () => {
-      updatePopupPlacement(div);
-      div.classList.add('is-hovered');
-      div.style.zIndex = '999999';
-      if (div.parentNode) {
-        div.parentNode.appendChild(div);
-      }
-    };
-    div.onmouseleave = () => {
-      div.classList.remove('is-hovered');
-      div.style.zIndex = '10';
-    };
 
     div.onclick = (e) => {
       e.stopPropagation();
@@ -2408,9 +2471,9 @@ export default function Bed3DViewer({
           content: '';
           position: absolute;
           top: 100%;
-          left: -20px;
-          right: -20px;
-          height: 25px;
+          left: -30px;
+          right: -30px;
+          height: 32px;
           pointer-events: auto;
         }
         .bed-spatial-container.placement-bottom .bed-spatial-card::after {
@@ -2418,9 +2481,9 @@ export default function Bed3DViewer({
           position: absolute;
           bottom: 100%;
           top: auto;
-          left: -20px;
-          right: -20px;
-          height: 25px;
+          left: -30px;
+          right: -30px;
+          height: 32px;
           pointer-events: auto;
         }
       `}</style>

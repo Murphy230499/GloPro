@@ -5,6 +5,7 @@ import {
   Building2, Clock, Phone, Calendar, User, 
   ArrowRightLeft, Play, CreditCard, LogOut, Sparkles, Check, AlertCircle 
 } from 'lucide-react';
+import Avatar from '@/components/Avatar';
 import { formatVND } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 
@@ -95,6 +96,7 @@ export default function BedHoverCard({
   const customerName = session?.customer_name || customer.name || 'Khách hàng';
   const customerPhone = session?.customer_phone || customer.phone || '—';
   const customerDob = customer.dob || customer.birthday || '—';
+  const customerAvatar = session?.customer_avatar || customer.avatar_url || null;
 
   // Services list specifically assigned to this bed
   const servicesList = React.useMemo(() => {
@@ -125,7 +127,7 @@ export default function BedHoverCard({
       const key = matched?.id || sId || sName;
       const finalName = matched?.full_name || matched?.name || sName;
       const finalAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
-      const finalColor = svc.staff_color || matched?.avatar_color || '#3B82F6';
+      const finalColor = svc.staff_color || matched?.avatar_color || '#0ea5e9';
 
       if (!map.has(key)) {
         map.set(key, {
@@ -152,7 +154,7 @@ export default function BedHoverCard({
         id: key,
         name: matched?.full_name || matched?.name || sName,
         avatar_url: matched?.avatar_url || null,
-        color: matched?.avatar_color || '#3B82F6',
+        color: matched?.avatar_color || '#0ea5e9',
         services: []
       });
     }
@@ -173,7 +175,8 @@ export default function BedHoverCard({
     <div 
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="w-[360px] sm:w-[390px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150"
+      onClick={(e) => e.stopPropagation()}
+      className="relative w-[360px] sm:w-[390px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 text-slate-800 font-sans z-50 text-left transition-all animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-inset-3 before:-z-10 before:pointer-events-auto"
       style={{ filter: 'drop-shadow(0 20px 25px rgba(15, 23, 42, 0.15))' }}
     >
       {/* 1. Header: Room | Bed + Status Badge */}
@@ -221,28 +224,37 @@ export default function BedHoverCard({
         </div>
       ) : (
         <>
-          {/* 2. Customer Info (Không hiển thị avatar) */}
-          <div className="py-2.5 border-b border-slate-100">
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="text-sm font-bold text-slate-900 truncate">
-                {customerName}
-              </h4>
-              {customerPhone !== '—' && (
-                <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 shrink-0">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{customerPhone}</span>
+          {/* 2. Customer Info với Avatar */}
+          <div className="flex items-center gap-3 py-3 border-b border-slate-100">
+            <Avatar 
+              src={customerAvatar}
+              name={customerName}
+              size={38}
+              color="#0ea5e9"
+              className="ring-2 ring-slate-100 shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-900 truncate">
+                  {customerName}
+                </h4>
+                {customerPhone !== '—' && (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{customerPhone}</span>
+                  </div>
+                )}
+              </div>
+              {customerDob !== '—' && (
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Ngày sinh: {customerDob}</span>
                 </div>
               )}
             </div>
-            {customerDob !== '—' && (
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Ngày sinh: {customerDob}</span>
-              </div>
-            )}
           </div>
 
-          {/* 3. Services List & Technicians (Không hiển thị avatar) */}
+          {/* 3. Services List & Technicians kèm Avatar */}
           <div className="py-2.5 border-b border-slate-100">
             {/* Header: Service count & Multi-Staff summary */}
             <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
@@ -258,16 +270,23 @@ export default function BedHoverCard({
               ) : null}
             </div>
 
-            {/* Thẻ nhân viên được xếp vào vị trí này (Không avatar) */}
+            {/* Thẻ nhân viên được xếp vào vị trí này kèm avatar */}
             {assignedStaffList.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2.5">
                 {assignedStaffList.map((st) => (
                   <div 
                     key={st.id} 
-                    className="inline-flex items-center px-2 py-0.5 bg-sky-50/80 border border-sky-200/70 rounded-lg text-xs font-semibold text-sky-800 shadow-2xs"
+                    className="inline-flex items-center gap-1.5 bg-sky-50/80 border border-sky-200/70 px-2 py-1 rounded-xl text-xs font-semibold text-sky-800 shadow-2xs"
                     title={`${st.name}: ${st.services.join(', ')}`}
                   >
-                    <span className="text-[11px] truncate max-w-[140px]">
+                    <Avatar
+                      src={st.avatar_url}
+                      name={st.name}
+                      size={18}
+                      color={st.color || '#0ea5e9'}
+                      className="shrink-0"
+                    />
+                    <span className="text-[11px] truncate max-w-[120px]">
                       {st.name}
                     </span>
                   </div>
@@ -280,7 +299,7 @@ export default function BedHoverCard({
               Dịch vụ thực hiện ({servicesList.length})
             </div>
 
-            {/* List of services without staff avatar */}
+            {/* List of services with individual staff avatar */}
             <div className="space-y-2 max-h-[145px] overflow-y-auto custom-scrollbar pr-0.5">
               {servicesList.map((svc, idx) => {
                 const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
@@ -288,7 +307,9 @@ export default function BedHoverCard({
                   (svc.staff_id && st.id === svc.staff_id) || 
                   (sName && (st.full_name === sName || st.name === sName))
                 );
+                const staffAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
                 const staffName = matched?.full_name || matched?.name || sName;
+                const staffColor = svc.staff_color || matched?.avatar_color || '#0ea5e9';
 
                 return (
                   <div key={idx} className="flex items-start justify-between text-xs gap-2 p-2 rounded-xl bg-slate-50/80 border border-slate-100/90 hover:bg-slate-50 transition-colors">
@@ -302,12 +323,18 @@ export default function BedHoverCard({
                         )}
                       </div>
                       
-                      {/* Technician without Avatar */}
+                      {/* Technician with Avatar */}
                       <div className="flex items-center gap-1.5 mt-1">
                         {staffName ? (
-                          <div className="inline-flex items-center text-[11px] font-medium text-sky-700 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
-                            <span className="text-slate-400 mr-1 text-[10px]">KTV:</span>
-                            <span className="truncate max-w-[150px]" title={staffName}>
+                          <div className="inline-flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
+                            <Avatar
+                              src={staffAvatar}
+                              name={staffName}
+                              size={16}
+                              color={staffColor}
+                              className="shrink-0"
+                            />
+                            <span className="text-[11px] font-medium text-slate-700 truncate max-w-[150px]" title={staffName}>
                               {staffName}
                             </span>
                           </div>
@@ -341,9 +368,9 @@ export default function BedHoverCard({
               <span>Đã qua: <strong>{elapsedMinutes} phút</strong></span>
               <span>
                 {status === 'overtime' ? (
-                  <strong className="text-purple-600">100% (quá {overtimeMinutes} phút)</strong>
+                  <strong className="text-rose-600 font-bold">100% (quá {overtimeMinutes} phút)</strong>
                 ) : status === 'waiting' ? (
-                  <strong className="text-blue-600">0% (Đang chờ)</strong>
+                  <strong className="text-sky-600">0% (Đang chờ)</strong>
                 ) : (
                   <strong className="text-slate-700">{progressPercent}%</strong>
                 )}
