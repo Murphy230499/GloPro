@@ -5,7 +5,6 @@ import {
   Building2, Clock, Phone, Calendar, User, 
   ArrowRightLeft, Play, CreditCard, LogOut, Sparkles, Check, AlertCircle 
 } from 'lucide-react';
-import Avatar from '@/components/Avatar';
 import { formatVND } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 
@@ -222,30 +221,28 @@ export default function BedHoverCard({
         </div>
       ) : (
         <>
-          {/* 2. Customer Info */}
-          <div className="flex items-center gap-3 py-3 border-b border-slate-100">
-            <Avatar 
-              name={customerName}
-              size="md"
-              className="w-10 h-10 ring-2 ring-slate-100 shrink-0"
-            />
-            <div className="min-w-0 flex-1">
+          {/* 2. Customer Info (Không hiển thị avatar) */}
+          <div className="py-2.5 border-b border-slate-100">
+            <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-bold text-slate-900 truncate">
                 {customerName}
               </h4>
-              <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                <span>{customerPhone}</span>
-                {customerDob !== '—' && (
-                  <>
-                    <span className="text-slate-300">•</span>
-                    <span>{customerDob}</span>
-                  </>
-                )}
-              </div>
+              {customerPhone !== '—' && (
+                <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 shrink-0">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{customerPhone}</span>
+                </div>
+              )}
             </div>
+            {customerDob !== '—' && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Ngày sinh: {customerDob}</span>
+              </div>
+            )}
           </div>
 
-          {/* 3. Services List & Technicians with Avatars */}
+          {/* 3. Services List & Technicians (Không hiển thị avatar) */}
           <div className="py-2.5 border-b border-slate-100">
             {/* Header: Service count & Multi-Staff summary */}
             <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
@@ -253,7 +250,7 @@ export default function BedHoverCard({
                 Nhân viên xếp vào vị trí ({assignedStaffList.length})
               </span>
               {assignedStaffList.length > 1 ? (
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+                <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200/60">
                   {assignedStaffList.length} KTV phối hợp
                 </span>
               ) : assignedStaffList.length === 1 ? (
@@ -261,23 +258,16 @@ export default function BedHoverCard({
               ) : null}
             </div>
 
-            {/* Thẻ nhân viên được xếp vào vị trí này */}
+            {/* Thẻ nhân viên được xếp vào vị trí này (Không avatar) */}
             {assignedStaffList.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2.5">
                 {assignedStaffList.map((st) => (
                   <div 
                     key={st.id} 
-                    className="inline-flex items-center gap-1.5 bg-blue-50/70 border border-blue-200/70 px-2 py-1 rounded-xl text-xs shadow-2xs"
+                    className="inline-flex items-center px-2 py-0.5 bg-sky-50/80 border border-sky-200/70 rounded-lg text-xs font-semibold text-sky-800 shadow-2xs"
                     title={`${st.name}: ${st.services.join(', ')}`}
                   >
-                    <Avatar
-                      src={st.avatar_url}
-                      name={st.name}
-                      size={18}
-                      color={st.color}
-                      className="shrink-0"
-                    />
-                    <span className="font-bold text-slate-800 text-[11px] truncate max-w-[120px]">
+                    <span className="text-[11px] truncate max-w-[140px]">
                       {st.name}
                     </span>
                   </div>
@@ -290,7 +280,7 @@ export default function BedHoverCard({
               Dịch vụ thực hiện ({servicesList.length})
             </div>
 
-            {/* List of services with individual staff avatar */}
+            {/* List of services without staff avatar */}
             <div className="space-y-2 max-h-[145px] overflow-y-auto custom-scrollbar pr-0.5">
               {servicesList.map((svc, idx) => {
                 const sName = svc.staff_name || svc.staff?.name || svc.staff?.full_name || '';
@@ -298,9 +288,7 @@ export default function BedHoverCard({
                   (svc.staff_id && st.id === svc.staff_id) || 
                   (sName && (st.full_name === sName || st.name === sName))
                 );
-                const staffAvatar = svc.staff_avatar || matched?.avatar_url || svc.staff?.avatar_url || null;
                 const staffName = matched?.full_name || matched?.name || sName;
-                const staffColor = svc.staff_color || matched?.avatar_color || '#3B82F6';
 
                 return (
                   <div key={idx} className="flex items-start justify-between text-xs gap-2 p-2 rounded-xl bg-slate-50/80 border border-slate-100/90 hover:bg-slate-50 transition-colors">
@@ -314,18 +302,12 @@ export default function BedHoverCard({
                         )}
                       </div>
                       
-                      {/* Technician with Avatar */}
-                      <div className="flex items-center gap-1.5 mt-1.5">
+                      {/* Technician without Avatar */}
+                      <div className="flex items-center gap-1.5 mt-1">
                         {staffName ? (
-                          <div className="inline-flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
-                            <Avatar
-                              src={staffAvatar}
-                              name={staffName}
-                              size={18}
-                              color={staffColor}
-                              className="shrink-0"
-                            />
-                            <span className="font-medium text-slate-700 truncate max-w-[150px]" title={staffName}>
+                          <div className="inline-flex items-center text-[11px] font-medium text-sky-700 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
+                            <span className="text-slate-400 mr-1 text-[10px]">KTV:</span>
+                            <span className="truncate max-w-[150px]" title={staffName}>
                               {staffName}
                             </span>
                           </div>
