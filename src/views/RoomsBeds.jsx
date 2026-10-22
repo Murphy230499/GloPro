@@ -1873,7 +1873,7 @@ export default function RoomsBeds() {
                                     <span>Vệ sinh & dọn phòng</span>
                                   </div>
                                   <div className="text-[11px] text-slate-500">
-                                    Còn lại: <strong className="text-teal-700 font-mono">{session.cleaning_info?.remainingMinutes || 0} phút</strong>
+                                    Còn lại: <strong className="text-teal-700 font-semibold tabular-nums">{session.cleaning_info?.remainingMinutes || 0} phút</strong>
                                   </div>
                                 </div>
                               ) : isOccupied ? (
@@ -1912,12 +1912,12 @@ export default function RoomsBeds() {
                                   </div>
 
                                   <div className="text-[11px] text-slate-500 font-medium">
-                                    {t('rooms_beds.start', 'Bắt đầu')}: <span className="font-mono text-slate-700">{session.start_time}</span>
+                                    {t('rooms_beds.start', 'Bắt đầu')}: <span className="tabular-nums font-semibold text-slate-700">{session.start_time}</span>
                                     <span className="mx-2 text-slate-300">|</span>
-                                    {t('rooms_beds.end', 'Kết thúc')}: <span className={`font-mono ${isOvertime ? 'text-fuchsia-700 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
+                                    {t('rooms_beds.end', 'Kết thúc')}: <span className={`tabular-nums font-semibold ${isOvertime ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
                                   </div>
                                   {isOvertime && (
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-fuchsia-700 bg-fuchsia-100 px-2 py-1 rounded-lg">
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-1 rounded-lg">
                                       <Clock className="w-3 h-3 shrink-0" />
                                       <span>Quá giờ: +{session.overtime_minutes} phút</span>
                                     </div>
@@ -1971,7 +1971,7 @@ export default function RoomsBeds() {
                               <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
                                 <div className="flex items-center justify-between text-[11px] text-slate-500">
                                   <span>Đang dọn dẹp</span>
-                                  <span className="font-bold text-teal-700 font-mono">
+                                  <span className="font-bold text-teal-700 tabular-nums">
                                     {session.cleaning_info?.remainingSeconds ? `${Math.floor(session.cleaning_info.remainingSeconds / 60)}:${String(session.cleaning_info.remainingSeconds % 60).padStart(2, '0')}` : `${session.cleaning_info?.remainingMinutes || 0}p`}
                                   </span>
                                 </div>
@@ -1988,7 +1988,7 @@ export default function RoomsBeds() {
                                   <span>
                                     {isOccupied ? (
                                       <>
-                                        {t('rooms_beds.elapsed', 'Đã qua')}: <strong className={isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}>{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
+                                        {t('rooms_beds.elapsed', 'Đã qua')}: <strong className={`tabular-nums ${isOvertime ? 'text-rose-600' : 'text-slate-700'}`}>{session?.elapsed_minutes || 0} {t('common.minutes', 'phút')}</strong>
                                       </>
                                     ) : windowInfo?.hasNextAppt ? (
                                       <span className="text-amber-800 font-medium">
@@ -1998,7 +1998,7 @@ export default function RoomsBeds() {
                                       <span>{t('rooms_beds.elapsed', 'Đã qua')}: <strong className="text-slate-700">0 {t('common.minutes', 'phút')}</strong></span>
                                     )}
                                   </span>
-                                  <span className={`font-bold ${isOvertime ? 'text-fuchsia-700' : 'text-slate-700'}`}>
+                                  <span className={`font-bold tabular-nums ${isOvertime ? 'text-rose-600' : 'text-slate-700'}`}>
                                     {isOccupied ? (
                                       isOvertime
                                         ? `100% (+${session?.overtime_minutes || 0}p quá giờ)`

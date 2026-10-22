@@ -191,13 +191,13 @@ function createSignTexture(isDark) {
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.font = 'bold 38px sans-serif';
+  ctx.font = 'bold 38px Inter, sans-serif';
   ctx.fillStyle = isDark ? '#38bdf8' : '#b45309';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('✨ GLOWPRO SALON & SPA ✨', 256, 52);
 
-  ctx.font = '600 18px sans-serif';
+  ctx.font = '600 18px Inter, sans-serif';
   ctx.fillStyle = isDark ? '#94a3b8' : '#78716c';
   ctx.fillText('PREMIUM TREATMENT & WELLNESS', 256, 92);
 
@@ -2371,7 +2371,7 @@ export default function Bed3DViewer({
   const isDark = themeMode === 'dark';
 
   return (
-    <div className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl ${
+    <div className={`relative w-full rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl font-sans ${
       isFullscreen 
         ? 'fixed inset-0 z-50 rounded-none h-screen w-screen border-none' 
         : 'h-[690px] border-slate-200/80 dark:border-slate-800'
@@ -2382,6 +2382,7 @@ export default function Bed3DViewer({
         .room-spatial-badge {
           z-index: 1 !important;
           pointer-events: none !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         }
         .bed-spatial-container {
           position: relative;
@@ -2391,6 +2392,7 @@ export default function Bed3DViewer({
           pointer-events: auto;
           user-select: none;
           z-index: 10;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         }
         .bed-spatial-container:hover,
         .bed-spatial-container.is-hovered {
@@ -2403,6 +2405,7 @@ export default function Bed3DViewer({
           opacity: 1;
           transform: scale(1);
           pointer-events: auto;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         }
         .bed-spatial-container:hover .bed-spatial-pill,
         .bed-spatial-container.is-hovered .bed-spatial-pill {
@@ -2418,6 +2421,7 @@ export default function Bed3DViewer({
           opacity: 0;
           pointer-events: none;
           visibility: hidden;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
           transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
                       transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
                       visibility 0.22s;

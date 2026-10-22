@@ -122,7 +122,7 @@ export default function BedConflictOverrideModal({
             <div className="flex items-center justify-between text-slate-700 pt-0.5">
               <span className="font-semibold text-slate-900">{apptCustomerName}</span>
               {apptCustomerPhone && (
-                <span className="text-slate-500 font-mono text-[11px]">{apptCustomerPhone}</span>
+                <span className="text-slate-500 tabular-nums text-[11px]">{apptCustomerPhone}</span>
               )}
             </div>
             <div className="text-[11px] text-slate-600">
