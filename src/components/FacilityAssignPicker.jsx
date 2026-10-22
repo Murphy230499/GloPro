@@ -384,7 +384,7 @@ export default function FacilityAssignPicker({
   };
 
   const btnPadding = buttonSize === 'xs' 
-    ? 'px-2.5 py-0 h-7 text-xs' 
+    ? 'px-2.5 py-0 h-7.5 sm:h-8 text-xs' 
     : buttonSize === 'sm' 
     ? 'px-2.5 py-1.5 text-xs' 
     : 'px-3 py-2 text-xs';

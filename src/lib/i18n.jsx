@@ -2003,7 +2003,7 @@ const translations = {
     'pos.ticket.discount': 'Giảm giá',
     'pos.ticket.total': 'Tổng tiền',
     'pos.ticket.total_spent': 'Tổng chi tiêu:',
-    'pos.ticket.assign_staff': 'Nhân viên thực hiện / KTV',
+    'pos.ticket.assign_staff': 'Nhân viên',
     'pos.ticket.select_staff_placeholder': 'Chọn nhân viên phục vụ...',
     'pos.ticket.promo_voucher_title': 'Khuyến mãi & Voucher',
     'pos.ticket.promotions_label': 'CHƯƠNG TRÌNH KHUYẾN MÃI (CTKM)',

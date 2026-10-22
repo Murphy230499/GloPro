@@ -774,15 +774,15 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                           </div>
                         </div>
 
-                        {/* Staff & Facility Pickers — unified layout */}
+                        {/* Staff & Facility Pickers — unified parallel layout */}
                         <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-1.5">
                           {/* Staff row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1 shrink-0">
-                              <span>👤</span>
-                              <span>{t('pos.ticket.assign_staff', 'KTV')}:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 w-[76px] shrink-0">
+                              <span className="shrink-0 text-xs">👤</span>
+                              <span className="truncate">{t('pos.ticket.assign_staff', 'Nhân viên')}:</span>
                             </span>
-                            <div className="w-[220px] max-w-[72%] shrink-0">
+                            <div className="flex-1 min-w-0">
                               <StaffAssignPicker
                                 staff={staff}
                                 value={x.staff_id || ''}
@@ -796,12 +796,12 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                           </div>
 
                           {/* Facility row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1 shrink-0">
-                              <span>🛏️</span>
-                              <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 w-[76px] shrink-0">
+                              <span className="shrink-0 text-xs">🛏️</span>
+                              <span className="truncate">{t('rooms_beds.facility_label', 'Vị trí')}:</span>
                             </span>
-                            <div className="w-[220px] max-w-[72%] shrink-0">
+                            <div className="flex-1 min-w-0">
                               <FacilityAssignPicker
                                 value={x.facility_id || ''}
                                 onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
@@ -911,15 +911,15 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                         </div>
                       </div>
 
-                      {/* Staff & Facility Pickers — unified layout */}
+                      {/* Staff & Facility Pickers — unified parallel layout */}
                       <div className="mt-2 pt-2 border-t border-slate-100/80 space-y-1.5">
                         {/* Staff row */}
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 shrink-0">
-                            <span>👤</span>
-                            <span>{t('pos.ticket.assign_staff', 'KTV')}:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 w-[76px] shrink-0">
+                            <span className="shrink-0 text-xs">👤</span>
+                            <span className="truncate">{t('pos.ticket.assign_staff', 'Nhân viên')}:</span>
                           </span>
-                          <div className="w-[240px] max-w-[75%] shrink-0">
+                          <div className="flex-1 min-w-0">
                             <StaffAssignPicker
                               staff={staff}
                               value={x.staff_id || ''}
@@ -933,12 +933,12 @@ export default function TicketColumn({ session, staff, customers, facilities = [
                         </div>
 
                         {/* Facility row */}
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 shrink-0">
-                            <span>🛏️</span>
-                            <span>{t('rooms_beds.facility_label', 'Vị trí')}:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 w-[76px] shrink-0">
+                            <span className="shrink-0 text-xs">🛏️</span>
+                            <span className="truncate">{t('rooms_beds.facility_label', 'Vị trí')}:</span>
                           </span>
-                          <div className="w-[240px] max-w-[75%] shrink-0">
+                          <div className="flex-1 min-w-0">
                             <FacilityAssignPicker
                               value={x.facility_id || ''}
                               onChange={(facId, facName) => updateCart(i, { facility_id: facId, facility_name: facName })}
@@ -1143,7 +1143,7 @@ export default function TicketColumn({ session, staff, customers, facilities = [
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('pos.ticket.assign_staff', 'Nhân viên thực hiện / KTV')}</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('pos.ticket.assign_staff', 'Nhân viên')}</label>
                 <StaffAssignPicker staff={staff} value={editStaffId} isRequested={editIsRequested} onChange={(sid, name, req) => {
                   setEditStaffId(sid);
                   setEditStaffName(name);
