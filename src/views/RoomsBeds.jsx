@@ -1821,7 +1821,7 @@ export default function RoomsBeds() {
                       return (
                         <div
                           key={bed.id}
-                          className={`relative transition-all duration-150 ${hoveredBedId === bed.id ? 'z-50' : 'z-10'}`}
+                          className={`relative h-[216px] transition-all duration-150 ${hoveredBedId === bed.id ? 'z-50' : 'z-10'}`}
                           onMouseEnter={(e) => handleBedMouseEnter(bed.id, e)}
                           onMouseLeave={handleBedMouseLeave}
                         >
@@ -1900,21 +1900,21 @@ export default function RoomsBeds() {
                                 setQuickAssignBed({ bed, room: group.room });
                               }
                             }}
-                            className={`rounded-2xl border-2 ${borderClass} ${cardExtraClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none min-h-[140px] bg-white`}
+                            className={`h-full w-full rounded-2xl border-2 ${borderClass} ${cardExtraClass} p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none bg-white`}
                           >
                             {/* Card Top: Bed Name + Badge */}
-                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                              <span className="font-bold text-slate-800 text-sm">{bed.name}</span>
-                              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${badgeClass}`}>
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 shrink-0">
+                              <span className="font-bold text-slate-800 text-sm truncate">{bed.name}</span>
+                              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0 ${badgeClass}`}>
                                 {badgeText}
                               </span>
                             </div>
 
                             {/* Card Middle: Content */}
-                            <div className="py-2.5 space-y-1.5 flex-1 flex flex-col justify-center">
+                            <div className="py-2 space-y-1.5 flex-1 flex flex-col justify-center min-h-0">
                               {isCleaning ? (
-                                <div className="py-1 space-y-1">
-                                  <div className="text-xs font-semibold text-teal-800 flex items-center gap-1.5">
+                                <div className="py-1 space-y-1 text-center">
+                                  <div className="text-xs font-semibold text-teal-800 flex items-center justify-center gap-1.5">
                                     <Sparkles className="w-3.5 h-3.5 text-teal-600 animate-pulse shrink-0" />
                                     <span>Vệ sinh & dọn phòng</span>
                                   </div>
@@ -1930,47 +1930,57 @@ export default function RoomsBeds() {
 
                                   {/* Thẻ nhân viên được xếp vào vị trí này */}
                                   <div className="py-0.5 min-w-0">
-                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                       <span className="text-[11px] text-slate-400 font-medium shrink-0">KTV:</span>
                                       {bedStaffList.length === 0 ? (
                                         <span className="text-[11px] text-slate-400 italic">Chưa gán</span>
                                       ) : (
-                                        bedStaffList.map((st) => (
-                                          <div
-                                            key={st.id}
-                                            className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-2xs max-w-full transition-colors"
-                                            title={`${st.name}${st.services?.length ? ` - ${st.services.join(', ')}` : ''}`}
-                                          >
-                                            <Avatar
-                                              src={st.avatar_url}
-                                              name={st.name}
-                                              size={18}
-                                              color={st.color}
-                                              className="shrink-0"
-                                            />
-                                            <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]">
-                                              {st.name}
+                                        <>
+                                          {bedStaffList.slice(0, 1).map((st) => (
+                                            <div
+                                              key={st.id}
+                                              className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-2xs min-w-0 max-w-[130px] transition-colors shrink-0"
+                                              title={`${st.name}${st.services?.length ? ` - ${st.services.join(', ')}` : ''}`}
+                                            >
+                                              <Avatar
+                                                src={st.avatar_url}
+                                                name={st.name}
+                                                size={18}
+                                                color={st.color}
+                                                className="shrink-0"
+                                              />
+                                              <span className="text-xs font-semibold text-slate-700 truncate">
+                                                {st.name}
+                                              </span>
+                                            </div>
+                                          ))}
+                                          {bedStaffList.length > 1 && (
+                                            <span 
+                                              className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0 cursor-default"
+                                              title={bedStaffList.slice(1).map(s => s.name).join(', ')}
+                                            >
+                                              +{bedStaffList.length - 1}
                                             </span>
-                                          </div>
-                                        ))
+                                          )}
+                                        </>
                                       )}
                                     </div>
                                   </div>
 
-                                  <div className="text-[11px] text-slate-500 font-medium">
+                                  <div className="text-[11px] text-slate-500 font-medium truncate">
                                     {t('rooms_beds.start', 'Bắt đầu')}: <span className="tabular-nums font-semibold text-slate-700">{session.start_time}</span>
                                     <span className="mx-2 text-slate-300">|</span>
                                     {t('rooms_beds.end', 'Kết thúc')}: <span className={`tabular-nums font-semibold ${isOvertime ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>{session.end_time}</span>
                                   </div>
                                   {isOvertime && (
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-1 rounded-lg">
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-lg shrink-0">
                                       <Clock className="w-3 h-3 shrink-0" />
                                       <span>Quá giờ: +{session.overtime_minutes} phút</span>
                                     </div>
                                   )}
                                 </>
                               ) : windowInfo?.hasNextAppt ? (
-                                <div className="py-0.5 space-y-1.5">
+                                <div className="space-y-1">
                                   <div className="text-xs font-semibold text-emerald-700 flex items-center justify-between">
                                     <span>{t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}</span>
                                     <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded-full border border-amber-200">
@@ -2001,11 +2011,12 @@ export default function RoomsBeds() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="text-center py-1">
-                                  <div className="text-xs font-semibold text-emerald-700">
-                                    {t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}
+                                <div className="text-center py-2 space-y-1">
+                                  <div className="text-xs font-semibold text-emerald-700 flex items-center justify-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>{t('rooms_beds.ready_to_serve', 'Sẵn sàng đón khách')}</span>
                                   </div>
-                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                  <div className="text-[11px] text-slate-400 tabular-nums">
                                     {t('rooms_beds.start', 'Bắt đầu')}: --:--  •  {t('rooms_beds.end', 'Kết thúc')}: --:--
                                   </div>
                                 </div>
@@ -2014,7 +2025,7 @@ export default function RoomsBeds() {
 
                             {/* Card Bottom: Elapsed & Progress Bar */}
                             {isCleaning ? (
-                              <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
+                              <div className="pt-2.5 border-t border-slate-100/80 space-y-1.5 shrink-0">
                                 <div className="flex items-center justify-between text-[11px] text-slate-500">
                                   <span>Đang dọn dẹp</span>
                                   <span className="font-bold text-teal-700 tabular-nums">
@@ -2029,7 +2040,7 @@ export default function RoomsBeds() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="pt-2 border-t border-slate-100/80 space-y-1.5">
+                              <div className="pt-2.5 border-t border-slate-100/80 space-y-1.5 shrink-0">
                                 <div className="flex items-center justify-between text-[11px] text-slate-500">
                                   <span>
                                     {isOccupied ? (
