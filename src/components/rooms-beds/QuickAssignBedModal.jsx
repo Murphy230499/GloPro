@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, User, Phone, Plus, Trash2, Clock, Check, Scissors, Search, UserX, ChevronDown, Sparkles, AlertTriangle } from 'lucide-react';
+import { 
+  X, User, Phone, Plus, Trash2, Clock, Check, Scissors, 
+  Search, UserX, ChevronDown, Sparkles, AlertTriangle, Play 
+} from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/components/Layout';
 import { formatMinutesToTime, timeStringToMinutes } from '@/components/appointments/constants';
