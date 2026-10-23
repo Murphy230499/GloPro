@@ -123,6 +123,7 @@ export function aggregateBedTimelineEvents({
   beds = [],
   appointments = [],
   bedSessions = {},
+  completedBedSessions = [],
   staff = [],
   services = [],
   currentMinutes = (new Date().getHours() * 60 + new Date().getMinutes())
@@ -194,7 +195,7 @@ export function aggregateBedTimelineEvents({
     });
   });
 
-  // 2. Xử lý các Khách vãng lai / Trực tiếp (Bed Sessions)
+  // 2. Xử lý các Khách vãng lai / Trực tiếp đang hoạt động (Bed Sessions)
   // Chỉ hiển thị phiên active nếu ngày được chọn là "Hôm nay"
   if (isSelectedDayToday && bedSessions) {
     Object.entries(bedSessions).forEach(([bedId, session]) => {
@@ -230,10 +231,10 @@ export function aggregateBedTimelineEvents({
         id: `walkin_${session.id || bedId}`,
         originalId: session.id,
         type: 'walk_in', // Khách vãng lai / trực tiếp
-        typeLabel: 'Vãng lai',
+        typeLabel: session.status === 'cleaning' ? 'Dọn dẹp' : 'Vãng lai',
         bed_id: bedId,
         customer_id: session.customer?.id || session.customer_id,
-        customer_name: session.customer_name || session.customer?.name || 'Khách vãng lai',
+        customer_name: session.customer_name || session.customer?.name || (session.status === 'cleaning' ? 'Đang dọn dẹp' : 'Khách vãng lai'),
         customer_phone: session.customer_phone || session.customer?.phone || '',
         staff_id: session.services?.[0]?.staff_id || session.staff_id,
         staff_name: staffName,
@@ -246,6 +247,69 @@ export function aggregateBedTimelineEvents({
         duration_minutes: durationMins,
         status: session.status || 'in_progress',
         is_overtime: isOvertime,
+        price: session.total_price || session.price || 0,
+        notes: session.notes || '',
+        raw: session
+      });
+    });
+  }
+
+  // 3. Xử lý các Phiên giường đã hoàn tất trong ngày (Completed Bed Sessions / Trả phòng)
+  // Giúp xem tổng quan toàn bộ lịch sử phục vụ của từng giường trong ngày
+  if (completedBedSessions && Array.isArray(completedBedSessions)) {
+    completedBedSessions.forEach(session => {
+      if (!session) return;
+      const sessionDate = session.date || (session.completed_at ? String(session.completed_at).slice(0, 10) : getTodayDateString());
+      if (!isSameDay(sessionDate, selectedDate)) return;
+
+      const bedId = session.bed_id;
+      if (!bedId || !result[bedId]) return;
+
+      // Tránh trùng lặp nếu session này đã có trong result[bedId] (ví dụ từ appointment hoặc phiên đang chạy)
+      const isDuplicate = result[bedId].some(e => 
+        (e.originalId && String(e.originalId) === String(session.id || session.originalId)) ||
+        (session.appointment_id && String(e.originalId) === String(session.appointment_id))
+      );
+      if (isDuplicate) return;
+
+      const startMins = parseTimeToMinutes(session.start_time || '08:00');
+      let durationMins = parseInt(session.total_duration_minutes || session.duration || 60, 10);
+      if (isNaN(durationMins) || durationMins <= 0) durationMins = 60;
+
+      let endMins = session.end_time ? parseTimeToMinutes(session.end_time) : (startMins + durationMins);
+      if (endMins <= startMins) endMins = startMins + durationMins;
+
+      // Dịch vụ
+      const serviceName = session.services && session.services.length > 0
+        ? session.services.map(s => s.name || s.service_name).join(', ')
+        : (session.service_name || 'Dịch vụ đã hoàn tất');
+
+      // KTV
+      const staffName = session.services?.[0]?.staff_name || 
+                        session.staff_name || 
+                        'KTV Phục vụ';
+
+      result[bedId].push({
+        id: `completed_${session.id || bedId}_${startMins}`,
+        originalId: session.id,
+        type: 'completed_session',
+        typeLabel: 'Đã trả phòng',
+        bed_id: bedId,
+        customer_id: session.customer?.id || session.customer_id,
+        customer_name: session.customer_name || session.customer?.name || 'Khách phục vụ xong',
+        customer_phone: session.customer_phone || session.customer?.phone || '',
+        customer: session.customer,
+        staff_id: session.services?.[0]?.staff_id || session.staff_id,
+        staff_name: staffName,
+        service_name: serviceName,
+        services: session.services || [{ name: serviceName, price: session.price || 0 }],
+        start_time: formatMinutesToString(startMins),
+        end_time: formatMinutesToString(endMins),
+        start_minutes: startMins,
+        end_minutes: endMins,
+        duration_minutes: durationMins,
+        status: 'completed',
+        is_overtime: false,
         price: session.total_price || session.price || 0,
         notes: session.notes || '',
         raw: session

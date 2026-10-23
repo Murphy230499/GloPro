@@ -142,6 +142,11 @@ export default function BedTimelineView({
 
   // Xác định trạng thái của sự kiện trên timeline
   const getTimelineEventStatus = (event, bed) => {
+    // 0. Nếu sự kiện đã hoàn tất hoặc là phiên lịch sử đã trả phòng
+    if (event.status === 'completed' || event.type === 'completed_session') {
+      return 'completed';
+    }
+
     const session = bedSessions[bed?.id] || 
                     (bed?.db_id && bedSessions[bed.db_id]) ||
                     (bed?.id && ensureValidUuid(bed.id) && bedSessions[ensureValidUuid(bed.id)]);
@@ -153,6 +158,7 @@ export default function BedTimelineView({
     );
 
     if (isCurrentSessionEvent && session?.status) {
+      if (session.status === 'completed') return 'completed';
       if (session.status === 'overtime' || event.is_overtime) return 'overtime';
       if (session.status === 'nearly_finished') return 'nearly_finished';
       if (session.status === 'cleaning') return 'cleaning';
@@ -228,10 +234,10 @@ export default function BedTimelineView({
       case 'completed':
         return {
           status,
-          label: 'ĐÃ XONG',
-          container: 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs opacity-80',
-          badge: 'bg-slate-200/80 text-slate-700 border border-slate-300',
-          dot: 'bg-slate-400'
+          label: 'ĐÃ TRẢ PHÒNG',
+          container: 'bg-slate-100/95 border-slate-300 text-slate-800 hover:bg-slate-200/80 shadow-2xs opacity-90',
+          badge: 'bg-slate-200 text-slate-700 border border-slate-300 font-semibold',
+          dot: 'bg-emerald-500'
         };
       case 'reserved':
       default:
@@ -284,7 +290,8 @@ export default function BedTimelineView({
                           (bed?.db_id && bedSessions[bed.db_id]) ||
                           (bed?.id && ensureValidUuid(bed.id) && bedSessions[ensureValidUuid(bed.id)]);
 
-    const isCurrentSessionEvent = activeSession && (
+    const isCompleted = event.status === 'completed' || event.type === 'completed_session';
+    const isCurrentSessionEvent = !isCompleted && activeSession && (
       (event.type === 'walk_in' && (String(event.originalId) === String(activeSession.id) || !activeSession.appointment_id)) ||
       (activeSession.appointment_id && String(event.originalId) === String(activeSession.appointment_id)) ||
       (isToday && currentMinutes >= event.start_minutes && currentMinutes <= event.end_minutes)
@@ -312,12 +319,14 @@ export default function BedTimelineView({
       end_time: event.end_time,
       duration_minutes: event.duration_minutes,
       price: event.price || 0,
-      status: event.type === 'appointment' ? 'reserved' : (event.status || 'in_progress'),
+      status: isCompleted ? 'completed' : (event.type === 'appointment' ? 'reserved' : (event.status || 'in_progress')),
       elapsed_minutes: Math.max(0, currentMinutes - event.start_minutes),
       remaining_minutes: Math.max(0, event.end_minutes - currentMinutes),
-      progress_percent: event.duration_minutes > 0 
-        ? Math.min(100, Math.max(0, Math.round(((currentMinutes - event.start_minutes) / event.duration_minutes) * 100))) 
-        : 0
+      progress_percent: isCompleted ? 100 : (
+        event.duration_minutes > 0 
+          ? Math.min(100, Math.max(0, Math.round(((currentMinutes - event.start_minutes) / event.duration_minutes) * 100))) 
+          : 0
+      )
     };
 
     const status = getTimelineEventStatus(event, bed);
@@ -512,6 +521,8 @@ export default function BedTimelineView({
             <span>Đặt trước</span>
             <span className="w-2.5 h-2.5 rounded bg-emerald-200 border border-emerald-400 ml-1.5" />
             <span>Vãng lai</span>
+            <span className="w-2.5 h-2.5 rounded bg-slate-200 border border-slate-400 ml-1.5" />
+            <span>Đã trả phòng</span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-500 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
             <Info className="w-3.5 h-3.5 text-blue-500" />

@@ -231,6 +231,7 @@ export function releaseCustomerBedSessions(bedSessions = {}, identifier = {}) {
   const { masterSessionId, customerId, customerPhone, customerName, bedId, bedIds = [] } = identifier;
   const updated = { ...bedSessions };
   const releasedBedIds = [];
+  const releasedSessions = [];
 
   const explicitBedIds = new Set(bedIds.filter(Boolean));
   if (bedId) explicitBedIds.add(bedId);
@@ -271,10 +272,11 @@ export function releaseCustomerBedSessions(bedSessions = {}, identifier = {}) {
     }
 
     if (match) {
+      releasedSessions.push({ ...session, bed_id: bId });
       delete updated[bId];
       releasedBedIds.push(bId);
     }
   });
 
-  return { updatedSessions: updated, releasedBedIds, releasedCount: releasedBedIds.length };
+  return { updatedSessions: updated, releasedBedIds, releasedCount: releasedBedIds.length, releasedSessions };
 }

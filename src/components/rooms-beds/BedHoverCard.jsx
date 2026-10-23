@@ -80,6 +80,14 @@ export default function BedHoverCard({
           border: 'border-teal-200',
           barColor: 'bg-teal-500'
         };
+      case 'completed':
+        return {
+          label: 'ĐÃ TRẢ PHÒNG',
+          bg: 'bg-slate-100',
+          text: 'text-slate-700',
+          border: 'border-slate-300',
+          barColor: 'bg-emerald-500'
+        };
       case 'in_progress':
       default:
         return {
@@ -378,7 +386,9 @@ export default function BedHoverCard({
             <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-0.5">
               <span>Đã qua: <strong>{elapsedMinutes} phút</strong></span>
               <span>
-                {status === 'overtime' ? (
+                {status === 'completed' ? (
+                  <strong className="text-emerald-700 font-bold">100% (Đã trả phòng)</strong>
+                ) : status === 'overtime' ? (
                   <strong className="text-rose-600 font-bold">100% (quá {overtimeMinutes} phút)</strong>
                 ) : status === 'waiting' ? (
                   <strong className="text-sky-600">0% (Đang chờ)</strong>
@@ -392,7 +402,7 @@ export default function BedHoverCard({
             <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
               <div 
                 className={`h-full ${badge.barColor} transition-all duration-300 rounded-full`}
-                style={{ width: `${status === 'waiting' ? 10 : progressPercent}%` }}
+                style={{ width: `${status === 'waiting' ? 10 : (status === 'completed' ? 100 : progressPercent)}%` }}
               />
             </div>
           </div>
@@ -402,75 +412,89 @@ export default function BedHoverCard({
 
       {/* 5. Action Buttons (Footer - pinned shrink-0 mt-auto luôn hiển thị 100% trên màn hình) */}
       <div className="pt-2.5 mt-auto border-t border-slate-100 grid grid-cols-3 gap-2 w-full shrink-0">
-        {/* Nút 1: Chuyển phòng */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onTransferRoom?.(bed, session);
-          }}
-          className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-          title={t('rooms_beds.transfer_room', 'Chuyển phòng')}
-        >
-          <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">{t('rooms_beds.transfer_room', 'Chuyển phòng')}</span>
-        </button>
-
-        {/* Nút 2: Action chính theo trạng thái */}
-        {status === 'cleaning' ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onFinishCleaning?.(bed, session);
-            }}
-            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            title={t('rooms_beds.finish_clean_now', 'Xong dọn dẹp')}
-          >
-            <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
-            <span className="truncate">{t('rooms_beds.finish_clean_now', 'Xong dọn')}</span>
-          </button>
-        ) : (status === 'waiting' || status === 'reserved') ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStartServing?.(bed, session);
-            }}
-            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            title={t('rooms_beds.start_serving', 'Bắt đầu phục vụ')}
-          >
-            <Play className="w-3.5 h-3.5 shrink-0 fill-current" />
-            <span className="truncate">{status === 'waiting' ? 'Phục vụ ngay' : 'Bắt đầu'}</span>
-          </button>
+        {status === 'completed' ? (
+          <div className="col-span-3 w-full py-2 px-3 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs text-slate-700">
+            <span className="flex items-center gap-1.5 font-bold text-slate-700">
+              <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
+              <span>Đã hoàn tất phục vụ & trả phòng</span>
+            </span>
+            <span className="text-[11px] font-semibold text-slate-500">
+              {session?.end_time ? `Lúc ${session.end_time}` : ''}
+            </span>
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCheckout?.(bed, session);
-            }}
-            className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            title={t('rooms_beds.checkout', 'Thanh toán')}
-          >
-            <CreditCard className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{t('rooms_beds.checkout', 'Thanh toán')}</span>
-          </button>
-        )}
+          <>
+            {/* Nút 1: Chuyển phòng */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTransferRoom?.(bed, session);
+              }}
+              className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+              title={t('rooms_beds.transfer_room', 'Chuyển phòng')}
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('rooms_beds.transfer_room', 'Chuyển phòng')}</span>
+            </button>
 
-        {/* Nút 3: Trả phòng */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onReleaseBed?.(bed, session);
-          }}
-          className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-          title={t('rooms_beds.release_bed', 'Trả phòng')}
-        >
-          <LogOut className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">{t('rooms_beds.release_bed', 'Trả phòng')}</span>
-        </button>
+            {/* Nút 2: Action chính theo trạng thái */}
+            {status === 'cleaning' ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFinishCleaning?.(bed, session);
+                }}
+                className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title={t('rooms_beds.finish_clean_now', 'Xong dọn dẹp')}
+              >
+                <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
+                <span className="truncate">{t('rooms_beds.finish_clean_now', 'Xong dọn')}</span>
+              </button>
+            ) : (status === 'waiting' || status === 'reserved') ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartServing?.(bed, session);
+                }}
+                className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title={t('rooms_beds.start_serving', 'Bắt đầu phục vụ')}
+              >
+                <Play className="w-3.5 h-3.5 shrink-0 fill-current" />
+                <span className="truncate">{status === 'waiting' ? 'Phục vụ ngay' : 'Bắt đầu'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCheckout?.(bed, session);
+                }}
+                className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title={t('rooms_beds.checkout', 'Thanh toán')}
+              >
+                <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t('rooms_beds.checkout', 'Thanh toán')}</span>
+              </button>
+            )}
+
+            {/* Nút 3: Trả phòng */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReleaseBed?.(bed, session);
+              }}
+              className="w-full min-w-0 px-2 py-2 text-xs font-bold rounded-xl border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+              title={t('rooms_beds.release_bed', 'Trả phòng')}
+            >
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('rooms_beds.release_bed', 'Trả phòng')}</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
