@@ -98,12 +98,14 @@ export async function logoutSupabase() {
 }
 
 /** OAuth Google */
-export async function loginWithGoogleSupabase() {
+export async function loginWithGoogleSupabase(redirectPath) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const target = redirectPath || searchParams?.get('redirect') || '/';
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/`,
+      redirectTo: `${origin}${target}`,
       queryParams: { access_type: 'offline', prompt: 'consent' },
     },
   });
@@ -112,11 +114,13 @@ export async function loginWithGoogleSupabase() {
 }
 
 /** OAuth Facebook */
-export async function loginWithFacebookSupabase() {
+export async function loginWithFacebookSupabase(redirectPath) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const target = redirectPath || searchParams?.get('redirect') || '/';
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'facebook',
-    options: { redirectTo: `${origin}/` },
+    options: { redirectTo: `${origin}${target}` },
   });
   if (error) throw error;
   return data;

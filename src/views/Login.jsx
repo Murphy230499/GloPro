@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, Facebook } from "lucide-react";
+import { Mail, Lock, Loader2, Facebook, Sparkles, ShieldCheck } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { useAuth } from "@/lib/AuthContext";
 import {
   loginViaEmailPassword,
   loginWithGoogleSupabase,
@@ -17,10 +18,28 @@ import {
 
 export default function Login() {
   const router = useRouter();
+  const { loginDevUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState("/dashboard");
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isLocal = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' || 
+                      window.location.hostname.includes('.local');
+      setIsLocalhost(isLocal);
+
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('redirect');
+      if (target && target.startsWith('/')) {
+        setRedirectTarget(target);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +47,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginViaEmailPassword(email, password);
-      router.push("/");
+      router.push(redirectTarget);
     } catch (err) {
       setError(err.message || "Email hoặc mật khẩu không chính xác.");
     } finally {
@@ -36,11 +55,18 @@ export default function Login() {
     }
   };
 
+  const handleQuickDevLogin = () => {
+    if (loginDevUser) {
+      loginDevUser();
+      router.push(redirectTarget);
+    }
+  };
+
   const handleGoogle = async () => {
     setError("");
     setLoading(true);
     try {
-      await loginWithGoogleSupabase();
+      await loginWithGoogleSupabase(redirectTarget);
     } catch (err) {
       setError(err.message || "Đăng nhập Google thất bại.");
     } finally {
@@ -52,7 +78,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await loginWithFacebookSupabase();
+      await loginWithFacebookSupabase(redirectTarget);
     } catch (err) {
       setError(err.message || "Đăng nhập Facebook thất bại.");
     } finally {
@@ -94,6 +120,31 @@ export default function Login() {
           Facebook
         </Button>
       </div>
+
+      {/* Nút Đăng nhập nhanh khi chạy ở Localhost (Tránh bị Supabase OAuth đẩy sang domain Production) */}
+      {isLocalhost && (
+        <div className="mb-5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-xs flex flex-col gap-2">
+          <div className="flex items-center justify-between text-amber-900">
+            <span className="font-bold text-xs flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              Chế độ kiểm thử Localhost
+            </span>
+            <span className="text-[10px] bg-amber-200/80 text-amber-900 font-semibold px-2 py-0.5 rounded-full">
+              Dev Mode
+            </span>
+          </div>
+          <p className="text-[11px] text-amber-800/90 leading-tight">
+            Đăng nhập trực tiếp ngay trên localhost:3000, không bị Supabase OAuth chuyển hướng về website Production.
+          </p>
+          <Button
+            type="button"
+            onClick={handleQuickDevLogin}
+            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs h-10 rounded-xl shadow-xs transition cursor-pointer"
+          >
+            ⚡ Đăng nhập nhanh vào Localhost (Admin)
+          </Button>
+        </div>
+      )}
 
       {/* Separator */}
       <div className="relative mb-5">

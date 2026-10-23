@@ -20,8 +20,13 @@ import {
   CheckCircle2, 
   Compass,
   Cpu,
-  RotateCcw
+  RotateCcw,
+  Paperclip,
+  FileSpreadsheet,
+  UploadCloud
 } from 'lucide-react';
+import { parseExcelFile, autoDetectEntityType, executeImportBatch } from '@/lib/excelImportHelper';
+import AIExcelImportPreview from '@/components/ai/AIExcelImportPreview';
 
 export function CopilotDrawer() {
   const router = useRouter();
@@ -48,6 +53,11 @@ export function CopilotDrawer() {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [activeModel, setActiveModel] = useState('Gemini AI');
+  
+  // State và Ref cho tính năng AI Excel Import
+  const fileInputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [importingMessageId, setImportingMessageId] = useState(null);
   
   const initialName = authUser?.full_name || authUser?.name || 'bạn';
   const initialBranch = branchData?.name || 'Hệ thống GloPro';
@@ -124,6 +134,23 @@ export function CopilotDrawer() {
     const query = textToSend || inputQuery;
     if (!query.trim() || loading) return;
 
+    // Phản hồi thông minh nếu người dùng muốn import/tải file Excel
+    const lower = query.toLowerCase();
+    if (lower.includes('nhập excel') || lower.includes('import excel') || lower.includes('tải excel') || lower.includes('file excel') || lower.includes('nhập file')) {
+      const userMsg = { id: `user_${Date.now()}`, role: 'user', content: query };
+      const botMsg = {
+        id: `bot_${Date.now()}`,
+        role: 'assistant',
+        content: `📁 **AI Hỗ trợ Import Excel:**\n\nBạn có thể bấm vào biểu tượng kẹp ghim 📎 ở thanh chat hoặc **kéo thả tệp (.xlsx, .xls, .csv)** trực tiếp vào khung chat này.\n\nAI sẽ tự động đọc dữ liệu, phân loại (**Khách hàng, Dịch vụ hoặc Sản phẩm**), khớp các cột thông minh và hiển thị bản xem trước để bạn xác nhận trước khi lưu!`
+      };
+      setMessages(prev => [...prev, userMsg, botMsg]);
+      setInputQuery('');
+      setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 350);
+      return;
+    }
+
     const userMsg = { id: `user_${Date.now()}`, role: 'user', content: query };
     setMessages(prev => [...prev, userMsg]);
     setInputQuery('');
@@ -172,6 +199,139 @@ export function CopilotDrawer() {
     }
   };
 
+  // Xử lý đọc và phân tích file Excel (.xlsx, .xls, .csv)
+  const processSelectedFile = async (file) => {
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      setMessages(prev => [...prev, {
+        id: `err_${Date.now()}`,
+        role: 'assistant',
+        content: `⚠️ **Định dạng không được hỗ trợ:** GloPro AI hiện hỗ trợ các tệp bảng tính **.xlsx, .xls** và **.csv**.\nVui lòng chọn đúng tệp Excel để tiếp tục.`
+      }]);
+      return;
+    }
+
+    const userMsg = {
+      id: `user_file_${Date.now()}`,
+      role: 'user',
+      content: `📎 Tải lên tệp Excel: **${file.name}**`
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
+
+    try {
+      const parsed = await parseExcelFile(file);
+      const detectedType = autoDetectEntityType(parsed.headers);
+
+      const entityLabels = {
+        customer: 'Khách hàng (CRM)',
+        service: 'Danh mục Dịch vụ Salon',
+        product: 'Sản phẩm & Kho hàng'
+      };
+
+      const botMsg = {
+        id: `excel_msg_${Date.now()}`,
+        role: 'assistant',
+        type: 'excel_preview',
+        fileData: parsed,
+        detectedType,
+        content: `📊 **Đã phân tích tệp:** \`${parsed.fileName}\` (${parsed.rowCount} dòng dữ liệu).\n🤖 **AI nhận diện nhóm:** ${entityLabels[detectedType] || 'Dữ liệu Salon'}.\n\nBạn có thể kiểm tra ánh xạ cột, tùy chọn xử lý trùng và xác nhận import bên dưới:`
+      };
+
+      setMessages(prev => [...prev, botMsg]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: `err_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ **Không thể đọc tệp Excel:** ${err.message || 'Lỗi xử lý file.'}`
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Thực thi Import Batch vào cơ sở dữ liệu
+  const handleExecuteImport = async ({ messageId, entityType, duplicateStrategy, validationResult }) => {
+    setImportingMessageId(messageId);
+
+    try {
+      const result = await executeImportBatch({
+        entityType,
+        validRows: validationResult.validRows,
+        duplicateStrategy,
+        currentBranchId: branchData?.id
+      });
+
+      if (!result.success) {
+        throw new Error(result.message || 'Import thất bại.');
+      }
+
+      const entityLabels = {
+        customer: { name: 'Khách hàng', route: '/customers' },
+        service: { name: 'Dịch vụ Salon', route: '/services' },
+        product: { name: 'Sản phẩm & Kho', route: '/inventory' }
+      };
+      const info = entityLabels[entityType] || { name: 'Dữ liệu', route: '/dashboard' };
+
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === messageId) {
+          return {
+            ...msg,
+            type: 'text',
+            content: `🎉 **Đã hoàn tất nhập dữ liệu ${info.name}!**\n\n` +
+              `• 🟢 Thêm mới thành công: **${result.createdCount}** bản ghi\n` +
+              (result.updatedCount > 0 ? `• 🔄 Đã cập nhật / ghi đè: **${result.updatedCount}** bản ghi cũ\n` : '') +
+              (result.skippedCount > 0 ? `• ⏭️ Đã bỏ qua trùng lặp: **${result.skippedCount}** bản ghi\n` : '') +
+              (result.errors && result.errors.length > 0 ? `• ⚠️ Dòng cảnh báo lỗi: **${result.errors.length}** dòng\n` : '') +
+              `\nDữ liệu đã sẵn sàng trên hệ thống GloPro.`,
+            actionButton: {
+              label: `Xem danh sách ${info.name}`,
+              route: info.route
+            }
+          };
+        }
+        return msg;
+      }));
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: `err_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ **Lỗi trong quá trình import:** ${err.message || 'Không thể lưu vào cơ sở dữ liệu.'}`
+      }]);
+    } finally {
+      setImportingMessageId(null);
+    }
+  };
+
+  const handleCancelImport = (messageId) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+  };
+
+  // Kéo thả tệp trực tiếp vào khung chat
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await processSelectedFile(files[0]);
+    }
+  };
+
   // Voice Input (Web Speech API) for hands-free salon commands
   const handleVoiceInput = () => {
     if (typeof window === 'undefined') return;
@@ -216,6 +376,7 @@ export function CopilotDrawer() {
     if (page.includes('pos')) {
       return [
         'Hôm nay doanh thu bao nhiêu?',
+        '📊 Nhập dữ liệu từ Excel',
         'Tạo bill khách Anh Tuấn cắt tóc 100k',
         'Kiểm tra tồn kho dầu gội'
       ];
@@ -229,9 +390,17 @@ export function CopilotDrawer() {
     }
     if (page.includes('customer')) {
       return [
+        '📊 Nhập khách hàng từ Excel',
         'Tìm khách hàng số 0912345678',
         'Tạo khách hàng mới Nguyễn Văn A 0988123456',
         'Top khách hàng chi tiêu nhiều nhất'
+      ];
+    }
+    if (page.includes('inventory') || page.includes('service')) {
+      return [
+        '📊 Nhập dữ liệu từ Excel',
+        'Tra cứu sản phẩm dầu gội',
+        'Xem dịch vụ đang bán chạy'
       ];
     }
     if (page.includes('report')) {
@@ -242,6 +411,7 @@ export function CopilotDrawer() {
     }
     return [
       'Doanh thu hôm nay thế nào?',
+      '📊 Nhập dữ liệu từ Excel',
       'Chuyển sang màn hình POS',
       'Đặt lịch hẹn cho khách 14:00 ngày mai'
     ];
@@ -271,7 +441,25 @@ export function CopilotDrawer() {
       )}
 
       {isOpen && (
-        <div className="w-[430px] max-w-[95vw] h-[640px] max-h-[88vh] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div 
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className="relative w-[430px] max-w-[95vw] h-[640px] max-h-[88vh] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 animate-in fade-in slide-in-from-bottom-5 duration-200"
+        >
+          {/* Overlay kéo thả tệp Excel */}
+          {isDragging && (
+            <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm border-2 border-dashed border-indigo-500 rounded-2xl flex flex-col items-center justify-center gap-3 p-6 text-center pointer-events-none animate-in fade-in duration-150">
+              <div className="p-4 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+                <FileSpreadsheet className="w-10 h-10 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="font-bold text-white text-sm">Thả tệp Excel vào đây</h4>
+                <p className="text-xs text-slate-400 mt-1">Hỗ trợ tệp .xlsx, .xls, .csv (Khách hàng, Dịch vụ, Sản phẩm)</p>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="p-4 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -358,6 +546,31 @@ export function CopilotDrawer() {
                 >
                   {msg.content}
 
+                  {/* Thẻ xem trước và cấu hình Excel Import thông minh */}
+                  {msg.type === 'excel_preview' && msg.fileData && (
+                    <div className="w-full mt-2">
+                      <AIExcelImportPreview
+                        fileData={msg.fileData}
+                        initialEntityType={msg.detectedType}
+                        isImporting={importingMessageId === msg.id}
+                        onConfirm={(params) => handleExecuteImport({ ...params, messageId: msg.id })}
+                        onCancel={() => handleCancelImport(msg.id)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Nút hành động nhanh điều hướng trang (sau khi import xong) */}
+                  {msg.actionButton && (
+                    <button
+                      type="button"
+                      onClick={() => router.push(msg.actionButton.route)}
+                      className="mt-2.5 px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 rounded-xl text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <span>{msg.actionButton.label}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   {/* Tool execution badge */}
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-700/60 flex flex-col gap-1 text-[10px] text-emerald-400 font-medium">
@@ -423,9 +636,33 @@ export function CopilotDrawer() {
             ))}
           </div>
 
-          {/* Input Bar with Voice Support */}
+          {/* Input Bar with Voice & File Support */}
           <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+            {/* Ẩn input file thực tế để trigger bằng icon kẹp ghim */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  processSelectedFile(e.target.files[0]);
+                  e.target.value = '';
+                }
+              }}
+            />
+
             <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Đính kèm tệp Excel (.xlsx, .xls, .csv) để AI đọc và import"
+              className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer shrink-0"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
               onClick={handleVoiceInput}
               title={isListening ? "Đang lắng nghe..." : "Ra lệnh bằng giọng nói"}
               className={`p-2.5 rounded-xl transition cursor-pointer shrink-0 ${
@@ -442,11 +679,12 @@ export function CopilotDrawer() {
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={isListening ? "Đang lắng nghe bạn nói..." : "Ra lệnh bằng tiếng Việt (vd: Đặt lịch 14h mai, doanh thu hôm nay...)"}
+              placeholder={isListening ? "Đang lắng nghe bạn nói..." : "Hỏi AI hoặc đính kèm file Excel để import..."}
               className="flex-1 bg-slate-800 text-white text-xs px-3 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 placeholder-slate-500"
             />
 
             <button
+              type="button"
               onClick={() => handleSend()}
               disabled={loading || !inputQuery.trim()}
               className="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl transition cursor-pointer shrink-0"

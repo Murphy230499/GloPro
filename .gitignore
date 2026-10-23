@@ -44,6 +44,15 @@ scratch/
 supabase/.temp/
 supabase/compiled_schema.sql
 supabase/backups/
+supabase/artifacts/
 
 fix_appts.js
 phase7_0_production_runtime_audit.md
+BACKUP_*.md
+DISK_*.md
+FK_*.md
+POSTGRES_*.md
+PRE_*.md
+PRODUCTION_*.md
+STEP_*.md
+scripts/export_production_backup.mjs

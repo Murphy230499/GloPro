@@ -122,6 +122,26 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      // 0. Check Dev Auth Session in Local Storage for smooth local development
+      if (typeof window !== 'undefined') {
+        const devAuthStr = localStorage.getItem('gp_dev_auth_user');
+        if (devAuthStr) {
+          try {
+            const devUser = JSON.parse(devAuthStr);
+            if (devUser && devUser.email) {
+              console.log('[AuthContext] Local dev auth user found:', devUser.email);
+              setUser(devUser);
+              setIsAuthenticated(true);
+              setIsLoadingAuth(false);
+              setAuthChecked(true);
+              return;
+            }
+          } catch (e) {
+            localStorage.removeItem('gp_dev_auth_user');
+          }
+        }
+      }
+
       // 1. Check Supabase OAuth Session
       console.log('[AuthContext] checkUserAuth calling getSession...');
       const { data: { session } } = await supabase.auth.getSession();
@@ -164,10 +184,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginDevUser = (mockUser = null) => {
+    const userToSet = mockUser || {
+      id: 'dev_user_admin',
+      email: 'admin@glopro.salon',
+      full_name: 'Quản trị viên (Dev)',
+      role: 'owner'
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gp_dev_auth_user', JSON.stringify(userToSet));
+    }
+    setUser(userToSet);
+    setIsAuthenticated(true);
+    setIsLoadingAuth(false);
+    setAuthChecked(true);
+  };
+
   const logout = async (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
     clearActiveTenant();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gp_dev_auth_user');
+    }
     
     await supabase.auth.signOut().catch(() => {});
     if (shouldRedirect && typeof window !== 'undefined') {
@@ -188,6 +227,7 @@ export const AuthProvider = ({ children }) => {
       authError,
       appPublicSettings,
       authChecked,
+      loginDevUser,
       logout,
       navigateToLogin,
       checkUserAuth,

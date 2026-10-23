@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from '@/components/Layout';
@@ -9,12 +9,14 @@ import Layout from '@/components/Layout';
 export default function ProtectedLayoutInner({ children }) {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoadingAuth && !isLoadingPublicSettings && !isAuthenticated) {
-      router.replace('/login');
+      const redirectUrl = pathname && pathname !== '/' ? `/login?redirect=${encodeURIComponent(pathname)}` : '/login';
+      router.replace(redirectUrl);
     }
-  }, [isLoadingAuth, isLoadingPublicSettings, isAuthenticated, router]);
+  }, [isLoadingAuth, isLoadingPublicSettings, isAuthenticated, router, pathname]);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
