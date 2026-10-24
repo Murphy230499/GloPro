@@ -1,20 +1,25 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useT } from '@/lib/i18n';
-import { TrendingUp, CalendarDays, Users, UserSquare, Sparkles, Sliders } from 'lucide-react';
+import { TrendingUp, CalendarDays, Users, UserSquare, Sparkles } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 import { formatVND, todayStr, last7Days } from '@/lib/format';
+import StatCard from '@/components/StatCard';
+import TopRevenueList from '@/components/TopRevenueList';
 import { getUIPreferences } from '@/lib/uiPreferences.js';
 import { getThemeById } from '@/lib/uiThemes.js';
 
-import KPIStatWidget from '@/components/dashboard/widgets/KPIStatWidget';
-import RevenueChartWidget from '@/components/dashboard/widgets/RevenueChartWidget';
-import UpcomingAppointmentsWidget from '@/components/dashboard/widgets/UpcomingAppointmentsWidget';
-import RoomOccupancyWidget from '@/components/dashboard/widgets/RoomOccupancyWidget';
-import SocialChatAlertWidget from '@/components/dashboard/widgets/SocialChatAlertWidget';
-import TopRevenueRankingsWidget from '@/components/dashboard/widgets/TopRevenueRankingsWidget';
+const STATUS_COLORS = {
+  pending: '#94A3B8',
+  confirmed: '#60A5FA',
+  checked_in: '#FBBF24',
+  in_progress: '#A78BFA',
+  completed: '#34D399',
+  cancelled: '#F87171',
+  no_show: '#F97316'
+};
 
 const getPeriodRange = (period) => {
   const now = new Date();
@@ -50,21 +55,46 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day');
 
-  // Cấu hình giao diện động (iOS Glassmorphism & Widgets)
+  // Cấu hình giao diện động (hỗ trợ Live Theme & Dark Mode)
   const [uiConfig, setUiConfig] = useState(() => getUIPreferences(currentBranchId, branchCountry));
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const current = getUIPreferences(currentBranchId, branchCountry);
-    setUiConfig(current);
+    const loaded = getUIPreferences(currentBranchId, branchCountry);
+    setUiConfig(loaded);
+
+    // Kiểm tra dark mode thực tế từ thẻ html
+    const checkDark = () => {
+      if (typeof document !== 'undefined') {
+        setIsDark(document.documentElement.classList.contains('dark'));
+      }
+    };
+    checkDark();
 
     const handleUIPreferencesUpdated = (e) => {
       if (e.detail) {
         setUiConfig(e.detail);
+        checkDark();
       }
     };
+
+    const handleThemeChange = () => {
+      checkDark();
+    };
+
     window.addEventListener('glopro-ui-preferences-updated', handleUIPreferencesUpdated);
+    window.addEventListener('theme-change', handleThemeChange);
+
+    // Lắng nghe thay đổi class trên documentElement
+    const observer = new MutationObserver(checkDark);
+    if (typeof document !== 'undefined') {
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
     return () => {
       window.removeEventListener('glopro-ui-preferences-updated', handleUIPreferencesUpdated);
+      window.removeEventListener('theme-change', handleThemeChange);
+      observer.disconnect();
     };
   }, [currentBranchId, branchCountry]);
 
@@ -168,14 +198,6 @@ export default function Dashboard() {
     };
   }, [periodInvoices, staff, customers]);
 
-  // Lọc và sắp xếp danh sách các widget đang được bật (enabled === true)
-  const enabledWidgets = useMemo(() => {
-    const list = uiConfig?.dashboard?.widgets || [];
-    return [...list]
-      .filter((w) => w.enabled !== false)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [uiConfig?.dashboard?.widgets]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -190,160 +212,213 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 pb-10">
       
-      {/* HEADER: Tiêu đề, Chào mừng, Bộ lọc thời gian & Nút tùy biến */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      {/* 1. HEADER: Tiêu đề & Bộ lọc thời gian */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl md:text-3xl font-extrabold tracking-tight text-slate-800">
-              {t('dashboard.tong_quan', 'Tổng quan')}
-            </h1>
-            
-            {/* Huy hiệu chủ đề / Lễ hội */}
-            {activeTheme && (
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs animate-in fade-in"
-                style={{ 
-                  background: `${tintColor}12`, 
-                  color: tintColor, 
-                  borderColor: `${tintColor}30` 
-                }}
-              >
-                <span>{activeTheme.icon}</span>
-                <span>{activeTheme.name}</span>
-              </span>
-            )}
-          </div>
-          
-          <p className="text-slate-400 text-xs md:text-sm mt-1">
-            {t('dashboard.welcome_msg', 'Xin chào 👋 Đây là tình hình hoạt động hôm nay')}
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
+            {t('dashboard.tong_quan', 'Tổng quan')}
+          </h1>
+          <p className="text-slate-400 dark:text-slate-400 text-xs md:text-sm mt-1">
+            {t('dashboard.welcome_msg', 'Xin chào 👋 Đây là tình hình hôm nay')}
           </p>
         </div>
-
-        {/* Thao tác góc phải: Bộ lọc thời gian & Nút mở Tùy biến */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Bộ lọc thời gian */}
-          <div className="flex items-center gap-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-700 p-1 shadow-2xs">
-            {PERIODS.map((p) => (
+        
+        {/* Bộ lọc thời gian Glassmorphism */}
+        <div className="flex items-center gap-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-700 p-1 shadow-2xs">
+          {PERIODS.map((p) => {
+            const isSelected = period === p.value;
+            return (
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  period === p.value 
-                    ? 'text-white shadow-xs' 
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                  isSelected
+                    ? 'text-white shadow-xs'
+                    : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
                 }`}
-                style={period === p.value ? { background: tintColor } : undefined}
+                style={isSelected ? { background: tintColor } : undefined}
               >
                 {p.label}
               </button>
-            ))}
-          </div>
-
-          {/* Nút 1-chạm mở cài đặt giao diện */}
-          <Link
-            href="/settings?tab=appearance"
-            className="btn-glass flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200/80 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-2xs hover:shadow-xs transition-all active:scale-95"
-            title="Tùy biến Widget & Chủ đề giao diện"
-          >
-            <Sliders className="w-3.5 h-3.5 text-slate-500" />
-            <span className="hidden sm:inline">Tùy biến</span>
-          </Link>
+            );
+          })}
         </div>
       </div>
 
-      {/* LƯỚI WIDGET DASHBOARD ĐỘNG THEO CẤU HÌNH (DYNAMIC 12-COLUMN GRID) */}
-      <div className="grid grid-cols-12 gap-4">
-        {enabledWidgets.map((w) => {
-          // Quy định độ rộng lưới dựa theo kích thước iOS:
-          // small: 3 cột trên desktop (1/4 hàng)
-          // medium: 6 cột trên desktop (1/2 hàng)
-          // large: 12 cột (Toàn hàng)
-          const colSpan = w.size === 'small' 
-            ? 'col-span-12 sm:col-span-6 lg:col-span-3' 
-            : w.size === 'medium' 
-              ? 'col-span-12 lg:col-span-6' 
-              : 'col-span-12';
+      {/* 2. HÀNG 1: 4 THẺ CHỈ SỐ STATCARD CHUẨN */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard 
+          icon={TrendingUp} 
+          label={t('dashboard.doanh_thu_hom_nay', 'Doanh thu hôm nay')} 
+          value={formatVND(todayRevenue)} 
+          color="#34D399" 
+          sub={`${invoices.filter((i) => i.date === today).length} ${t('dashboard.hoa_don', 'Hóa đơn')}`} 
+        />
+        <StatCard 
+          icon={CalendarDays} 
+          label={t('dashboard.lich_hen_hom_nay', 'Lịch hẹn hôm nay')} 
+          value={todayAppts.length} 
+          color="#60A5FA" 
+          sub={`${completedToday} ${t('dashboard.hoan_thanh', 'Hoàn thành')}`} 
+        />
+        <StatCard 
+          icon={Users} 
+          label={t('dashboard.khach_hang', 'Khách hàng')} 
+          value={customers.length} 
+          color="#FBBF24" 
+          sub={t('dashboard.toan_chuoi', 'Toàn chuỗi')} 
+        />
+        <StatCard 
+          icon={UserSquare} 
+          label={t('dashboard.nhan_vien', 'Nhân viên')} 
+          value={staff.length} 
+          color="#F97316" 
+          sub={t('dashboard.dang_lam_viec', 'Đang làm việc')} 
+        />
+      </div>
 
-          return (
-            <div key={w.id} className={`${colSpan} flex flex-col transition-all duration-300`}>
-              {w.id === 'kpi_revenue' && (
-                <KPIStatWidget 
-                  type="kpi_revenue" 
-                  value={todayRevenue} 
-                  sub={`${invoices.filter((i) => i.date === today).length} ${t('dashboard.hoa_don', 'Hóa đơn')}`} 
-                  size={w.size} 
-                  tintColor={tintColor} 
-                />
-              )}
+      {/* 3. HÀNG 2: BIỂU ĐỒ DOANH THU 7 NGÀY & HÀNG CHỜ LỊCH HẸN SẮP TỚI */}
+      <div className="grid md:grid-cols-2 gap-4">
+        
+        {/* Cột Trái: Biểu đồ Doanh thu 7 ngày qua */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-1 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.doanh_thu_7_ngay', 'Doanh thu 7 ngày qua')}
+          </h3>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-3">
+            {t('dashboard.theo_ngay', 'Theo ngày')}
+          </p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} barSize={26}>
+              <CartesianGrid vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name" 
+                tickLine={false} 
+                axisLine={false} 
+                tick={{ fontSize: 12, fill: isDark ? '#94A3B8' : '#64748B' }} 
+              />
+              <YAxis 
+                tickFormatter={(v) => v >= 1000000 ? v / 1000000 + t('dashboard.trieu_short', 'tr') : v >= 1000 ? Math.round(v / 1000) + 'k' : v} 
+                tickLine={false} 
+                axisLine={false} 
+                tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#64748B' }} 
+                width={40} 
+              />
+              <Tooltip 
+                formatter={(v) => [formatVND(v), t('dashboard.doanh_thu', 'Doanh thu')]} 
+                contentStyle={{ 
+                  borderRadius: 12, 
+                  border: isDark ? '1px solid #334155' : '1px solid #e2e8f0', 
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                  color: isDark ? '#ffffff' : '#0f172a',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  fontSize: 12,
+                  fontWeight: 600
+                }} 
+              />
+              <Bar dataKey="revenue" radius={[8, 8, 0, 0]} fill={tintColor} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-              {w.id === 'kpi_appts' && (
-                <KPIStatWidget 
-                  type="kpi_appts" 
-                  value={todayAppts.length} 
-                  sub={`${completedToday} ${t('dashboard.hoan_thanh', 'Hoàn thành')}`} 
-                  size={w.size} 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'kpi_customers' && (
-                <KPIStatWidget 
-                  type="kpi_customers" 
-                  value={customers.length} 
-                  sub={t('dashboard.toan_chuoi', 'Toàn chuỗi')} 
-                  size={w.size} 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'kpi_staff' && (
-                <KPIStatWidget 
-                  type="kpi_staff" 
-                  value={staff.length} 
-                  sub={t('dashboard.dang_lam_viec', 'Đang làm việc')} 
-                  size={w.size} 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'revenue_chart' && (
-                <RevenueChartWidget 
-                  chartData={chartData} 
-                  tintColor={tintColor} 
-                  size={w.size} 
-                />
-              )}
-
-              {w.id === 'upcoming_queue' && (
-                <UpcomingAppointmentsWidget 
-                  appointments={upcoming} 
-                  statusLabels={STATUS_LABEL} 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'room_occupancy' && (
-                <RoomOccupancyWidget 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'social_chat_alert' && (
-                <SocialChatAlertWidget 
-                  tintColor={tintColor} 
-                />
-              )}
-
-              {w.id === 'top_rankings' && (
-                <TopRevenueRankingsWidget 
-                  tops={tops} 
-                  size={w.size} 
-                  tintColor={tintColor} 
-                />
-              )}
+        {/* Cột Phải: Lịch hẹn sắp tới */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-3 flex items-center gap-2 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.lich_hen_sap_toi', 'Lịch hẹn sắp tới')}
+          </h3>
+          {upcoming.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 dark:text-slate-400 text-sm">
+              <Sparkles className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              {t('dashboard.khong_co_lich_hen_sap_toi', 'Không có lịch hẹn nào sắp tới')}
             </div>
-          );
-        })}
+          ) : (
+            <div className="space-y-2">
+              {upcoming.map((a) => (
+                <div 
+                  key={a.id} 
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 transition-colors"
+                >
+                  <div className="text-center w-12">
+                    <div className="text-sm font-bold text-slate-800 dark:text-white">
+                      {a.start_time?.slice(0, 5)}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-slate-800 dark:text-white truncate">
+                      {a.customer_name}
+                    </div>
+                    <div className="text-xs text-slate-400 dark:text-slate-400 truncate">
+                      {a.service_name || t('dashboard.chua_chon_dich_vu', 'Chưa chọn dịch vụ')}
+                    </div>
+                  </div>
+                  <span 
+                    className="text-[11px] font-semibold px-2 py-1 rounded-full shrink-0" 
+                    style={{ background: STATUS_COLORS[a.status] + '26', color: STATUS_COLORS[a.status] }}
+                  >
+                    {STATUS_LABEL[a.status]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 4. HÀNG 3: 4 BẢNG TOP DOANH THU (DỊCH VỤ, SẢN PHẨM, NHÂN VIÊN, KHÁCH HÀNG) */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        
+        {/* Top Dịch vụ */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-3 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.top_service_rev', 'Top dịch vụ theo doanh thu')}
+          </h3>
+          <TopRevenueList 
+            items={tops.services} 
+            colorFrom="from-pink-400" 
+            colorTo="to-rose-500" 
+            emptyText={t('common.no_data', 'Chưa có dữ liệu')} 
+          />
+        </div>
+
+        {/* Top Sản phẩm */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-3 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.top_product_rev', 'Top sản phẩm theo doanh thu')}
+          </h3>
+          <TopRevenueList 
+            items={tops.products} 
+            colorFrom="from-emerald-400" 
+            colorTo="to-teal-500" 
+            emptyText={t('common.no_data', 'Chưa có dữ liệu')} 
+          />
+        </div>
+
+        {/* Top Nhân viên */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-3 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.top_staff_rev', 'Top nhân viên theo doanh thu')}
+          </h3>
+          <TopRevenueList 
+            items={tops.staff} 
+            colorFrom="from-amber-400" 
+            colorTo="to-orange-500" 
+            emptyText={t('common.no_data', 'Chưa có dữ liệu')} 
+          />
+        </div>
+
+        {/* Top Khách hàng */}
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-slate-200/60 dark:border-slate-800/80 shadow-xs transition-all duration-200">
+          <h3 className="font-bold mb-3 text-base md:text-xl text-slate-800 dark:text-white">
+            {t('dashboard.top_customer_rev', 'Top khách hàng theo doanh thu')}
+          </h3>
+          <TopRevenueList 
+            items={tops.customers} 
+            colorFrom="from-blue-400" 
+            colorTo="to-cyan-500" 
+            emptyText={t('common.no_data', 'Chưa có dữ liệu')} 
+          />
+        </div>
+
       </div>
 
     </div>
