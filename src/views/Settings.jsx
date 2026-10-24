@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, X, MapPin, Phone, User, Edit3, Trash2, 
-  Building, Users, ShieldAlert, Shield, Check, ShieldCheck, Mail, CheckCircle2, Share2 
+  Building, Users, ShieldAlert, Shield, Check, ShieldCheck, Mail, CheckCircle2, Share2,
+  Sparkles, Palette 
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import RoleManager from '@/components/settings/RoleManager';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
+import AppearanceWidgetsTab from '@/components/settings/AppearanceWidgetsTab';
 import { base44, getCachedPermissions, clearCachedPermissions } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
 import { useBranch } from '@/lib/BranchContext';
@@ -273,6 +275,7 @@ export default function SettingsPage() {
       if (isMyPermissionAllowed('setting_account_view')) allowed.push('accounts');
       if (isMyPermissionAllowed('setting_permission_edit')) allowed.push('permissions');
       if (isMyPermissionAllowed('setting_integration_view')) allowed.push('integrations');
+      allowed.push('appearance');
       
       if (allowed.length > 0 && !allowed.includes(activeTab)) {
         handleTabChange(allowed[0]);
@@ -499,19 +502,19 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">{t('settings.page_title', 'Cài đặt hệ thống')}</h1>
-        <p className="text-slate-400 text-sm mt-1">{t('settings.page_subtitle', 'Cấu hình các phân hệ chi nhánh, tài khoản và quyền hoạt động.')}</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800 dark:text-white">{t('settings.page_title', 'Cài đặt hệ thống')}</h1>
+        <p className="text-slate-500 dark:text-slate-300 text-sm mt-1">{t('settings.page_subtitle', 'Cấu hình các phân hệ chi nhánh, tài khoản và quyền hoạt động.')}</p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex overflow-x-auto gap-1 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
+      <div className="flex overflow-x-auto gap-1 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/60 rounded-2xl p-1 shadow-xs">
         {isMyPermissionAllowed('setting_branch_view') && (
           <button
             onClick={() => handleTabChange('branches')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
               activeTab === 'branches'
                 ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <Building className="w-4 h-4 shrink-0" />
@@ -524,7 +527,7 @@ export default function SettingsPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
               activeTab === 'accounts'
                 ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <Users className="w-4 h-4 shrink-0" />
@@ -537,7 +540,7 @@ export default function SettingsPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
               activeTab === 'permissions'
                 ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
@@ -550,13 +553,24 @@ export default function SettingsPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
               activeTab === 'integrations'
                 ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <Share2 className="w-4 h-4 shrink-0" />
             <span>{t('settings.tab_integrations', 'Tích hợp')}</span>
           </button>
         )}
+        <button
+          onClick={() => handleTabChange('appearance')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+            activeTab === 'appearance'
+              ? 'bg-emerald-600 text-white shadow-sm font-bold'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
+          }`}
+        >
+          <Palette className="w-4 h-4 shrink-0" />
+          <span>{t('settings.tab_appearance', 'Giao diện')}</span>
+        </button>
       </div>
 
       {/* Tab 1: Chi nhánh */}
@@ -643,11 +657,11 @@ export default function SettingsPage() {
               <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="bg-white border-y md:border border-slate-100 md:rounded-2xl md:shadow-sm md:overflow-hidden -mx-4 md:mx-0">
+            <div className="bg-white dark:bg-slate-900 border-y md:border border-slate-100 dark:border-slate-800 md:rounded-2xl md:shadow-sm md:overflow-hidden -mx-4 md:mx-0">
               <div className="overflow-x-auto hidden md:block">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/90 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                       <th className="px-6 py-4">{t('settings.col_account_code', 'MÃ TK')}</th>
                       <th className="px-6 py-4">{t('settings.col_display_name', 'TÊN HIỂN THỊ')}</th>
                       <th className="px-6 py-4">{t('settings.col_phone', 'SỐ ĐIỆN THOẠI')}</th>
@@ -658,7 +672,7 @@ export default function SettingsPage() {
                       <th className="px-6 py-4 text-right">{t('settings.col_actions', 'THAO TÁC')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                     {profiles.length === 0 ? (
                       <tr>
                         <td colSpan="8" className="text-center py-10 text-slate-400">
@@ -868,9 +882,9 @@ export default function SettingsPage() {
       {/* Tab 3: Phân quyền */}
       {activeTab === 'permissions' && (
         <div className="space-y-4">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-100 dark:border-slate-700/80 flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
               {t('settings.permission_note', '**Lưu ý:** Quyền hạn đối với vai trò **Chủ Salon (Owner)** được gán mặc định tối cao và không thể thay đổi. Các vai trò khác hệ thống và tự định nghĩa có thể thay đổi bật/tắt quyền xem hoặc chỉnh sửa tương ứng cho từng phân hệ.')}
             </p>
           </div>
@@ -880,23 +894,23 @@ export default function SettingsPage() {
               <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/90 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                       <th className="px-6 py-4">{t('settings.permission_module_col', 'Phân hệ chức năng')}</th>
                       {(roles.length > 0 ? roles : [
                         { code: 'admin', name: 'Quản trị (Admin)' },
                         { code: 'cashier', name: 'Thu ngân' }
                       ]).filter(r => r.code !== 'owner').map(role => (
-                        <th key={role.code} className="px-6 py-4 text-center border-l border-slate-100/60">
+                        <th key={role.code} className="px-6 py-4 text-center border-l border-slate-100/60 dark:border-slate-800">
                           {t('settings.role_' + role.code, role.name)}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                     {MODULE_GROUPS.map((group) => {
                       const rolesForMatrix = (roles.length > 0 ? roles : [
                         { code: 'admin', name: 'Quản trị (Admin)' },
@@ -906,18 +920,18 @@ export default function SettingsPage() {
                       return (
                         <React.Fragment key={group.title}>
                           {/* Group header row */}
-                          <tr className="bg-slate-50 border-y border-slate-200/60">
+                          <tr className="bg-slate-50 dark:bg-slate-800/90 border-y border-slate-200/60 dark:border-slate-700/60">
                             <td 
                               colSpan={rolesForMatrix.length + 1}
-                              className="px-6 py-3 font-bold text-slate-700 text-[13px] uppercase tracking-wider bg-slate-50/80"
+                              className="px-6 py-3 font-bold text-slate-700 dark:text-slate-100 text-[13px] uppercase tracking-wider bg-slate-50/80 dark:bg-slate-800/90"
                             >
                               {t('settings.perm_group_' + group.id, group.title)}
                             </td>
                           </tr>
                           {Object.entries(group.modules).map(([moduleKey, label]) => {
                             return (
-                              <tr key={moduleKey} className="hover:bg-slate-50/40 transition-colors">
-                                <td className="px-6 py-3 text-slate-500 font-normal text-xs">
+                              <tr key={moduleKey} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="px-6 py-3 text-slate-500 dark:text-slate-300 font-normal text-xs">
                                   {t('settings.perm_mod_' + moduleKey, label)}
                                 </td>
                                 
@@ -931,7 +945,7 @@ export default function SettingsPage() {
                                   };
 
                                   return (
-                                    <td key={role.code} className="px-6 py-3.5 text-center border-l border-slate-50/60">
+                                    <td key={role.code} className="px-6 py-3.5 text-center border-l border-slate-50/60 dark:border-slate-800/60">
                                       <input
                                         type="checkbox"
                                         checked={perm.can_view}
@@ -984,6 +998,10 @@ export default function SettingsPage() {
       {/* Tab 4: Tích hợp */}
       {activeTab === 'integrations' && (
         <IntegrationsTab />
+      )}
+      {/* Tab 5: Giao diện & Widgets */}
+      {activeTab === 'appearance' && (
+        <AppearanceWidgetsTab />
       )}
     </div>
   );

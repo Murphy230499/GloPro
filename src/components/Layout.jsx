@@ -13,9 +13,9 @@ import { useBranch } from '@/lib/BranchContext';
 import TopBar from '@/components/TopBar';
 import AppointmentModal from '@/components/AppointmentModal';
 import POSInvoiceModal from '@/components/POSInvoiceModal';
-import { base44, getCachedPermissions } from '@/api/base44Client';
-import { supabase } from '@/api/supabaseClient';
+import { getCachedPermissions } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { getUIPreferences, applyThemeToDom } from '@/lib/uiPreferences';
 
 export { toast };
 
@@ -45,11 +45,11 @@ export default function Layout({ children }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [apptOpen, setApptOpen] = useState(false);
   const [apptEditing, setApptEditing] = useState(null);
-  const [color, setColor] = useState('#EC4899');
+  const [_color, setColor] = useState('#EC4899');
   const [invOpen, setInvOpen] = useState(false);
   const pathname = usePathname();
   const { t } = useT();
-  const { currentBranchId } = useBranch();
+  const { currentBranchId, currentBranch } = useBranch();
 
   // Xác định xem trang hiện tại có phải là Báo cáo hay không
   const isReportsPage = pathname.startsWith('/reports');
@@ -72,17 +72,25 @@ export default function Layout({ children }) {
   }, []);
 
   useEffect(() => {
-    // 1. Initial color check
-    const currentTheme = localStorage.getItem('gp_theme') || '#EC4899';
-    document.documentElement.style.setProperty('--theme-color', currentTheme);
-    setColor(currentTheme);
+    // 1. Initial theme load based on active branch and country
+    const branchCountry = currentBranch?.country || 'Vietnam';
+    const initialConfig = getUIPreferences(currentBranchId, branchCountry);
+    applyThemeToDom(initialConfig);
+    if (initialConfig.theme?.tintColor) {
+      setColor(initialConfig.theme.tintColor);
+    }
 
-    // 2. Setup theme event listener
+    // 2. Setup theme event listeners
     const handleThemeChange = (e) => {
-      document.documentElement.style.setProperty('--theme-color', e.detail);
       setColor(e.detail);
     };
+    const handleUIPreferencesUpdated = (e) => {
+      if (e.detail?.theme?.tintColor) {
+        setColor(e.detail.theme.tintColor);
+      }
+    };
     window.addEventListener('theme-change', handleThemeChange);
+    window.addEventListener('glopro-ui-preferences-updated', handleUIPreferencesUpdated);
 
     // 3. Setup appointment modal event listener
     const handleOpenAppt = (e) => {
@@ -99,9 +107,10 @@ export default function Layout({ children }) {
 
     return () => {
       window.removeEventListener('theme-change', handleThemeChange);
+      window.removeEventListener('glopro-ui-preferences-updated', handleUIPreferencesUpdated);
       window.removeEventListener('open-appointment-modal', handleOpenAppt);
     };
-  }, [isReportsPage]);
+  }, [currentBranchId, currentBranch, isReportsPage]);
 
   const NavItem = ({ item }) => {
     const Icon = item.icon;
@@ -109,13 +118,18 @@ export default function Layout({ children }) {
     return (
       <Link
         href={item.to}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-          isActive ? 'text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+        className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 overflow-hidden ${
+          isActive
+            ? 'text-white shadow-md shadow-pink-500/15 ring-1 ring-white/30'
+            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-sm'
         } ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-        style={isActive ? { background: item.color } : undefined}
+        style={isActive ? {
+          background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}ee 100%)`,
+          boxShadow: `0 4px 14px -2px ${item.color}55, inset 0 1px 1px rgba(255, 255, 255, 0.4)`
+        } : undefined}
         title={t(item.tkey)}
       >
-        <Icon className="w-5 h-5 shrink-0" />
+        <Icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
         <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${isSidebarCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'}`}>
           {t(item.tkey)}
         </span>
@@ -124,19 +138,22 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-slate-50 font-body overflow-hidden">
+    <div 
+      className="h-[100dvh] flex flex-col font-body overflow-hidden transition-all duration-500 bg-cover bg-center bg-no-repeat bg-fixed"
+      style={{ background: 'var(--theme-page-bg, #f8fafc)' }}
+    >
       <TopBar onNewAppointment={() => setApptOpen(true)} onNewInvoice={() => setInvOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop sidebar */}
         <aside 
-          className={`hidden md:flex shrink-0 flex-col bg-white border-r border-slate-100 z-30 transition-all duration-300 relative
+          className={`main-sidebar glass-sidebar hidden md:flex shrink-0 flex-col bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-r border-white/50 dark:border-slate-800/80 z-30 transition-all duration-300 relative shadow-2xs
             ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}
         >
           {/* Toggle Sidebar Button */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute top-4 right-[-10px] bg-white border border-slate-200 rounded-full w-5 h-5 flex items-center justify-center shadow-xs cursor-pointer hover:border-blue-500 hover:text-blue-500 z-40"
+            className="absolute top-4 right-[-10px] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 rounded-full w-5 h-5 flex items-center justify-center shadow-xs cursor-pointer hover:border-pink-500 hover:text-pink-500 z-40 transition-transform active:scale-90"
           >
             {isSidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
           </button>
@@ -203,7 +220,7 @@ export default function Layout({ children }) {
 
         {/* Content */}
         <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col relative" id="main-content">
-          <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-28 md:px-8 md:py-6 grow flex flex-col bg-[hsl(var(--background))]">
+          <div className="max-w-[1600px] w-full mx-auto px-3 pt-4 pb-28 md:px-8 md:py-6 grow flex flex-col">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
@@ -212,7 +229,7 @@ export default function Layout({ children }) {
       </div>
 
       {/* Mobile bottom tabs */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/90 backdrop-blur-lg border-t border-slate-100">
+      <nav className="mobile-bottom-tabs md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-t border-white/40 dark:border-slate-800/80 shadow-lg">
         <div className="grid grid-cols-5">
           {MOBILE_TABS.map((item) => {
             const Icon = item.icon;

@@ -190,12 +190,12 @@ export default function AppointmentTimelineView({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs font-body flex-1 min-h-0 flex flex-col overflow-hidden relative">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs font-body flex-1 min-h-0 flex flex-col overflow-hidden relative">
 
       {/* ── Fixed Time Header (Top Row, scroll-synced with body) ── */}
-      <div className="shrink-0 border-b border-slate-200 shadow-sm bg-white rounded-t-2xl overflow-hidden z-40 sticky top-0 flex">
+      <div className="shrink-0 border-b border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden z-40 sticky top-0 flex">
         {/* Top-Left Frozen Corner Cell ("Nhân viên" / "Vị trí") */}
-        <div className="w-24 md:w-52 shrink-0 p-2 md:p-4 border-r border-slate-200 bg-slate-50/90 font-bold text-[10px] md:text-xs text-slate-500 uppercase flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 z-40">
+        <div className="w-24 md:w-52 shrink-0 p-2 md:p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-850 font-bold text-[10px] md:text-xs text-slate-500 dark:text-slate-400 uppercase flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 z-40">
           {targetEntity === 'staff' ? (
             <>
               <User className="w-4 h-4 text-blue-600" />
@@ -212,13 +212,13 @@ export default function AppointmentTimelineView({
         {/* Scrollable Time Slot Headers */}
         <div
           ref={headerScrollRef}
-          className="flex-1 overflow-x-hidden relative border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm z-10"
+          className="flex-1 overflow-x-hidden relative border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-850 backdrop-blur-sm z-10"
         >
           <div className="relative h-[45px]" style={{ width: TOTAL_GRID_WIDTH_PX }}>
             {TIMELINE_SLOTS.map((slot, idx) => (
               <div
                 key={idx}
-                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 text-[11px] font-bold text-slate-500 ${idx === 0 ? 'ml-4' : ''}`}
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 text-[11px] font-bold text-slate-500 dark:text-slate-400 ${idx === 0 ? 'ml-4' : ''}`}
                 style={{ left: idx * SLOT_WIDTH_PX }}
               >
                 {slot}
@@ -263,10 +263,10 @@ export default function AppointmentTimelineView({
               return (
                 <div
                   key={row.id}
-                  className="flex border-b border-slate-100 min-h-[96px] relative group hover:bg-slate-50/30 transition-colors font-body"
+                  className="flex border-b border-slate-100 dark:border-slate-800/60 min-h-[96px] relative group hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors font-body"
                 >
                   {/* Left Column: Staff Avatar & Name */}
-                  <div className="w-24 md:w-52 shrink-0 px-1 md:px-3 py-3 md:py-4 border-r border-slate-200 bg-white flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-1 md:gap-3 sticky left-0 z-20 font-body">
+                  <div className="w-24 md:w-52 shrink-0 px-1 md:px-3 py-3 md:py-4 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-1 md:gap-3 sticky left-0 z-20 font-body">
                     {targetEntity === 'staff' ? (
                       <div className="shrink-0 scale-75 md:scale-100 flex items-center justify-center">
                         <Avatar
@@ -282,7 +282,7 @@ export default function AppointmentTimelineView({
                       </div>
                     )}
                     <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full">
-                      <h4 className="font-semibold text-[10px] md:text-[13px] text-slate-800 truncate mb-0.5 w-full text-center md:text-left">
+                      <h4 className="font-semibold text-[10px] md:text-[13px] text-slate-800 dark:text-slate-100 truncate mb-0.5 w-full text-center md:text-left">
                         {row.name}
                       </h4>
                       {targetEntity === 'staff' ? (
@@ -290,7 +290,7 @@ export default function AppointmentTimelineView({
                           <span className="truncate">{row.group_name}</span>
                         </span>
                       ) : (
-                        <p className="text-[10px] md:text-xs text-slate-400 truncate text-center md:text-left w-full">
+                        <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 truncate text-center md:text-left w-full">
                           {row.room_name || row.category || 'Phòng'}
                         </p>
                       )}
@@ -320,7 +320,7 @@ export default function AppointmentTimelineView({
                             console.error('Drop error:', err);
                           }
                         }}
-                        className="shrink-0 border-l border-slate-100 h-full hover:bg-blue-50/20 cursor-pointer transition-colors"
+                        className="shrink-0 border-l border-slate-100 dark:border-slate-800/60 h-full hover:bg-blue-50/20 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
                         title={`Click tạo lịch lúc ${slot} cho ${row.name}`}
                       />
                     ))}
@@ -410,24 +410,24 @@ export default function AppointmentTimelineView({
                 left: `${popoverPos.left}px`,
                 zIndex: 60
               }}
-              className="bg-white rounded-2xl p-4 shadow-2xl border border-slate-200/90 w-[340px] space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-150 font-body select-none"
+              className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 w-[340px] space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-150 font-body select-none"
             >
               {/* Header Status Badge */}
               <div className="flex items-center justify-between">
                 {hoveredAppt.is_break || hoveredAppt.status === 'break' ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     <span className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>Blocktime / Nghỉ ⌄</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>Confirmed ⌄</span>
                   </span>
                 )}
                 <button
                   onClick={() => setHoveredAppt(null)}
-                  className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition"
+                  className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -442,10 +442,10 @@ export default function AppointmentTimelineView({
                   color="#3B82F6"
                 />
                 <div>
-                  <h4 className="font-extrabold text-sm text-slate-800">
+                  <h4 className="font-extrabold text-sm text-slate-800 dark:text-white">
                     {hoveredAppt.customer_name || 'Anh Ngọc Nguyễn'}
                   </h4>
-                  <p className="text-xs font-medium text-slate-500">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {hoveredAppt.displayStart || hoveredAppt.start_time || '11:00'} - {hoveredAppt.displayEnd || hoveredAppt.end_time || '13:00'}
                   </p>
                 </div>
@@ -454,12 +454,12 @@ export default function AppointmentTimelineView({
               {/* Service Details & Actual Price */}
               {!hoveredAppt.is_break && (
                 <>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div>
-                      <h5 className="font-extrabold text-sm text-slate-900 leading-snug">
+                      <h5 className="font-extrabold text-sm text-slate-900 dark:text-white leading-snug">
                         {hoveredAppt.service_name || 'Full Press Set (2 hrs)'}
                       </h5>
-                      <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1">
                         <Avatar
                           src={hoveredAppt.staff_avatar_url}
                           name={hoveredAppt.staff_name || t('invoices.table.staff', 'Nhân viên')}
@@ -469,13 +469,13 @@ export default function AppointmentTimelineView({
                         <span>{hoveredAppt.staff_name || t('invoices.table.staff', 'Nhân viên')}</span>
                       </p>
                     </div>
-                    <div className="font-extrabold text-sm text-slate-900">
+                    <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                       {formatVND(hoveredAppt.price || 450000)}
                     </div>
                   </div>
 
                   {/* Duration & Station */}
-                  <div className="text-xs text-slate-600 flex items-center gap-2 pt-1 font-medium">
+                  <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 pt-1 font-medium">
                     <span className="shrink-0">⏱ {hoveredAppt.duration_minutes || hoveredAppt.duration || 60} mins</span>
                     {hoveredAppt.facility_name && (hoveredAppt.raw_appointment?.facility_id || hoveredAppt.raw_appointment?.services?.some(s => s.facility_id)) && (
                       <>
@@ -487,7 +487,7 @@ export default function AppointmentTimelineView({
 
                   {/* Note ONLY rendered if actual note exists */}
                   {(hoveredAppt.notes || hoveredAppt.note) && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed font-normal">
+                    <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60 leading-relaxed font-normal">
                       📝 {hoveredAppt.notes || hoveredAppt.note}
                     </div>
                   )}
@@ -495,7 +495,7 @@ export default function AppointmentTimelineView({
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-1 text-slate-400">
                   <button
                     onClick={() => {
@@ -503,7 +503,7 @@ export default function AppointmentTimelineView({
                       setHoveredAppt(null);
                       onApptClick?.(appt);
                     }}
-                    className="p-2 rounded-lg hover:bg-slate-100 hover:text-slate-700 transition"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
                     title="Chỉnh sửa"
                   >
                     <Edit3 className="w-4 h-4" />

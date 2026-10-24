@@ -49,6 +49,7 @@ html, body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --theme-page-bg: #F8FAFC;
   }
 
   .dark {
@@ -84,6 +85,7 @@ html, body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --theme-page-bg: radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.24) 0%, transparent 50%), radial-gradient(circle at 85% 25%, rgba(244, 63, 94, 0.20) 0%, transparent 45%), radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), #0B0F19;
   }
 }
 
@@ -100,7 +102,141 @@ html, body {
 
   body {
     @apply bg-background text-foreground;
+    background: var(--theme-page-bg, #f8fafc);
+    background-attachment: fixed;
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    transition: background 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
+}
+
+/* ==========================================================================
+   Dark Mode High-Contrast Typography & Surface System (GloPro Liquid Glass)
+   ========================================================================== */
+.dark {
+  color-scheme: dark;
+  color: #F8FAFC;
+}
+
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6 {
+  color: #FFFFFF !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: #FFFFFF !important;
+}
+
+.dark .text-slate-600 {
+  color: #F8FAFC !important;
+}
+
+.dark .text-slate-500 {
+  color: #E2E8F0 !important;
+}
+
+.dark .text-slate-400 {
+  color: #CBD5E1 !important;
+}
+
+/* Tự động tối ưu các nền thẻ card & bề mặt trong dark mode */
+.dark .bg-white {
+  background-color: rgba(22, 27, 46, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .bg-white\/80,
+.dark .bg-white\/85,
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: rgba(18, 22, 38, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Comprehensive coverage for all slate-50 & slate-100 opacities and light hex backgrounds in dark mode */
+.dark .bg-slate-50,
+.dark .bg-slate-50\/20,
+.dark .bg-slate-50\/30,
+.dark .bg-slate-50\/40,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/80,
+.dark .bg-slate-50\/90,
+.dark .bg-slate-100,
+.dark .bg-slate-100\/20,
+.dark .bg-slate-100\/30,
+.dark .bg-slate-100\/40,
+.dark .bg-slate-100\/50,
+.dark .bg-slate-100\/60,
+.dark .bg-slate-100\/70,
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100\/90,
+.dark [class*="bg-slate-50"],
+.dark [class*="bg-slate-100"],
+.dark .bg-\[\#f8fafc\],
+.dark .bg-\[\#eff6ff\],
+.dark .bg-\[\#f0fdf4\],
+.dark .bg-\[\#fff7ed\],
+.dark .bg-\[\#fff1f2\] {
+  background-color: rgba(26, 32, 50, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Specific sticky and fixed columns in dark mode to prevent light bleed */
+.dark .sticky.bg-white,
+.dark .sticky[class*="bg-slate-50"],
+.dark .sticky[class*="bg-slate-100"] {
+  background-color: rgba(22, 27, 46, 0.96) !important;
+}
+
+/* Table header and grouping rows */
+.dark tr[class*="bg-slate-50"],
+.dark th[class*="bg-slate-50"],
+.dark td[class*="bg-slate-50"],
+.dark tr[class*="bg-slate-100"],
+.dark th[class*="bg-slate-100"],
+.dark td[class*="bg-slate-100"] {
+  background-color: rgba(28, 35, 54, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Hover rows */
+.dark tr[class*="hover:bg-slate-50"]:hover,
+.dark div[class*="hover:bg-slate-50"]:hover,
+.dark button[class*="hover:bg-slate-50"]:hover,
+.dark tr[class*="hover:bg-slate-100"]:hover,
+.dark div[class*="hover:bg-slate-100"]:hover,
+.dark button[class*="hover:bg-slate-100"]:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-200\/50,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/70,
+.dark .border-slate-200\/80,
+.dark .border-slate-300,
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark button.bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #E2E8F0 !important;
+}
+.dark button.bg-slate-100:hover {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
 }
 
 @media print {
@@ -137,28 +273,162 @@ html, body {
   }
 }
 
+/* ==========================================================================
+   GloPro iOS Glassmorphism & Liquid Glass Design System (Full Adaptive Engine)
+   ========================================================================== */
+:root {
+  --liquid-glass-bg: rgba(255, 255, 255, 0.72);
+  --liquid-glass-border: rgba(255, 255, 255, 0.65);
+  --liquid-glass-btn-bg: rgba(255, 255, 255, 0.68);
+  --liquid-glass-btn-hover: rgba(255, 255, 255, 0.92);
+  --liquid-glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 10px -2px rgba(0, 0, 0, 0.02);
+  --liquid-glass-specular: inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 1px rgba(0, 0, 0, 0.03);
+}
+
+.dark {
+  --liquid-glass-bg: rgba(18, 24, 38, 0.75);
+  --liquid-glass-border: rgba(255, 255, 255, 0.12);
+  --liquid-glass-btn-bg: rgba(30, 38, 58, 0.65);
+  --liquid-glass-btn-hover: rgba(38, 48, 72, 0.85);
+  --liquid-glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.15);
+  --liquid-glass-specular: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
+}
+
+/* 1. Liquid Glass Card / Surface Container */
+.ios-glass-card,
+.liquid-glass-surface,
+.glass-surface {
+  background-color: var(--glass-bg, var(--liquid-glass-bg));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%);
+  border: 1px solid var(--glass-border, var(--liquid-glass-border));
+  border-radius: 24px;
+  box-shadow: var(--liquid-glass-shadow), var(--liquid-glass-specular);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-glass-card:hover,
+.liquid-glass-surface:hover,
+.glass-surface:hover {
+  box-shadow: 0 14px 35px -4px rgba(0, 0, 0, 0.08), 0 6px 14px -3px rgba(0, 0, 0, 0.04), var(--liquid-glass-specular);
+}
+
+/* 2. Liquid Glass Buttons */
+.ios-glass-button,
+.liquid-glass-button,
+.btn-glass {
+  background-color: var(--liquid-glass-btn-bg);
+  backdrop-filter: blur(var(--glass-blur, 16px)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(160%);
+  border: 1px solid var(--liquid-glass-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), var(--liquid-glass-specular);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-glass-button:hover,
+.liquid-glass-button:hover,
+.btn-glass:hover {
+  background-color: var(--liquid-glass-btn-hover);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), var(--liquid-glass-specular);
+  transform: translateY(-1px);
+}
+
+.ios-glass-button:active,
+.liquid-glass-button:active,
+.btn-glass:active {
+  transform: scale(0.98);
+}
+
+/* 3. Liquid Glass Capsule with Edge Highlights */
 .liquid-glass {
-  background: rgba(0, 0, 0, 0.4);
-  background-blend-mode: luminosity;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: none;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  background: var(--liquid-glass-bg);
+  backdrop-filter: blur(var(--glass-blur, 16px)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(170%);
+  border: 1px solid var(--liquid-glass-border);
+  box-shadow: var(--liquid-glass-shadow), var(--liquid-glass-specular);
   position: relative;
   overflow: hidden;
 }
-.liquid-glass::before {
-  content: '';
+
+/* 4. Global Automatic Cascading (Kích hoạt khi toggle Kính Mờ Liquid Glass bật) */
+html[data-glass-enabled="true"] aside.main-sidebar,
+html[data-glass-enabled="true"] .glass-sidebar {
+  background-color: var(--glass-bg, var(--liquid-glass-bg)) !important;
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  border-right: 1px solid var(--glass-border, var(--liquid-glass-border)) !important;
+  box-shadow: 4px 0 24px -2px rgba(0, 0, 0, 0.03), inset -1px 0 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+html[data-glass-enabled="true"].dark aside.main-sidebar,
+html[data-glass-enabled="true"].dark .glass-sidebar {
+  background-color: rgba(15, 20, 32, 0.78) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 24px -2px rgba(0, 0, 0, 0.25), inset -1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-glass-enabled="true"] header.topbar-header,
+html[data-glass-enabled="true"] .glass-topbar {
+  background-color: var(--glass-bg, var(--liquid-glass-bg)) !important;
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  border-bottom: 1px solid var(--glass-border, var(--liquid-glass-border)) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03), inset 0 -1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+html[data-glass-enabled="true"].dark header.topbar-header,
+html[data-glass-enabled="true"].dark .glass-topbar {
+  background-color: rgba(15, 20, 32, 0.78) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-glass-enabled="true"] nav.mobile-bottom-tabs {
+  background-color: var(--glass-bg, var(--liquid-glass-bg)) !important;
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(180%) !important;
+  border-top: 1px solid var(--glass-border, var(--liquid-glass-border)) !important;
+}
+
+html[data-glass-enabled="true"].dark nav.mobile-bottom-tabs {
+  background-color: rgba(15, 20, 32, 0.85) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.bg-theme-gradient {
+  background: var(--theme-gradient, linear-gradient(135deg, #FF3B7A 0%, #FB7185 100%));
+}
+
+.text-theme-gradient {
+  background: var(--theme-gradient, linear-gradient(135deg, #FF3B7A 0%, #FB7185 100%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hiệu ứng hạt vi mô trôi nhẹ nhàng ngày lễ & tài lộc (Tiền vàng, Đô la, Mèo chiêu tài) */
+.glopro-particle {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.4px;
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
-    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
-    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  top: -40px;
+  user-select: none;
   pointer-events: none;
+  animation: gloproParticleDrift linear infinite;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes gloproParticleDrift {
+  0% {
+    transform: translateY(0) rotate(0deg) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg) translateX(35px);
+    opacity: 0;
+  }
 }

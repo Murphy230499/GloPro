@@ -172,12 +172,12 @@ export default function AppointmentCalendarView({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs font-body flex-1 min-h-0 flex flex-col overflow-hidden relative">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs font-body flex-1 min-h-0 flex flex-col overflow-hidden relative">
 
       {/* ── Fixed Column Headers (scroll-synced with body) ── */}
-      <div className="shrink-0 border-b border-slate-200 shadow-2xs bg-white rounded-t-2xl overflow-hidden z-20 flex">
+      <div className="shrink-0 border-b border-slate-200 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden z-20 flex">
         {/* Top-Left Frozen Corner Cell ("Giờ") */}
-        <div className="w-20 shrink-0 p-3 border-r border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-500 flex items-center justify-center z-30">
+        <div className="w-20 shrink-0 p-3 border-r border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-850 font-bold text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center z-30">
           Giờ
         </div>
 
@@ -202,7 +202,7 @@ export default function AppointmentCalendarView({
               return (
                 <div
                   key={col.id}
-                  className="flex-1 min-w-[150px] shrink-0 border-r border-slate-200 py-3 px-2 text-center bg-slate-50/50 flex flex-col items-center gap-1.5"
+                  className="flex-1 min-w-[150px] shrink-0 border-r border-slate-200 dark:border-slate-800 py-3 px-2 text-center bg-slate-50/50 dark:bg-slate-800/80 flex flex-col items-center gap-1.5"
                 >
                   {targetEntity === 'staff' ? (
                     <Avatar src={col.avatar_url} name={col.name} size={36} color="#3B82F6" />
@@ -211,7 +211,7 @@ export default function AppointmentCalendarView({
                       {col.icon || '🛏️'}
                     </div>
                   )}
-                  <span className="text-xs font-bold text-slate-800 truncate max-w-full">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate max-w-full">
                     {col.name} <span className="text-slate-400 font-normal">({colApptsCount})</span>
                   </span>
                   {targetEntity === 'facility' && col.room_name && (
@@ -248,13 +248,13 @@ export default function AppointmentCalendarView({
             )}
 
             {/* Left Time Scale Column (Sticky on Left) */}
-            <div className="w-20 shrink-0 border-r border-slate-200 relative bg-slate-50/90 backdrop-blur-sm sticky left-0 z-10">
+            <div className="w-20 shrink-0 border-r border-slate-200 dark:border-slate-800 relative bg-slate-50/90 dark:bg-slate-850 backdrop-blur-sm sticky left-0 z-10">
               {TIMELINE_SLOTS.map((slot, idx) => {
                 const topPx = (timeStringToMinutes(slot) - START_MINS) * MINUTE_HEIGHT_PX;
                 return (
                   <div
                     key={idx}
-                    className="absolute left-0 right-0 text-[11px] font-bold text-slate-500 pr-2 text-right"
+                    className="absolute left-0 right-0 text-[11px] font-bold text-slate-500 dark:text-slate-400 pr-2 text-right"
                     style={{ top: topPx - 8 }}
                   >
                     {slot}
@@ -278,7 +278,7 @@ export default function AppointmentCalendarView({
                 });
 
                 return (
-                  <div key={col.id} className="flex-1 min-w-[150px] shrink-0 border-r border-slate-100 relative">
+                  <div key={col.id} className="flex-1 min-w-[150px] shrink-0 border-r border-slate-100 dark:border-slate-800/60 relative">
                     {TIMELINE_SLOTS.map((slot, idx) => (
                       <div
                         key={idx}
@@ -299,7 +299,7 @@ export default function AppointmentCalendarView({
                             console.error('Drop error:', err);
                           }
                         }}
-                        className="absolute left-0 right-0 border-t border-slate-100 hover:bg-blue-50/20 cursor-pointer transition-colors"
+                        className="absolute left-0 right-0 border-t border-slate-100 dark:border-slate-800/60 hover:bg-blue-50/20 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
                         style={{
                           top: (timeStringToMinutes(slot) - START_MINS) * MINUTE_HEIGHT_PX,
                           height: 30 * MINUTE_HEIGHT_PX
@@ -391,23 +391,23 @@ export default function AppointmentCalendarView({
                 left: `${popoverPos.left}px`,
                 zIndex: 60
               }}
-              className="bg-white rounded-2xl p-4 shadow-2xl border border-slate-200/90 w-[340px] space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-150 font-body select-none"
+              className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 w-[340px] space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-150 font-body select-none"
             >
               <div className="flex items-center justify-between">
                 {hoveredAppt.is_break || hoveredAppt.status === 'break' ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     <span className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>Blocktime / Nghỉ ⌄</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>Confirmed ⌄</span>
                   </span>
                 )}
                 <button
                   onClick={() => setHoveredAppt(null)}
-                  className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition"
+                  className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -421,10 +421,10 @@ export default function AppointmentCalendarView({
                   color="#3B82F6"
                 />
                 <div>
-                  <h4 className="font-extrabold text-sm text-slate-800">
+                  <h4 className="font-extrabold text-sm text-slate-800 dark:text-white">
                     {hoveredAppt.customer_name || 'Anh Ngọc Nguyễn'}
                   </h4>
-                  <p className="text-xs font-medium text-slate-500">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {hoveredAppt.displayStart || hoveredAppt.start_time || '11:00'} - {hoveredAppt.displayEnd || hoveredAppt.end_time || '13:00'}
                   </p>
                 </div>
@@ -432,12 +432,12 @@ export default function AppointmentCalendarView({
 
               {!hoveredAppt.is_break && (
                 <>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div>
-                      <h5 className="font-extrabold text-sm text-slate-900 leading-snug">
+                      <h5 className="font-extrabold text-sm text-slate-900 dark:text-white leading-snug">
                         {hoveredAppt.service_name || 'Full Press Set (2 hrs)'}
                       </h5>
-                      <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1">
                         <Avatar
                           src={hoveredAppt.staff_avatar_url}
                           name={hoveredAppt.staff_name || 'Nhân viên'}
@@ -447,12 +447,12 @@ export default function AppointmentCalendarView({
                         <span>{hoveredAppt.staff_name || 'Nhân viên'}</span>
                       </p>
                     </div>
-                    <div className="font-extrabold text-sm text-slate-900">
+                    <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                       {formatVND(hoveredAppt.price || 450000)}
                     </div>
                   </div>
 
-                  <div className="text-xs text-slate-600 flex items-center gap-2 pt-1 font-medium">
+                  <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 pt-1 font-medium">
                     <span className="shrink-0">⏱ {hoveredAppt.duration_minutes || hoveredAppt.duration || 60} mins</span>
                     {hoveredAppt.facility_name && (hoveredAppt.raw_appointment?.facility_id || hoveredAppt.raw_appointment?.services?.some(s => s.facility_id)) && (
                       <>
@@ -463,14 +463,14 @@ export default function AppointmentCalendarView({
                   </div>
 
                   {(hoveredAppt.notes || hoveredAppt.note) && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed font-normal">
+                    <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60 leading-relaxed font-normal">
                       📝 {hoveredAppt.notes || hoveredAppt.note}
                     </div>
                   )}
                 </>
               )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-1 text-slate-400">
                   <button
                     onClick={() => {
@@ -478,7 +478,7 @@ export default function AppointmentCalendarView({
                       setHoveredAppt(null);
                       onApptClick?.(appt);
                     }}
-                    className="p-2 rounded-lg hover:bg-slate-100 hover:text-slate-700 transition"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
                     title="Chỉnh sửa"
                   >
                     <Edit3 className="w-4 h-4" />

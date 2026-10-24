@@ -34,7 +34,7 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
   };
 
   return (
-    <header className="sticky top-0 z-[99] bg-white/80 backdrop-blur-lg border-b border-slate-100">
+    <header className="topbar-header glass-topbar sticky top-0 z-[99] bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/80 shadow-2xs transition-colors duration-300">
       <div className="h-16 flex items-center gap-1.5 md:gap-3 px-2 md:px-5">
         {/* Left: logo + branch */}
         <div className="flex items-center gap-2 shrink-0">
@@ -45,7 +45,10 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
         </div>
 
         <div className="relative shrink-0 min-w-0">
-          <button onClick={() => setBranchMenu((v) => !v)} className="flex items-center gap-1 px-1.5 md:gap-1.5 md:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+          <button 
+            onClick={() => setBranchMenu((v) => !v)} 
+            className="btn-glass flex items-center gap-1 px-1.5 md:gap-1.5 md:px-3 py-2 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-98 cursor-pointer"
+          >
             <MapPin className="w-4 h-4 text-pink-500 shrink-0" />
             <span className="text-sm font-semibold max-w-[130px] sm:max-w-[180px] truncate">
               {currentBranchId === 'all' ? t('top.all_branches') : currentBranch?.name || '—'}
@@ -53,13 +56,13 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
             <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
           </button>
           {branchMenu &&
-          <div className="absolute left-0 mt-2 w-60 bg-white rounded-2xl border border-slate-100 shadow-xl py-1 z-50">
-              <button onClick={() => {setBranch('all');setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 font-medium border-b border-slate-100">
+          <div className="absolute left-0 mt-2 w-60 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl border border-white/40 dark:border-slate-800 shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+              <button onClick={() => {setBranch('all');setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium border-b border-slate-100 dark:border-slate-800">
                 <span className="truncate">{t('top.all_branches', 'Tất cả chi nhánh')}</span>
                 {currentBranchId === 'all' && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
               </button>
               {branches.map((b) =>
-            <button key={b.id} onClick={() => {setBranch(b.id);setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
+            <button key={b.id} onClick={() => {setBranch(b.id);setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
                   <span className="truncate">{b.name}</span>
                   {currentBranchId === b.id && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
                 </button>
@@ -78,19 +81,19 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
 
           <button
             onClick={onNewAppointment}
-            className="hidden md:flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+            className="btn-glass hidden md:flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-98 cursor-pointer group"
             title={t('topbar.to_lch_hn', 'Tạo lịch hẹn')}
           >
-            <CalendarDays className="w-5 h-5 md:w-4 md:h-4 text-blue-500" />
+            <CalendarDays className="w-5 h-5 md:w-4 md:h-4 text-blue-500 transition-transform group-hover:scale-110" />
             <span className="text-xs font-semibold hidden md:inline">{t('topbar.t_lch', 'Đặt lịch')}</span>
           </button>
           
           <button
             onClick={onNewInvoice}
-            className="hidden md:flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+            className="btn-glass hidden md:flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 md:gap-1.5 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-98 cursor-pointer group"
             title={t('topbar.to_ha_n', 'Tạo hóa đơn')}
           >
-            <Receipt className="w-5 h-5 md:w-4 md:h-4 text-emerald-500" />
+            <Receipt className="w-5 h-5 md:w-4 md:h-4 text-emerald-500 transition-transform group-hover:scale-110" />
             <span className="text-xs font-semibold hidden md:inline">{t('topbar.to_n', 'Tạo đơn')}</span>
           </button>
 

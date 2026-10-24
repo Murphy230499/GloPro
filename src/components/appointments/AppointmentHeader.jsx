@@ -116,7 +116,7 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
       onClick={(e) => { e.stopPropagation(); onClose?.(); }}
     >
       <div 
-        className="w-[300px] sm:w-full bg-white rounded-2xl border border-slate-200 shadow-2xl p-4"
+        className="w-[300px] sm:w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Month Year Header */}
@@ -124,19 +124,19 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
           <button
             type="button"
             onClick={prevMonth}
-            className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+            className="w-8 h-8 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 shadow-2xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
           </button>
 
-          <div className="text-base font-bold text-slate-900 tracking-tight">
+          <div className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
             {monthNames[month]} {year}
           </div>
 
           <button
             type="button"
             onClick={nextMonth}
-            className="w-8 h-8 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-2xs cursor-pointer"
+            className="w-8 h-8 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95 shadow-2xs cursor-pointer"
           >
             <ChevronRight className="w-4 h-4 stroke-[2.2]" />
           </button>
@@ -145,7 +145,7 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
         {/* Weekdays Header */}
         <div className="grid grid-cols-7 text-center mb-2">
           {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-            <span key={d} className="text-xs font-semibold text-slate-400 py-1">
+            <span key={d} className="text-xs font-semibold text-slate-400 dark:text-slate-500 py-1">
               {d}
             </span>
           ))}
@@ -162,11 +162,11 @@ export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, a
             if (isSelected) {
               classNames += "bg-blue-500 text-white font-bold shadow-sm scale-105 rounded-full";
             } else if (isHighlight) {
-              classNames += "bg-blue-50 text-blue-900 font-bold hover:bg-blue-100 rounded-full";
+              classNames += "bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-full";
             } else if (item.isCurrentMonth) {
-              classNames += "text-slate-800 hover:bg-slate-100 font-medium rounded-full";
+              classNames += "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium rounded-full";
             } else {
-              classNames += "text-slate-300 hover:bg-slate-50 font-normal rounded-full";
+              classNames += "text-slate-300 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 font-normal rounded-full";
             }
 
             return (
@@ -308,12 +308,12 @@ export default function AppointmentHeader({
   }, {});
 
   return (
-    <div className="relative z-50 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs font-body mb-2 sm:mb-4 overflow-visible">
+    <div className="relative z-50 bg-white dark:bg-slate-900/90 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs font-body mb-2 sm:mb-4 overflow-visible">
       {/* Responsive Horizontal Container without Overflow Clipping */}
       <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 sm:gap-3 overflow-visible w-full">
         {/* Left Side Items */}
           {/* Target Entity Switcher: Nhân viên | Giường / Phòng */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-xl flex items-center justify-between gap-1 border border-slate-200/70 shrink-0 w-auto order-1 shadow-2xs">
+          <div className="bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-xl flex items-center justify-between gap-1 border border-slate-200/70 dark:border-slate-700/70 shrink-0 w-auto order-1 shadow-2xs">
             <button
               onClick={() => {
                 setTargetEntity?.('staff');
@@ -322,7 +322,7 @@ export default function AppointmentHeader({
               className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 targetEntity === 'staff'
                   ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -336,7 +336,7 @@ export default function AppointmentHeader({
               className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 targetEntity === 'facility'
                   ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <BedDouble className="w-3.5 h-3.5" />
@@ -357,24 +357,24 @@ export default function AppointmentHeader({
               }}
               className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs cursor-pointer ${
                 isServiceOpen || selectedService !== 'all'
-                  ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white text-slate-800 font-semibold'
-                  : 'border-slate-300 bg-white text-slate-500 font-normal hover:border-slate-400'
+                  ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-100 font-semibold'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-500 dark:text-slate-400 font-normal hover:border-slate-400 dark:hover:border-slate-600'
               }`}
             >
-              <span className={`truncate ${selectedService === 'all' ? 'text-slate-500 font-normal' : 'text-slate-800 font-semibold'}`}>{serviceLabel}</span>
+              <span className={`truncate ${selectedService === 'all' ? 'text-slate-500 dark:text-slate-400 font-normal' : 'text-slate-800 dark:text-slate-100 font-semibold'}`}>{serviceLabel}</span>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
 
             {isServiceOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl border border-slate-200 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
+              <div className="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
                 {/* Search Header Bar */}
-                <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
+                <div className="bg-[#f8fafc] dark:bg-slate-800/80 px-4 py-3 border-b border-slate-100/80 dark:border-slate-700/80">
                   <input
                     type="text"
                     placeholder={t('catalog.search_service_placeholder', 'tìm kiếm dịch vụ...')}
                     value={searchService}
                     onChange={(e) => setSearchService(e.target.value)}
-                    className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-light"
+                    className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-light"
                   />
                 </div>
 
@@ -387,12 +387,12 @@ export default function AppointmentHeader({
                       setSelectedService?.('all');
                       setIsServiceOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-800 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                       selectedService === 'all'
                         ? 'border-orange-500 bg-orange-500 text-white'
-                        : 'border-slate-300 bg-white'
+                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                     }`}>
                       {selectedService === 'all' && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
@@ -404,7 +404,7 @@ export default function AppointmentHeader({
                     <div key={category} className="space-y-1 pt-1">
                       {/* Group Header */}
                       <div className="flex items-center gap-2 px-2 pt-1">
-                        <div className="w-4 h-4 rounded-md border border-slate-300 bg-white shrink-0" />
+                        <div className="w-4 h-4 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0" />
                         <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                           {category}
                         </span>
@@ -423,12 +423,12 @@ export default function AppointmentHeader({
                                 setSelectedService?.(sName);
                                 setIsServiceOpen(false);
                               }}
-                              className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                              className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
                               <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                                 isSelected
                                   ? 'border-orange-500 bg-orange-500 text-white'
-                                  : 'border-slate-300 bg-white'
+                                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                               }`}>
                                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                               </div>
@@ -455,8 +455,8 @@ export default function AppointmentHeader({
               }}
               className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-xs font-medium transition-all shadow-2xs cursor-pointer ${
                 isStaffOpen || selectedStaff !== 'all'
-                  ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white text-slate-800 font-semibold'
-                  : 'border-slate-300 bg-white text-slate-500 font-normal hover:border-slate-400'
+                  ? 'border-orange-500 ring-2 ring-orange-500/10 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-100 font-semibold'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-500 dark:text-slate-400 font-normal hover:border-slate-400 dark:hover:border-slate-600'
               }`}
             >
               <div className="flex items-center gap-2 max-w-[120px] sm:max-w-[180px] truncate">
@@ -468,21 +468,21 @@ export default function AppointmentHeader({
                     color={currentStaffObj.avatar_color || '#3B82F6'}
                   />
                 )}
-                <span className={`truncate ${selectedStaff === 'all' ? 'text-slate-500 font-normal' : 'text-slate-800 font-semibold'}`}>{staffLabel}</span>
+                <span className={`truncate ${selectedStaff === 'all' ? 'text-slate-500 dark:text-slate-400 font-normal' : 'text-slate-800 dark:text-slate-100 font-semibold'}`}>{staffLabel}</span>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </button>
 
             {isStaffOpen && (
-              <div className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 w-72 bg-white rounded-xl border border-slate-200 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
+              <div className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 w-72 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl z-[60] flex flex-col max-h-80 overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-body">
                 {/* Search Header Bar */}
-                <div className="bg-[#f8fafc] px-4 py-3 border-b border-slate-100/80">
+                <div className="bg-[#f8fafc] dark:bg-slate-800/80 px-4 py-3 border-b border-slate-100/80 dark:border-slate-700/80">
                   <input
                     type="text"
                     placeholder={targetEntity === 'staff' ? t('appointments.search_staff_placeholder', 'tìm kiếm nhân viên...') : t('appointments.search_bed_placeholder', 'tìm kiếm giường / phòng...')}
                     value={searchStaff}
                     onChange={(e) => setSearchStaff(e.target.value)}
-                    className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-light"
+                    className="w-full bg-transparent text-xs font-normal outline-none text-slate-700 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-light"
                   />
                 </div>
 
@@ -495,12 +495,12 @@ export default function AppointmentHeader({
                       setSelectedStaff?.('all');
                       setIsStaffOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-800 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                       selectedStaff === 'all'
                         ? 'border-orange-500 bg-orange-500 text-white'
-                        : 'border-slate-300 bg-white'
+                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                     }`}>
                       {selectedStaff === 'all' && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
@@ -512,7 +512,7 @@ export default function AppointmentHeader({
                     <div key={group} className="space-y-1 pt-1">
                       {/* Group Header */}
                       <div className="flex items-center gap-2 px-2 pt-1">
-                        <div className="w-4 h-4 rounded-md border border-slate-300 bg-white shrink-0" />
+                        <div className="w-4 h-4 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0" />
                         <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                           {group}
                         </span>
@@ -531,12 +531,12 @@ export default function AppointmentHeader({
                                 setSelectedStaff?.(item.id);
                                 setIsStaffOpen(false);
                               }}
-                              className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                              className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
                               <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                                 isSelected
                                   ? 'border-orange-500 bg-orange-500 text-white'
-                                  : 'border-slate-300 bg-white'
+                                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                               }`}>
                                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                               </div>
@@ -562,13 +562,13 @@ export default function AppointmentHeader({
           </div>
 
           {/* Custom Date Picker Navigation Segmented Pill */}
-          <div className="relative flex items-center justify-between bg-white rounded-lg border border-slate-300 shadow-2xs divide-x divide-slate-200 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-8 sm:order-7 xl:order-4">
+          <div className="relative flex items-center justify-between bg-white dark:bg-slate-850 rounded-lg border border-slate-300 dark:border-slate-700 shadow-2xs divide-x divide-slate-200 dark:divide-slate-700 font-body shrink-0 datepicker-dropdown-container flex-1 min-w-0 xl:flex-none xl:w-auto order-8 sm:order-7 xl:order-4">
             {/* Left Arrow Button: Previous Day */}
             <button
               type="button"
               onClick={() => handleDateShift(-1)}
               title={t('appointments.prev_day', 'Ngày trước')}
-              className="px-2.5 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="px-2.5 py-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4 stroke-[1.5]" />
             </button>
@@ -581,8 +581,8 @@ export default function AppointmentHeader({
                 setIsStaffOpen(false);
                 setIsServiceOpen(false);
               }}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 hover:bg-slate-50 transition-colors cursor-pointer ${
-                isDatePickerOpen ? 'bg-slate-50 text-blue-600 font-semibold' : 'text-slate-700 font-medium'
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                isDatePickerOpen ? 'bg-slate-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold' : 'text-slate-700 dark:text-slate-200 font-medium'
               }`}
             >
               <CalendarDays className={`w-4 h-4 ${isDatePickerOpen ? 'text-blue-500' : 'text-slate-400'}`} />
@@ -594,7 +594,7 @@ export default function AppointmentHeader({
               type="button"
               onClick={() => handleDateShift(1)}
               title={t('appointments.next_day', 'Ngày sau')}
-              className="px-2.5 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
+              className="px-2.5 py-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center active:scale-95 cursor-pointer"
             >
               <ChevronRight className="w-4 h-4 stroke-[1.5]" />
             </button>
@@ -615,14 +615,14 @@ export default function AppointmentHeader({
           <div className="basis-full h-0 xl:hidden order-7 sm:order-6" />
 
           {/* Sub-view Mode Icons: Timeline | Calendar | List */}
-          <div className="bg-slate-100 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 shrink-0 order-2 sm:order-4 xl:order-5 ml-auto">
+          <div className="bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 border border-slate-200/60 dark:border-slate-700/60 shrink-0 order-2 sm:order-4 xl:order-5 ml-auto">
             <button
               onClick={() => setViewMode?.('timeline')}
               title={t('appointments.timeline_view', 'Dòng thời gian (Timeline)')}
               className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'timeline'
                   ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -634,7 +634,7 @@ export default function AppointmentHeader({
               className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'calendar'
                   ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -646,7 +646,7 @@ export default function AppointmentHeader({
               className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 viewMode === 'list'
                   ? 'bg-blue-500 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <List className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -658,7 +658,7 @@ export default function AppointmentHeader({
             <button
               type="button"
               onClick={onSettingsClick}
-              className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg sm:rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-2xs"
+              className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-100 transition-colors shadow-2xs cursor-pointer"
               title={t('appointments.settings_title', 'Cài đặt lịch hẹn')}
             >
               <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2]" />
@@ -670,7 +670,7 @@ export default function AppointmentHeader({
             <div className="flex items-stretch bg-blue-500 hover:bg-blue-600 text-white rounded-lg sm:rounded-xl shadow-2xs transition-all active:scale-95 group">
               <button
                 onClick={onAddClick}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold whitespace-nowrap border-r border-blue-400/30"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold whitespace-nowrap border-r border-blue-400/30 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
                 <span className="hidden sm:inline">{t('appointments.create_appt', 'Tạo Lịch Hẹn')}</span>
@@ -678,20 +678,20 @@ export default function AppointmentHeader({
               </button>
               <button
                 onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                className="px-1 sm:px-2 py-1.5 sm:py-2 flex items-center justify-center rounded-r-lg sm:rounded-r-xl"
+                className="px-1 sm:px-2 py-1.5 sm:py-2 flex items-center justify-center rounded-r-lg sm:rounded-r-xl cursor-pointer"
               >
                 <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
 
             {isAddMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-[100] overflow-hidden py-1">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-[100] overflow-hidden py-1">
                 <button
                   onClick={() => {
                     setIsAddMenuOpen(false);
                     onAddClick?.();
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-500 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer"
                 >
                   {t('appointments.create_appt', 'Tạo Lịch Hẹn')}
                 </button>
@@ -700,7 +700,7 @@ export default function AppointmentHeader({
                     setIsAddMenuOpen(false);
                     onAddTimeBlockClick?.();
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-500 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer"
                 >
                   {t('appointments.create_break', 'Tạo Giờ Nghỉ')}
                 </button>
