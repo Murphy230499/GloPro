@@ -142,46 +142,36 @@ Thay vì ẩn hoàn toàn khiến khách không biết sản phẩm có tính n�
 
 ---
 
-## 🚀 6. LỘ TRÌNH TRIỂN KHAI (4 GIAI ĐOẠN)
+## 🚀 6. LỘ TRÌNH TRIỂN KHAI & TIẾN ĐỘ THỰC HIỆN
 
-```mermaid
-graph TD
-    A[Giai đoạn 1: Database & Seed Gói] --> B[Giai đoạn 2: Engine usePlan & API Guard]
-    B --> C[Giai đoạn 3: UI Khóa tính năng & Upsell Modal]
-    C --> D[Giai đoạn 4: Trang Cài đặt Gói & Tích hợp Thanh toán]
-```
-
-### Giai đoạn 1: Cơ sở dữ liệu & Cấu hình Gói cước (Database & Data)
-- [ ] Viết migration tạo 2 bảng `subscription_plans` và `tenant_subscriptions`.
-- [ ] Seed sẵn dữ liệu mẫu cho 3 gói (`free`, `pro`, `ultra`).
-- [ ] Gán mặc định gói `free` cho tất cả các salon hiện tại (hoặc kích hoạt `ultra` cho các salon thử nghiệm như salon của Đức Live).
-
-### Giai đoạn 2: Bộ máy kiểm soát quyền hạn (Guardrail Core)
-- [ ] Tạo `src/lib/planConfig.js`: Định nghĩa bảng mã tính năng và hạn mức.
-- [ ] Tạo `src/lib/PlanContext.jsx` & Hook `usePlan()`.
-- [ ] Bổ sung kiểm tra quyền trong `/api/copilot` (Chỉ gói Ultra mới được gọi Gemini).
-- [ ] Bổ sung kiểm tra hạn mức chi nhánh và nhân viên trong `/api/db`.
-
-### Giai đoạn 3: Giao diện Khóa & Modal Nâng Cấp (UI Upsell)
-- [ ] Xây dựng Component `<UpgradeModal />` (Hiển thị quyền lợi, bảng giá và nút thanh toán).
-- [ ] Xây dựng Component `<FeatureLockGate />` bọc các tính năng:
-  - Tab 3D Phòng Giường (`Bed3DViewer`)
-  - Menu Kho & Nhà Cung Cấp
-  - Menu Bảng Lương & Hoa Hồng KTV
-  - Nút kích hoạt AI Copilot Drawer
-- [ ] Thêm Badge hiển thị gói (`Free`, `Pro`, `Ultra`) trên Header `TopBar.jsx`.
-
-### Giai đoạn 4: Cổng Thanh Toán & Quản Lý Gói (Billing & Checkout)
-- [ ] Tạo tab "Gói cước & Đăng ký" trong `src/views/Settings.jsx`.
-- [ ] Tích hợp tính năng tạo mã VietQR SePay/PayOS tự động theo cú pháp `GLOPRO {TENANT_ID} {PLAN}`.
-- [ ] Viết API Webhook `/api/billing/webhook` để tự động nâng cấp gói khi tiền vào tài khoản.
+### Đã hoàn thành (Delivered & Verified):
+- [x] **Cấu hình Gói & Bảng giá (`src/lib/planConfig.js`):**
+  - Định nghĩa 3 gói: `free` (0đ), `pro` (399k/tháng hoặc 3.83tr/năm), `ultra` (899k/tháng hoặc 8.63tr/năm giảm 20%).
+  - Tích hợp công thức tính khấu trừ theo ngày chưa dùng (**Proration Calculator**).
+  - Cấu hình cổng **VietQR** nội địa (MBBank, QR động kèm tiền & nội dung tự động) & thẻ quốc tế **Stripe**.
+- [x] **Bộ máy quản trị Vòng đời Gói (`src/lib/PlanContext.jsx`):**
+  - Theo dõi Ngày kích hoạt (`started_at`), Ngày hết hạn (`expires_at`), Số ngày còn lại (`remaining_days`), Trạng thái hoạt động.
+  - Tự động hạ về gói Free khi hết hạn, bảo lưu 100% dữ liệu lịch sử và khách hàng.
+  - Quản lý nâng gói, hạ gói, gia hạn gói tức thì.
+- [x] **Giao diện Quản lý Gói & Đăng ký (`src/components/subscription/SubscriptionTab.jsx`):**
+  - Tích hợp tab **"Gói cước & Đăng ký"** vào `src/views/Settings.jsx`.
+  - Hiển thị Hero Card trạng thái gói hiện tại, ngày kích hoạt, ngày hết hạn, đếm ngược ngày và cơ chế bảo vệ dữ liệu.
+  - Bảng so sánh 3 cột tính năng trực quan kèm nút toggle Tháng / Năm (-20%).
+  - Modal hạ gói (Downgrade Modal) cảnh báo thân thiện và bảo lưu dữ liệu.
+- [x] **Cổng Thanh Toán Tích Hợp (`src/components/subscription/PaymentModal.jsx`):**
+  - Quét mã VietQR tự động cho khách nội địa (tự tạo mã theo hóa đơn).
+  - Thanh toán Thẻ quốc tế Stripe cho khách nước ngoài.
+  - Bảng chi tiết khấu trừ (Proration breakdown) minh bạch số tiền.
+- [x] **Badge Gói cước trên Header TopBar (`src/components/TopBar.jsx`):**
+  - Hiển thị Badge Gói (`🌱 Free`, `⭐ Pro`, `💎 Ultra AI`) kèm số ngày còn lại.
+  - Bấm vào Badge điều hướng thẳng tới màn hình Quản lý gói cước.
+- [x] **Component Khóa Giao diện (`src/components/subscription/FeatureLockGate.jsx`):**
+  - Màn hình kính mờ (Glassmorphism) khóa các tính năng khi tài khoản chưa nâng cấp gói tương ứng.
 
 ---
 
-## ❓ 7. CÂU HỎI LÀM RÕ (SOCRATIC GATE)
+## 💡 7. QUYẾT ĐỊNH THIẾT KẾ ĐÃ THỐNG NHẤT
+1. **Cổng thanh toán:** Hỗ trợ song song 2 cổng: VietQR tự động cho khách nội địa Việt Nam + Stripe thẻ tín dụng cho khách quốc tế.
+2. **Nâng gói (Upgrade):** Tự động trừ tiền theo ngày đã dùng (khấu trừ số ngày còn lại của gói cũ vào hóa đơn nâng gói mới).
+3. **Hết hạn (Expiration):** Tự động hạ về gói Free (bảo lưu toàn bộ dữ liệu lịch sử, chỉ tạm khóa các tính năng nâng cao của Pro/Ultra cho đến khi gia hạn).
 
-Trước khi tiến hành viết mã triển khai, xin ý kiến phản hồi của bạn về 3 điểm sau:
-
-1. **Chính sách tài khoản hiện tại:** Salon hiện tại của bạn (`duclivegiolinh@gmail.com`) có mặc định được kích hoạt vĩnh viễn gói **Ultra (Full quyền AI)** không?
-2. **Hình thức thanh toán:** Bạn muốn tích hợp cổng thanh toán nào trước? (Ví dụ: **Chuyển khoản VietQR tự động qua SePay/PayOS** hay **Thẻ quốc tế Stripe**)?
-3. **Thời gian dùng thử (Trial):** Khách mới đăng ký có được tặng 7 hoặc 14 ngày dùng thử miễn phí gói **Pro/Ultra** trước khi quay về gói Free không?

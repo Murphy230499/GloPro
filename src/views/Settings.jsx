@@ -10,6 +10,7 @@ import ImageUpload from '@/components/ImageUpload';
 import RoleManager from '@/components/settings/RoleManager';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import AppearanceWidgetsTab from '@/components/settings/AppearanceWidgetsTab';
+import SubscriptionTab from '@/components/subscription/SubscriptionTab';
 import { base44, getCachedPermissions, clearCachedPermissions } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
 import { useBranch } from '@/lib/BranchContext';
@@ -276,6 +277,7 @@ export default function SettingsPage() {
       if (isMyPermissionAllowed('setting_permission_edit')) allowed.push('permissions');
       if (isMyPermissionAllowed('setting_integration_view')) allowed.push('integrations');
       allowed.push('appearance');
+      allowed.push('subscription');
       
       if (allowed.length > 0 && !allowed.includes(activeTab)) {
         handleTabChange(allowed[0]);
@@ -570,6 +572,17 @@ export default function SettingsPage() {
         >
           <Palette className="w-4 h-4 shrink-0" />
           <span>{t('settings.tab_appearance', 'Giao diện')}</span>
+        </button>
+        <button
+          onClick={() => handleTabChange('subscription')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-all ${
+            activeTab === 'subscription'
+              ? 'bg-blue-600 text-white shadow-sm font-bold'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/80'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>{t('settings.tab_subscription', 'Gói cước & Đăng ký')}</span>
         </button>
       </div>
 
@@ -1002,6 +1015,10 @@ export default function SettingsPage() {
       {/* Tab 5: Giao diện & Widgets */}
       {activeTab === 'appearance' && (
         <AppearanceWidgetsTab />
+      )}
+      {/* Tab 6: Gói cước & Đăng ký */}
+      {activeTab === 'subscription' && (
+        <SubscriptionTab />
       )}
     </div>
   );

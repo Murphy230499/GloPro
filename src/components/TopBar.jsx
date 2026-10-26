@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Sparkles, MapPin, ChevronDown, Check, CalendarDays, Receipt, CloudUpload } from 'lucide-react';
 import { useBranch } from '@/lib/BranchContext';
+import { usePlan } from '@/lib/PlanContext';
+import Link from 'next/link';
 import GlobalSearch from '@/components/GlobalSearch';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProfileMenu from '@/components/ProfileMenu';
@@ -11,6 +13,7 @@ import { toast } from '@/components/Layout';
 
 export default function TopBar({ onNewAppointment, onNewInvoice }) {
   const { branches, currentBranchId, setBranch, currentBranch } = useBranch();
+  const { plan, planId, remainingDays, isExpired } = usePlan();
   const [branchMenu, setBranchMenu] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { t } = useT();
@@ -36,12 +39,12 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
   return (
     <header className="topbar-header glass-topbar sticky top-0 z-[99] bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/80 shadow-2xs transition-colors duration-300">
       <div className="h-16 flex items-center gap-1.5 md:gap-3 px-2 md:px-5">
-        {/* Left: logo + branch */}
+        {/* Left: logo + branch + subscription badge */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-md">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold tracking-tight hidden lg:block">GlowPro</span>
+          <span className="font-bold tracking-tight hidden lg:block">GloPro</span>
         </div>
 
         <div className="relative shrink-0 min-w-0">
@@ -78,6 +81,25 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
             </div>
           )}
         </div>
+
+        {/* Plan Subscription Badge */}
+        <Link
+          href="/settings?tab=subscription"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-98 cursor-pointer shrink-0 ${plan.badgeColor}`}
+          title="Quản lý gói cước & Đăng ký"
+        >
+          <span>{plan.badge}</span>
+          {planId !== 'free' && !isExpired && (
+            <span className="text-[10px] font-semibold opacity-85 hidden sm:inline">
+              • {remainingDays} ngày
+            </span>
+          )}
+          {planId !== 'free' && isExpired && (
+            <span className="text-[10px] font-semibold text-rose-500 hidden sm:inline">
+              • Hết hạn
+            </span>
+          )}
+        </Link>
 
         {/* Center: global search */}
         <div className="flex-1 hidden md:flex justify-end md:justify-center px-1 md:px-2 min-w-0">

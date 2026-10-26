@@ -5,18 +5,21 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClientInstance } from '@/lib/query-client';
 import { AuthProvider } from '@/lib/AuthContext';
 import { BranchProvider } from '@/lib/BranchContext';
+import { PlanProvider } from '@/lib/PlanContext';
 import { LanguageProvider } from '@/lib/i18n';
 
 export default function ProvidersInner({ children }) {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-          <BranchProvider>
+        <BranchProvider>
+          <PlanProvider>
             <LanguageProvider>
               {children}
               <Toaster />
             </LanguageProvider>
-          </BranchProvider>
+          </PlanProvider>
+        </BranchProvider>
       </QueryClientProvider>
     </AuthProvider>
   );
