@@ -16,6 +16,7 @@ import POSInvoiceModal from '@/components/POSInvoiceModal';
 import { getCachedPermissions } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { getUIPreferences, applyThemeToDom } from '@/lib/uiPreferences';
+import SidebarSubscriptionWidget from '@/components/subscription/SidebarSubscriptionWidget';
 
 export { toast };
 
@@ -216,6 +217,9 @@ export default function Layout({ children }) {
               <NavItem key={item.to} item={item} />
             )}
           </nav>
+
+          {/* Subscription Tier Widget at the bottom of sidebar */}
+          <SidebarSubscriptionWidget isCollapsed={isSidebarCollapsed} />
         </aside>
 
         {/* Content */}
@@ -287,6 +291,11 @@ export default function Layout({ children }) {
                   </Link>
                 );
               })}
+            </div>
+
+            {/* Mobile subscription widget */}
+            <div className="mt-4">
+              <SidebarSubscriptionWidget isCollapsed={false} />
             </div>
           </div>
         </div>
