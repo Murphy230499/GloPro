@@ -51,24 +51,32 @@ export default function TopBar({ onNewAppointment, onNewInvoice }) {
           >
             <MapPin className="w-4 h-4 text-pink-500 shrink-0" />
             <span className="text-sm font-semibold max-w-[130px] sm:max-w-[180px] truncate">
-              {currentBranchId === 'all' ? t('top.all_branches') : currentBranch?.name || '—'}
+              {currentBranch?.name || branches[0]?.name || '—'}
             </span>
             <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
           </button>
-          {branchMenu &&
-          <div className="absolute left-0 mt-2 w-60 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl border border-white/40 dark:border-slate-800 shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-              <button onClick={() => {setBranch('all');setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium border-b border-slate-100 dark:border-slate-800">
-                <span className="truncate">{t('top.all_branches', 'Tất cả chi nhánh')}</span>
-                {currentBranchId === 'all' && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
-              </button>
-              {branches.map((b) =>
-            <button key={b.id} onClick={() => {setBranch(b.id);setBranchMenu(false);}} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
-                  <span className="truncate">{b.name}</span>
-                  {currentBranchId === b.id && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
-                </button>
-            )}
+          {branchMenu && (
+            <div className="absolute left-0 mt-2 w-60 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl border border-white/40 dark:border-slate-800 shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+              {branches.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-slate-400 italic">Đang tải chi nhánh...</div>
+              ) : (
+                branches.map((b) => (
+                  <button 
+                    key={b.id} 
+                    onClick={() => { setBranch(b.id); setBranchMenu(false); }} 
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                      currentBranchId === b.id 
+                        ? 'font-bold text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-950/20' 
+                        : 'text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    <span className="truncate">{b.name}</span>
+                    {currentBranchId === b.id && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
+                  </button>
+                ))
+              )}
             </div>
-          }
+          )}
         </div>
 
         {/* Center: global search */}
