@@ -227,6 +227,7 @@ export async function resolveTenantId(forceRefresh = false) {
               if (apiData.profile) {
                 profile = apiData.profile;
                 sessionStorage.setItem('gp_active_profile', JSON.stringify(apiData.profile));
+                localStorage.setItem('gp_user_profile', JSON.stringify(apiData.profile));
               }
             }
           }
@@ -321,23 +322,17 @@ export function getTenantStorageKey(prefix, suffix = '') {
 export function clearActiveTenant() {
   inMemoryTenantId = null;
   if (typeof window !== 'undefined') {
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_') || k.startsWith('glopro_'))) {
-        keysToRemove.push(k);
-      }
-    }
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-
-    const sKeys = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const k = sessionStorage.key(i);
-      if (k && (k.startsWith('gp_') || k.startsWith('glowpro_') || k.startsWith('glopro_'))) {
-        sKeys.push(k);
-      }
-    }
-    sKeys.forEach(k => sessionStorage.removeItem(k));
+    // Only remove auth/tenant session keys, NEVER clear UI preferences, themes, or profile
+    const SESSION_KEYS = [
+      'gp_active_tenant_id',
+      'gp_tenant_map',
+      'gp_dev_auth_user',
+      'glowpro_branch'
+    ];
+    SESSION_KEYS.forEach(k => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
   }
 }
 

@@ -20,6 +20,42 @@ export async function POST(request) {
       }
     });
 
+    // Caller Authorization & Tenant Extraction
+    const authHeader = request.headers.get('authorization');
+    let callerTenantId = null;
+    let isAuthorized = false;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+        if (user && !error) {
+          const { data: profile } = await supabaseAdmin
+            .from('user_profile')
+            .select('tenant_id, role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const userRole = profile?.role || user.user_metadata?.role;
+          callerTenantId = profile?.tenant_id || user.user_metadata?.tenant_id;
+          
+          if (userRole === 'owner' || userRole === 'manager' || userRole === 'admin') {
+            isAuthorized = true;
+          }
+        }
+      } catch (_) {}
+    }
+
+    const isDev = process.env.NODE_ENV === 'development';
+    if (!isAuthorized && isDev) {
+      isAuthorized = true;
+      callerTenantId = '57e50365-d351-4acf-a967-c6c0fc62eed9';
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Chỉ có Chủ Salon hoặc Quản lý mới có quyền mời nhân viên' }, { status: 403 });
+    }
+
     const requestUrl = new URL(request.url);
     const redirectToUrl = `${requestUrl.origin}/auth/setup-password`;
 
@@ -29,7 +65,9 @@ export async function POST(request) {
       data: {
         full_name: `${last_name} ${first_name}`.trim(),
         first_name,
-        last_name
+        last_name,
+        tenant_id: callerTenantId,
+        role: role || 'staff'
       }
     });
 
@@ -50,11 +88,12 @@ export async function POST(request) {
         first_name,
         last_name,
         phone,
-        role,
-        type,
+        role: role || 'staff',
+        type: type || 'staff',
         status: 'pending',
         branch_ids,
-        avatar_url
+        avatar_url,
+        tenant_id: callerTenantId
       }, { onConflict: 'email' })
       .select()
       .single();

@@ -15,6 +15,8 @@ import {
 import { useT } from '@/lib/i18n';
 import { formatVND } from '@/lib/format';
 
+const escapeHtml = (str) => String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 // Bảng màu trạng thái chuẩn GloPro (Tuân thủ nghiêm ngặt quy tắc No-Purple, tối ưu thẩm mỹ cao cấp)
 const STATUS_THEME = {
   available: {
@@ -1029,7 +1031,7 @@ export default function Bed3DViewer({
           ${isOccupied && !isWaiting ? `<span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: ${cfg.colorStr}"></span>` : ''}
           <span class="relative inline-flex rounded-full h-2 w-2" style="background: ${cfg.colorStr}"></span>
         </span>
-        <span class="text-xs font-bold tracking-tight">${bed.name || 'Vị trí'}</span>
+        <span class="text-xs font-bold tracking-tight">${escapeHtml(bed.name || 'Vị trí')}</span>
         ${isOccupied ? `
           <span class="bed-pill-subtext text-[10px] font-medium ${isOver ? 'text-rose-400 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}">
             · ${isOver ? 'Quá giờ' : isCleaning ? 'Đang dọn' : isWaiting ? 'Chờ KTV' : `Còn ${remainingMins}p`}
@@ -1050,7 +1052,7 @@ export default function Bed3DViewer({
         <div class="flex items-center justify-between pb-2.5 border-b ${isDark ? 'border-white/10' : 'border-slate-100'}">
           <div class="flex items-center gap-1.5 text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">
             ${svgBuilding}
-            <span>${room?.name || 'Phòng'} | ${bed.name || 'Vị trí'}</span>
+            <span>${escapeHtml(room?.name || 'Phòng')} | ${escapeHtml(bed.name || 'Vị trí')}</span>
           </div>
           <span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border uppercase ${cfg.cssBadge}">
             ${cfg.label}
@@ -1128,7 +1130,7 @@ export default function Bed3DViewer({
             `}
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-1.5">
-                <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${customerName}</h4>
+                <h4 class="text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}">${escapeHtml(customerName)}</h4>
                 ${customerPhone !== '—' ? `
                   <div class="flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'} shrink-0">
                     ${svgPhone}
@@ -2225,7 +2227,7 @@ export default function Bed3DViewer({
             : 'bg-white/95 text-slate-900 border-slate-200/90 hover:border-blue-500 shadow-slate-300/40'
         }">
           <div class="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></div>
-          <span class="text-xs font-black tracking-wider uppercase">${room.name || `Phòng ${roomIdx + 1}`}</span>
+          <span class="text-xs font-black tracking-wider uppercase">${escapeHtml(room.name || `Phòng ${roomIdx + 1}`)}</span>
         </div>
       `;
       const roomBadgeObj = new CSS2DObject(roomBadgeDom);

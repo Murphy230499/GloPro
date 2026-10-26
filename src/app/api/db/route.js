@@ -129,6 +129,66 @@ const sanitizePayload = (tableName, payload, tid) => {
   return p;
 };
 
+const KNOWN_TENANTS = {
+  'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'dev@glopro.local': '57e50365-d351-4acf-a967-c6c0fc62eed9'
+};
+
+async function authenticateAndAuthorize(request, requestedTenantId) {
+  const authHeader = request.headers.get('authorization');
+  let authenticatedUser = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+      if (user && !error) {
+        authenticatedUser = user;
+      }
+    } catch (_) {}
+  }
+
+  // 1. If user is authenticated via Supabase JWT
+  if (authenticatedUser) {
+    const userEmail = (authenticatedUser.email || '').toLowerCase();
+    
+    // Look up profile to get true tenant_id
+    const { data: profile } = await supabaseAdmin
+      .from('user_profile')
+      .select('id, tenant_id, role')
+      .eq('id', authenticatedUser.id)
+      .maybeSingle();
+
+    const authorizedTenantId = 
+      profile?.tenant_id || 
+      authenticatedUser.user_metadata?.tenant_id || 
+      KNOWN_TENANTS[userEmail] || 
+      KNOWN_TENANTS[authenticatedUser.id];
+
+    if (!authorizedTenantId) {
+      return { error: 'Tài khoản chưa được liên kết với Salon nào', status: 403 };
+    }
+
+    // IDOR Check: Caller cannot access another salon's data
+    if (requestedTenantId && requestedTenantId !== authorizedTenantId) {
+      console.warn(`[IDOR BLOCKED] User ${userEmail} attempted to access tenant ${requestedTenantId} instead of ${authorizedTenantId}`);
+      return { error: 'Truy cập bị từ chối: Bạn không có quyền truy cập dữ liệu của Salon này', status: 403 };
+    }
+
+    return { tenantId: authorizedTenantId, user: authenticatedUser };
+  }
+
+  // 2. Allow fallback ONLY in local development
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) {
+    const devFallbackTenant = requestedTenantId || '57e50365-d351-4acf-a967-c6c0fc62eed9';
+    return { tenantId: devFallbackTenant, user: null };
+  }
+
+  // 3. In production, unauthenticated requests are strictly forbidden
+  return { error: 'Yêu cầu đăng nhập để truy cập dữ liệu (Unauthorized)', status: 401 };
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -139,7 +199,12 @@ export async function POST(request) {
       return NextResponse.json({ error: `Table '${tableName}' is not allowed` }, { status: 400 });
     }
 
-    const tid = tenantId || '57e50365-d351-4acf-a967-c6c0fc62eed9';
+    const authCheck = await authenticateAndAuthorize(request, tenantId);
+    if (authCheck.error) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+    }
+
+    const tid = authCheck.tenantId;
 
     if (action === 'get') {
       const { data, error } = await supabaseAdmin.from(tbl).select('*').eq('id', id).eq('tenant_id', tid).maybeSingle();

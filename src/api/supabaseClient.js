@@ -23,9 +23,20 @@ const callServerDbProxy = async (action, tableName, extra = {}) => {
   try {
     const tid = getSyncTenantId() || DEFAULT_FALLBACK_TENANT_ID;
     const baseUrl = typeof window !== 'undefined' ? '' : 'http://localhost:3000';
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (typeof window !== 'undefined') {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          headers['Authorization'] = `Bearer ${data.session.access_token}`;
+        }
+      } catch (_) {}
+    }
+
     const res = await fetch(`${baseUrl}/api/db`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         action,
         tableName,

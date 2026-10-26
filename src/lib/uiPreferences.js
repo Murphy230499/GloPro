@@ -121,19 +121,46 @@ export function getUIPreferences(branchId = 'all', branchCountry = 'Vietnam') {
       const branchKey = `${STORAGE_PREFIX}${branchId}`;
       const branchStored = localStorage.getItem(branchKey);
       if (branchStored) {
-        const parsed = JSON.parse(branchStored);
-        if (parsed && parsed.version) return parsed;
+        try {
+          const parsed = JSON.parse(branchStored);
+          if (parsed && parsed.version) return parsed;
+        } catch (_) {}
       }
     }
 
     // 2. Kiểm tra cấu hình chung toàn chuỗi
     const globalStored = localStorage.getItem(GLOBAL_STORAGE_KEY);
     if (globalStored) {
-      const parsed = JSON.parse(globalStored);
-      if (parsed && parsed.version) return parsed;
+      try {
+        const parsed = JSON.parse(globalStored);
+        if (parsed && parsed.version) return parsed;
+      } catch (_) {}
     }
 
-    // 3. Kiểm tra cấu hình legacy gp_theme nếu có
+    // 3. Kiểm tra bất kỳ cấu hình chi nhánh nào đã lưu trước đó nếu đang ở 'all' hoặc chưa có global
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORAGE_PREFIX)) {
+        try {
+          const val = localStorage.getItem(k);
+          if (val) {
+            const parsed = JSON.parse(val);
+            if (parsed && parsed.version && parsed.theme?.tintColor) return parsed;
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 4. Kiểm tra mã active theme ID đã lưu
+    const savedThemeId = localStorage.getItem('gp_active_theme_id');
+    if (savedThemeId) {
+      const found = ALL_THEMES.find(t => t.id === savedThemeId);
+      if (found) {
+        return createDefaultConfig(found.id, branchCountry);
+      }
+    }
+
+    // 5. Kiểm tra cấu hình legacy gp_theme nếu có
     const legacyTheme = localStorage.getItem('gp_theme');
     if (legacyTheme) {
       const found = ALL_THEMES.find(t => t.tintColor.toLowerCase() === legacyTheme.toLowerCase());
@@ -145,7 +172,7 @@ export function getUIPreferences(branchId = 'all', branchCountry = 'Vietnam') {
     console.warn('[uiPreferences] Error reading preferences from localStorage:', err);
   }
 
-  // 4. Mặc định chuẩn của hệ thống GloPro (Slate-50 & Emerald)
+  // 6. Mặc định chuẩn của hệ thống GloPro (Slate-50 & Emerald)
   return createDefaultConfig('default_classic', branchCountry);
 }
 
@@ -162,13 +189,18 @@ export function saveUIPreferences(config, branchId = 'all') {
     };
     const json = JSON.stringify(updated);
 
-    if (config.applyScope === 'global_chain' || branchId === 'all') {
-      localStorage.setItem(GLOBAL_STORAGE_KEY, json);
-    } else {
+    // Luôn lưu vào GLOBAL_STORAGE_KEY để làm fallback chắc chắn không bao giờ bị mất giao diện
+    localStorage.setItem(GLOBAL_STORAGE_KEY, json);
+
+    // Lưu riêng cho chi nhánh nếu có branchId cụ thể
+    if (branchId && branchId !== 'all') {
       localStorage.setItem(`${STORAGE_PREFIX}${branchId}`, json);
     }
 
-    // Đồng bộ legacy key cho các component cũ nếu có
+    // Đồng bộ active theme ID và legacy tint color
+    if (updated.activeThemeId) {
+      localStorage.setItem('gp_active_theme_id', updated.activeThemeId);
+    }
     if (updated.theme?.tintColor) {
       localStorage.setItem('gp_theme', updated.theme.tintColor);
     }

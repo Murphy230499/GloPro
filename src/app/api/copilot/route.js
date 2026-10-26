@@ -3467,20 +3467,21 @@ async function resolveTrustedActor(req, clientContext) {
           .maybeSingle();
 
         const userEmail = (user.email || '').toLowerCase();
-        const resolvedTenant = clientContext.tenantId ||
-          clientContext.currentUser?.tenant_id ||
-          profile?.tenant_id || 
+        
+        // P0 Security: Authentic tenant MUST be anchored to database profile / auth token, NOT spoofable client body
+        const authenticTenant = profile?.tenant_id || 
           user.user_metadata?.tenant_id || 
           KNOWN_TENANTS[userEmail] || 
-          KNOWN_TENANTS[user.id] || 
-          '57e50365-d351-4acf-a967-c6c0fc62eed9';
+          KNOWN_TENANTS[user.id];
+
+        const resolvedTenant = authenticTenant || '57e50365-d351-4acf-a967-c6c0fc62eed9';
 
         return {
           actorId: user.id,
           tenantId: resolvedTenant,
           branchId: profile?.branch_id || (clientContext.salonBranch?.id !== 'current_branch' && clientContext.salonBranch?.id !== 'all' ? clientContext.salonBranch?.id : undefined),
           role: profile?.role || user.user_metadata?.role || 'staff',
-          permissions: profile?.role === 'owner' ? 'all' : (clientContext.currentPermissions || 'read_only'),
+          permissions: (profile?.role === 'owner' || user.user_metadata?.role === 'owner') ? 'all' : (clientContext.currentPermissions || 'read_only'),
           isVerifiedAuth: true
         };
       }
@@ -3489,8 +3490,10 @@ async function resolveTrustedActor(req, clientContext) {
     // Auth fallback for test / unauthenticated requests
   }
 
+  // Fallback for local development or unauthenticated requests
+  const isDev = process.env.NODE_ENV === 'development';
   const clientEmail = (clientContext.currentUser?.email || '').toLowerCase();
-  const fallbackTenant = clientContext.tenantId ||
+  const fallbackTenant = (isDev && clientContext.tenantId) ||
     clientContext.currentUser?.tenant_id || 
     KNOWN_TENANTS[clientEmail] || 
     KNOWN_TENANTS[clientContext.currentUser?.id] || 
@@ -3500,8 +3503,9 @@ async function resolveTrustedActor(req, clientContext) {
     actorId: clientContext.currentUser?.id || 'anon_user',
     tenantId: fallbackTenant,
     branchId: clientContext.salonBranch?.id !== 'current_branch' && clientContext.salonBranch?.id !== 'all' ? clientContext.salonBranch?.id : undefined,
-    role: clientContext.currentUser?.role || 'owner',
-    permissions: clientContext.currentPermissions || 'all',
+    // In production, unauthenticated users only get read_only permissions
+    role: isDev ? (clientContext.currentUser?.role || 'owner') : 'guest',
+    permissions: isDev ? (clientContext.currentPermissions || 'all') : 'read_only',
     isVerifiedAuth: false
   };
 }

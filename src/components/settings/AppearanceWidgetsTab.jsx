@@ -221,9 +221,10 @@ export default function AppearanceWidgetsTab() {
       }
     };
     setConfig(updated);
-    // Áp dụng tức thì để xem trước trực tiếp trên thanh topbar và background
+    // Tự động lưu ngay lập tức vào bộ nhớ vĩnh viễn và áp dụng tức thì
+    saveUIPreferences(updated, currentBranchId);
     applyThemeToDom(updated);
-    toast.success(t('settings.theme_applied_preview', `Đã áp dụng chủ đề: ${theme.name}`));
+    toast.success(t('settings.theme_applied_saved', `Đã lưu và áp dụng giao diện: ${theme.name}`));
   };
 
   // Lưu cấu hình chính thức

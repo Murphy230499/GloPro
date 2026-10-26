@@ -30,14 +30,11 @@ export async function POST(request) {
 
     const cleanEmail = String(email || '').toLowerCase().trim();
 
-    // 1. Check known salon owners map
+    let knownTid = null;
     if (cleanEmail && KNOWN_TENANT_MAP[cleanEmail]) {
-      const tid = KNOWN_TENANT_MAP[cleanEmail];
-      return NextResponse.json({ tenantId: tid });
-    }
-    if (userId && KNOWN_TENANT_MAP[userId]) {
-      const tid = KNOWN_TENANT_MAP[userId];
-      return NextResponse.json({ tenantId: tid });
+      knownTid = KNOWN_TENANT_MAP[cleanEmail];
+    } else if (userId && KNOWN_TENANT_MAP[userId]) {
+      knownTid = KNOWN_TENANT_MAP[userId];
     }
 
     // 2. Query user_profile
@@ -53,10 +50,12 @@ export async function POST(request) {
     const { data: profiles, error: queryError } = await query.limit(1);
     let profile = profiles?.[0];
 
-    let tid = null;
+    let tid = knownTid || null;
 
     if (profile) {
-      tid = profile.tenant_id;
+      if (!tid) {
+        tid = profile.tenant_id;
+      }
       if (!tid) {
         // Assign new tenant_id = userId for the owner
         tid = userId || profile.id;

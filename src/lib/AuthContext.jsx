@@ -16,6 +16,29 @@ const AuthContext = createContext({
   navigateToLogin: () => {},
 });
 
+const getCachedProfile = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const str = sessionStorage.getItem('gp_active_profile') || localStorage.getItem('gp_user_profile');
+    if (str) return JSON.parse(str);
+  } catch (_) {}
+  return null;
+};
+
+const buildMergedUser = (sessionUser) => {
+  if (!sessionUser) return null;
+  const cached = getCachedProfile();
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email,
+    full_name: cached?.full_name || sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || sessionUser.email,
+    phone: cached?.phone || sessionUser.user_metadata?.phone || '',
+    avatar_url: cached?.avatar_url || sessionUser.user_metadata?.avatar_url || sessionUser.user_metadata?.picture || '',
+    role: cached?.role || sessionUser.user_metadata?.role || sessionUser.app_metadata?.role || 'owner',
+    provider: sessionUser.app_metadata?.provider
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,13 +56,7 @@ export const AuthProvider = ({ children }) => {
       console.log('[AuthContext] onAuthStateChange event:', event, 'session exists:', !!session);
       if (session?.user) {
         console.log('[AuthContext] Setting user from onAuthStateChange');
-        const sbUser = {
-          id: session.user.id,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
-          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-          provider: session.user.app_metadata?.provider
-        };
+        const sbUser = buildMergedUser(session.user);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('gp_dev_auth_user');
         }
@@ -49,7 +66,18 @@ export const AuthProvider = ({ children }) => {
         setAuthChecked(true);
         // Force-refresh tenant resolution immediately so all components have the correct tenant ID
         resolveTenantId(true).then((tid) => {
-          if (tid) setUser((prev) => (prev ? { ...prev, tenant_id: tid } : prev));
+          const cached = getCachedProfile();
+          setUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              tenant_id: tid || prev.tenant_id,
+              full_name: cached?.full_name || prev.full_name,
+              phone: cached?.phone || prev.phone,
+              avatar_url: cached?.avatar_url || prev.avatar_url,
+              role: cached?.role || prev.role
+            };
+          });
         }).catch(e => console.warn('[AuthContext] onAuthStateChange resolveTenantId warning:', e));
       } else if (event === 'SIGNED_OUT') {
         console.log('[AuthContext] SIGNED_OUT event received, clearing session');
@@ -137,14 +165,7 @@ export const AuthProvider = ({ children }) => {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('gp_dev_auth_user');
         }
-        console.log('[AuthContext] Valid user found in getSession, setting authenticated:', user.email);
-        const sbUser = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-          provider: user.app_metadata?.provider
-        };
+        const sbUser = buildMergedUser(user);
         let resolvedTid = null;
         try {
           resolvedTid = await resolveTenantId(true);
@@ -152,6 +173,13 @@ export const AuthProvider = ({ children }) => {
           console.warn('[AuthContext] Tenant resolution warning:', e);
         }
         if (resolvedTid) sbUser.tenant_id = resolvedTid;
+        const cached = getCachedProfile();
+        if (cached) {
+          if (cached.full_name) sbUser.full_name = cached.full_name;
+          if (cached.phone) sbUser.phone = cached.phone;
+          if (cached.avatar_url) sbUser.avatar_url = cached.avatar_url;
+          if (cached.role) sbUser.role = cached.role;
+        }
         setUser(sbUser);
         setIsAuthenticated(true);
         setIsLoadingAuth(false);
@@ -159,22 +187,31 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // 2. Check Dev Auth Session in Local Storage ONLY IF no real session
+      // 2. Check Dev Auth Session in Local Storage ONLY IF no real session AND on local development
       if (typeof window !== 'undefined') {
+        const isLocalHost = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' || 
+                            window.location.hostname.endsWith('.local');
+
         const devAuthStr = localStorage.getItem('gp_dev_auth_user');
         if (devAuthStr) {
-          try {
-            const devUser = JSON.parse(devAuthStr);
-            if (devUser && devUser.email) {
-              console.log('[AuthContext] Local dev auth user found:', devUser.email);
-              setUser(devUser);
-              setIsAuthenticated(true);
-              setIsLoadingAuth(false);
-              setAuthChecked(true);
-              return;
-            }
-          } catch (e) {
+          if (!isLocalHost) {
+            // Refuse and scrub dev auth bypass token on production domains
             localStorage.removeItem('gp_dev_auth_user');
+          } else {
+            try {
+              const devUser = JSON.parse(devAuthStr);
+              if (devUser && devUser.email) {
+                console.log('[AuthContext] Local dev auth user found:', devUser.email);
+                setUser(devUser);
+                setIsAuthenticated(true);
+                setIsLoadingAuth(false);
+                setAuthChecked(true);
+                return;
+              }
+            } catch (e) {
+              localStorage.removeItem('gp_dev_auth_user');
+            }
           }
         }
       }
