@@ -70,7 +70,7 @@ export class AppointmentCreateTool implements WriteTool {
       date: parameters.date,
       start_time: parameters.time || parameters.start_time,
       status: 'confirmed',
-      note: parameters.note || 'Đặt qua EasySalon AI',
+      note: parameters.note || 'Đặt qua GloPro AI',
       created_at: new Date().toISOString()
     };
     if (tenantId) {

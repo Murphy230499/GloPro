@@ -3561,7 +3561,7 @@ export async function POST(req) {
           content: planResult.message,
           actionResult: planResult,
           verified: planResult.verified,
-          model: 'EasySalon Action Orchestrator'
+          model: 'GloPro Action Orchestrator'
         });
       }
       if (confirmDecision.pendingAction) {
@@ -3572,7 +3572,7 @@ export async function POST(req) {
           content: execResult.message,
           actionResult: execResult,
           verified: execResult.verified,
-          model: 'EasySalon Action Engine'
+          model: 'GloPro Action Engine'
         });
       }
     }
@@ -3588,7 +3588,7 @@ export async function POST(req) {
         content: previewMsg,
         actionPreview: pendingPlan ? pendingPlan.actions[0]?.preview : pendingAction?.preview,
         actionReference: pendingPlan ? pendingPlan.planId : pendingAction?.referenceId,
-        model: 'EasySalon Context Manager'
+        model: 'GloPro Context Manager'
       });
     }
 
@@ -3598,7 +3598,7 @@ export async function POST(req) {
       return NextResponse.json({
         status: 'CANCELLED',
         content: '❌ **Đã hủy thao tác theo yêu cầu của bạn.** Dữ liệu trên hệ thống không thay đổi.',
-        model: 'EasySalon Confirmation Gate'
+        model: 'GloPro Confirmation Gate'
       });
     }
 
@@ -3612,7 +3612,7 @@ export async function POST(req) {
         actionPreview: multiPlan.actionResult.preview,
         actionReference: multiPlan.actionResult.actionReference,
         actionPlan: multiPlan.plan,
-        model: 'EasySalon Multi-Step Action Planner'
+        model: 'GloPro Multi-Step Action Planner'
       });
     }
 
@@ -3624,7 +3624,7 @@ export async function POST(req) {
         content: brainDecision.message,
         executedTools: [],
         navigateTo: null,
-        model: 'EasySalon Business Brain',
+        model: 'GloPro Business Brain',
         structuredIntent: brainDecision.structuredIntent
       });
     }
@@ -3657,7 +3657,7 @@ export async function POST(req) {
           content: understandingCheck.message || brainDecision.message || 'Hệ thống cần thêm thông tin để thực hiện.',
           executedTools: [],
           navigateTo: null,
-          model: 'EasySalon Understanding Validator',
+          model: 'GloPro Understanding Validator',
           structuredIntent: brainDecision.structuredIntent
         });
       }
@@ -3669,7 +3669,7 @@ export async function POST(req) {
           content: planResult.message,
           actionPreview: planResult.preview,
           actionReference: planResult.actionReference,
-          model: 'EasySalon Action Planner',
+          model: 'GloPro Action Planner',
           structuredIntent: brainDecision.structuredIntent
         });
       }
@@ -3677,7 +3677,7 @@ export async function POST(req) {
         status: planResult.status,
         content: planResult.message,
         error: planResult.error,
-        model: 'EasySalon Action Precondition Validator',
+        model: 'GloPro Action Precondition Validator',
         structuredIntent: brainDecision.structuredIntent
       });
     }
@@ -3688,9 +3688,9 @@ export async function POST(req) {
       const amount = brainDecision.structuredIntent.entities.amount?.value || 0;
       const formatted = amount > 0 ? `${amount.toLocaleString('vi-VN')} đ` : '';
       return NextResponse.json({
-        content: `💵 **Ghi nhận tiền Tip:**\n• **Nhân viên nhận:** **${staffName}**\n• **Số tiền tip:** **${formatted}**\n\n*(Lưu ý nghiệp vụ EasySalon: Tiền Tip là khoản thu hộ cho nhân viên, được cộng vào số tiền khách thực tế thanh toán nhưng KHÔNG tính vào doanh thu thuần của Salon).*`,
+        content: `💵 **Ghi nhận tiền Tip:**\n• **Nhân viên nhận:** **${staffName}**\n• **Số tiền tip:** **${formatted}**\n\n*(Lưu ý nghiệp vụ GloPro: Tiền Tip là khoản thu hộ cho nhân viên, được cộng vào số tiền khách thực tế thanh toán nhưng KHÔNG tính vào doanh thu thuần của Salon).*`,
         executedTools: [],
-        model: 'EasySalon Business Brain'
+        model: 'GloPro Business Brain'
       });
     }
 
@@ -3808,7 +3808,7 @@ export async function POST(req) {
       return NextResponse.json({
         content: res.message,
         executedTools: [{ name: 'customer_filter', args: filterArgs, result: res }],
-        model: 'EasySalon Segmentation Engine'
+        model: 'GloPro Segmentation Engine'
       });
     }
 
@@ -3910,7 +3910,7 @@ export async function POST(req) {
           content: groundedContext.summary,
           executedTools: (groundedContext.sources || []).map(s => ({ name: s.tool, result: { message: groundedContext.summary } })),
           navigateTo: null,
-          model: 'EasySalon Grounding Engine',
+          model: 'GloPro Grounding Engine',
           structuredIntent: brainDecision.structuredIntent
         });
       }
@@ -3921,7 +3921,7 @@ export async function POST(req) {
           content: groundedContext.summary,
           executedTools: [],
           navigateTo: null,
-          model: 'EasySalon Security Gate',
+          model: 'GloPro Security Gate',
           structuredIntent: brainDecision.structuredIntent
         });
       }
@@ -4032,7 +4032,7 @@ QUY TẮC BẮT BUỘC (GROUNDING & SAFETY RULES):
           content: groundedContext.summary,
           executedTools: (groundedContext.sources || []).map(s => ({ name: s.tool, result: { message: groundedContext.summary } })),
           navigateTo: null,
-          model: 'EasySalon Grounding Engine'
+          model: 'GloPro Grounding Engine'
         });
       }
 
@@ -4099,7 +4099,7 @@ QUY TẮC BẮT BUỘC (GROUNDING & SAFETY RULES):
           content: groundedContext.summary,
           executedTools: (groundedContext.sources || []).map(s => ({ name: s.tool, result: { message: groundedContext.summary } })),
           navigateTo: null,
-          model: 'EasySalon Grounding Engine'
+          model: 'GloPro Grounding Engine'
         });
       }
       const localResult = await executeLocalFallbackIntent(message, context);

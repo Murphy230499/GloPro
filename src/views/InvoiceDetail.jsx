@@ -300,7 +300,7 @@ export default function InvoiceDetail({ invoiceId: invoiceIdProp } = {}) {
         .total { font-size: 16px; font-weight: bold; margin-top: 10px; }
         .right { text-align: right; }
       </style></head><body>
-      <h2>EasySalon</h2>
+      <h2>GloPro</h2>
       <div class="info"><b>Mã HD:</b> ${invoice.invoice_code || id}</div>
       <div class="info"><b>Khách hàng:</b> ${invoice.customer_name}</div>
       <div class="info"><b>Ngày:</b> ${invoice.date}</div>

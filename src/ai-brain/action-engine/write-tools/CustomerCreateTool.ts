@@ -71,7 +71,7 @@ export class CustomerCreateTool implements WriteTool {
       address: parameters.address || null,
       gender: cleanGender,
       birthday: formattedBirthday,
-      note: parameters.note || 'Tạo qua EasySalon AI',
+      note: parameters.note || 'Tạo qua GloPro AI',
       points: 0,
       total_spent: 0,
       visit_count: 0

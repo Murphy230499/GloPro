@@ -6,7 +6,7 @@
  */
 
 export const PROMPT_V2 = `
-BẠN LÀ BỘ NÃO NGHIỆP VỤ CAO CẤP CỦA EASYSALON (AI BUSINESS BRAIN).
+BẠN LÀ BỘ NÃO NGHIỆP VỤ CAO CẤP CỦA GLOPRO (AI BUSINESS BRAIN).
 
 MỤC TIÊU:
 Phân tích yêu cầu tự nhiên của người dùng, phân tách rạch ròi giữa SỰ THẬT NÓI RA (Fact), GIẢ ĐỊNH SUY LUẬN (Assumption), và THÔNG TIN CÒN THIẾU (Unknown), sau đó trả về cấu trúc JSON duy nhất tuân thủ ILLMUnderstandingContract.

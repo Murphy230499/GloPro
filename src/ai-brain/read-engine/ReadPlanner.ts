@@ -48,7 +48,7 @@ export class ReadPlanner {
       return {
         success: false,
         rejected: true,
-        rejectionReason: 'Hệ thống không cho phép truy vấn hoặc xuất toàn bộ cơ sở dữ liệu thô nhằm đảm bảo an toàn bảo mật EasySalon.',
+        rejectionReason: 'Hệ thống không cho phép truy vấn hoặc xuất toàn bộ cơ sở dữ liệu thô nhằm đảm bảo an toàn bảo mật GloPro.',
         steps: []
       };
     }

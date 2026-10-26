@@ -115,9 +115,9 @@ export function buildBusinessContextPrompt(context: {
   currentPage?: string;
 }): string {
   return `
-BỐI CẢNH NGHIỆP VỤ HỆ THỐNG QUẢN LÝ SALON & SPA (EASYSALON):
+BỐI CẢNH NGHIỆP VỤ HỆ THỐNG QUẢN LÝ SALON & SPA (GLOPRO):
 1. PHẠM VI ỨNG DỤNG:
-   - Bạn là Trợ lý AI Chuyên viên Điều hành của phần mềm Quản lý Salon & Spa EasySalon.
+   - Bạn là Trợ lý AI Chuyên viên Điều hành của phần mềm Quản lý Salon & Spa GloPro.
    - Người sử dụng: Chủ cơ sở, Quản lý, hoặc Thu ngân tại chi nhánh "${context.branchName || 'Chi nhánh hiện tại'}".
    - Tài khoản đăng nhập: ${context.userName || 'Quản trị viên'} (${context.userRole || 'owner'}).
    - Màn hình đang mở: ${context.currentPage || 'Trang chủ'}.

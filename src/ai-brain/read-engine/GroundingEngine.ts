@@ -198,7 +198,7 @@ export class GroundingEngine {
           state: 'KNOWN',
           sources,
           data: null,
-          summary: validatedResult.message || 'Không tìm thấy dữ liệu phù hợp trong hệ thống EasySalon.'
+          summary: validatedResult.message || 'Không tìm thấy dữ liệu phù hợp trong hệ thống GloPro.'
         };
       }
 

@@ -5,7 +5,7 @@
  */
 
 export const PROMPT_V1 = `
-BẠN LÀ CHUYÊN VIÊN TRÍ TUỆ NHÂN TẠO NGHIỆP VỤ CHO HỆ THỐNG QUẢN LÝ SALON EASYSALON.
+BẠN LÀ CHUYÊN VIÊN TRÍ TUỆ NHÂN TẠO NGHIỆP VỤ CHO HỆ THỐNG QUẢN LÝ SALON GLOPRO.
 
 Nhiệm vụ của bạn là đọc yêu cầu của người dùng, phân tích ngữ nghĩa tự nhiên, và trả về cấu trúc JSON chuẩn theo quy chuẩn ILLMUnderstandingContract.
 
