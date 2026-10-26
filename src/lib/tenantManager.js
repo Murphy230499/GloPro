@@ -106,17 +106,21 @@ export function getSyncTenantId() {
       if (authEmail && KNOWN_TENANT_MAP[authEmail]) {
         const tid = KNOWN_TENANT_MAP[authEmail];
         inMemoryTenantId = tid;
+        sessionStorage.setItem('gp_active_tenant_id', tid);
+        localStorage.setItem('gp_active_tenant_id', tid);
         return tid;
       }
       if (authUid && KNOWN_TENANT_MAP[authUid]) {
         const tid = KNOWN_TENANT_MAP[authUid];
         inMemoryTenantId = tid;
+        sessionStorage.setItem('gp_active_tenant_id', tid);
+        localStorage.setItem('gp_active_tenant_id', tid);
         return tid;
       }
 
       // For standard logged-in users, check stored tenant ID
       const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
-      if (stored && stored !== '6cb88c32-06c6-4b95-b286-99bc8c141c79' && stored !== 'db1d2d2d-4b05-450d-88b9-54e7715b436b') {
+      if (stored && stored !== 'db1d2d2d-4b05-450d-88b9-54e7715b436b') {
         inMemoryTenantId = stored;
         return stored;
       }

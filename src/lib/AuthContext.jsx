@@ -40,12 +40,17 @@ export const AuthProvider = ({ children }) => {
           avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
           provider: session.user.app_metadata?.provider
         };
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('gp_dev_auth_user');
+        }
         setUser(sbUser);
         setIsAuthenticated(true);
         setIsLoadingAuth(false);
         setAuthChecked(true);
         // Force-refresh tenant resolution immediately so all components have the correct tenant ID
-        resolveTenantId(true).catch(e => console.warn('[AuthContext] onAuthStateChange resolveTenantId warning:', e));
+        resolveTenantId(true).then((tid) => {
+          if (tid) setUser((prev) => (prev ? { ...prev, tenant_id: tid } : prev));
+        }).catch(e => console.warn('[AuthContext] onAuthStateChange resolveTenantId warning:', e));
       } else if (event === 'SIGNED_OUT') {
         console.log('[AuthContext] SIGNED_OUT event received, clearing session');
         setUser(null);
@@ -122,7 +127,39 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 0. Check Dev Auth Session in Local Storage for smooth local development
+      // 1. Check real Supabase Auth Session FIRST
+      console.log('[AuthContext] checkUserAuth calling getSession...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[AuthContext] getSession returned, session exists:', !!session);
+      const user = session?.user;
+      
+      if (user) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('gp_dev_auth_user');
+        }
+        console.log('[AuthContext] Valid user found in getSession, setting authenticated:', user.email);
+        const sbUser = {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+          provider: user.app_metadata?.provider
+        };
+        let resolvedTid = null;
+        try {
+          resolvedTid = await resolveTenantId(true);
+        } catch (e) {
+          console.warn('[AuthContext] Tenant resolution warning:', e);
+        }
+        if (resolvedTid) sbUser.tenant_id = resolvedTid;
+        setUser(sbUser);
+        setIsAuthenticated(true);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
+
+      // 2. Check Dev Auth Session in Local Storage ONLY IF no real session
       if (typeof window !== 'undefined') {
         const devAuthStr = localStorage.getItem('gp_dev_auth_user');
         if (devAuthStr) {
@@ -140,33 +177,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('gp_dev_auth_user');
           }
         }
-      }
-
-      // 1. Check Supabase OAuth Session
-      console.log('[AuthContext] checkUserAuth calling getSession...');
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('[AuthContext] getSession returned, session exists:', !!session);
-      const user = session?.user;
-      
-      if (user) {
-        console.log('[AuthContext] Valid user found in getSession, setting authenticated');
-        const sbUser = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-          provider: user.app_metadata?.provider
-        };
-        setUser(sbUser);
-        setIsAuthenticated(true);
-        try {
-          await resolveTenantId(true);
-        } catch (e) {
-          console.warn('[AuthContext] Tenant resolution warning:', e);
-        }
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
-        return;
       }
 
 
