@@ -52,14 +52,16 @@ export class AppointmentCreateTool implements WriteTool {
     const resolved = valResult.resolvedData || {};
 
     let branchId = context.branchId || parameters.branchId || parameters.branch_id;
-    if (!branchId) {
+    if (!branchId || branchId === 'current_branch' || branchId === 'all') {
       const branches = await base44.entities.Branch.list().catch(() => []);
       const mainBranch = branches.find(b => b.id && b.id !== '00000000-0000-0000-0000-000000000000') || branches[0];
       branchId = mainBranch?.id;
     }
 
+    const tenantId = context.tenantId || parameters.tenantId || parameters.tenant_id;
+
     // 3. Prepare payload for existing appointment adapter
-    const payload = {
+    const payload: Record<string, any> = {
       customer_name: parameters.customerName || parameters.customer_name,
       customer_phone: parameters.customerPhone || parameters.customer_phone,
       service_name: resolved.serviceName || parameters.serviceName || parameters.service_name,
@@ -71,6 +73,9 @@ export class AppointmentCreateTool implements WriteTool {
       note: parameters.note || 'Đặt qua EasySalon AI',
       created_at: new Date().toISOString()
     };
+    if (tenantId) {
+      payload.tenant_id = tenantId;
+    }
 
     // 4. Execute mutation
     let createdRecord: any;
@@ -115,13 +120,25 @@ export class AppointmentCreateTool implements WriteTool {
       };
     }
 
+    // Format human-friendly appointment booking code (e.g. LH-261027-420E)
+    const dateCode = (payload.date || '').replace(/-/g, '').slice(2);
+    const idSegment = String(createdRecord.id || '').replace(/-/g, '').slice(-4).toUpperCase();
+    const shortCode = `LH-${dateCode}-${idSegment}`;
+    const dateFormatted = payload.date ? payload.date.split('-').reverse().join('/') : '';
+
     return {
       success: true,
       status: 'SUCCESS',
       actionType: this.actionType,
-      data: verification.verifiedRecord || createdRecord,
+      data: { ...(verification.verifiedRecord || createdRecord), code: shortCode },
       verified: true,
-      message: `📅 **Đã đặt lịch hẹn thành công (Đã xác minh CSDL):**\n• **Khách hàng:** **${payload.customer_name}** (\`${payload.customer_phone}\`)\n• **Dịch vụ:** **${payload.service_name}**\n• **Thời gian:** **${payload.start_time}** ngày **${payload.date}**\n• **Nhân viên:** **${payload.staff_name}**\n• **Mã lịch hẹn:** \`${createdRecord.id}\``
+      message: `📅 Đã đặt lịch hẹn thành công (Đã xác minh CSDL):\n` +
+        `• Mã lịch hẹn: ${shortCode}\n` +
+        `• Khách hàng: ${payload.customer_name} (${payload.customer_phone})\n` +
+        `• Dịch vụ: ${payload.service_name}\n` +
+        `• Thời gian hẹn: ${payload.start_time} ngày ${dateFormatted}\n` +
+        `• Nhân viên: ${payload.staff_name}\n\n` +
+        `📌 Lưu ý: Lịch hẹn được xếp vào ngày ${dateFormatted}. Khi bạn mở trang Lịch hẹn, hãy chọn ngày ${dateFormatted} trên thanh ngày để xem lịch này nhé!`
     };
   }
 }

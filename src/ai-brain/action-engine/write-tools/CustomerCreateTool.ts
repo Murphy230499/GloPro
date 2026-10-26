@@ -51,7 +51,18 @@ export class CustomerCreateTool implements WriteTool {
 
     // 3. Prepare clean payload
     const rawGender = (parameters.gender || '').toLowerCase();
-    const cleanGender = rawGender.includes('nam') ? 'male' : (rawGender.includes('nữ') ? 'female' : 'other');
+    const cleanGender = (rawGender === 'male' || rawGender.includes('nam')) ? 'male' : ((rawGender === 'female' || rawGender.includes('nữ')) ? 'female' : 'other');
+
+    let formattedBirthday: string | null = null;
+    const rawBday = parameters.birthday || parameters.birth_date;
+    if (rawBday) {
+      const match = String(rawBday).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (match) {
+        formattedBirthday = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(String(rawBday))) {
+        formattedBirthday = String(rawBday);
+      }
+    }
 
     const payload = {
       name: parameters.name.trim(),
@@ -59,7 +70,7 @@ export class CustomerCreateTool implements WriteTool {
       email: parameters.email || null,
       address: parameters.address || null,
       gender: cleanGender,
-      birthday: parameters.birthday || parameters.birth_date || null,
+      birthday: formattedBirthday,
       note: parameters.note || 'Tạo qua EasySalon AI',
       points: 0,
       total_spent: 0,

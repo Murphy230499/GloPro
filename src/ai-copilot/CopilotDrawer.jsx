@@ -23,10 +23,58 @@ import {
   RotateCcw,
   Paperclip,
   FileSpreadsheet,
-  UploadCloud
+  UploadCloud,
+  Users,
+  PlusCircle,
+  ExternalLink
 } from 'lucide-react';
 import { parseExcelFile, autoDetectEntityType, executeImportBatch } from '@/lib/excelImportHelper';
 import AIExcelImportPreview from '@/components/ai/AIExcelImportPreview';
+
+function renderMessageText(content) {
+  if (!content) return null;
+  const clean = String(content).replace(/\*\*\*/g, '**');
+  const lines = clean.split('\n');
+
+  return (
+    <div className="space-y-1">
+      {lines.map((line, lIdx) => {
+        if (!line.trim()) return <div key={lIdx} className="h-1.5" />;
+
+        const parts = [];
+        let remaining = line;
+        let pIdx = 0;
+
+        const tokenRegex = /(\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/;
+        while (remaining) {
+          const match = remaining.match(tokenRegex);
+          if (!match) {
+            parts.push(<span key={pIdx++}>{remaining}</span>);
+            break;
+          }
+          const before = remaining.substring(0, match.index);
+          if (before) parts.push(<span key={pIdx++}>{before}</span>);
+
+          if (match[2]) {
+            parts.push(<strong key={pIdx++} className="font-semibold text-white">{match[2]}</strong>);
+          } else if (match[3]) {
+            parts.push(<code key={pIdx++} className="px-1.5 py-0.5 rounded bg-slate-900/80 font-mono text-indigo-300 border border-slate-700/50">{match[3]}</code>);
+          } else if (match[4]) {
+            parts.push(<em key={pIdx++} className="italic text-slate-300">{match[4]}</em>);
+          }
+
+          remaining = remaining.substring(match.index + match[0].length);
+        }
+
+        return (
+          <div key={lIdx} className="leading-relaxed">
+            {parts}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function CopilotDrawer() {
   const router = useRouter();
@@ -76,26 +124,38 @@ export function CopilotDrawer() {
 
   // Sync logged in account and active branch into Copilot State
   useEffect(() => {
-    if (authUser || branchData) {
-      updateCopilotState({
-        ...(authUser ? {
-          currentUser: {
-            id: authUser.id,
-            name: authUser.full_name || authUser.name || authUser.email?.split('@')[0] || 'Chủ tài khoản',
-            email: authUser.email,
-            role: authUser.role || 'owner'
-          }
-        } : {}),
-        ...(branchData ? {
-          salonBranch: {
-            id: branchData.id,
-            name: branchData.name,
-            address: branchData.address
-          }
-        } : {})
-      });
+    let syncTid = null;
+    try {
+      const { getSyncTenantId } = require('@/lib/tenantManager');
+      syncTid = getSyncTenantId();
+    } catch (e) {}
+
+    const finalTid = authUser?.tenant_id || syncTid || '57e50365-d351-4acf-a967-c6c0fc62eed9';
+    if (typeof window !== 'undefined' && finalTid) {
+      try {
+        localStorage.setItem('gp_active_tenant_id', finalTid);
+      } catch (e) {}
     }
-  }, [authUser?.id, authUser?.full_name, authUser?.email, branchData?.id, branchData?.name]);
+    const finalBranchId = (branchData?.id && branchData?.id !== 'current_branch' && branchData?.id !== 'all')
+      ? branchData.id
+      : '800d714a-245a-4e54-ad95-103ee2e509ca';
+
+    updateCopilotState({
+      currentUser: {
+        id: authUser?.id || 'current_user',
+        name: authUser?.full_name || authUser?.name || authUser?.email?.split('@')[0] || 'Chủ tài khoản',
+        email: authUser?.email,
+        role: authUser?.role || 'owner',
+        tenant_id: finalTid
+      },
+      tenantId: finalTid,
+      salonBranch: {
+        id: finalBranchId,
+        name: branchData?.name || 'Chi nhánh chính',
+        address: branchData?.address
+      }
+    });
+  }, [authUser?.id, authUser?.full_name, authUser?.email, authUser?.tenant_id, branchData?.id, branchData?.name]);
 
   // Always enforce the new concise welcome message even in existing chat sessions
   useEffect(() => {
@@ -170,12 +230,20 @@ export function CopilotDrawer() {
         content: response.content,
         toolCalls: response.toolCallsExecuted || [],
         model: response.metadata?.model || 'Gemini 2.5 Pro',
+        actionButton: result.actionButton || response.metadata?.actionButton,
+        actionPreview: result.actionPreview || response.metadata?.actionPreview,
+        status: result.status || response.metadata?.status,
         navigateTo
       };
       setMessages(prev => [...prev, botMsg]);
 
       // If action modified database, notify active screens to refresh live
-      if (response.toolCallsExecuted && response.toolCallsExecuted.length > 0) {
+      if (
+        (response.toolCallsExecuted && response.toolCallsExecuted.length > 0) ||
+        result.status === 'SUCCESS' ||
+        result.verified ||
+        result.actionResult
+      ) {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('reload-data'));
           window.dispatchEvent(new Event('storage'));
@@ -196,6 +264,60 @@ export function CopilotDrawer() {
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Lưu tập khách hàng từ kết quả lọc trực tiếp trong chat
+  const handleSaveSegmentFromChat = async (messageId, filterResult) => {
+    try {
+      const now = new Date();
+      const defaultName = filterResult.applied_descriptions?.length > 0 
+        ? `${filterResult.applied_descriptions.join(', ')} (${now.toLocaleDateString('vi-VN')})` 
+        : `Tập khách hàng lọc ngày ${now.toLocaleDateString('vi-VN')}`;
+
+      const name = prompt('Nhập tên cho tập khách hàng mới:', defaultName);
+      if (!name || !name.trim()) return;
+
+      const COLORS = ['#34D399', '#60A5FA', '#FF6B9D', '#A78BFA', '#FBBF24', '#F97316', '#06B6D4'];
+      const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+      const { base44 } = await import('@/api/base44Client');
+      const newSeg = await base44.entities.CustomerSegment.create({
+        name: name.trim(),
+        color: randomColor,
+        conditions: JSON.stringify(filterResult.criteria || {})
+      });
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('reload-data'));
+        window.dispatchEvent(new Event('storage'));
+      }
+
+      setMessages(prev => prev.map(m => {
+        if (m.id === messageId) {
+          return {
+            ...m,
+            segmentSaved: true,
+            createdSegment: newSeg
+          };
+        }
+        return m;
+      }));
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `bot_saved_${Date.now()}`,
+          role: 'assistant',
+          content: `🎯 **Đã lưu thành công Tập khách hàng:** **${newSeg.name}**\n*(Đã đồng bộ trực tiếp vào mục Khách hàng > Tập khách hàng trên hệ thống).*`,
+          actionButton: {
+            label: 'Mở xem tại tab Tập khách hàng',
+            route: '/customers?tab=segments'
+          }
+        }
+      ]);
+    } catch (err) {
+      alert('Không thể lưu tập khách hàng: ' + (err.message || 'Lỗi không xác định'));
     }
   };
 
@@ -372,48 +494,87 @@ export function CopilotDrawer() {
 
   // Dynamic context suggestions based on current route
   const getContextSuggestions = () => {
-    const page = copilotState.currentPage || '';
+    const page = (copilotState.currentPage || '').toLowerCase();
     if (page.includes('pos')) {
       return [
-        'Hôm nay doanh thu bao nhiêu?',
-        '📊 Nhập dữ liệu từ Excel',
+        'Làm sao để chia hoa hồng cho thợ?',
         'Tạo bill khách Anh Tuấn cắt tóc 100k',
-        'Kiểm tra tồn kho dầu gội'
+        'Cách áp dụng mã giảm giá voucher?',
+        'Hôm nay doanh thu bao nhiêu?'
       ];
     }
     if (page.includes('appointment')) {
       return [
+        'Làm sao để đổi giờ hoặc hủy lịch hẹn?',
         'Đặt lịch cho chị Lan gội đầu 14h ngày mai',
         'Xem danh sách lịch hẹn hôm nay',
-        'Kiểm tra thợ nào rảnh lúc 15h'
+        'Cách kiểm tra thợ nào đang rảnh?'
       ];
     }
     if (page.includes('customer')) {
       return [
-        '📊 Nhập khách hàng từ Excel',
-        'Tìm khách hàng số 0912345678',
-        'Tạo khách hàng mới Nguyễn Văn A 0988123456',
-        'Top khách hàng chi tiêu nhiều nhất'
+        'Làm sao để tạo tập khách hàng mới?',
+        'Lọc khách hàng chưa quay lại 30 ngày',
+        'Cách cấu hình hạng thành viên VIP?',
+        'Tạo khách hàng mới Nguyễn Văn A 0988123456'
       ];
     }
-    if (page.includes('inventory') || page.includes('service')) {
+    if (page.includes('inventory')) {
       return [
-        '📊 Nhập dữ liệu từ Excel',
+        'Làm sao để nhập hàng vào kho?',
+        'Kiểm tra sản phẩm nào sắp hết hàng',
         'Tra cứu sản phẩm dầu gội',
+        '📊 Nhập dữ liệu từ Excel'
+      ];
+    }
+    if (page.includes('service')) {
+      return [
+        'Làm sao để tạo combo dịch vụ?',
+        'Thêm dịch vụ mới Nhuộm tóc 350k',
+        'Cách thiết lập thời lượng làm dịch vụ?',
         'Xem dịch vụ đang bán chạy'
+      ];
+    }
+    if (page.includes('staff') || page.includes('payroll')) {
+      return [
+        'Làm sao để cấu hình % hoa hồng cho thợ?',
+        'Cách tính bảng lương và in phiếu lương?',
+        'Thêm nhân viên mới Nguyễn Văn Hùng',
+        'Cách chấm công vào ca cho nhân viên?'
+      ];
+    }
+    if (page.includes('room') || page.includes('bed')) {
+      return [
+        'Làm sao để xếp giường cho khách spa?',
+        'Cách quản lý trạng thái dọn dẹp giường?'
+      ];
+    }
+    if (page.includes('discount')) {
+      return [
+        'Làm sao để tạo mã giảm giá voucher mới?',
+        'Cách tạo chương trình khuyến mãi theo ngày?'
       ];
     }
     if (page.includes('report')) {
       return [
-        'Tổng kết doanh thu hôm nay',
-        'Xem nhân viên nào có doanh thu cao nhất'
+        'Tạo báo cáo doanh thu tháng này',
+        'Tạo báo cáo hiệu suất thợ',
+        'Báo cáo top khách hàng chi tiêu',
+        'Làm sao để xuất báo cáo ra Excel?'
+      ];
+    }
+    if (page.includes('setting')) {
+      return [
+        'Làm sao để thêm chi nhánh mới?',
+        'Cách cấu hình máy in hóa đơn nhiệt?',
+        'Cách phân quyền cho nhân viên?'
       ];
     }
     return [
-      'Doanh thu hôm nay thế nào?',
-      '📊 Nhập dữ liệu từ Excel',
-      'Chuyển sang màn hình POS',
-      'Đặt lịch hẹn cho khách 14:00 ngày mai'
+      'Tạo báo cáo doanh thu tuần này',
+      'Làm sao để tạo hóa đơn bán hàng?',
+      'Đặt lịch hẹn cho khách 14:00 ngày mai',
+      'Lọc khách hàng chưa quay lại 30 ngày'
     ];
   };
 
@@ -544,7 +705,7 @@ export function CopilotDrawer() {
                       : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/60'
                   }`}
                 >
-                  {msg.content}
+                  {renderMessageText(msg.content)}
 
                   {/* Thẻ xem trước và cấu hình Excel Import thông minh */}
                   {msg.type === 'excel_preview' && msg.fileData && (
@@ -559,7 +720,63 @@ export function CopilotDrawer() {
                     </div>
                   )}
 
-                  {/* Nút hành động nhanh điều hướng trang (sau khi import xong) */}
+                  {/* Thẻ xem trước thao tác CRUD & Xác nhận an toàn (Action Preview Card) */}
+                  {(msg.actionPreview || msg.toolCalls?.find(t => t.result?.actionPreview)?.result?.actionPreview) && (() => {
+                    const preview = msg.actionPreview || msg.toolCalls?.find(t => t.result?.actionPreview)?.result?.actionPreview;
+                    const isPending = msg.status === 'PENDING_CONFIRMATION' || preview.statusText?.includes('Chờ');
+                    return (
+                      <div className="w-full mt-3 p-3 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2 text-xs">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                          <div className="flex items-center gap-1.5 text-indigo-400 font-bold">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>{preview.title || 'Chi tiết thao tác'}</span>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            isPending 
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {preview.statusText || (isPending ? 'Chờ xác nhận' : 'Đã thực hiện')}
+                          </span>
+                        </div>
+
+                        {preview.summary && (
+                          <p className="text-[11px] text-slate-300 italic">{preview.summary}</p>
+                        )}
+
+                        <div className="space-y-1 pt-1">
+                          {preview.items?.map((it, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-[11px] py-0.5">
+                              <span className="text-slate-400">{it.label}:</span>
+                              <span className="text-slate-200 font-semibold font-mono text-right">{it.value}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {isPending && (
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                            <button
+                              type="button"
+                              onClick={() => handleSend('Đồng ý')}
+                              className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Xác nhận lưu</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSend('Hủy')}
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg text-xs transition cursor-pointer"
+                            >
+                              Hủy bỏ
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Nút hành động nhanh điều hướng trang (sau khi thao tác xong) */}
                   {msg.actionButton && (
                     <button
                       type="button"
@@ -570,6 +787,84 @@ export function CopilotDrawer() {
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   )}
+
+                  {/* Widget Danh sách khách hàng đã lọc có thanh cuộn (Scrollable Customer List) */}
+                  {msg.toolCalls?.some(t => t.toolName === 'customer_filter' && t.result?.customers?.length > 0) && (() => {
+                    const filterTool = msg.toolCalls.find(t => t.toolName === 'customer_filter');
+                    const res = filterTool.result;
+                    const customers = res.customers || [];
+                    const isCreated = res.created_segment || msg.createdSegment;
+
+                    return (
+                      <div className="w-full mt-3 p-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-xs font-semibold text-slate-300 pb-1.5 border-b border-slate-800">
+                          <div className="flex items-center gap-1.5 text-indigo-400">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Danh sách phù hợp ({customers.length} khách)</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">Cuộn để xem hết</span>
+                        </div>
+
+                        {/* Vùng cuộn danh sách khách hàng */}
+                        <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1 text-[11px] custom-scrollbar">
+                          {customers.map((c, idx) => (
+                            <div 
+                              key={c.id || idx}
+                              className="p-2 bg-slate-800/80 hover:bg-slate-700/80 rounded-lg border border-slate-700/50 flex items-center justify-between gap-2 transition"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[10px] shrink-0 border border-indigo-500/30">
+                                  {c.name ? c.name.charAt(0).toUpperCase() : 'K'}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-medium text-slate-200 truncate">{c.name}</div>
+                                  <div className="text-[10px] text-slate-400 font-mono">{c.phone}</div>
+                                </div>
+                              </div>
+                              <div className="text-right text-[10px] shrink-0">
+                                <div className="text-emerald-400 font-semibold font-mono">
+                                  {(c.total_spent || 0).toLocaleString('vi-VN')} đ
+                                </div>
+                                <div className="text-slate-400">
+                                  {c.visit_count} lần ghé • {c.last_visit}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Nút lưu thành tập khách hàng mới (Áp dụng cho tùy chọn C hoặc khi chưa lưu) */}
+                        {!isCreated && !msg.segmentSaved && (
+                          <button
+                            type="button"
+                            onClick={() => handleSaveSegmentFromChat(msg.id, res)}
+                            className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg transition cursor-pointer"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>Lưu {customers.length} khách này thành Tập khách hàng mới</span>
+                          </button>
+                        )}
+
+                        {/* Thông báo đã lưu & nút xem tại tab Tập khách hàng */}
+                        {isCreated && (
+                          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                            <span className="text-emerald-400 font-medium flex items-center gap-1 truncate max-w-[70%]">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">Đã lưu: <strong>{isCreated.name}</strong></span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => router.push('/customers?tab=segments')}
+                              className="text-indigo-400 hover:text-indigo-300 font-medium underline text-[10px] flex items-center gap-0.5 shrink-0 cursor-pointer"
+                            >
+                              <span>Mở xem</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Tool execution badge */}
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
@@ -591,6 +886,8 @@ export function CopilotDrawer() {
                           staff_search: 'Tra cứu nhân viên',
                           staff_create: 'Thêm nhân viên mới',
                           branch_create: 'Tạo chi nhánh',
+                          customer_filter: 'Lọc tập khách hàng',
+                          customer_segment_create: 'Tạo tập khách hàng',
                           navigate_to: 'Chuyển màn hình'
                         };
                         return (

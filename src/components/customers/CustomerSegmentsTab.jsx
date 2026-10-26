@@ -63,7 +63,12 @@ export default function CustomerSegmentsTab({ createTrigger }) {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { 
+    load(); 
+    const handleReload = () => { load(); };
+    window.addEventListener('reload-data', handleReload);
+    return () => window.removeEventListener('reload-data', handleReload);
+  }, []);
 
   useEffect(() => {
     if (createTrigger > 0) {
@@ -219,22 +224,38 @@ export default function CustomerSegmentsTab({ createTrigger }) {
   const evaluateCustomer = (c, cond) => {
     if (!cond) return true;
 
-    // 1. last_visit_days_gt
+    // 1. last_visit_days_gt & lt
     if (cond.last_visit_days_gt !== undefined) {
+      if (c.last_visit) {
+        const diffTime = Math.abs(new Date() - new Date(c.last_visit));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays <= Number(cond.last_visit_days_gt)) return false;
+      }
+    }
+    if (cond.last_visit_days_lt !== undefined) {
       if (!c.last_visit) return false;
       const diffTime = Math.abs(new Date() - new Date(c.last_visit));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays <= Number(cond.last_visit_days_gt)) return false;
+      if (diffDays > Number(cond.last_visit_days_lt)) return false;
     }
 
-    // 2. total_spent_gt
+    // 2. total_spent_gt & lt
     if (cond.total_spent_gt !== undefined) {
-      if ((c.total_spent || 0) <= Number(cond.total_spent_gt)) return false;
+      if ((Number(c.total_spent) || 0) < Number(cond.total_spent_gt)) return false;
+    }
+    if (cond.total_spent_lt !== undefined) {
+      if ((Number(c.total_spent) || 0) > Number(cond.total_spent_lt)) return false;
     }
 
-    // 3. visit_count_eq
+    // 3. visit_count
     if (cond.visit_count_eq !== undefined) {
-      if ((c.visit_count || 0) !== Number(cond.visit_count_eq)) return false;
+      if ((Number(c.visit_count) || 0) !== Number(cond.visit_count_eq)) return false;
+    }
+    if (cond.visit_count_gte !== undefined) {
+      if ((Number(c.visit_count) || 0) < Number(cond.visit_count_gte)) return false;
+    }
+    if (cond.visit_count_lte !== undefined) {
+      if ((Number(c.visit_count) || 0) > Number(cond.visit_count_lte)) return false;
     }
 
     // 4. birthday_month_eq
@@ -247,6 +268,11 @@ export default function CustomerSegmentsTab({ createTrigger }) {
     // 5. gender
     if (cond.gender) {
       if (c.gender !== cond.gender) return false;
+    }
+
+    // 6. points_gte
+    if (cond.points_gte !== undefined) {
+      if ((Number(c.points) || 0) < Number(cond.points_gte)) return false;
     }
 
     return true;

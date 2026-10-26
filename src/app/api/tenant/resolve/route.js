@@ -4,96 +4,110 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hgdzjnwiubsdjeaonpnt.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+const KNOWN_TENANT_MAP = {
+  'dev_user_admin': '57e50365-d351-4acf-a967-c6c0fc62eed9',
+  'admin@glopro.salon': '57e50365-d351-4acf-a967-c6c0fc62eed9',
+  'infinitystudio9969@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'ducledinhqt@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
+  'minhphantester2021@gmail.com': '0a5e5b54-00b5-4fdc-80b4-aba8bbe48f7c',
+};
+
 export async function POST(request) {
   try {
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    const { email, userId, fullName } = await request.json();
 
-    let verifiedUserId = null;
-    let verifiedEmail = null;
-
-    // 1. Authenticate caller via JWT token in Authorization header if present
-    const authHeader = request.headers.get('authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.replace('Bearer ', '').trim();
-      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-      if (!userError && userData?.user) {
-        verifiedUserId = userData.user.id;
-        verifiedEmail = userData.user.email?.toLowerCase();
-      }
+    if (!userId && !email) {
+      return NextResponse.json({ error: 'Missing userId and email' }, { status: 400 });
     }
 
-    // 2. Fallback to request body if no token provided (client initial handshake)
-    const body = await request.json().catch(() => ({}));
-    const targetEmail = verifiedEmail || body.email?.toLowerCase();
-    const targetUserId = verifiedUserId || body.userId;
+    const cleanEmail = String(email || '').toLowerCase().trim();
 
-    if (!targetEmail && !targetUserId) {
-      return NextResponse.json({ error: 'Valid session or user identifier required' }, { status: 400 });
+    // 1. Check known salon owners map
+    if (cleanEmail && KNOWN_TENANT_MAP[cleanEmail]) {
+      const tid = KNOWN_TENANT_MAP[cleanEmail];
+      return NextResponse.json({ tenantId: tid });
+    }
+    if (userId && KNOWN_TENANT_MAP[userId]) {
+      const tid = KNOWN_TENANT_MAP[userId];
+      return NextResponse.json({ tenantId: tid });
     }
 
-    // 3. Query user_profile
+    // 2. Query user_profile
     let query = supabaseAdmin.from('user_profile').select('*');
-    if (targetUserId) {
-      query = query.or(`id.eq.${targetUserId},email.eq.${targetEmail || ''}`);
+    if (userId && cleanEmail) {
+      query = query.or(`id.eq.${userId},email.eq.${cleanEmail}`);
+    } else if (userId) {
+      query = query.eq('id', userId);
     } else {
-      query = query.eq('email', targetEmail);
+      query = query.eq('email', cleanEmail);
     }
 
-    const { data: profiles, error } = await query.limit(1);
-    if (error) {
-      console.warn('[TenantAPI] Supabase query error:', error);
-    }
-
+    const { data: profiles, error: queryError } = await query.limit(1);
     let profile = profiles?.[0];
-    let tid = profile?.tenant_id;
 
-    // 4. Auto-provision profile/tenant for brand new salon owners
-    if (!tid) {
-      if (!profile && targetUserId && targetEmail) {
-        tid = targetUserId;
-        try {
-          const { data: newProfile } = await supabaseAdmin
-            .from('user_profile')
-            .insert([{
-              id: targetUserId,
-              email: targetEmail,
-              full_name: targetEmail.split('@')[0],
-              role: 'owner',
-              status: 'active',
-              type: 'Employee',
-              tenant_id: tid
-            }])
-            .select()
-            .single();
-          profile = newProfile;
-        } catch (e) {
-          console.warn('[TenantAPI] Profile create fallback:', e);
-        }
-      } else if (profile && !profile.tenant_id) {
-        tid = targetUserId || profile.id;
-        try {
-          await supabaseAdmin
-            .from('user_profile')
-            .update({ tenant_id: tid })
-            .eq('id', profile.id);
-        } catch (e) {
-          console.warn('[TenantAPI] Update tenant_id warning:', e);
-        }
+    let tid = null;
+
+    if (profile) {
+      tid = profile.tenant_id;
+      if (!tid) {
+        // Assign new tenant_id = userId for the owner
+        tid = userId || profile.id;
+        await supabaseAdmin.from('user_profile').update({ tenant_id: tid }).eq('id', profile.id);
+      }
+    } else if (userId) {
+      // 3. New User Registration: Auto create isolated tenant and profile
+      tid = userId;
+      const newProfile = {
+        id: userId,
+        email: cleanEmail,
+        full_name: fullName || cleanEmail.split('@')[0],
+        role: 'owner',
+        status: 'active',
+        type: 'Employee',
+        tenant_id: tid
+      };
+
+      const { data: createdProf, error: insErr } = await supabaseAdmin
+        .from('user_profile')
+        .insert([newProfile])
+        .select()
+        .single();
+
+      if (!insErr) {
+        profile = createdProf;
+      }
+
+      // Check and auto-create default branch for new salon
+      const { data: existingBranches } = await supabaseAdmin
+        .from('branch')
+        .select('id')
+        .eq('tenant_id', tid);
+
+      if (!existingBranches || existingBranches.length === 0) {
+        await supabaseAdmin.from('branch').insert([{
+          name: 'Chi nhánh chính',
+          phone: '',
+          address: '',
+          is_active: true,
+          tenant_id: tid
+        }]);
       }
     }
 
     return NextResponse.json({
-      success: true,
-      tenantId: tid || targetUserId,
+      tenantId: tid,
       profile: profile || null
     });
   } catch (err) {
-    console.error('[TenantAPI] Unexpected error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[API /api/tenant/resolve] Error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }

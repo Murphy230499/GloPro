@@ -134,6 +134,13 @@ export default function Customers() {
     return () => window.removeEventListener('reload-data', load);
   }, []);
 
+  const urlTab = searchParams?.get('tab');
+  useEffect(() => {
+    if (urlTab && ['list', 'tiers', 'segments', 'points'].includes(urlTab)) {
+      setTab(urlTab);
+    }
+  }, [urlTab]);
+
   useEffect(() => {
     if (!customers || customers.length === 0) return;
     if (urlId) {

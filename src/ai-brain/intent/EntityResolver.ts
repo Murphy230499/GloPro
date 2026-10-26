@@ -89,12 +89,49 @@ export class EntityResolver {
       }
     }
 
-    // Check phone number format
+    // Check phone number format & adjacent customer name (e.g. "Lê Đình Đức, 0388870792..." or "0388870792, Lê Đình Đức...")
     const phoneMatch = cleanText.match(/(0\d{9})/);
     if (phoneMatch) {
+      // Check if there is a name before the phone number
+      const beforePhone = cleanText.substring(0, phoneMatch.index)
+        .replace(/^(?:đặt\s+(?:lịch\s+)?(?:cho\s+)?|tạo\s+(?:lịch\s+)?(?:cho\s+)?|khách(?:\s+hàng)?\s*[:\s]*|tên\s*[:\s]*)/i, '')
+        .replace(/[,;:\-\s]+$/, '')
+        .trim();
+
+      if (beforePhone && /^[A-ZÀ-Ỹa-zà-ỹ\s]{2,40}$/.test(beforePhone) && !/^(hôm nay|ngày mai|chiều|sáng|tối|lịch|cắt|gội|nhuộm|dịch vụ)$/i.test(beforePhone)) {
+        return {
+          resolved: true,
+          value: beforePhone,
+          source: 'direct'
+        };
+      }
+
+      // Check if there is a name after the phone number (e.g. "0388870792, Lê Đình Đức, cắt tóc...")
+      const afterPhone = cleanText.substring(phoneMatch.index + phoneMatch[0].length)
+        .replace(/^[,;:\-\s]+/, '')
+        .trim();
+      const firstSegment = afterPhone.split(/[,;:\-]/)[0]?.trim();
+      if (firstSegment && /^[A-ZÀ-Ỹa-zà-ỹ\s]{2,40}$/.test(firstSegment) && !/^(hôm nay|ngày mai|chiều|sáng|tối|lịch|cắt|gội|nhuộm|dịch vụ|cắt tóc|uốn|gội đầu)$/i.test(firstSegment)) {
+        return {
+          resolved: true,
+          value: firstSegment,
+          source: 'direct'
+        };
+      }
+
       return {
         resolved: true,
         value: phoneMatch[1],
+        source: 'direct'
+      };
+    }
+
+    // Check leading capitalized Vietnamese full name (e.g. "Lê Đình Đức, cắt tóc, ngày mai 14h")
+    const leadingNameMatch = cleanText.match(/^([A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)+)(?:[,;:\-]\s*|\s+(?:cắt|gội|nhuộm|uốn|đặt|hẹn|lúc|ngày))/);
+    if (leadingNameMatch && leadingNameMatch[1]) {
+      return {
+        resolved: true,
+        value: leadingNameMatch[1].trim(),
         source: 'direct'
       };
     }

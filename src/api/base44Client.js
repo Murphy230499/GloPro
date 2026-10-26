@@ -1,4 +1,4 @@
-import { supabase, supabaseClient } from './supabaseClient';
+import { supabase, supabaseClient } from './supabaseClient.js';
 
 export const base44 = supabaseClient;
 

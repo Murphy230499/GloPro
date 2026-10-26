@@ -22,31 +22,7 @@ import { DEFAULT_FACILITIES, INITIAL_DEMO_ROOMS, INITIAL_DEMO_BEDS } from '@/com
 import { getTenantStorageKey } from '@/lib/tenantManager';
 import { isRoomFacility, parseRoomFromFacility, parseBedFromFacility } from '@/lib/roomBedDbHelper';
 
-const SAMPLE_DEMO_APPOINTMENTS = [
-  { id: 'demo_1', customer_name: 'Michael Johnson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:30', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'confirmed' },
-  { id: 'demo_2', customer_name: 'Emily Harris', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: '__unassigned', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'pending' },
-  { id: 'demo_3', customer_name: 'Jessica Miller', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:00', staff_id: '__unassigned', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
-  { id: 'demo_4', customer_name: 'Sarah Wilson', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '11:00', end_time: '11:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
-  { id: 'demo_5', customer_name: 'Brandon Martinez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p1_3', facility_name: 'Giường 3 (Phòng 1)', status: 'confirmed' },
-  { id: 'demo_6', customer_name: 'Megan Taylor', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p1_4', facility_name: 'Giường 4 (Phòng 1)', status: 'pending' },
-  { id: 'demo_7', customer_name: 'Anh Ngọc Nguyễn', service_name: 'Gội đầu dưỡng sinh (2h)', price: 350000, start_time: '12:30', end_time: '13:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p2_1', facility_name: 'Giường 1 (Phòng 2)', status: 'checked_in' },
-  { id: 'demo_8', customer_name: 'Emma Brown', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_2', staff_name: 'Michelle M.', facility_id: 'bed_p2_2', facility_name: 'Giường 2 (Phòng 2)', status: 'confirmed' },
-  { id: 'demo_9', customer_name: 'Ava Campbell', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'bed_p2_3', facility_name: 'Giường 3 (Phòng 2)', status: 'pending' },
-  { id: 'demo_10', customer_name: 'Sophia Hernandez', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '15:30', staff_id: 'st_3', staff_name: 'Minh P.', facility_id: 'bed_p3_1', facility_name: 'Giường 1 (Phòng 3)', status: 'checked_in' },
-  { id: 'demo_11', customer_name: 'Olivia Thompson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '12:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'checked_in' },
-  { id: 'demo_12', customer_name: 'Kylie Walker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '12:00', end_time: '13:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'checked_in' },
-  { id: 'demo_13', customer_name: 'Andrew Robinson', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'confirmed' },
-  { id: 'demo_14', customer_name: 'Grace Moore', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:30', end_time: '14:30', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'checked_in' },
-  { id: 'demo_15', customer_name: 'Chloe Scott', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p1_1', facility_name: 'Giường 1 (Phòng 1)', status: 'in_progress' },
-  { id: 'demo_16', customer_name: 'Madison Baker', service_name: 'Full Press Set (2h)', price: 450000, start_time: '13:00', end_time: '14:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p1_2', facility_name: 'Giường 2 (Phòng 1)', status: 'checked_in' },
-  { id: 'demo_17', customer_name: 'Mia Carter', service_name: 'Full Press Set (2h)', price: 450000, start_time: '11:00', end_time: '13:00', staff_id: 'st_7', staff_name: 'Nga H.', facility_id: 'bed_p2_1', facility_name: 'Giường 1 (Phòng 2)', status: 'checked_in' },
-  { id: 'demo_18', customer_name: 'Trần Thu Hà', service_name: 'Cắt gội xấy tạo kiểu (1.5h)', price: 250000, start_time: '09:30', end_time: '11:00', staff_id: 'st_1', staff_name: 'Maria A.', facility_id: 'bed_p2_2', facility_name: 'Giường 2 (Phòng 2)', status: 'completed' },
-  { id: 'demo_19', customer_name: 'Đặng Văn Lâm', service_name: 'Massage cổ vai gáy (1h)', price: 300000, start_time: '10:00', end_time: '11:00', staff_id: 'st_5', staff_name: 'Rose H.', facility_id: 'bed_p3_1', facility_name: 'Giường 1 (Phòng 3)', status: 'completed' },
-  { id: 'demo_20', customer_name: 'Nguyễn Hoàng Nam', service_name: 'Uốn tóc Hàn Quốc (2h)', price: 650000, start_time: '14:00', end_time: '16:00', staff_id: 'st_4', staff_name: 'Ethan O.', facility_id: 'bed_p3_2', facility_name: 'Giường 2 (Phòng 3)', status: 'cancelled' },
-  { id: 'demo_21', customer_name: 'Phạm Đức Anh', service_name: 'Chăm sóc da chuyên sâu (1.5h)', price: 500000, start_time: '15:00', end_time: '16:30', staff_id: 'st_6', staff_name: 'Jenie K.', facility_id: 'bed_p4_1', facility_name: 'Giường VIP 1 (Phòng 4)', status: 'no_show' },
-  { id: 'demo_break_1', customer_name: 'Nghỉ trưa', service_name: 'Khung giờ bận', price: 0, start_time: '12:00', end_time: '13:00', staff_id: 'st_1', staff_name: 'Maria A.', is_break: true, status: 'break' },
-  { id: 'demo_break_2', customer_name: 'Nghỉ trưa', service_name: 'Khung giờ bận', price: 0, start_time: '12:30', end_time: '13:30', staff_id: 'st_3', staff_name: 'Minh P.', is_break: true, status: 'break' }
-];
+const SAMPLE_DEMO_APPOINTMENTS = [];
 
 const STATUS_COLORS = {
   pending: '#94A3B8',

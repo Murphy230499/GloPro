@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../../api/base44Client.js';
 
 // ─── Seed data ───────────────────────────────────────────────────────────────
 // 4 staff groups
@@ -72,7 +72,7 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
   const SHIFT_TEMPLATES = SHIFT_TEMPLATES_LANG[l];
   const SAMPLE_STAFF = SAMPLE_STAFF_LANG[l];
 
-  if (!b) {
+  if (!b || b === 'all') {
     try {
       const branches = await base44.entities.Branch.list();
       if (branches && branches.length > 0) {
@@ -82,8 +82,8 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
         b = defaultBranch.id;
       }
     } catch (e) {
-      console.error('Không thể lấy chi nhánh, sử dụng rỗng:', e);
-      b = '';
+      console.error('Không thể lấy chi nhánh, sử dụng fallback:', e);
+      b = '6a473852-3dde-addc-bb57-8d6900000000';
     }
   }
 
@@ -119,7 +119,7 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
       if (existing.length > 0) {
         createdTemplates[t.name] = existing[0].id;
       } else {
-        const created = await base44.entities.ShiftTemplate.create(t);
+        const created = await base44.entities.ShiftTemplate.create({ ...t, branch_id: b || null });
         createdTemplates[t.name] = created.id;
       }
     } catch (e) {
@@ -137,10 +137,11 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
   let staffCreated = 0;
   for (const member of SAMPLE_STAFF) {
     const { _group_name, ...staffPayload } = member;
-    const groupId = createdGroups[_group_name] || '';
+    const rawGroupId = createdGroups[_group_name];
+    const groupId = (rawGroupId && !rawGroupId.startsWith('local_')) ? rawGroupId : null;
     const payload = {
       ...staffPayload,
-      branch_id: b,
+      branch_id: b || '6a473852-3dde-addc-bb57-8d6900000000',
       group_id: groupId,
       is_active: true,
       avatar_url: staffPayload.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(staffPayload.full_name)}&background=${staffPayload.avatar_color?.replace('#', '') || 'random'}&color=fff&size=150`,
@@ -148,8 +149,10 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
     };
 
     try {
-      // Check if already exists by phone and branch
-      const existingStaff = await base44.entities.Staff.filter({ phone: member.phone, branch_id: b });
+      // Check if already exists by phone
+      const filterObj = { phone: member.phone };
+      if (b) filterObj.branch_id = b;
+      const existingStaff = await base44.entities.Staff.filter(filterObj);
       if (existingStaff.length === 0) {
         await base44.entities.Staff.create(payload);
         staffCreated++;
@@ -158,6 +161,7 @@ export async function seedStaffData(branchId = 'all', onProgress = null, lang = 
         // Reactivate if inactive, or update properties to ensure they match sample data
         await base44.entities.Staff.update(existing.id, {
           ...payload,
+          branch_id: existing.branch_id || payload.branch_id,
           is_active: true
         });
         staffCreated++;

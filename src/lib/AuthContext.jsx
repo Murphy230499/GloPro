@@ -186,13 +186,17 @@ export const AuthProvider = ({ children }) => {
 
   const loginDevUser = (mockUser = null) => {
     const userToSet = mockUser || {
-      id: 'dev_user_admin',
+      id: '57e50365-d351-4acf-a967-c6c0fc62eed9',
       email: 'admin@glopro.salon',
       full_name: 'Quản trị viên (Dev)',
-      role: 'owner'
+      role: 'owner',
+      tenant_id: '57e50365-d351-4acf-a967-c6c0fc62eed9'
     };
     if (typeof window !== 'undefined') {
       localStorage.setItem('gp_dev_auth_user', JSON.stringify(userToSet));
+      localStorage.setItem('gp_active_tenant_id', '57e50365-d351-4acf-a967-c6c0fc62eed9');
+      sessionStorage.setItem('gp_active_tenant_id', '57e50365-d351-4acf-a967-c6c0fc62eed9');
+      localStorage.setItem('glowpro_branch', '800d714a-245a-4e54-ad95-103ee2e509ca');
     }
     setUser(userToSet);
     setIsAuthenticated(true);

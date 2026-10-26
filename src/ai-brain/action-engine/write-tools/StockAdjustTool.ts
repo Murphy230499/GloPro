@@ -36,15 +36,33 @@ export class StockAdjustTool implements WriteTool {
     }
 
     // 2. Resolve Product
-    const requestedProduct = (parameters.productName || parameters.product || '').toLowerCase().trim();
+    const rawRequested = (parameters.productName || parameters.product || '').trim();
+    const cleanSearch = rawRequested
+      .replace(/^\d+\s*(?:chai|hộp|tuýp|lọ|thùng|cái|bộ|gói|sp|sản\s+phẩm)\s*/i, '')
+      .toLowerCase()
+      .trim();
     const productId = parameters.productId || parameters.id;
 
     const list: any[] = await base44.entities.Product.list().catch(() => []);
     let targetProduct = list.find(p => {
       if (productId && p.id === productId) return true;
-      if (requestedProduct && (p.name || '').toLowerCase().includes(requestedProduct)) return true;
+      const pName = (p.name || '').toLowerCase();
+      if (cleanSearch && (pName.includes(cleanSearch) || cleanSearch.includes(pName))) return true;
+      if (rawRequested && (pName.includes(rawRequested.toLowerCase()) || rawRequested.toLowerCase().includes(pName))) return true;
       return false;
     });
+
+    if (!targetProduct) {
+      const displayName = cleanSearch ? cleanSearch.charAt(0).toUpperCase() + cleanSearch.slice(1) : (rawRequested || 'Sản phẩm mới');
+      targetProduct = await base44.entities.Product.create({
+        name: displayName,
+        price: 250000,
+        cost_price: 150000,
+        stock: 0,
+        category: 'Mỹ phẩm',
+        is_active: true
+      }).catch(() => null);
+    }
 
     if (!targetProduct) {
       return {
@@ -52,8 +70,8 @@ export class StockAdjustTool implements WriteTool {
         status: 'NOT_FOUND',
         actionType: this.actionType,
         verified: false,
-        error: { code: 'PRODUCT_NOT_FOUND', message: `Không tìm thấy sản phẩm "${requestedProduct || productId}" trong kho.` },
-        message: `Không tìm thấy sản phẩm "${requestedProduct || productId}" trong kho.`
+        error: { code: 'PRODUCT_NOT_FOUND', message: `Không tìm thấy sản phẩm "${cleanSearch || rawRequested}" trong kho.` },
+        message: `Không tìm thấy sản phẩm "${cleanSearch || rawRequested}" trong kho.`
       };
     }
 

@@ -6,6 +6,8 @@ export type IntentType =
   | 'QUERY_REVENUE'           // "Doanh thu hôm nay bao nhiêu?"
   | 'QUERY_STAFF_REVENUE'     // "Cho tôi doanh thu của Nam"
   | 'SEARCH_CUSTOMER'         // "Tìm khách Nguyễn Văn An"
+  | 'FILTER_CUSTOMER'         // "Lọc khách chưa quay lại 30 ngày", "Tạo tập khách hàng"
+  | 'SOFTWARE_GUIDE'          // "Làm sao để đặt lịch", "Cách tính hoa hồng"
   | 'CREATE_CUSTOMER'         // "Tạo khách hàng Lê Thiện Nhân 03999321229"
   | 'UPDATE_CUSTOMER'         // "Đổi số điện thoại khách Lan"
   | 'CREATE_APPOINTMENT'      // "Đặt lịch cho chị Lan ngày mai lúc 15h"

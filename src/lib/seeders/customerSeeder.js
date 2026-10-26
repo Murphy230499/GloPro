@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../../api/base44Client.js';
 
 // ─── Seed data ───────────────────────────────────────────────────────────────
 
@@ -63,8 +63,13 @@ async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
     
     const existing = await entity.filter(filter);
     if (existing && existing.length > 0) {
-      const updated = await entity.update(existing[0].id, payload);
-      return updated ? updated.id : existing[0].id;
+      try {
+        const updated = await entity.update(existing[0].id, payload);
+        return updated ? updated.id : existing[0].id;
+      } catch (upErr) {
+        console.warn(`Could not update customer entity ${filterVal}, reusing existing ID:`, upErr?.message || upErr);
+        return existing[0].id;
+      }
     }
     const created = await entity.create(payload);
     return created ? created.id : null;
@@ -91,7 +96,7 @@ export async function seedCustomerData(branchId = 'all', onProgress = null, lang
     const payload = {
       name: g.name,
       color: g.color,
-      branch_id: b,
+      branch_id: b || null,
     };
     const id = await upsertEntity(base44.entities.CustomerGroup, 'name', g.name, b, payload);
     groupIdMap[g.name] = id;
@@ -108,7 +113,6 @@ export async function seedCustomerData(branchId = 'all', onProgress = null, lang
       note: notes,
       points: loyalty_points,
       group_id: groupIdMap[group] || null,
-      is_active: true,
       avatar_url: `https://i.pravatar.cc/150?u=${c.phone}`,
     };
 

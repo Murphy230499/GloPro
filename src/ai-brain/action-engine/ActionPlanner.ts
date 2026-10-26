@@ -99,7 +99,9 @@ export class ActionPlanner {
           phone,
           email: entities.email?.value,
           gender: entities.gender?.value,
-          birthday: entities.date?.value
+          birthday: entities.birthday?.value || entities.date?.value,
+          address: entities.address?.value,
+          note: entities.note?.value
         };
 
         const val = await ActionPreconditionValidator.validateCreateCustomer(params);

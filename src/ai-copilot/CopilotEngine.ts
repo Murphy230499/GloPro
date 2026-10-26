@@ -108,6 +108,13 @@ export class CopilotEngine {
     }
 
     // 3. Prepare payload for Gemini API Route
+    let syncTid: string | null = null;
+    try {
+      const { getSyncTenantId } = require('@/lib/tenantManager');
+      syncTid = getSyncTenantId();
+    } catch (e) {}
+    const activeTenantId = syncTid || copilotState.tenantId || copilotState.currentUser?.tenant_id || '57e50365-d351-4acf-a967-c6c0fc62eed9';
+
     const payload = {
       message: contextResolution.resolvedQuery,
       history: recentHistory,
@@ -115,6 +122,7 @@ export class CopilotEngine {
         currentPage: copilotState.currentPage,
         salonBranch: copilotState.salonBranch,
         currentUser: copilotState.currentUser,
+        tenantId: activeTenantId,
         selectedCustomer: copilotState.selectedCustomer,
         selectedInvoice: copilotState.selectedInvoice,
         selectedAppointment: copilotState.selectedAppointment,
@@ -125,9 +133,21 @@ export class CopilotEngine {
     };
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      try {
+        const { supabase } = await import('@/lib/supabaseClient');
+        const sessionRes = await supabase.auth.getSession();
+        const token = sessionRes?.data?.session?.access_token;
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (e) {
+        // Continue without auth header if session not available
+      }
+
       const res = await fetch('/api/copilot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
 
@@ -164,14 +184,22 @@ export class CopilotEngine {
         })),
         metadata: {
           model: data.model || 'gemini-2.5-pro',
-          navigateTo: data.navigateTo
+          navigateTo: data.navigateTo,
+          actionButton: data.actionButton,
+          status: data.status,
+          verified: data.verified,
+          actionResult: data.actionResult
         }
       };
 
       return {
         response: agentResponse,
         contextResolution,
-        navigateTo: data.navigateTo
+        navigateTo: data.navigateTo,
+        actionButton: data.actionButton,
+        actionResult: data.actionResult,
+        status: data.status,
+        verified: data.verified
       };
     } catch (apiErr: any) {
       this.logger.error(`Gemini Copilot Error: ${apiErr.message}`);

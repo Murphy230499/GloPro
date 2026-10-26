@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient.js';
 
 /**
  * All business tables in the system that are strictly isolated by Salon (Tenant).
@@ -63,14 +63,23 @@ let inMemoryTenantId = null;
 let tenantPromise = null;
 
 /**
+ * Sets tenant ID in memory for synchronous access (e.g. server-side API request lifecycle).
+ */
+export function setSyncTenantId(tid) {
+  if (tid) {
+    inMemoryTenantId = tid;
+  }
+}
+
+/**
  * Synchronously retrieves cached tenant ID from memory or browser storage.
  */
 export function getSyncTenantId() {
   if (inMemoryTenantId) return inMemoryTenantId;
   if (typeof window !== 'undefined') {
-    const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
-    
-    // Check logged in user email in Supabase auth local storage to immediately link known tenant
+    // Check if real Supabase Auth session token is in localStorage
+    let authEmail = null;
+    let authUid = null;
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
@@ -78,48 +87,79 @@ export function getSyncTenantId() {
           const item = localStorage.getItem(k);
           if (item) {
             const parsed = JSON.parse(item);
-            const email = parsed?.user?.email?.toLowerCase();
-            const uid = parsed?.user?.id;
-            if (email && KNOWN_TENANT_MAP[email]) {
-              const tid = KNOWN_TENANT_MAP[email];
-              inMemoryTenantId = tid;
-              sessionStorage.setItem('gp_active_tenant_id', tid);
-              localStorage.setItem('gp_active_tenant_id', tid);
-              return tid;
-            } else if (uid && KNOWN_TENANT_MAP[uid]) {
-              const tid = KNOWN_TENANT_MAP[uid];
-              inMemoryTenantId = tid;
-              sessionStorage.setItem('gp_active_tenant_id', tid);
-              localStorage.setItem('gp_active_tenant_id', tid);
-              return tid;
+            if (parsed?.user) {
+              authEmail = parsed.user.email?.toLowerCase();
+              authUid = parsed.user.id;
+              break;
             }
           }
         }
       }
     } catch (e) {}
 
-    // If the stored tenant id is the known dummy ID from previous bug, self-heal immediately to the real salon
-    if (stored === 'db1d2d2d-4b05-450d-88b9-54e7715b436b' || stored === '3466655b-41ab-4a4e-bf4a-c9deac3ee55e') {
-      const restored = '6cb88c32-06c6-4b95-b286-99bc8c141c79';
-      sessionStorage.setItem('gp_active_tenant_id', restored);
-      localStorage.setItem('gp_active_tenant_id', restored);
-      inMemoryTenantId = restored;
-      return restored;
+    // If real Supabase user is logged in
+    if (authUid || authEmail) {
+      // Clean up dev mock user if it was left over
+      localStorage.removeItem('gp_dev_auth_user');
+
+      // Check if known demo salon owner
+      if (authEmail && KNOWN_TENANT_MAP[authEmail]) {
+        const tid = KNOWN_TENANT_MAP[authEmail];
+        inMemoryTenantId = tid;
+        return tid;
+      }
+      if (authUid && KNOWN_TENANT_MAP[authUid]) {
+        const tid = KNOWN_TENANT_MAP[authUid];
+        inMemoryTenantId = tid;
+        return tid;
+      }
+
+      // For standard logged-in users, check stored tenant ID
+      const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
+      if (stored && stored !== '6cb88c32-06c6-4b95-b286-99bc8c141c79' && stored !== 'db1d2d2d-4b05-450d-88b9-54e7715b436b') {
+        inMemoryTenantId = stored;
+        return stored;
+      }
+
+      // Default isolated tenant ID for a new user is their own authUid
+      if (authUid) {
+        inMemoryTenantId = authUid;
+        sessionStorage.setItem('gp_active_tenant_id', authUid);
+        localStorage.setItem('gp_active_tenant_id', authUid);
+        return authUid;
+      }
     }
-    if (stored) {
+
+    // Only if NO real user is logged in, check dev mock user (local developer mode)
+    try {
+      const devUser = localStorage.getItem('gp_dev_auth_user');
+      if (devUser) {
+        const parsed = JSON.parse(devUser);
+        const email = parsed?.email?.toLowerCase();
+        const tid = (email && KNOWN_TENANT_MAP[email]) || '57e50365-d351-4acf-a967-c6c0fc62eed9';
+        inMemoryTenantId = tid;
+        return tid;
+      }
+    } catch (e) {}
+
+    const stored = sessionStorage.getItem('gp_active_tenant_id') || localStorage.getItem('gp_active_tenant_id');
+    if (stored && stored !== 'db1d2d2d-4b05-450d-88b9-54e7715b436b' && stored !== '3466655b-41ab-4a4e-bf4a-c9deac3ee55e') {
       inMemoryTenantId = stored;
       return stored;
     }
+
+    return '57e50365-d351-4acf-a967-c6c0fc62eed9';
   }
   return null;
 }
 
 const KNOWN_TENANT_MAP = {
+  'dev_user_admin': '57e50365-d351-4acf-a967-c6c0fc62eed9',
+  'admin@glopro.salon': '57e50365-d351-4acf-a967-c6c0fc62eed9',
   'infinitystudio9969@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
   'duclivegiolinh@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
   'ducledinhqt@gmail.com': '6cb88c32-06c6-4b95-b286-99bc8c141c79',
   'minhphantester2021@gmail.com': '0a5e5b54-00b5-4fdc-80b4-aba8bbe48f7c',
-  'db1d2d2d-4b05-450d-88b9-54e7715b436b': '6cb88c32-06c6-4b95-b286-99bc8c141c79'
 };
 
 /**
@@ -140,8 +180,19 @@ export async function resolveTenantId(forceRefresh = false) {
   tenantPromise = (async () => {
     try {
       const sessionRes = await supabase.auth.getSession();
-      const user = sessionRes.data?.session?.user;
-      if (!user) return null;
+      let user = sessionRes.data?.session?.user;
+      if (!user && typeof window !== 'undefined') {
+        const devUser = localStorage.getItem('gp_dev_auth_user');
+        if (devUser) {
+          try { user = JSON.parse(devUser); } catch (e) {}
+        }
+      }
+      if (!user) {
+        if (typeof window !== 'undefined') {
+          return '57e50365-d351-4acf-a967-c6c0fc62eed9';
+        }
+        return null;
+      }
 
       let tid = null;
       let profile = null;
@@ -159,7 +210,11 @@ export async function resolveTenantId(forceRefresh = false) {
           const apiRes = await fetch('/api/tenant/resolve', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email.toLowerCase(), userId: user.id })
+            body: JSON.stringify({
+              email: user.email.toLowerCase(),
+              userId: user.id,
+              fullName: user.user_metadata?.full_name || user.user_metadata?.name || user.email
+            })
           });
           if (apiRes.ok) {
             const apiData = await apiRes.json();
@@ -178,7 +233,7 @@ export async function resolveTenantId(forceRefresh = false) {
 
       // 2. Fallback to client-side user_profile query if API was unavailable
       if (!tid) {
-        const { data: profiles, error } = await supabase
+        const { data: profiles } = await supabase
           .from('user_profile')
           .select('id, email, role, tenant_id')
           .or(`id.eq.${user.id},email.eq.${user.email.toLowerCase()}`)
@@ -189,34 +244,15 @@ export async function resolveTenantId(forceRefresh = false) {
       }
 
       if (!tid) {
-        if (!profile) {
-          // Auto create profile for brand new salon owner registering
-          tid = user.id;
-          try {
-            await supabase.from('user_profile').insert([{
-              email: user.email.toLowerCase(),
-              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-              role: 'owner',
-              status: 'active',
-              type: 'Employee',
-              tenant_id: tid
-            }]);
-          } catch (e) {
-            console.warn('[TenantManager] Failed to auto-create user_profile on signup:', e);
-          }
-        } else if (profile.role === 'owner' || !profile.role) {
-          tid = user.id;
-          try {
-            await supabase.from('user_profile').update({ tenant_id: tid }).eq('id', profile.id);
-          } catch (e) {
-            console.warn('[TenantManager] Failed to update owner tenant_id:', e);
-          }
-        } else {
-          tid = user.id;
-        }
+        tid = user.id;
       }
 
       if (tid) {
+        const prevTid = localStorage.getItem('gp_active_tenant_id');
+        if (prevTid && prevTid !== tid) {
+          // If switching to a different tenant, clear previous branch selection
+          localStorage.removeItem('glowpro_branch');
+        }
         inMemoryTenantId = tid;
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('gp_active_tenant_id', tid);

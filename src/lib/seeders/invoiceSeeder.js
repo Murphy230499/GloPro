@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../../api/base44Client.js';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ export async function seedInvoiceData(branchId = 'all', onProgress = null, lang 
   // Fallback to vi if language is not supported
   const l = (lang === 'en') ? 'en' : 'vi';
 
-  if (!b) {
+  if (!b || b === 'all') {
     try {
       const branches = await base44.entities.Branch.list();
       if (branches && branches.length > 0) {
@@ -37,7 +37,7 @@ export async function seedInvoiceData(branchId = 'all', onProgress = null, lang 
       }
     } catch (e) {
       console.error('Cannot load branch for invoice seeder:', e);
-      b = '';
+      b = '6a473852-3dde-addc-bb57-8d6900000000';
     }
   }
   const filter = b ? { branch_id: b } : {};
@@ -102,7 +102,7 @@ export async function seedInvoiceData(branchId = 'all', onProgress = null, lang 
         price,
         qty,
         staff_id: staff?.id || '',
-        staff_name: staff?.full_name || '',
+        staff_name: staff?.full_name || staff?.name || '',
       });
     }
 
@@ -110,30 +110,24 @@ export async function seedInvoiceData(branchId = 'all', onProgress = null, lang 
     const total = subtotal - discountAmount;
 
     const payload = {
-      branch_id: b,
+      branch_id: b || '6a473852-3dde-addc-bb57-8d6900000000',
       invoice_code: generateInvoiceCode(idx + 1),
       customer_id: customer.id,
-      customer_name: customer.name,
-      customer_phone: customer.phone || '',
+      customer_name: customer.name || 'Khách hàng',
       date: dateStr,
       items,
       subtotal,
-      discount_amount: discountAmount,
-      discount_type: tmpl.discount > 0 ? 'percent' : '',
-      discount_value: tmpl.discount,
+      discount: discountAmount,
       total,
-      paid_amount: tmpl.status === 'paid' ? total : 0,
-      payment_method: tmpl.status === 'paid' ? (idx % 2 === 0 ? 'cash' : 'transfer') : '',
+      payment_methods: tmpl.status === 'paid' ? [{ method: (idx % 2 === 0 ? 'cash' : 'transfer'), amount: total }] : [],
       status: tmpl.status,
-      notes: tmpl.status === 'unpaid' ? (l === 'en' ? 'Customer will pay later' : 'Khách hẹn thanh toán sau') : '',
-      loyalty_points_earned: tmpl.status === 'paid' ? Math.floor(total / 10000) : 0,
     };
 
     try {
       await base44.entities.Invoice.create(payload);
       created++;
     } catch (_e) {
-      // ignore
+      console.error('Failed to create sample invoice:', _e);
     }
   }
 

@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabaseClient';
+import { clearActiveTenant } from '@/lib/tenantManager';
 
 /** Đăng nhập bằng email/password */
 export async function loginViaEmailPassword(email, password) {
+  clearActiveTenant();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
@@ -9,6 +11,7 @@ export async function loginViaEmailPassword(email, password) {
 
 /** Đăng ký tài khoản mới bằng email/password */
 export async function registerWithEmail(email, password) {
+  clearActiveTenant();
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
   return data;
@@ -16,6 +19,7 @@ export async function registerWithEmail(email, password) {
 
 /** Xác thực OTP email (Supabase dùng verifyOtp type=email) */
 export async function verifyOtp(email, token) {
+  clearActiveTenant();
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
   if (error) throw error;
   return data;
@@ -99,6 +103,7 @@ export async function logoutSupabase() {
 
 /** OAuth Google */
 export async function loginWithGoogleSupabase(redirectPath) {
+  clearActiveTenant();
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const target = redirectPath || searchParams?.get('redirect') || '/';
@@ -115,6 +120,7 @@ export async function loginWithGoogleSupabase(redirectPath) {
 
 /** OAuth Facebook */
 export async function loginWithFacebookSupabase(redirectPath) {
+  clearActiveTenant();
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const target = redirectPath || searchParams?.get('redirect') || '/';

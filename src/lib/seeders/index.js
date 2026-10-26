@@ -3,12 +3,12 @@
  * Used by individual pages and the global "Seed All" utility.
  */
 
-export { seedServiceData } from './serviceSeeder';
-export { seedCustomerData } from './customerSeeder';
-export { seedAppointmentData } from './appointmentSeeder';
-export { seedInvoiceData } from './invoiceSeeder';
-export { seedStaffData } from './staffSeeder';
-import { base44 } from '../../api/base44Client';
+export { seedServiceData } from './serviceSeeder.js';
+export { seedCustomerData } from './customerSeeder.js';
+export { seedAppointmentData } from './appointmentSeeder.js';
+export { seedInvoiceData } from './invoiceSeeder.js';
+export { seedStaffData } from './staffSeeder.js';
+import { base44 } from '../../api/base44Client.js';
 
 /**
  * seedAll — Seeds all modules in dependency order.
@@ -39,11 +39,11 @@ export async function seedAll(branchId, onProgress) {
     return fn();
   };
 
-  results.services  = await step('Đang seed Dịch vụ & Sản phẩm...', () => import('./serviceSeeder').then(m => m.seedServiceData(branchId, onProgress, lang)));
-  results.staff     = await step('Đang seed Nhân viên...', () => import('./staffSeeder').then(m => m.seedStaffData(branchId, onProgress, lang)));
-  results.customers = await step('Đang seed Khách hàng...', () => import('./customerSeeder').then(m => m.seedCustomerData(branchId, onProgress, lang)));
-  results.appointments = await step('Đang seed Lịch hẹn...', () => import('./appointmentSeeder').then(m => m.seedAppointmentData(branchId, onProgress, lang)));
-  results.invoices  = await step('Đang seed Hoá đơn...', () => import('./invoiceSeeder').then(m => m.seedInvoiceData(branchId, onProgress, lang)));
+  results.services  = await step('Đang seed Dịch vụ & Sản phẩm...', () => import('./serviceSeeder.js').then(m => m.seedServiceData(branchId, onProgress, lang)));
+  results.staff     = await step('Đang seed Nhân viên...', () => import('./staffSeeder.js').then(m => m.seedStaffData(branchId, onProgress, lang)));
+  results.customers = await step('Đang seed Khách hàng...', () => import('./customerSeeder.js').then(m => m.seedCustomerData(branchId, onProgress, lang)));
+  results.appointments = await step('Đang seed Lịch hẹn...', () => import('./appointmentSeeder.js').then(m => m.seedAppointmentData(branchId, onProgress, lang)));
+  results.invoices  = await step('Đang seed Hoá đơn...', () => import('./invoiceSeeder.js').then(m => m.seedInvoiceData(branchId, onProgress, lang)));
 
   onProgress?.(null);
   return results;

@@ -1,5 +1,6 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { base44 } from '@/api/base44Client';
 import { useBranch } from '@/lib/BranchContext';
 
@@ -31,8 +32,17 @@ import CashFlowReportTab from '@/components/reports/tabs/CashFlowReportTab';
 
 export default function Reports() {
   const { currentBranchId, branches } = useBranch();
-  const [activeTab, setActiveTab] = useState('overview');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const tabFromUrl = searchParams?.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   // Entities state
   const [invoices, setInvoices] = useState([]);
@@ -154,7 +164,20 @@ export default function Reports() {
       case 'multi_branch':
         return <MultiBranchTab branches={branches} invoices={invoices} />;
       case 'ai_report':
-        return <AiReportTab />;
+        return (
+          <AiReportTab
+            invoices={invoices}
+            appointments={appointments}
+            customers={customers}
+            staff={staff}
+            products={products}
+            services={services}
+            packages={packages}
+            treatments={treatments}
+            branches={branches}
+            currentBranchId={currentBranchId}
+          />
+        );
       case 'cash_flow':
         return <CashFlowReportTab />;
       default:

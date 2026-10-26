@@ -30,15 +30,6 @@ const DEFAULT_DEMO_SERVICES = [
   { id: 'srv_8', name: 'Uốn / Nhuộm Hàn Quốc', category: 'TÓC' }
 ];
 
-const DEFAULT_DEMO_STAFF = [
-  { id: 'st_1', full_name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', role: 'KTV Chuyên nghiệp' },
-  { id: 'st_2', full_name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', role: 'Nail Specialist' },
-  { id: 'st_3', full_name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100', role: 'Chuyên gia Tóc' },
-  { id: 'st_4', full_name: 'Ethan O.', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', role: 'Barber & Stylist' },
-  { id: 'st_5', full_name: 'Rose H.', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100', role: 'Spa Specialist' },
-  { id: 'st_6', full_name: 'Jenie K.', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100', role: 'Colorist' },
-  { id: 'st_7', full_name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', role: 'Stylist' }
-];
 
 export function CustomDatePickerPopover({ selectedDate, onSelectDate, onClose, align = 'right' }) {
   const todayISO = new Date().toISOString().split('T')[0];
@@ -259,8 +250,8 @@ export default function AppointmentHeader({
   // Effective Source Data Arrays with Fallbacks
   const effectiveServices = (servicesList && servicesList.length > 0) ? servicesList : DEFAULT_DEMO_SERVICES;
   const effectiveStaffList = targetEntity === 'staff'
-    ? ((staffList && staffList.length > 0) ? staffList : DEFAULT_DEMO_STAFF)
-    : facilityList;
+    ? (staffList || [])
+    : (facilityList || []);
 
   // Selected Service Display Text
   const currentServiceObj = effectiveServices.find(s => (s.name || s.service_name || s) === selectedService);
@@ -506,6 +497,44 @@ export default function AppointmentHeader({
                     </div>
                     <span>{t('common.select_all', 'Chọn tất cả')}</span>
                   </button>
+
+                  {/* Unassigned Option for Staff view */}
+                  {targetEntity === 'staff' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStaff?.('__unassigned');
+                        setIsStaffOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 text-left py-1.5 px-2 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                        selectedStaff === '__unassigned'
+                          ? 'border-orange-500 bg-orange-500 text-white'
+                          : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
+                      }`}>
+                        {selectedStaff === '__unassigned' && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+                      <span className="text-slate-500 dark:text-slate-400 italic">{t('appointments.unassigned', 'Chưa phân công (Lịch tự do)')}</span>
+                    </button>
+                  )}
+
+                  {/* Empty state when salon has no staff */}
+                  {Object.keys(staffByGroup).length === 0 && (
+                    <div className="py-6 px-3 text-center">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                        {targetEntity === 'staff' ? 'Chưa có nhân viên nào trong salon.' : 'Chưa có giường / phòng nào.'}
+                      </p>
+                      {targetEntity === 'staff' && (
+                        <a
+                          href="/staff"
+                          className="inline-flex items-center text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          + Thêm nhân viên ở mục Nhân sự
+                        </a>
+                      )}
+                    </div>
+                  )}
 
                   {/* Grouped Roles / Categories */}
                   {Object.entries(staffByGroup).map(([group, items]) => (

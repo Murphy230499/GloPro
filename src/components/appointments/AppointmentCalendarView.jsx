@@ -79,21 +79,10 @@ export default function AppointmentCalendarView({
     setHoveredAppt(null);
   };
 
-  const sampleStaffColumns = [
-    { id: 'st_john', name: 'John B.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100' },
-    { id: 'st_maria', name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-    { id: 'st_michelle', name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-    { id: 'st_minh', name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100' },
-    { id: 'st_lisa', name: 'Lisa O.', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100' },
-    { id: 'st_nga', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
-    { id: 'st_jenie', name: 'Jenie K.', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100' },
-    { id: 'st_rose', name: 'Rose H.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }
-  ];
-
   let rawColumns = targetEntity === 'staff'
     ? [
         { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null },
-        ...(staffList.length ? staffList.map(s => ({ id: s.id, name: s.full_name || s.name, avatar_url: s.avatar_url })) : sampleStaffColumns.filter(c => c.id !== '__unassigned'))
+        ...(staffList || []).map(s => ({ id: s.id, name: s.full_name || s.name, avatar_url: s.avatar_url }))
       ]
     : [
         { id: '__unassigned_facility', name: t('appointments.unassigned_facility', 'Chưa xếp giường'), icon: '❓' },

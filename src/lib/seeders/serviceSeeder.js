@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../../api/base44Client.js';
 
 // ─── Seed data ───────────────────────────────────────────────────────────────
 
@@ -124,8 +124,13 @@ async function upsertEntity(entity, filterKey, filterVal, branchId, payload) {
     
     const existing = await entity.filter(filter);
     if (existing && existing.length > 0) {
-      const updated = await entity.update(existing[0].id, payload);
-      return updated ? updated.id : existing[0].id;
+      try {
+        const updated = await entity.update(existing[0].id, payload);
+        return updated ? updated.id : existing[0].id;
+      } catch (upErr) {
+        console.warn(`Could not update existing entity ${filterVal}, reusing existing ID:`, upErr?.message || upErr);
+        return existing[0].id;
+      }
     }
     const created = await entity.create(payload);
     return created ? created.id : null;
@@ -166,11 +171,12 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
   // 2. Create services
   onProgress?.('Đang tạo danh mục dịch vụ...');
   for (const svc of SERVICES) {
-    const { group, type, ...rest } = svc;
+    const { group, type, duration, ...rest } = svc;
     await upsertEntity(base44.entities.Service, 'name', svc.name, b, {
       ...rest,
+      duration_minutes: duration || 45,
       branch_ids: b ? [b] : [],
-      group_id: groupIdMap[group] || '',
+      group_id: groupIdMap[group] || null,
       is_active: true,
       commission_rate: 30,
     });
@@ -184,7 +190,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     await upsertEntity(base44.entities.Product, 'name', prod.name, b, {
       ...rest,
       branch_ids: b ? [b] : [],
-      group_id: groupIdMap[group] || '',
+      group_id: groupIdMap[group] || null,
       is_active: true,
     });
     created.products++;
@@ -198,7 +204,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
       ...rest,
       usage_count: sessions || 1,
       branch_ids: b ? [b] : [],
-      group_id: groupIdMap[group] || '',
+      group_id: groupIdMap[group] || null,
       is_active: true,
     });
     created.packages++;
@@ -211,7 +217,7 @@ export async function seedServiceData(branchId = 'all', onProgress = null, lang 
     await upsertEntity(base44.entities.Treatment, 'name', trt.name, b, {
       ...rest,
       branch_ids: b ? [b] : [],
-      group_id: groupIdMap[group] || '',
+      group_id: groupIdMap[group] || null,
       is_active: true,
     });
     created.treatments++;

@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../../api/base44Client.js';
 
 // ─── Seeder ───────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export async function seedAppointmentData(branchId = 'all', onProgress = null, l
   // Fallback to vi if language is not supported
   const l = (lang === 'en') ? 'en' : 'vi';
 
-  if (!b) {
+  if (!b || b === 'all') {
     try {
       const branches = await base44.entities.Branch.list();
       if (branches && branches.length > 0) {
@@ -36,7 +36,7 @@ export async function seedAppointmentData(branchId = 'all', onProgress = null, l
       }
     } catch (e) {
       console.error('Cannot load branch for appointment seeder:', e);
-      b = '';
+      b = '6a473852-3dde-addc-bb57-8d6900000000';
     }
   }
   const filter = b ? { branch_id: b } : {};
@@ -113,28 +113,42 @@ export async function seedAppointmentData(branchId = 'all', onProgress = null, l
     const custSample = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
     const matchedCustomer = customerList.find(c => c.phone === custSample.phone);
 
+    const durationMin = service.duration_minutes || service.duration || 60;
+    const [h, m] = timeStr.split(':').map(Number);
+    const endMinutes = h * 60 + m + durationMin;
+    const endH = String(Math.floor(endMinutes / 60) % 24).padStart(2, '0');
+    const endM = String(endMinutes % 60).padStart(2, '0');
+    const endTimeStr = `${endH}:${endM}`;
 
     const payload = {
-      branch_id: b,
+      branch_id: b || '6a473852-3dde-addc-bb57-8d6900000000',
       staff_id: staffMember.id,
-      staff_name: staffMember.full_name,
+      staff_name: staffMember.full_name || staffMember.name || '',
       service_id: service.id,
       service_name: service.name,
-      customer_id: matchedCustomer?.id || '',
+      price: service.price || 0,
+      customer_id: matchedCustomer?.id || null,
       customer_name: matchedCustomer?.name || custSample.name,
       customer_phone: matchedCustomer?.phone || custSample.phone,
       date: dateStr,
-      time: timeStr,
-      duration: service.duration || 60,
+      start_time: timeStr,
+      end_time: endTimeStr,
       status,
-      notes: status === 'cancelled' ? 'Khách báo bận không đến được' : '',
+      note: status === 'cancelled' ? 'Khách báo bận không đến được' : '',
+      source: 'walk_in',
+      services: [{
+        id: service.id,
+        name: service.name,
+        price: service.price || 0,
+        duration: durationMin
+      }]
     };
 
     try {
       await base44.entities.Appointment.create(payload);
       created++;
     } catch (_e) {
-      // ignore
+      console.error('Failed to create sample appointment:', _e);
     }
   }
 

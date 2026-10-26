@@ -154,15 +154,49 @@ export class ActionPreconditionValidator {
     } else if (params.serviceName) {
       const qServ = params.serviceName.toLowerCase().trim();
       const matched = services.filter(s => (s.name || '').toLowerCase().includes(qServ));
-      const uniqueNames = new Set(matched.map(s => (s.name || '').trim().toLowerCase()));
-      if (uniqueNames.size > 1) {
-        return {
-          valid: false,
-          status: 'AMBIGUOUS',
-          message: `Tìm thấy ${matched.length} dịch vụ tương tự "${params.serviceName}". Vui lòng chọn chính xác dịch vụ.`
-        };
+      
+      // 1. Check exact match
+      const exact = matched.find(s => (s.name || '').trim().toLowerCase() === qServ);
+      if (exact) {
+        targetService = exact;
+      } else {
+        // 2. Check if customer name or query context matches gender (e.g. "Lê Đình Đức" -> nam)
+        const nameContext = ` ${params.customerName || ''} ${params.rawQuery || ''} `.toLowerCase();
+        const isMale = /(?:^|\s|[.,;:\-])(anh|ông|nam|đức|duc|hùng|hung|dũng|dung|minh|tuấn|tuan|hoàng|hoang|thành|thanh|long|huy|quân|quan|kiên|kien|bảo|bao|phúc|phuc|trọng|trong|khang|trung|việt|viet|vinh)(?:$|\s|[.,;:\-])/i.test(nameContext);
+        const isFemale = /(?:^|\s|[.,;:\-])(chị|bà|nữ|nu|trang|hương|huong|lan|mai|hoa|thảo|thao|linh|ngọc|ngoc|hà|ha|my|phương|phuong|vy|yến|yen|nhung|nguyệt|nguyet|tuyết|tuyet)(?:$|\s|[.,;:\-])/i.test(nameContext);
+
+        let genderService = null;
+        if (isMale && !isFemale) {
+          genderService = matched.find(s => (s.name || '').toLowerCase().includes('nam'));
+        } else if (isFemale && !isMale) {
+          genderService = matched.find(s => (s.name || '').toLowerCase().includes('nữ'));
+        }
+
+        if (genderService) {
+          targetService = genderService;
+        } else {
+          // Deduplicate unique service names
+          const uniqueMap = new Map<string, any>();
+          matched.forEach(s => {
+            const k = (s.name || '').trim().toLowerCase();
+            if (!uniqueMap.has(k)) uniqueMap.set(k, s);
+          });
+
+          if (uniqueMap.size > 1) {
+            const listServices = Array.from(uniqueMap.values()).slice(0, 5);
+            const options = listServices
+              .map(s => `• **${s.name}** (${(Number(s.price) || 0).toLocaleString('vi-VN')} đ)`)
+              .join('\n');
+
+            return {
+              valid: false,
+              status: 'AMBIGUOUS',
+              message: `💇‍♀️ Salon có các dịch vụ phù hợp sau:\n${options}\n\nBạn muốn chọn dịch vụ cụ thể nào cho khách ${params.customerName ? `**${params.customerName}**` : ''} ạ?`
+            };
+          }
+          targetService = matched[0];
+        }
       }
-      targetService = matched[0];
     }
 
     const durationMinutes = targetService?.duration_minutes || params.durationMinutes || 45;

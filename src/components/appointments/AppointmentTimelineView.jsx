@@ -79,21 +79,10 @@ export default function AppointmentTimelineView({
     setHoveredAppt(null);
   };
 
-  const sampleStaffRows = [
-    { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, group_name: t('appointments.free_slot', 'Lịch tự do'), group_color: '#94A3B8' },
-    { id: 'st_1', name: 'Maria A.', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', group_name: 'KTV Chuyên nghiệp', group_color: '#8b5cf6' },
-    { id: 'st_2', name: 'Michelle M.', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', group_name: 'Nail Specialist', group_color: '#f472b6' },
-    { id: 'st_3', name: 'Minh P.', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100', group_name: 'Chuyên gia Tóc', group_color: '#8b5cf6' },
-    { id: 'st_4', name: 'Ethan O.', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', group_name: 'Barber & Stylist', group_color: '#10b981' },
-    { id: 'st_5', name: 'Rose H.', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100', group_name: 'Spa Specialist', group_color: '#f59e0b' },
-    { id: 'st_6', name: 'Jenie K.', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100', group_name: 'Colorist', group_color: '#8b5cf6' },
-    { id: 'st_7', name: 'Nga H.', avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', group_name: 'Stylist', group_color: '#8b5cf6' },
-  ];
-
   let rawRows = targetEntity === 'staff'
-    ? (staffList.length ? [
+    ? [
         { id: '__unassigned', name: t('appointments.unassigned', 'Chưa phân công'), avatar_url: null, group_name: t('appointments.free_slot', 'Lịch tự do'), group_color: '#94A3B8' },
-        ...staffList.map(s => ({
+        ...(staffList || []).map(s => ({
           id: s.id,
           name: s.full_name || s.name,
           avatar_url: s.avatar_url,
@@ -101,7 +90,7 @@ export default function AppointmentTimelineView({
           group_color: s.group_color || '#3B82F6',
           color: s.avatar_color || '#3B82F6'
         }))
-      ] : sampleStaffRows)
+      ]
     : facilityList;
 
   if (selectedStaff && selectedStaff !== 'all') {
@@ -227,6 +216,20 @@ export default function AppointmentTimelineView({
           </div>
         </div>
       </div>
+
+      {targetEntity === 'staff' && (!staffList || staffList.length === 0) && (
+        <div className="bg-amber-500/10 dark:bg-amber-950/30 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-2">
+            <span>Salon chưa có nhân viên nào. Lịch hẹn hiện tại được quản lý tại dòng <strong>Chưa phân công</strong>.</span>
+          </div>
+          <a
+            href="/staff"
+            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-medium transition-colors text-xs flex items-center gap-1 shadow-sm"
+          >
+            + Quản lý nhân viên
+          </a>
+        </div>
+      )}
 
       {/* ── Scrollable Body Area ── */}
       <div
